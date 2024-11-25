@@ -2,7 +2,7 @@
 
 ## Introduction
 
-HERA is a no-code AR authoring platform for cultural heritage. It is entirely web-based and does not need any coding abilities.
+HERA is a no-code AR authoring platform for cultural heritage. It is entirely web-based and does not need any coding abilities. For more informations, check [the paper](https://hal.science/hal-04725966v1) and the [demo video](https://www.youtube.com/watch?v=ZqwUtapg_Bk).
 
 This file is intended to help you configure and start the project for development.
 

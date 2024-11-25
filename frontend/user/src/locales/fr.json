@@ -1,0 +1,75 @@
+{
+  "locale": "fr-Fr",
+  "header": {
+    "home": "Accueil",
+    "allProjects": "Tous les projets"
+  },
+  "homeView": {
+    "title": "Projets récents",
+    "loadingInfo": "Chargement...",
+    "loadingError": "Une erreur est survenue lors du chargement des projets. Veuillez réessayer plus tard.",
+    "seeAllProjects": "Voir tous les projets"
+  },
+  "projectsView": {
+    "title": "Tous les projets",
+    "seeMoreProjectsButton": "Voir plus de projets",
+    "loadingInfo": "Chargement...",
+    "loadingError": "Une erreur est survenue lors du chargement des projets. Veuillez réessayer plus tard.",
+    "noMoreProjectsToShow": "Plus de projets à afficher"
+  },
+  "projectView": {
+    "loadingInfo": "Chargement...",
+    "loadingError": "Une erreur est survenue lors du chargement du projet. Veuillez réessayer plus tard.",
+    "projectDetail": {
+      "pictureAlt": "Image du projet"
+    },
+    "arView": {
+      "startAr": {
+        "button": "Voir en AR",
+        "loading": "Chargement",
+        "incompatibleDevice": "Appareil incompatible !"
+      },
+      "arOverlay": {
+        "contextMenu": {
+          "reset": "Réinitialiser",
+          "showLabels": "Afficher les labels"
+        },
+        "slowMoveMessage": "Déplacez lentement votre appareil pour détecter les surfaces.",
+        "scene": {
+          "descriptionTitle": "Description",
+          "previousButton": "Précédent",
+          "nextButton": "Suivant"
+        }
+      }
+    },
+    "projectInfo": {
+      "title": "Informations sur le projet",
+      "createdBy": "Créé par : ",
+      "createdOn": "Créé le : ",
+      "updatedOn": "Mis à jour le : ",
+      "sceneCount": "Nombre de scènes : ",
+      "at": "à"
+    }
+  },
+
+
+
+  "projectCard": {
+    "scene": "scène | scènes",
+    "pictureAlt": "Image du projet",
+    "updatedOn": "Mis à jour le "
+  },
+  "redirectMessage": {
+    "part1": "Remarque :",
+    "part2": "si vous visitez ce site pour la première fois, veuillez cliquer ",
+    "part3": "ici",
+    "part4": " pour accepter le certificat et continuer."
+  },
+  "expandableNotification": {
+    "hideButton": "Masquer"
+  },
+  "meshLoadError": {
+    "title": "Erreur de chargement",
+    "message": "Impossible de charger le fichier "
+  }
+}

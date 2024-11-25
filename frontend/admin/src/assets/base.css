@@ -1,0 +1,57 @@
+@font-face {
+  font-family: readexPro;
+  src: url(../../public/fonts/Inter-variable.ttf);
+}
+
+
+*,
+*::before,
+*::after {
+  --accentColor:#3F9BF0;
+  --textImportantColor:#223A50;
+  --textColor:#6E7D8B;
+  --darkerBackgroundColor:#E5E7E8;
+  --backgroundColor:#FFFFFF;
+  --dangerColor:#FF4040;
+  --warningColor:#FFD217;
+  --successColor:#04BF71;
+
+  --shadowColor: rgba(34, 58, 80, 0.64);
+  --defaultUniformShadow: 0 0 8px 0 var(--shadowColor);
+
+
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+  font-family: readexPro, Arial, serif;
+  color: var(--textColor);
+  /*border: solid red 1px;*/
+}
+
+main{
+  background-color: var(--darkerBackgroundColor);
+  min-height: 100vh;
+  padding: 16px;
+}
+
+h1, h2{
+  color: var(--textImportantColor);
+}
+
+h1{
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+
+h2{
+  font-weight: 500;
+}
+
+p{
+  text-align: justify;
+}
+
+a{
+  text-decoration: none;
+}

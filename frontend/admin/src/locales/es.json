@@ -1,0 +1,262 @@
+{
+  "locale": "es-ES",
+  "header": {
+    "home": "Mis proyectos",
+    "logout": "Cerrar sesión"
+  },
+  "login": {
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "Tu correo electrónico",
+    "passwordLabel": "Contraseña",
+    "passwordPlaceholder": "Tu contraseña",
+    "login": "Iniciar sesión",
+    "loginIn": "Iniciando sesión",
+    "noAccount": "¿No tienes cuenta?",
+    "createAccount": "Crear uno"
+  },
+  "register": {
+    "title": "Registrarse",
+    "usernameLabel": "Nombre de usuario",
+    "usernamePlaceholder": "Crea un nombre de usuario",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "Introduce tu correo electrónico",
+    "passwordLabel": "Contraseña",
+    "passwordPlaceholder": "Crea una contraseña",
+    "register": "Registrarse",
+    "registering": "Registrando",
+    "alreadyRegistered": "¿Ya estás registrado?",
+    "login": "Iniciar sesión"
+  },
+  "defaultProjectSettings": {
+    "unit": "Escena",
+    "calibrationMessage": "Toca en cualquier lugar para colocar tu objeto"
+  },
+  "projectsView": {
+    "newProject": {
+      "button": "Nuevo proyecto",
+      "modal": {
+        "title": "Crear nuevo proyecto",
+        "inputTitle": "Título",
+        "inputPlaceholder": "Título del proyecto",
+        "inputDefaultValue": "Nuevo proyecto"
+      }
+    },
+    "title": "Tus proyectos",
+    "projectCard": {
+      "scene": "escena | escenas",
+      "pictureAlt": "Imagen del proyecto",
+      "updatedOn": "Actualizado el ",
+      "projectPublished": "Publicado",
+      "projectPrivate": "Privado"
+    },
+    "seeMoreProjectsButton": "Ver más proyectos",
+    "noMoreProjectsToShow": "No hay más proyectos para mostrar.",
+    "loadingInfo": "Cargando...",
+    "loadingError": "Ocurrió un error al cargar los proyectos. Inténtalo de nuevo más tarde."
+  },
+  "projectView": {
+    "selectedFile": {
+      "notAnImageError": "El archivo seleccionado no es una imagen.",
+      "sizeError": {
+        "part1": "La imagen seleccionada es demasiado grande",
+        "part2": "Por favor elige otro archivo"
+      }
+    },
+    "loadingInfo": "Cargando...",
+    "loadingError": "Ocurrió un error al cargar el proyecto. Inténtalo de nuevo más tarde.",
+    "title": {
+      "projects": "Proyectos"
+    },
+    "leftSection": {
+      "title": "Configuración del proyecto",
+      "publishedStatus": {
+        "label": "Estado:",
+        "true": "Público",
+        "false": "Privado"
+      },
+      "projectTitle": {
+        "label": "Título:",
+        "placeholder": "El título de tu proyecto"
+      },
+      "projectDescription": {
+        "label": "Descripción:",
+        "placeholder": "La descripción de tu proyecto"
+      },
+      "projectImage": {
+        "label": "Imagen:",
+        "alt": "Imagen del proyecto"
+      },
+      "buttons": {
+        "duplicate": "Duplicar proyecto",
+        "delete": "Eliminar proyecto"
+      }
+    },
+    "modals": {
+      "duplicate": {
+        "title": "Duplicar proyecto",
+        "inputTitle": "Nuevo título",
+        "inputPlaceholder": "Título del nuevo proyecto",
+        "inputDefaultValueCopy": "(Copia)"
+      },
+      "delete": {
+        "title": "Eliminar proyecto",
+        "body": {
+          "part1": "Estás a punto de eliminar el proyecto ",
+          "part2": "Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?"
+        }
+      },
+      "newScene": {
+        "title": "Crear escena",
+        "inputPlaceholder": "Título de la escena",
+        "inputDefaultValue": "Nueva escena"
+      },
+      "deleteScene": {
+        "title": "Eliminar escena",
+        "body": {
+          "part1": "Estás a punto de eliminar la escena ",
+          "part2": "Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?"
+        }
+      }
+    },
+    "rightSection": {
+      "title": "Gestión de escenas",
+      "projectParameter": {
+        "label": "Nombre del parámetro:",
+        "placeholder": "Describe el parámetro que varía entre escenas"
+      },
+      "projectCalibrationMessage": {
+        "label": "Mensaje de calibración:",
+        "placeholder": "Explica cómo posicionar el retículo para calibrar la escena"
+      },
+      "projectScenes": {
+        "label": "Escenas:",
+        "buttonText": "Añadir",
+        "noSceneInfo": "Este proyecto no tiene escenas",
+        "assetCount": "recurso | recursos"
+      }
+    },
+    "bottomActionBar": {
+      "backButton": "Volver",
+      "saveButton": {
+        "save": "Guardar",
+        "saved": "Guardado",
+        "saving": "Guardando"
+      }
+    }
+  },
+  "sceneView": {
+    "loadingInfo": "Cargando...",
+    "loadingError": "Ocurrió un error al cargar la escena. Inténtalo de nuevo más tarde.",
+    "title": {
+      "projects": "Proyectos",
+      "scenes": "Escenas"
+    },
+    "leftSection": {
+      "title": "Editar escena",
+      "sceneTitle": {
+        "placeholder": "Título de la escena"
+      },
+      "sceneDescription": {
+        "label": "Descripción",
+        "placeholder": "Describe la escena. Deja en blanco si no deseas mostrar una descripción."
+      },
+      "sceneLabels": {
+        "label": "Etiquetas:",
+        "addLabelButton": "Añadir",
+        "noLabelInfo": "Esta escena no tiene etiquetas",
+        "newLabelText": "Nueva etiqueta"
+      },
+      "sceneAssets": {
+        "label": "Modelos 3D:",
+        "addAssetButton": "Subir",
+        "addAssetButtonErrorFileNotSupported": "Este formato de archivo no es compatible.\nPor favor, usa .glb o .gltf",
+        "noAssetsInfo": "Esta escena no tiene ningún modelo 3D",
+        "assetNotDisplayed": "Este objeto no se mostrará en el visor",
+        "assetLoadFailed": "No se pudo cargar este modelo 3D"
+      },
+      "buttons": {
+        "duplicate": "Duplicar escena",
+        "delete": "Eliminar escena"
+      }
+    },
+    "modals": {
+      "duplicate": {
+        "title": "Duplicar escena",
+        "inputTitle": "Nuevo título",
+        "inputPlaceholder": "Título de la nueva escena",
+        "inputDefaultValueCopy": "(Copia)"
+      },
+      "delete": {
+        "title": "Eliminar escena",
+        "body": {
+          "part1": "Estás a punto de eliminar la escena ",
+          "part2": "Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?"
+        }
+      }
+    },
+    "rightSection": {
+      "title": "Previsualización",
+      "fileLoadError": {
+        "title": "Error de carga",
+        "message": "No se pudo cargar el archivo"
+      }
+    },
+    "bottomActionBar": {
+      "backButton": "Volver",
+      "saveButton": {
+        "save": "Guardar",
+        "saved": "Guardado",
+        "saving": "Guardando"
+      }
+    }
+  },
+  "textInputModal": {
+    "confirmButton": "Crear",
+    "cancelButton": "Cancelar"
+  },
+  "redirectMessage": {
+    "part1": "Nota:",
+    "part2": "si estás visitando este sitio por primera vez, por favor haz clic ",
+    "part3": "aquí",
+    "part4": " para aceptar el certificado y continuar."
+  },
+  "deleteConfirmModal": {
+    "confirmButton": "Sí, eliminar",
+    "cancelButton": "No, mantener"
+  },
+  "saveWarningModal": {
+    "title": "¿Guardar cambios?",
+    "body": {
+      "part1": "Estás a punto de salir de esta página.",
+      "part2": "Los datos no guardados se perderán. ¿Estás seguro de que quieres continuar?"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "continueWithoutSaving": "Continuar sin guardar",
+      "saveAndContinue": "Guardar y continuar",
+      "saving": "Guardando..."
+    }
+  },
+  "labelEditModal": {
+    "title": "Edición avanzada",
+    "content": {
+      "label": "Contenido",
+      "placeholder": "Introduce el contenido (texto o HTML)"
+    },
+    "animation": {
+      "title": "Mostrar",
+      "in": {
+        "label": "Desde",
+        "placeholder": "Entrada (ms)"
+      },
+      "out": {
+        "label": "Hasta",
+        "placeholder": "Salida (ms)"
+      }
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "confirm": "Confirmar"
+    }
+  }
+}

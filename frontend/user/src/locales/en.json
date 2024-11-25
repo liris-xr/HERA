@@ -1,0 +1,76 @@
+{
+  "locale": "en-Us",
+  "header": {
+    "home": "Home",
+    "allProjects": "All projects"
+  },
+  "homeView": {
+    "title": "Recent projects",
+    "loadingInfo": "Loading...",
+    "loadingError": "An error occurred while loading projects. Please try again later.",
+    "seeAllProjects": "See all projects"
+  },
+  "projectsView": {
+    "title": "All projects",
+    "seeMoreProjectButton": "See more projects",
+    "loadingInfo": "Loading...",
+    "loadingError": "An error occurred while loading projects. Please try again later.",
+    "noMoreProjectsToShow": "No more projects to show"
+  },
+  "projectView": {
+    "loadingInfo": "Loading...",
+    "loadingError": "An error occurred while loading project. Please try again later.",
+    "projectDetail": {
+      "pictureAlt": "Project picture"
+    },
+    "arView": {
+      "startAr": {
+        "button":"See in AR",
+        "loading": "Loading",
+        "incompatibleDevice": "Incompatible device !"
+      },
+      "arOverlay": {
+        "contextMenu": {
+          "reset": "Reset",
+          "showLabels": "Show labels"
+        },
+        "slowMoveMessage": "Move your device slowly to detect surfaces.",
+        "scene": {
+          "descriptionTitle": "Description",
+          "previousButton": "Previous",
+          "nextButton": "Next"
+        }
+      }
+    },
+    "projectInfo": {
+      "title": "About project",
+      "createdBy": "Created by : ",
+      "createdOn": "Created on : ",
+      "updatedOn": "Updated on : ",
+      "sceneCount": "Scene count : ",
+      "at": "at"
+    }
+  },
+
+
+
+
+  "projectCard": {
+    "scene": "scene | scenes",
+    "pictureAlt": "Project picture",
+    "updatedOn": "Updated on "
+  },
+  "redirectMessage": {
+    "part1": "Note:",
+    "part2": "if you are browsing this website for the first time, please click ",
+    "part3": "here",
+    "part4": " to accept certificate and continue."
+  },
+  "expandableNotification": {
+    "hideButton": "Hide"
+  },
+  "meshLoadError": {
+    "title": "Loading error",
+    "message": "Unable to load file "
+  }
+}

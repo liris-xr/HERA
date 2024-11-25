@@ -1,0 +1,72 @@
+{
+  "locale": "es-ES",
+  "header": {
+    "home": "Inicio",
+    "allProjects": "Todos los proyectos"
+  },
+  "homeView": {
+    "title": "Proyectos recientes",
+    "loadingInfo": "Cargando...",
+    "loadingError": "Ocurrió un error al cargar los proyectos. Inténtalo de nuevo más tarde.",
+    "seeAllProjects": "Ver todos los proyectos"
+  },
+  "projectsView": {
+    "title": "Todos los proyectos",
+    "seeMoreProjectButton": "Ver más proyectos",
+    "loadingInfo": "Cargando...",
+    "loadingError": "Ocurrió un error al cargar los proyectos. Inténtalo de nuevo más tarde.",
+    "noMoreProjectsToShow": "No hay más proyectos para mostrar"
+  },
+  "projectView": {
+    "loadingInfo": "Cargando...",
+    "loadingError": "Ocurrió un error al cargar el proyecto. Inténtalo de nuevo más tarde.",
+    "projectDetail": {
+      "pictureAlt": "Imagen del proyecto"
+    },
+    "arView": {
+      "startAr": {
+        "button": "Ver en AR",
+        "loading": "Cargando",
+        "incompatibleDevice": "¡Dispositivo incompatible!"
+      },
+      "arOverlay": {
+        "contextMenu": {
+          "reset": "Reiniciar",
+          "showLabels": "Mostrar etiquetas"
+        },
+        "slowMoveMessage": "Mueve tu dispositivo lentamente para detectar superficies.",
+        "scene": {
+          "descriptionTitle": "Descripción",
+          "previousButton": "Anterior",
+          "nextButton": "Siguiente"
+        }
+      }
+    },
+    "projectInfo": {
+      "title": "Acerca del proyecto",
+      "createdBy": "Creado por: ",
+      "createdOn": "Creado el: ",
+      "updatedOn": "Actualizado el: ",
+      "sceneCount": "Número de escenas: ",
+      "at": "a"
+    }
+  },
+  "projectCard": {
+    "scene": "escena | escenas",
+    "pictureAlt": "Imagen del proyecto",
+    "updatedOn": "Actualizado el "
+  },
+  "redirectMessage": {
+    "part1": "Nota:",
+    "part2": "si es la primera vez que visitas este sitio web, por favor haz clic ",
+    "part3": "aquí",
+    "part4": " para aceptar el certificado y continuar."
+  },
+  "expandableNotification": {
+    "hideButton": "Ocultar"
+  },
+  "meshLoadError": {
+    "title": "Error de carga",
+    "message": "No se pudo cargar el archivo"
+  }
+}

@@ -1,0 +1,269 @@
+{
+  "locale": "en-Us",
+  "header": {
+    "home": "My projects",
+    "logout": "Logout"
+  },
+  "login": {
+    "emailLabel": "Email",
+    "emailPlaceholder": "Your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Your password",
+    "login": "Login",
+    "loginIn": "Login in",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create one"
+  },
+  "register":{
+    "title": "Register",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Create a username",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Create a password",
+    "register": "Register",
+    "registering": "Registering",
+    "alreadyRegistered": "Already registered?",
+    "login": "Login"
+  },
+  "defaultProjectSettings": {
+    "unit": "Scene",
+    "calibrationMessage": "Tap anywhere to place your object"
+  },
+
+  "projectsView": {
+    "newProject": {
+      "button": "New project",
+      "modal": {
+        "title": "Create new project",
+        "inputTitle": "Title",
+        "inputPlaceholder": "Project title",
+        "inputDefaultValue": "New project"
+      }
+    },
+    "title": "Your projects",
+    "projectCard": {
+      "scene": "scene | scenes",
+      "pictureAlt": "Project picture",
+      "updatedOn": "Updated on ",
+      "projectPublished": "Published",
+      "projectPrivate": "Private"
+    },
+    "seeMoreProjectsButton": "See more projects",
+    "noMoreProjectsToShow": "No more projects to show.",
+    "loadingInfo": "Loading...",
+    "loadingError": "An error occurred while loading projects. Please try again later."
+  },
+
+  "projectView": {
+    "selectedFile": {
+      "notAnImageError": "Selected file is not a picture.",
+      "sizeError": {
+        "part1": "Selected image is too large",
+        "part2": "Please choose a file"
+      }
+    },
+    "loadingInfo": "Loading...",
+    "loadingError": "An error occurred while loading project. Please try again later.",
+    "title": {
+      "projects": "Projects"
+    },
+    "leftSection": {
+      "title": "Project settings",
+      "publishedStatus": {
+        "label": "Status:",
+        "true": "Public",
+        "false":"Private"
+      },
+      "projectTitle": {
+        "label": "Title:",
+        "placeholder": "Your project title's"
+      },
+      "projectDescription": {
+        "label": "Description:",
+        "placeholder": "Your project description's"
+      },
+      "projectImage": {
+        "label": "Image:",
+        "alt": "Project image"
+      },
+      "buttons": {
+        "duplicate": "Duplicate project",
+        "delete": "Delete project"
+      }
+    },
+    "modals": {
+      "duplicate": {
+        "title": "Duplicate project",
+        "inputTitle": "New title",
+        "inputPlaceholder": "New project title's",
+        "inputDefaultValueCopy": "(Copy)"
+      },
+      "delete": {
+        "title": "Delete project",
+        "body": {
+          "part1": "Your are about to delete project ",
+          "part2": "This action cannot be undone. Are you sure you want to continue?"
+        }
+      },
+      "newScene": {
+        "title": "Create scene",
+        "inputPlaceholder": "Scene title",
+        "inputDefaultValue": "New scene"
+      },
+      "deleteScene": {
+        "title": "Delete scene",
+        "body": {
+          "part1": "Your are about to delete scene ",
+          "part2": "This action cannot be undone. Are you sure you want to continue?"
+        }
+      }
+    },
+    "rightSection": {
+      "title": "Scene management",
+      "projectParameter": {
+        "label": "Parameter name:",
+        "placeholder": "Describe the parameter that differs from one scene to another"
+      },
+      "projectCalibrationMessage": {
+        "label": "Calibration message:",
+        "placeholder": "Explain how to position the reticle to calibrate the scene"
+      },
+      "projectScenes": {
+        "label": "Scenes:",
+        "buttonText": "Add",
+        "noSceneInfo": "This project does not have any scenes",
+        "assetCount": "asset | assets"
+      }
+    },
+    "bottomActionBar": {
+      "backButton": "Back",
+      "saveButton": {
+        "save": "Save",
+        "saved": "Saved",
+        "saving": "Saving"
+      }
+    }
+  },
+
+  "sceneView": {
+    "loadingInfo": "Loading...",
+    "loadingError": "An error occurred while loading scene. Please try again later.",
+    "title": {
+      "projects": "Projects",
+      "scenes": "Scenes"
+    },
+    "leftSection": {
+      "title": "Scene edit",
+      "sceneTitle": {
+        "placeholder": "Scene title"
+      },
+      "sceneDescription": {
+        "label": "Description",
+          "placeholder": "Describe the scene. Leave blank if you don't want to display a description."
+      },
+      "sceneLabels": {
+        "label": "Labels :",
+        "addLabelButton": "Add",
+        "noLabelInfo": "This scene does not have any label",
+        "newLabelText" : "New label"
+      },
+      "sceneAssets": {
+        "label": "3D models :",
+        "addAssetButton": "Upload",
+        "addAssetButtonErrorFileNotSupported": "This file format is not supported.\nPlease use .glb or .gltf",
+        "noAssetsInfo": "This scene does not have any 3D model",
+        "assetNotDisplayed": "This object will not be displayed in viewer",
+        "assetLoadFailed": "Unable to load this 3D model"
+      },
+      "buttons": {
+        "duplicate": "Duplicate scene",
+        "delete": "Delete scene"
+      }
+    },
+    "modals": {
+      "duplicate": {
+        "title": "Duplicate scene",
+        "inputTitle": "New title",
+        "inputPlaceholder": "New scene title's",
+        "inputDefaultValueCopy": "(Copy)"
+      },
+      "delete": {
+        "title": "Delete scene",
+        "body": {
+          "part1": "Your are about to delete scene ",
+          "part2": "This action cannot be undone. Are you sure you want to continue?"
+        }
+      }
+    },
+    "rightSection": {
+      "title": "Preview",
+      "fileLoadError": {
+        "title": "Loading error",
+        "message": "Unable to load file"
+      }
+    },
+    "bottomActionBar": {
+      "backButton": "Back",
+      "saveButton": {
+        "save": "Save",
+        "saved": "Saved",
+        "saving": "Saving"
+      }
+    }
+  },
+
+
+
+
+  "textInputModal":{
+    "confirmButton": "Create",
+    "cancelButton": "Cancel"
+  },
+  "redirectMessage": {
+    "part1": "Note:",
+    "part2": "if you are browsing this website for the first time, please click ",
+    "part3": "here",
+    "part4": " to accept certificate and continue."
+  },
+  "deleteConfirmModal": {
+    "confirmButton": "Yes, delete it",
+    "cancelButton": "No, keep it"
+  },
+  "saveWarningModal": {
+    "title": "Save changes?",
+    "body": {
+      "part1": "You are about to leave this page.",
+      "part2": "Unsaved data will be lost. Are you sure you want to continue?"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "continueWithoutSaving": "Continue without saving",
+      "saveAndContinue": "Save and continue",
+      "saving": "Saving..."
+    }
+  },
+  "labelEditModal": {
+    "title": "Advanced Edit",
+    "content": {
+      "label": "Content",
+      "placeholder": "Enter content (text or HTML)"
+    },
+    "animation": {
+      "title": "Show",
+      "in": {
+        "label": "From",
+        "placeholder": "Entry (ms)"
+      },
+      "out": {
+        "label": "To",
+        "placeholder": "Exit (ms)"
+      }
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
+  }
+}

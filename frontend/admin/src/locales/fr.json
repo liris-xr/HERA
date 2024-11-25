@@ -1,0 +1,273 @@
+{
+  "locale": "fr-Fr",
+  "header": {
+    "home": "Mes projets",
+    "logout": "Déconnexion"
+  },
+
+  "login": {
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "Votre adresse e-mail",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "Votre mot de passe",
+    "login": "Se connecter",
+    "loginIn": "Connexion en cours",
+    "noAccount": "Pas de compte ?",
+    "createAccount": "Créer un compte"
+  },
+
+  "register":{
+    "title": "Inscription",
+    "usernameLabel": "Nom d'utilisateur",
+    "usernamePlaceholder": "Créez un nom d'utilisateur",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "Entrez votre adresse e-mail",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "Créez un mot de passe",
+    "register": "S'inscrire",
+    "registering": "Inscription en cours",
+    "alreadyRegistered": "Déjà inscrit ?",
+    "login": "Se connecter"
+  },
+
+  "defaultProjectSettings": {
+    "unit": "Scène",
+    "calibrationMessage": "Appuyer n'importe où pour placer votre objet"
+  },
+
+  "projectsView": {
+    "newProject": {
+      "button": "Nouveau projet",
+      "modal": {
+        "title": "Créer un nouveau projet",
+        "inputTitle": "Titre",
+        "inputPlaceholder": "Titre du projet",
+        "inputDefaultValue": "Nouveau projet"
+      }
+    },
+    "title": "Vos projets",
+    "projectCard": {
+      "scene": "scène | scènes",
+      "pictureAlt": "Image du projet",
+      "updatedOn": "Mis à jour le ",
+      "projectPublished": "Public",
+      "projectPrivate": "Privé"
+    },
+    "seeMoreProjectsButton": "Voir plus de projets",
+    "noMoreProjectsToShow": "Plus de projets à afficher.",
+    "loadingInfo": "Chargement...",
+    "loadingError": "Une erreur est survenue lors du chargement des projets. Veuillez réessayer plus tard."
+  },
+
+  "projectView": {
+    "selectedFile": {
+      "notAnImageError": "Le fichier sélectionné n'est pas une image.",
+      "sizeError": {
+        "part1": "L'image sélectionnée est trop volumineuse",
+        "part2": "Veuillez choisir un fichier"
+      }
+    },
+    "loadingInfo": "Chargement...",
+    "loadingError": "Une erreur est survenue lors du chargement du projet. Veuillez réessayer plus tard.",
+    "title": {
+      "projects": "Projets"
+    },
+    "leftSection": {
+      "title": "Paramètres du projet",
+      "publishedStatus": {
+        "label": "Statut :",
+        "true": "Public",
+        "false":"Privé"
+      },
+      "projectTitle": {
+        "label": "Titre :",
+        "placeholder": "Titre de votre projet"
+      },
+      "projectDescription": {
+        "label": "Description :",
+        "placeholder": "Description de votre projet"
+      },
+      "projectImage": {
+        "label": "Image :",
+        "alt": "Image du projet"
+      },
+      "buttons": {
+        "duplicate": "Dupliquer le projet",
+        "delete": "Supprimer le projet"
+      }
+    },
+    "modals": {
+      "duplicate": {
+        "title": "Dupliquer le projet",
+        "inputTitle": "Nouveau nom",
+        "inputPlaceholder": "Titre du nouveau projet",
+        "inputDefaultValueCopy": "(Copie)"
+      },
+      "delete": {
+        "title": "Supprimer le projet",
+        "body": {
+          "part1": "Vous êtes sur le point de supprimer le projet ",
+          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+        }
+      },
+      "newScene": {
+        "title": "Créer une scène",
+        "inputPlaceholder": "Titre de la scène",
+        "inputDefaultValue": "Nouvelle scène"
+      },
+      "deleteScene": {
+        "title": "Supprimer la scène",
+        "body": {
+          "part1": "Vous êtes sur le point de supprimer la scène ",
+          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+        }
+      }
+    },
+    "rightSection": {
+      "title": "Gestion des scènes",
+      "projectParameter": {
+        "label": "Nom du paramètre :",
+        "placeholder": "Décrivez le paramètre qui diffère d'une scène à l'autre"
+      },
+      "projectCalibrationMessage": {
+        "label": "Message de calibration :",
+        "placeholder": "Indiquez comment placer le réticule pour calibrer la scène"
+      },
+      "projectScenes": {
+        "label": "Scènes :",
+        "buttonText": "Ajouter",
+        "noSceneInfo": "Ce projet ne comporte aucune scène",
+        "assetCount": "modèle | modèles"
+      }
+    },
+    "bottomActionBar": {
+      "backButton": "Retour",
+      "saveButton": {
+        "save": "Sauvegarder",
+        "saved": "Sauvegardé",
+        "saving": "Sauvegarde en cours"
+      }
+    }
+  },
+
+  "sceneView": {
+    "loadingInfo": "Chargement...",
+    "loadingError": "Une erreur est survenue lors du chargement de la scène. Veuillez réessayer plus tard.",
+    "title": {
+      "projects": "Projets",
+      "scenes": "Scènes"
+    },
+    "leftSection": {
+      "title": "Édition de la scène",
+      "sceneTitle": {
+        "placeholder": "Titre de la scène"
+      },
+      "sceneDescription": {
+        "label": "Description",
+        "placeholder": "Décrivez la scène. Laissez vide si vous ne souhaitez pas afficher de description."
+      },
+      "sceneLabels": {
+        "label": "Labels :",
+        "addLabelButton": "Ajouter",
+        "noLabelInfo": "Cette scène ne contient aucun label",
+        "newLabelText" : "Nouveau label"
+      },
+      "sceneAssets": {
+        "label": "Modèles 3D :",
+        "addAssetButton": "Ajouter",
+        "addAssetButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .glb ou .gltf",
+        "noAssetsInfo": "Cette scène ne contient aucun modèle 3D",
+        "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
+        "assetLoadFailed": "Impossible de charger ce modèle 3D"
+
+      },
+      "buttons": {
+        "duplicate": "Dupliquer la scène",
+        "delete": "Supprimer la scène"
+      }
+    },
+    "modals": {
+      "duplicate": {
+        "title": "Dupliquer la scène",
+        "inputTitle": "Nouveau nom",
+        "inputPlaceholder": "Titre de la nouvelle scène",
+        "inputDefaultValueCopy": "(Copie)"
+      },
+      "delete": {
+        "title": "Supprimer la scène",
+        "body": {
+          "part1": "Vous êtes sur le point de supprimer la scène ",
+          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+        }
+      }
+    },
+    "rightSection": {
+      "title": "Aperçu",
+      "fileLoadError": {
+        "title": "Erreur de chargement",
+        "message": "Impossible de charger le fichier"
+      }
+    },
+    "bottomActionBar": {
+      "backButton": "Retour",
+      "saveButton": {
+        "save": "Sauvegarder",
+        "saved": "Sauvegardé",
+        "saving": "Sauvegarde en cours"
+      }
+    }
+  },
+
+
+
+  "textInputModal":{
+    "confirmButton": "Créer",
+    "cancelButton": "Annuler"
+  },
+
+  "redirectMessage": {
+    "part1": "Remarque :",
+    "part2": "si vous visitez ce site pour la première fois, veuillez cliquer ",
+    "part3": "ici",
+    "part4": " pour accepter le certificat et continuer."
+  },
+  "deleteConfirmModal": {
+    "confirmButton": "Oui, supprimer",
+    "cancelButton": "Non, conserver"
+  },
+  "saveWarningModal": {
+    "title": "Enregistrer les modifications ?",
+    "body": {
+      "part1": "Vous êtes sur le point de quitter cette page.",
+      "part2": "Les données non-enregistrées seront perdues. Êtes vous sûr de vouloir continuer ?"
+    },
+    "buttons": {
+      "cancel": "Annuler",
+      "continueWithoutSaving": "Continuer sans sauvegarder",
+      "saveAndContinue": "Sauvegarder, puis continuer",
+      "saving": "Sauvegarde en cours..."
+    }
+  },
+  "labelEditModal": {
+    "title": "Édition avancée",
+    "content": {
+      "label": "Contenu",
+      "placeholder": "Saisir le contenu (texte ou HTML)"
+    },
+    "animation": {
+      "title": "Afficher",
+      "in": {
+        "label": "À partir de",
+        "placeholder": "Entrée (ms)"
+      },
+      "out": {
+        "label": "Jusqu'à",
+        "placeholder": "Sortie (ms)"
+      }
+    },
+    "buttons": {
+      "cancel": "Annuler",
+      "confirm": "Valider"
+    }
+  }
+}

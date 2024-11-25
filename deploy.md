@@ -1,89 +1,80 @@
-# Instruction de déploiement
+# Deployment Instructions
 
-Ce document décrit la procédure de déploiement sur un serveur linux (debian) en utilisant Apache
+This document describes the deployment procedure on a Linux (Debian) server using Apache
 
-## Prérequis
-Vous aurez besoin d'un serveur linux qui répond aux exigences suivantes :
-- Node.js est installé avec le gestionnaire de packages npm
-- Un serveur web Apache est installé
-- Vous disposez d'un certificat SSL présent sous la forme de deux fichiers : `certificate.crt` et `privatekey.key`
+## Prerequisites
+You will need a Linux server that meets the following requirements:
+- Node.js is installed with the npm package manager
+- An Apache web server is installed
+- You have an SSL certificate present in the form of two files: `certificate.crt` and `privatekey.key`
 
-Dans la suite, nous considérerons qu'il existe un utilisateur 'webadmin' sur le serveur linux. 
-
+In the following, we will assume that there is a user 'webadmin' on the Linux server.
 
 ## Instructions
 
-### Téléchargement des fichiers sur le serveur
-Clonez les fichiers sur le serveur en utilisant la commande `git clone`
-Ici, nous considérerons que les fichiers ont été clonés dans `/home/webadmin/hera`
+### Uploading files to the server
+Clone the files to the server using the `git clone` command
+Here, we will assume that the files have been cloned in `/home/webadmin/hera`
 
+### File configuration
+To work properly, some files must be modified according to your server configuration.
+You will need to know the following information:
+- the hostname of the web server (the address at which the site will be accessible)
+- the location of the `certificate.crt` and `privatekey.key` files
+- the port on which the API will be launched
 
-### Configuration des fichiers
-Pour fonctionner correctement, certains fichiers doivent être modifiés en fonction de la configuration de votre serveur.
-Vous aurez besoin de connaitre les informations suivantes :
-- le nom d'hote du serveur web (l'adresse à laquelle le site sera accessible)
-- l'emplacement des fichiers `certificate.crt` et `privatekey.key`
-- le port sur lequel sera lancé l'API
+In the rest of the document, the following values ​​will be used:
+- hostname: `https://hera.univ-lyon1.fr`
+- the location of the certificate files:
+- `/home/webadmin/certificate/certificate.crt`
+- `/home/webadmin/certificate/privatekey.key`
+- API port: `8080`
 
+Make sure you know this information before continuing.
 
-Dans la suite du document, les valeurs suivantes seront utilisées :
-- nom d'hote : `https://hera.univ-lyon1.fr`
-- l'emplacement des fichiers du certificat :
-  - `/home/webadmin/certificate/certificate.crt`
-  - `/home/webadmin/certificate/privatekey.key`
-- port API : `8080`
-
-Assurez-vous de connaitre ces informations avant de continuer.
-
-
-
-#### Définition du port
+#### Port definition
 ```shell
 cd hera
 nano ./backend/api/app.js
 ```
-Modifier la ligne 47 pour utiliser la valeur de votre choix pour le port utilisé par l'API, puis enregistrez les modifications :
-```javascript 
+Modify line 47 to use your preferred value for the port used by the API, then save the changes:
+```javascript
 https.createServer(options, app).listen(8080, () => {
-    console.log('Server started on port 8080')
+console.log('Server started on port 8080')
 })
 ```
 
-Modifiez également les lignes 26 et 27 pour indiquer le chemin d'accès des fichiers du certificat :
+Also modify lines 26 and 27 to specify the path to the certificate files:
 ```javascript
 const options = {
-    key: fs.readFileSync('/home/webadmin/certificate/privatekey.key'),
-    cert: fs.readFileSync('/home/webadmin/certificate/certificate.crt')
+key: fs.readFileSync('/home/webadmin/certificate/privatekey.key'),
+cert: fs.readFileSync('/home/webadmin/certificate/certificate.crt')
 };
 ```
 
-
-
-#### Modification de la configuration du site
-Vous devez maintenant modifier le fichier de configuration du site pour lui indiquer de communiquer avec l'API sur le port que vous avez défini.
+#### Editing the site configuration
+You now need to edit the site configuration file to tell it to communicate with the API on the port you set.
 ```shell
 nano ./frontend/user/src/js/endpoint.js
 ```
-Modifiez les lignes 4 et 12 pour inclure le port que vous avez défini :
+Edit lines 4 and 12 to include the port you set:
 ```javascript
 export const ENDPOINT = `${HOST}:8080/api/`;
 ...
 const RESOURCES_SERVER = `${HOST}:8080/`;
 ```
-Modifiez également la deuxième ligne pour indiquer l'adresse du serveur :
+Also edit the second line to indicate the server address:
 ```javascript
 const HOST = 'https://hera.univ-lyon1.fr';
 ```
 
-Répétez les étapes ci-dessus pour l'éditeur, en modifiant le fichier `./frontend/admin/src/js/endpoint.js`
+Repeat the above steps for the editor, modifying the file `./frontend/admin/src/js/endpoint.js`
 
+### Preparing the API
+Once all the files are configured, the API can be started.
+By convention, websites are usually placed in the `/var/www/` folder.
 
-
-
-### Préparation de l'API
-Une fois tous les fichiers configurés, l'API va pouvoir être démarré.
-Par convention, les sites internets sont généralement placés dans le dossier `/var/www/`.
-Pour des raisons de simplicité, nous allons également stocker l'API a cet endroit.
+For simplicity, we will also store the API there.
 
 ```shell
 cd /var/www
@@ -91,29 +82,28 @@ mkdir hera
 cd hera
 cp -r /home/webadmin/hera/backend/api ./backend
 ```
-Remarque : la création du dossier peut nécessiter les droits admins. Dans ce cas, assurez-vous d'accorder l'accès au dossier à l'utilisateur webadmin avec la commande `chown`, et de définir les autorisations suffisantes avec `chmod`
+Note: creating the folder may require admin rights. In this case, make sure to grant access to the folder to the webadmin user with the `chown` command, and set sufficient permissions with `chmod`
 
 #### Installation
-Depuis le dossier créé précédemment, lancez l'installation des dépendances :
+From the folder created earlier, launch the dependencies installation:
 ```shell
 cd backend
 npm install
 ```
-À présent, vous pouvez démarrer l'API :
+Now, you can start the API:
 ```shell
 npm run start
 ```
-Assurez-vous du bon fonctionnement de l'API en effectuant une requête de test, en accédant à https://hera.univ-lyon1.fr:8080/api/dev/hello
+Ensure that the API is working properly by making a test request, by accessing https://hera.univ-lyon1.fr:8080/api/dev/hello
 
-
-#### Création d'un service
-Actuellement, l'API ne fonctionne qu'après avoir exécuté la commande `npm run start`.
-Pour assurer son fonctionnement en permanence, nous allons créer un service qui s'exécute automatiquement.
+#### Creating a service
+Currently, the API only works after running the `npm run start` command.
+To ensure its continuous operation, we will create a service that runs automatically.
 ```shell
 cd /etc/systemd/system
 nano hera.service
 ```
-Insérez le code suivant dans le fichier, puis sauvegardez :
+Insert the following code into the file, then save:
 ```
 [Unit]
 Description=Node.js backend for hera
@@ -133,108 +123,97 @@ SyslogIdentifier=hera
 [Install]
 WantedBy=multi-user.target
 ```
-Enfin, démarrez le service :
+Finally, start the service:
 ```shell
 sudo systemctl start hera.service
 ```
-L'API devrait fonctionner de nouveau, comme lorsqu'il a été lancé manuellement.
+The API should work again, as it did when it was started manually.
 
+### Uploading with Apache
+Once the API is set up, we will upload the two websites with Apache.
 
-
-
-
-### Mise en ligne avec Apache
-Une fois l'API en place, nous allons mettre en ligne les deux sites web avec Apache.
-
-#### Copie des fichiers
+#### Copying the files
 
 ```shell
 cd /home/webadmin/hera/frontend/user
 ```
 
-Comme pour l'API, il est nécessaire d'installer les dépendances :
+As for the API, it is necessary to install the dependencies:
 ```shell
 npm install
 ```
-Le site étant basé sur le Framework Vue.js, il doit être compilé dans un fichier html statique :
+Since the site is based on the Vue.js Framework, it must be compiled into a static html file:
 ```shell
 npm run build
 ```
-Après l'exécution de cette commande, un dossier `build` sera créé. Copiez-y le fichier `.htaccess` (ce fichier est nécessaire pour permettre à Vue.js de gérer correctement les URLs) :
+After running this command, a `build` will be created. Copy the `.htaccess` file into it (this file is needed to allow Vue.js to handle URLs properly):
 ```shell
 cp .htaccess ./build
 ```
 
-À présent, le dossier `build` continent tous les fichiers statiques pouvant être hébergés par Apache.
-Comme convenu plus tôt, nous allons stocker ces fichiers dans le dossier `/var/www`
+Now, the `build` folder contains all the static files that can be hosted by Apache.
+As agreed earlier, we will store these files in the `/var/www` folder
 ```shell
 cp -r ./build /var/www/hera/frontend/viewer
 ```
-Remarque : pour assurer le fonctionnement du fichier `.htaccess`, le dossier destination doit être nommé `viewer` pour le site de visualisation, et `editor` pour le site d'édition.
+Note: to ensure the `.htaccess` file works, the destination folder must be named `viewer` for the viewer site, and `editor` for the editor site.
 
+Repeat the previous steps (the 'Copying files' section) for the editor site, i.e. from the `/home/webadmin/hera/frontend/admin` folder.
+Make sure to copy the build to `/var/www/hera/frontend/editor`.
 
-Répétez les étapes précédentes (la section 'Copie des fichiers') pour le site d'édition, c'est-à-dire depuis le dossier `/home/webadmin/hera/frontend/admin`.
-Assurez-vous de copier le build vers `/var/www/hera/frontend/editor`.
-
-
-#### Configuration Apache
-La dernière étape consiste à créer le fichier de configuration Apache nécessaire à la mise en ligne des deux sites copiés précédemment.
-Un template de configuration est fourni dans les fichiers.
+#### Apache Configuration
+The last step is to create the Apache configuration file needed to put the two sites copied earlier online.
+A configuration template is provided in the files.
 ```shell
 cd '/home/webadmin/hera/apache configs'
 nano apache.conf
 ```
-Éditez-le pour modifier les informations suivantes :
+Edit it to change the following information:
 ```
 <VirtualHost *:443>
-        ServerAdmin webmaster@localhost
+ServerAdmin webmaster@localhost
 
-        DocumentRoot /var/www/hera/frontend                    <-- chemin vers la racine du site
+DocumentRoot /var/www/hera/frontend <-- path to site root
 
-        <Directory /var/www/hera/frontend>                     <-- chemin vers la racine du site
-                Options FollowSymLinks
-                AllowOverride All
-                Require all granted
-        </Directory>
+<Directory /var/www/hera/frontend> <-- path to site root
+Options FollowSymLinks
+AllowOverride All
+Require all granted
+</Directory>
 
-       
-        ErrorLog ${APACHE_LOG_DIR}/error.log
-        CustomLog ${APACHE_LOG_DIR}/access.log combined
+ErrorLog ${APACHE_LOG_DIR}/error.log
+CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-        SSLEngine on
+SSLEngine on
 
-        SSLCertificateFile      /home/webadmin/certificate/certificate.crt        <-- chemin vers les fichier .crt du certificat
-        SSLCertificateKeyFile   /home/webadmin/certificate/privatekey.key         <-- chemin vers les fichier .key du certificat
-        <FilesMatch "\.(?:cgi|shtml|phtml|php)$">
-                SSLOptions +StdEnvVars
-        </FilesMatch>
-        <Directory /usr/lib/cgi-bin>
-                SSLOptions +StdEnvVars
-        </Directory>
+SSLCertificateFile /home/webadmin/certificate/certificate.crt <-- path to certificate .crt files
+SSLCertificateKeyFile /home/webadmin/certificate/privatekey.key <-- path to the certificate .key files
+<FilesMatch "\.(?:cgi|shtml|phtml|php)$">
+SSLOptions +StdEnvVars
+</FilesMatch>
+<Directory /usr/lib/cgi-bin>
+SSLOptions +StdEnvVars
+</Directory>
 </VirtualHost>
 ```
 
-
-Sauvegardez les modifications, puis copiez le fichier vers le dossier apache avec un nom explicite :
+Save the changes, then copy the file to the apache folder with a meaningful name:
 ```shell
 cp apache.conf /etc/apache2/sites-available/hera.conf
 ```
 
-Activez le site avec apache, puis redémarrez le service (généralement en root) :
+Activate the site with apache, then restart the service (usually as root):
 ```shell
 a2ensite hera.conf
-systemctl restart  apache2.service
+systemctl restart apache2.service
 ```
 
+The site is now deployed and functional. Make sure it works properly by accessing the site:
+- editor: https://hera.univ-lyon1.fr/editor
+- viewer: https://hera.univ-lyon1.fr/viewer
 
-Le site est maintenant déployé et fonctionnel.
-Assurez-vous du bon fonctionnement en accédant au site :
-- éditeur : https://hera.univ-lyon1.fr/editor
-- visualiseur : https://hera.univ-lyon1.fr/viewer
+You can delete the folder `/home/webadmin/hera` to free up space.
 
-
-Vous pouvez supprimer le dossier `/home/webadmin/hera` pour libérer de l'espace.
-
-En cas de problème, il est possible de vérifier les logs :
-- `cat /var/log/apache2/error.log` pour les erreurs du site
-- `sudo journalctl -u hera` pour les erreurs de l'API
+In case of problems, it is possible to check the logs:
+- `cat /var/log/apache2/error.log` for site errors
+- `sudo journalctl -u hera` for API errors

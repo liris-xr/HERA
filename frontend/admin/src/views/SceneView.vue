@@ -19,9 +19,10 @@ import TextInputModal from "@/components/modal/textInputModal.vue";
 import FileUploadButtonView from "@/components/button/fileUploadButtonView.vue";
 import {sleep} from "@/js/utils/sleep.js";
 import SaveWarningModal from "@/components/modal/saveWarningModal.vue";
-import TransformTool from "@/components/transformTool.vue";
+import ButtonTool from "@/components/buttonTool.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import LabelEditModal from "@/components/modal/labelEditModal.vue";
+import MaterialView from "@/components/materialView.vue";
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
@@ -50,6 +51,7 @@ const loading = ref(true);
 const error = ref(false);
 const ready = computed(()=>!loading.value && !error.value);
 
+const showMaterialMenu = ref(false);
 const showSceneDeleteModal = ref(false);
 const showSceneDuplicateModal = ref(false);
 const showLabelEditModal = ref(false);
@@ -418,13 +420,14 @@ onBeforeRouteUpdate((to, from, next)=>{
 
         <span></span>
         <section id="right">
-          <h2>{{$t("sceneView.rightSection.title")}}</h2>
+          <h2>{{$t("sceneView.rightSection.title")}}</h2> 
           <div id="previewGroup">
             <div ref="container" id="container"></div>
             <div id="toolGroup">
-              <transform-tool :current-active="editor.scene.getTransformMode.value" name="translate" @click="editor.scene.setTransformMode('translate')"></transform-tool>
-              <transform-tool :current-active="editor.scene.getTransformMode.value" name="rotate" @click="editor.scene.setTransformMode('rotate')"></transform-tool>
-              <transform-tool :current-active="editor.scene.getTransformMode.value" name="scale" @click="editor.scene.setTransformMode('scale')"></transform-tool>
+              <button-tool :current-active="editor.scene.getTransformMode.value" name="translate" @click="editor.scene.setTransformMode('translate')"></button-tool>
+              <button-tool :current-active="editor.scene.getTransformMode.value" name="rotate" @click="editor.scene.setTransformMode('rotate')"></button-tool>
+              <button-tool :current-active="editor.scene.getTransformMode.value" name="scale" @click="editor.scene.setTransformMode('scale')"></button-tool>
+              <button-tool :current-active="showMaterialMenu ? '3d' : 'false' " name="3d" @click="showMaterialMenu = !showMaterialMenu"></button-tool>
 
               <div id="valuesGroup">
                 <label for="transformX">x:</label>
@@ -439,8 +442,14 @@ onBeforeRouteUpdate((to, from, next)=>{
           </div>
 
           <expandable-notification v-for="error in editor.scene.getErrors.value" :title="error.title" :text="error.message"></expandable-notification>
-
         </section>
+        <span> </span>
+        
+        <section v-if=showMaterialMenu id="materials"> 
+          <h2>{{$t("sceneView.materialSection.title")}}</h2> 
+          <material-view> </material-view>
+        </section>
+
       </section>
 
       <section v-if="ready" class="bottomActionBar">
@@ -515,7 +524,7 @@ h1{
 }
 
 form{
-  width: 80%;
+  width: 90%;
   margin: auto;
   display: flex;
   flex-direction: column;
@@ -645,7 +654,7 @@ img{
 }
 
 .sceneItem>div>*{
-  margin-right: 8px;
+  margin-right: 16px;
 }
 
 

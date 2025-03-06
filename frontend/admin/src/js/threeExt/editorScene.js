@@ -21,6 +21,7 @@ export class EditorScene extends THREE.Scene {
     #currentTransformMode;
     #selected;
     currentSelectedValues;
+    currentSelectedMaterialValues;
 
     constructor(shadowMapSize) {
         super();
@@ -33,6 +34,13 @@ export class EditorScene extends THREE.Scene {
         this.#currentTransformMode = ref(null);
         this.#selected = ref(null);
         this.currentSelectedValues = ref({x:"",y:"", z:""});
+        this.currentSelectedMaterialValues = ref(
+            {
+                color:null,
+                metalicness:null,
+                roughness:null,
+            }
+        )
 
 
         watch(() =>this.currentSelectedValues, (value) => {
@@ -134,6 +142,7 @@ export class EditorScene extends THREE.Scene {
             object.setSelected(selected);
         }
         this.#updateSelectedValues();
+        this.#updateSelectedMaterialValues();
     }
 
     deselectAll(){
@@ -220,6 +229,10 @@ export class EditorScene extends THREE.Scene {
         this.#updateSelectedValues();
     }
 
+    setMaterial() {
+        this.#updateSelectedMaterialValues()
+    }
+
     getTransformMode = computed(()=>this.#currentTransformMode.value)
 
 
@@ -239,6 +252,10 @@ export class EditorScene extends THREE.Scene {
         }else if(this.getTransformMode.value === "scale"){
             this.currentSelectedValues.value = this.#selected.value.getResultScale();
         }
+    }
+
+    #updateSelectedMaterialValues() {
+
     }
 
 

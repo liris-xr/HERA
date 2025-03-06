@@ -204,6 +204,12 @@
         "message": "Unable to load file"
       }
     },
+    "materialSection": {
+      "title": "Material",
+      "color": "Color",
+      "matallicness": "Metallicness",
+      "roughness": "Roughness"
+    },
     "bottomActionBar": {
       "backButton": "Back",
       "saveButton": {

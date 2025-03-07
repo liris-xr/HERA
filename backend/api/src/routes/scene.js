@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Sequelize} from "sequelize";
@@ -15,6 +15,10 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
     try{
         let scene = (await ArScene.findOne({
             include: [
+                {
+                    model: ArMesh,
+                    as: "meshes"
+                },
                 {
                     model: ArAsset,
                     as: "assets",
@@ -69,6 +73,10 @@ const getPostUploadData = async (req, res, next) => {
     let scene = await ArScene.findOne({
         include: [
             {
+                model: ArMesh,
+                as: "meshes"
+            },
+            {
                 model: ArAsset,
                 as: "assets"
             },
@@ -116,6 +124,10 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
                     model: ArAsset,
                     as: "assets"
                 },
+                {
+                    model: ArMesh,
+                    as: "meshes"
+                }
             ],
             where: {id: sceneId},
         })
@@ -130,18 +142,9 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
             return res.status(403).send({error: "User not granted"})
 
 
-
-        //update the labels
-        const knownLabelsIds = [];
-        for (let label of scene.labels) {
-            knownLabelsIds.push(label.id)
-        }
-
-
-        const knownAssetsIds = [];
-        for (let asset of scene.assets) {
-            knownAssetsIds.push(asset.id)
-        }
+        const knownLabelsIds = scene.labels.map( (label) => label.id )
+        const knownAssetsIds = scene.assets.map( (asset) => asset.id )
+        const knonwMeshesIds = scene.meshes.map( (mesh) => mesh.id )
 
         let assetsIdMatching = []
 
@@ -223,6 +226,48 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
                     assetToDelete.destroy({transaction:t})
                     await assetToDelete.save({transaction:t})
                 }
+            );
+
+            await updateListById(knonwMeshesIds, JSON.parse(req.body.meshes),
+                async (mesh) => {
+                    await ArMesh.update({
+                        position:mesh.position,
+                        rotation:mesh.rotation,
+                        scale: mesh.scale,
+                        emissiveIntensity: mesh.emissiveIntensity,
+                        emissiveColor: mesh.emissiveColor,
+                        roughenss: mesh.roughness,
+                        metalness: mesh.metalness,
+                        opacity: mesh.opacity
+                    }, {
+                        where: {id: mesh.id},
+                        returning: true,
+                        transaction:t
+                    })
+                },
+
+                async (mesh)=>{
+                    await ArMesh.create({
+                        position:mesh.position,
+                        rotation:mesh.rotation,
+                        scale: mesh.scale,
+                        sceneId:scene.id,
+                        assetId:mesh.assetId,
+                        name: mesh.name,
+                        emissiveIntensity: mesh.emissiveIntensity,
+                        emissiveColor: mesh.emissiveColor,
+                        roughenss: mesh.roughness,
+                        metalness: mesh.metalness,
+                        opacity: mesh.opacity
+                    },{
+                        transaction:t
+                    })
+                },
+                
+                async (knownId)=>{
+                    await ArMesh.destroy({where: {id: knownId},transaction:t});
+                }
+        
             );
 
 

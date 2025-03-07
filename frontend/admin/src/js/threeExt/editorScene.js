@@ -34,14 +34,6 @@ export class EditorScene extends THREE.Scene {
         this.#currentTransformMode = ref(null);
         this.#selected = ref(null);
         this.currentSelectedValues = ref({x:"",y:"", z:""});
-        this.currentSelectedMaterialValues = ref(
-            {
-                color:null,
-                metalicness:null,
-                roughness:null,
-            }
-        )
-
 
         watch(() =>this.currentSelectedValues, (value) => {
             if(this.#selected.value == null) return;
@@ -142,7 +134,6 @@ export class EditorScene extends THREE.Scene {
             object.setSelected(selected);
         }
         this.#updateSelectedValues();
-        this.#updateSelectedMaterialValues();
     }
 
     deselectAll(){
@@ -229,10 +220,6 @@ export class EditorScene extends THREE.Scene {
         this.#updateSelectedValues();
     }
 
-    setMaterial() {
-        this.#updateSelectedMaterialValues()
-    }
-
     getTransformMode = computed(()=>this.#currentTransformMode.value)
 
 
@@ -253,12 +240,5 @@ export class EditorScene extends THREE.Scene {
             this.currentSelectedValues.value = this.#selected.value.getResultScale();
         }
     }
-
-    #updateSelectedMaterialValues() {
-
-    }
-
-
-
 
 }

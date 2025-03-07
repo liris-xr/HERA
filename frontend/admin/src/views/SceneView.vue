@@ -169,7 +169,6 @@ async function saveScene(sceneData, uploads) {
       });
     }
 
-
     const res = await fetch(`${ENDPOINT}scenes/${sceneData.id}`,
     {
           method: "PUT",
@@ -201,6 +200,7 @@ async function saveAll(){
     project:scene.value.project,
     labels:editor.scene.labelManager.getResultLabel(),
     assets:editor.scene.assetManager.getResultAssets(),
+    meshes:editor.scene.assetManager.getResultMeshes()
   };
 
   const uploads = editor.scene.assetManager.getResultUploads();

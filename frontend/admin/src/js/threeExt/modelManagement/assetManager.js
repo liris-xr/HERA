@@ -71,6 +71,43 @@ export class AssetManager {
         return result;
     }
 
+    getResultMeshes() {
+        // Tricky part : 
+        // We need to find the meshes in the asset
+        // But they are sorted in diffrents ways depending on the asset
+        // We have to go down the tree until we found the meshes
+
+        let result = []
+
+        const step = (currentChildren,assetId) => {
+            for (let children of currentChildren.children) {
+                if("material" in children) {
+                    result.push({
+                        position:children.position,
+                        rotation:children.rotation,
+                        scale: children.scale,
+                        assetId:assetId,
+                        name: children.name,
+                        emissiveIntensity: children.emissiveIntensity,
+                        emissiveColor: children.emissiveColor,
+                        roughenss: children.roughness,
+                        metalness: children.metalness,
+                        opacity: children.opacity
+                    })
+                } else {
+                    step(children,assetId)
+                }
+            }
+        }
+
+        for (let asset of this.#assets) {
+            step(asset.mesh,asset.id)
+        }
+
+        return result;
+        
+    }
+
     getResultUploads(){
         const uploads = []
         for (let asset of this.#assets) {

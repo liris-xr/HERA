@@ -2,27 +2,20 @@ import { DataTypes } from 'sequelize'
 import { sequelize } from '../database.js'
 
 /**
- * @typedef {Object} ArAssetObject
+ * @typedef {Object} ArMeshObject
  * @property {string} id
- * @property {string} url
  * @property {Object} position
  * @property {Object} rotation
  * @property {Object} scale
+ * @property {}
  */
 
-export default sequelize.define('ArAsset', {
+export default sequelize.define('ArMesh', {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false,
         primaryKey: true
-    },
-    url:{
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
-            notEmpty: true
-        }
     },
     name:{
         type: DataTypes.STRING,
@@ -51,7 +44,41 @@ export default sequelize.define('ArAsset', {
         allowNull: false,
         defaultValue: {x:1, y:1, z:1},
     },
+    color:{
+        type:DataTypes.JSON,
+        allowNull: false,
+        defaultValue: {x:1, y:1, z:1},
+    },
+    emissiveIntensity:{
+        type:DataTypes.FLOAT,
+        allowNull:false,
+        defaultValue:1
+    },
+    emissiveColor:{
+        type:DataTypes.JSON,
+        allowNull: false,
+        defaultValue: {x:1, y:1, z:1},
+    },
+    roughness:{
+        type:DataTypes.FLOAT,
+        allowNull:false,
+        defaultValue:0.5
+    },
+    metalness:{
+        type:DataTypes.FLOAT,
+        allowNull:false,
+        defaultValue:0.5
+    },
+    opacity:{
+        type:DataTypes.FLOAT,
+        allowNull:false,
+        defaultValue:1
+    },
     sceneId:{
+        type: DataTypes.UUID,
+        allowNull: false,
+    },
+    assetId:{
         type: DataTypes.UUID,
         allowNull: false,
     }

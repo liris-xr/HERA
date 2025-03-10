@@ -5,16 +5,14 @@ import {computed, ref} from "vue";
 import {LoadableInterface} from "@/js/threeExt/interfaces/loadableInterface.js";
 
 export class Mesh extends LoadableInterface {
-    sourceUrl;
-    rawData;
+    data;
 
     #hasError
     #isLoading
-
-    constructor(sourceUrl, rawData = null) {
+    
+    constructor(rawData) {
         super();
-        this.sourceUrl = sourceUrl;
-        this.rawData = rawData
+        this.data = rawData
         this.#hasError = ref(false)
         this.#isLoading = ref(false)
     }
@@ -27,64 +25,25 @@ export class Mesh extends LoadableInterface {
         return this.#isLoading.value;
     })
 
-    load(){
+    load() {
         const loader = ModelLoader.getInstance();
 
         const onLoad = (mesh) => {
-            mesh.scene.traverse( function(child) {
-                if (child instanceof THREE.Mesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
-            });
-            this.#isLoading.value = false;
-        };
+            child.position = this.data.position
+            child.rotation = this.data.rotation
+            child.scale = this.data.scale
 
-        const onError = (error) => {
-            console.error(error);
-            this.#hasError.value = true;
-            this.#isLoading.value = false;
+            child.material.roughness = this.data.roughness
+            child.material.metalness = this.data.metalness
+            child.material.emissiveIntensity = this.data.emissiveIntensity
+            child.material.emissiveColor = this.data.emissiveColor
+            child.material.opacity = this.data.opacity
+
+
+            child.castShadow = true;
+            child.receiveShadow = true;
+
         }
-
-
-        if(this.rawData == null)
-            return new Promise((resolve, reject) => {
-                loader.load(getResource(this.sourceUrl),
-                    (mesh)=> {
-                        onLoad(mesh)
-                        resolve(mesh.scene);
-                    },
-                    ()=> {
-                        this.#isLoading.value = true;
-                    },
-                    (error) =>
-                    {
-                        onError(error)
-                        reject(null);
-                    }
-                );
-            });
-        else
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const contents = event.target.result;
-                    this.#isLoading.value = true;
-                    loader.parse(
-                        contents,
-                        '',
-                        (mesh) => {
-                            onLoad(mesh)
-                            resolve(mesh.scene);
-                        },
-                        (error) => {
-                            onError(error)
-                            reject(null);
-                        })
-
-                };
-                reader.readAsArrayBuffer(this.rawData);
-            })
-
     }
+
 }

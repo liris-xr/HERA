@@ -88,11 +88,11 @@ export class AssetManager {
                         scale: children.scale,
                         assetId:assetId,
                         name: children.name,
-                        emissiveIntensity: children.emissiveIntensity,
-                        emissiveColor: children.emissiveColor,
-                        roughenss: children.roughness,
-                        metalness: children.metalness,
-                        opacity: children.opacity
+                        emissiveIntensity: children.material.emissiveIntensity,
+                        emissiveColor: children.material.emissiveColor,
+                        roughenss: children.material.roughness,
+                        metalness: children.material.metalness,
+                        opacity: children.material.opacity
                     })
                 } else {
                     step(children,assetId)
@@ -105,7 +105,6 @@ export class AssetManager {
         }
 
         return result;
-        
     }
 
     getResultUploads(){

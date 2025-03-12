@@ -9,14 +9,16 @@ import { subclip } from "three/src/animation/AnimationUtils";
 let currentAssetId = 0;
 export class AssetManager {
     #assets;
+    #meshes;
     meshManager;
     meshData;
     onChanged;
     onMoved;
 
-    constructor() {
+    constructor(meshManager) {
         this.#assets = shallowReactive([]);
-        this.meshManager = new MeshManager();
+        this.#meshes = shallowReactive([]);
+        this.meshManager = meshManager;
     }
 
     setMeshData(meshData) {
@@ -34,6 +36,7 @@ export class AssetManager {
                subMeshes.push(child)
             }
         });
+        
         return subMeshes
     }
 
@@ -43,15 +46,14 @@ export class AssetManager {
             asset.id = 'new-asset'+currentAssetId;
             currentAssetId++;
         }
-
+        
         asset.load().then((mesh)=>{
             // scene.add(mesh)
-            
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                if(subMesh.name == "Mesh_0_1") {
-                    const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
-                    this.meshManager.addSubMesh(scene,subMesh,subMeshData,onAdd)
-                }
+                this.#meshes.push(subMesh)
+                
+                const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
+                this.meshManager.addSubMesh(scene,subMesh,subMeshData,onAdd)
                 
             })
             if(onAdd)
@@ -106,32 +108,22 @@ export class AssetManager {
 
         let result = []
 
-        const step = (currentChildren,assetId) => {
-            for (let children of currentChildren.children) {
-                if("material" in children) {
-                    result.push({
-                        id:"mesh-"+children.id+'-'+children.name,
-                        position:children.position,
-                        rotation:children.rotation,
-                        scale: children.scale,
-                        assetId:assetId,
-                        name: children.name,
-                        emissiveIntensity: children.material.emissiveIntensity,
-                        emissiveColor: children.material.emissiveColor,
-                        roughenss: children.material.roughness,
-                        metalness: children.material.metalness,
-                        opacity: children.material.opacity
-                    })
-                } else {
-                    step(children,assetId)
-                }
-            }
+        for (let mesh of this.meshManager.getMeshes.value) {
+            result.push({
+                id:"mesh-"+mesh.id+'-'+mesh.name,
+                position:mesh.position,
+                rotation:mesh.rotation,
+                scale: mesh.scale,
+                assetId:1,
+                name: mesh.name,
+                emissiveIntensity: mesh.material.emissiveIntensity,
+                emissiveColor: mesh.material.emissiveColor,
+                roughenss: mesh.material.roughness,
+                metalness: mesh.material.metalness,
+                opacity: mesh.material.opacity
+            })
         }
-
-        for (let asset of this.#assets) {
-            step(asset.mesh,asset.id)
-        }
-
+        
         return result;
     }
 

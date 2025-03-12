@@ -5,11 +5,13 @@ import {GridPlane} from "@/js/threeExt/lighting/gridPlane.js";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {LabelManager} from "@/js/threeExt/postprocessing/labelManager.js";
 import {AssetManager} from "@/js/threeExt/modelManagement/assetManager.js";
+import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 
 
 export class EditorScene extends THREE.Scene {
+    meshManager;
     assetManager;
     labelManager;
     #errors;
@@ -25,8 +27,9 @@ export class EditorScene extends THREE.Scene {
 
     constructor(shadowMapSize) {
         super();
+        this.meshManager = new MeshManager();
         this.labelManager = new LabelManager();
-        this.assetManager = new AssetManager();
+        this.assetManager = new AssetManager(this.meshManager);
         this.#errors = ref([]);
         this.#lightSet = new LightSet(shadowMapSize);
         this.#lightSet.pushToScene(this);
@@ -251,3 +254,4 @@ export class EditorScene extends THREE.Scene {
     }
 
 }
+

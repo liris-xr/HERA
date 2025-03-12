@@ -4,9 +4,17 @@ import * as THREE from "three";
 
 let currentMeshId = 0;
 export class MeshManager {
+    #meshes
+
+    constructor() {
+        this.#meshes = shallowReactive([]);
+    }
+
+    getMeshes = computed(()=>{
+        return this.#meshes;
+    });
 
     addSubMesh(scene,mesh,meshData,onAdd) {
-        
         
         // mesh.position.x = meshData.position.x 
         // mesh.position.y = meshData.position.y 
@@ -28,13 +36,15 @@ export class MeshManager {
         // console.log(mesh);
         // scene.add(mesh)
         
-        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
-        const meshh = new THREE.Mesh( geometry, material );
+        // const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        // const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+        // const meshh = new THREE.Mesh( geometry, material );
         // meshh.geometry = mesh.geometry
         // meshh.material = mesh.material
-        scene.add( meshh );
-        console.log(scene);
+        scene.add( mesh );
+        this.#meshes.push(mesh)
+        
+        // console.log(scene);
         
         
         // console.log(scene);

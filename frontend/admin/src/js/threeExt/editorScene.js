@@ -123,10 +123,18 @@ export class EditorScene extends THREE.Scene {
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
-            for (let asset of this.assetManager.getAssets.value) {
-                const intersects = raycaster.intersectObject(asset.getObject(), true);
+            // for (let asset of this.assetManager.getAssets.value) {
+            //     const intersects = raycaster.intersectObject(asset.getObject(), true);
+            //     if (intersects.length > 0) {
+            //         object = asset;
+            //     }
+            // }
+            // console.log(this.meshManager.getAssets.value);
+            
+            for (let mesh of this.meshManager.getMeshes.value) {
+                const intersects = raycaster.intersectObject(mesh, true);
                 if (intersects.length > 0) {
-                    object = asset;
+                    object = mesh;
                 }
             }
         }
@@ -137,13 +145,13 @@ export class EditorScene extends THREE.Scene {
 
     setSelected(object, selected = true){
         this.deselectAll();
-        this.#selected.value = object;
+        this.#selected = object;
 
-        if(object==null || selected === false || object.hasError.value){
+        if(object==null || selected === false){
             this.#transformControls.detach();
         }else {
-            this.#transformControls.attach(object.getObject());
-            object.setSelected(selected);
+            this.#transformControls.attach(object);
+            //object.setSelected(selected);
         }
         this.#updateSelectedValues();
     }
@@ -242,14 +250,16 @@ export class EditorScene extends THREE.Scene {
     }
 
     #updateSelectedValues(){
-        if(this.#selected.value == null)
-            this.currentSelectedValues.value = {x:"",y:"", z:""};
-        else if(this.getTransformMode.value === "translate"){
-            this.currentSelectedValues.value = this.#selected.value.getResultPosition();
-        }else if(this.getTransformMode.value === "rotate"){
-            this.currentSelectedValues.value = this.#selected.value.getResultRotation();
-        }else if(this.getTransformMode.value === "scale"){
-            this.currentSelectedValues.value = this.#selected.value.getResultScale();
+        if(this.#selected != null) {
+            if(this.#selected.value == null)
+                this.currentSelectedValues.value = {x:"",y:"", z:""};
+            else if(this.getTransformMode.value === "translate"){
+                this.currentSelectedValues.value = this.#selected.value.getResultPosition();
+            }else if(this.getTransformMode.value === "rotate"){
+                this.currentSelectedValues.value = this.#selected.value.getResultRotation();
+            }else if(this.getTransformMode.value === "scale"){
+                this.currentSelectedValues.value = this.#selected.value.getResultScale();
+            }
         }
     }
 

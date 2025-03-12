@@ -48,10 +48,7 @@ export class AssetManager {
         }
         
         asset.load().then((mesh)=>{
-            // scene.add(mesh)
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                this.#meshes.push(subMesh)
-                
                 const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
                 this.meshManager.addSubMesh(scene,subMesh,subMeshData,onAdd)
                 

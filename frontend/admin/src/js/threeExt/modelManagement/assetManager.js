@@ -1,22 +1,41 @@
 import {computed, shallowReactive} from "vue";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
+import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {MeshLoadError} from "@/js/threeExt/error/meshLoadError.js";
 import * as THREE from "three";
 import {Vector3} from "three";
+import { subclip } from "three/src/animation/AnimationUtils";
 
 let currentAssetId = 0;
 export class AssetManager {
     #assets;
+    meshManager;
+    meshData;
     onChanged;
     onMoved;
 
     constructor() {
         this.#assets = shallowReactive([]);
+        this.meshManager = new MeshManager();
+    }
+
+    setMeshData(meshData) {
+        this.meshData = meshData;
     }
 
     getAssets = computed(()=>{
         return this.#assets;
     });
+
+    getAssetSubMeshes(asset) {
+        let subMeshes = []
+        asset.traverse( function(child) {
+            if ("material" in child) {
+               subMeshes.push(child)
+            }
+        });
+        return subMeshes
+    }
 
 
     addToScene(scene,asset,onAdd){
@@ -26,7 +45,15 @@ export class AssetManager {
         }
 
         asset.load().then((mesh)=>{
-            scene.add(mesh)
+            // scene.add(mesh)
+            
+            this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
+                if(subMesh.name == "Mesh_0_1") {
+                    const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
+                    this.meshManager.addSubMesh(scene,subMesh,subMeshData,onAdd)
+                }
+                
+            })
             if(onAdd)
                 onAdd(asset)
         }).catch(()=>{
@@ -83,6 +110,7 @@ export class AssetManager {
             for (let children of currentChildren.children) {
                 if("material" in children) {
                     result.push({
+                        id:"mesh-"+children.id+'-'+children.name,
                         position:children.position,
                         rotation:children.rotation,
                         scale: children.scale,

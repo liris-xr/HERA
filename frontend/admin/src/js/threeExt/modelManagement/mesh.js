@@ -10,9 +10,9 @@ export class Mesh extends LoadableInterface {
     #hasError
     #isLoading
     
-    constructor(rawData) {
+    constructor(data) {
         super();
-        this.data = rawData
+        this.data = data
         this.#hasError = ref(false)
         this.#isLoading = ref(false)
     }
@@ -39,11 +39,21 @@ export class Mesh extends LoadableInterface {
             child.material.emissiveColor = this.data.emissiveColor
             child.material.opacity = this.data.opacity
 
-
             child.castShadow = true;
             child.receiveShadow = true;
 
+            this.#isLoading.value = false;
         }
+
+        const onError = (error) => {
+            console.error(error);
+            this.#hasError.value = true;
+            this.#isLoading.value = false;
+        }
+
+        return new Promise((resolve,reject) =>  {
+            
+        })
     }
 
 }

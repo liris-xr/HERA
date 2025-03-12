@@ -4,7 +4,7 @@ import {getResource} from "@/js/endpoints.js";
 import {computed, ref} from "vue";
 import {LoadableInterface} from "@/js/threeExt/interfaces/loadableInterface.js";
 
-export class Mesh_save extends LoadableInterface {
+export class Mesh extends LoadableInterface {
     sourceUrl;
     rawData;
 

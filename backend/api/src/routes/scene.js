@@ -231,6 +231,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
             await updateListById(knonwMeshesIds, JSON.parse(req.body.meshes),
                 async (mesh) => {
                     await ArMesh.update({
+                        id:mesh.id,
                         position:mesh.position,
                         rotation:mesh.rotation,
                         scale: mesh.scale,
@@ -248,6 +249,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
 
                 async (mesh)=>{
                     await ArMesh.create({
+                        id:mesh.id,
                         position:mesh.position,
                         rotation:mesh.rotation,
                         scale: mesh.scale,

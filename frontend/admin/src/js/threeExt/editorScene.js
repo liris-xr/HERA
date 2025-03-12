@@ -55,10 +55,19 @@ export class EditorScene extends THREE.Scene {
 
     }
 
+    getMeshMap(meshes) {
+        let map = new Map()
+        meshes.forEach( (mesh) => {
+            map.set(mesh.id,mesh)
+        })
+        return map
+    }
+
     init(sceneData){
+        this.assetManager.setMeshData(this.getMeshMap(sceneData.meshes));
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);
-            this.assetManager.addToScene(this, asset, ()=>{this.updatePlaygroundSize()});
+            this.assetManager.addToScene(this, asset,()=>{this.updatePlaygroundSize()});
         }
 
         for (let labelData of sceneData.labels) {

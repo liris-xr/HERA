@@ -9,7 +9,6 @@ import { subclip } from "three/src/animation/AnimationUtils";
 let currentAssetId = 0;
 export class AssetManager {
     #assets;
-    #meshes;
     meshManager;
     meshData;
     onChanged;
@@ -17,7 +16,6 @@ export class AssetManager {
 
     constructor(meshManager) {
         this.#assets = shallowReactive([]);
-        this.#meshes = shallowReactive([]);
         this.meshManager = meshManager;
     }
 
@@ -48,8 +46,10 @@ export class AssetManager {
         }
         
         asset.load().then((mesh)=>{
+            
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
                 const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
+                
                 this.meshManager.addSubMesh(scene,subMesh,subMeshData,onAdd)
                 
             })
@@ -94,6 +94,7 @@ export class AssetManager {
                 hideInViewer: asset.hideInViewer.value
             });
         }
+        
         return result;
     }
 
@@ -104,7 +105,6 @@ export class AssetManager {
         // We have to go down the tree until we found the meshes
 
         let result = []
-
         for (let mesh of this.meshManager.getMeshes.value) {
             result.push({
                 id:"mesh-"+mesh.id+'-'+mesh.name,
@@ -113,6 +113,7 @@ export class AssetManager {
                 scale: mesh.scale,
                 assetId:1,
                 name: mesh.name,
+                color:mesh.material.color,
                 emissiveIntensity: mesh.material.emissiveIntensity,
                 emissiveColor: mesh.material.emissiveColor,
                 roughenss: mesh.material.roughness,
@@ -120,7 +121,6 @@ export class AssetManager {
                 opacity: mesh.material.opacity
             })
         }
-        
         return result;
     }
 

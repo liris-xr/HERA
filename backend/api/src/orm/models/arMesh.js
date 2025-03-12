@@ -47,7 +47,7 @@ export default sequelize.define('ArMesh', {
     color:{
         type:DataTypes.JSON,
         allowNull: false,
-        defaultValue: {x:1, y:1, z:1},
+        defaultValue: {isColor:true, r:1, g:1, b:1},
     },
     emissiveIntensity:{
         type:DataTypes.FLOAT,

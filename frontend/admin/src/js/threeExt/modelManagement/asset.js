@@ -73,7 +73,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
         }else{
             meshToLoad = new Mesh(this.sourceUrl, null)
         }
-
+        
         return new Promise((resolve, reject) => {
             meshToLoad.load().then((mesh)=>{
                 this.#isLoading.value = false;

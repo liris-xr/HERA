@@ -18,12 +18,12 @@ export class EditorScene extends THREE.Scene {
     #gridPlane;
     #lightSet;
     #transformControls;
-
+    
+    selected;
+    selectedMeshKey;
     onChanged;
     #currentTransformMode;
-    #selected;
     currentSelectedValues;
-    currentSelectedMaterialValues;
 
     constructor(shadowMapSize) {
         super();
@@ -35,19 +35,18 @@ export class EditorScene extends THREE.Scene {
         this.#lightSet.pushToScene(this);
         this.#transformControls = null;
         this.#currentTransformMode = ref(null);
-        this.#selected = ref(null);
         this.currentSelectedValues = ref({x:"",y:"", z:""});
 
         watch(() =>this.currentSelectedValues, (value) => {
-            if(this.#selected.value == null) return;
+            if(this.selected == null) return;
 
 
             if(this.getTransformMode.value === "translate"){
-                this.#selected.value.getObject().position.set(value.value.x, value.value.y, value.value.z);
+                this.selected.position.set(value.value.x, value.value.y, value.value.z);
             }else if(this.getTransformMode.value === "rotate"){
-                this.#selected.value.getObject().rotation.set(value.value.x, value.value.y, value.value.z);
+                this.selected.rotation.set(value.value.x, value.value.y, value.value.z);
             }else if(this.getTransformMode.value === "scale"){
-                this.#selected.value.getObject().scale.set(value.value.x, value.value.y, value.value.z);
+                this.selected.scale.set(value.value.x, value.value.y, value.value.z);
             }
 
             this.updatePlaygroundSize();
@@ -142,11 +141,10 @@ export class EditorScene extends THREE.Scene {
         this.setSelected(object);
 
     }
-
     setSelected(object, selected = true){
         this.deselectAll();
-        this.#selected = object;
-
+        this.selected = object;
+        this.selectedMeshKey = "mesh-"+object.id+'-'+object.name
         if(object==null || selected === false){
             this.#transformControls.detach();
         }else {
@@ -250,18 +248,15 @@ export class EditorScene extends THREE.Scene {
     }
 
     #updateSelectedValues(){
-        if(this.#selected != null) {
-            if(this.#selected.value == null)
-                this.currentSelectedValues.value = {x:"",y:"", z:""};
-            else if(this.getTransformMode.value === "translate"){
-                this.currentSelectedValues.value = this.#selected.value.getResultPosition();
-            }else if(this.getTransformMode.value === "rotate"){
-                this.currentSelectedValues.value = this.#selected.value.getResultRotation();
-            }else if(this.getTransformMode.value === "scale"){
-                this.currentSelectedValues.value = this.#selected.value.getResultScale();
-            }
+        if(!this.selected)
+            this.currentSelectedValues.value = {x:"",y:"", z:""};
+        else if(this.getTransformMode.value === "translate"){
+            this.currentSelectedValues.value = this.selected.position;
+        }else if(this.getTransformMode.value === "rotate"){
+            this.currentSelectedValues.value = this.selected.rotation;
+        }else if(this.getTransformMode.value === "scale"){
+            this.currentSelectedValues.value = this.selected.scale;
         }
     }
-
 }
 

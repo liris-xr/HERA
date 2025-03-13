@@ -433,7 +433,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                 <label for="transformX">x:</label>
                 <input type="number" autocomplete="false" id="transformX" name="transformX" v-model="editor.scene.currentSelectedValues.value.x" step="any">
                 <label for="transformY">y:</label>
-                <input type="number" autocomplete="false" id="transformX" name="transformY" v-model="editor.scene.currentSelectedValues.value.y" step="any">
+                <input type="number" autocomplete="false" id="transformY" name="transformY" v-model="editor.scene.currentSelectedValues.value.y" step="any">
                 <label for="transformZ">z:</label>
                 <input type="number" autocomplete="false" id="transformZ" name="transformZ" v-model="editor.scene.currentSelectedValues.value.z" step="any">
 

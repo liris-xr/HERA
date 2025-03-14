@@ -36,7 +36,7 @@ export class Mesh extends LoadableInterface {
             child.material.roughness = this.data.roughness
             child.material.metalness = this.data.metalness
             child.material.emissiveIntensity = this.data.emissiveIntensity
-            child.material.emissiveColor = this.data.emissiveColor
+            child.material.emissive = this.data.emissive
             child.material.opacity = this.data.opacity
 
             child.castShadow = true;

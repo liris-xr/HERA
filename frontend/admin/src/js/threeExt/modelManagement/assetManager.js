@@ -46,7 +46,6 @@ export class AssetManager {
         }
         
         asset.load().then((mesh)=>{
-            
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
                 const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
                 
@@ -113,14 +112,23 @@ export class AssetManager {
                 scale: mesh.scale,
                 assetId:1,
                 name: mesh.name,
-                color:mesh.material.color,
+                color:{
+                    r:mesh.material.color.r,
+                    g:mesh.material.color.g,
+                    b:mesh.material.color.b,
+                },
+                emissive:{
+                    r:mesh.material.emissive.r,
+                    g:mesh.material.emissive.g,
+                    b:mesh.material.emissive.b,
+                },
                 emissiveIntensity: mesh.material.emissiveIntensity,
-                emissiveColor: mesh.material.emissiveColor,
                 roughenss: mesh.material.roughness,
                 metalness: mesh.material.metalness,
                 opacity: mesh.material.opacity
             })
         }
+        
         return result;
     }
 

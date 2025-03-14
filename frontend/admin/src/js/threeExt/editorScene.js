@@ -22,8 +22,10 @@ export class EditorScene extends THREE.Scene {
     selected;
     selectedMeshKey;
     onChanged;
+    #isMaterialMenuAvailable
     #currentTransformMode;
-    currentSelectedValues;
+    currentSelectedTransformValues;
+    currentSelectedMaterialValues;
 
     constructor(shadowMapSize) {
         super();
@@ -35,11 +37,19 @@ export class EditorScene extends THREE.Scene {
         this.#lightSet.pushToScene(this);
         this.#transformControls = null;
         this.#currentTransformMode = ref(null);
-        this.currentSelectedValues = ref({x:"",y:"", z:""});
+        this.#isMaterialMenuAvailable = ref(false)
+        this.currentSelectedTransformValues = ref({x:"",y:"", z:""});
+        this.currentSelectedMaterialValues = ref({
+            metalness:"",
+            roughness:"",
+            opacity:"",
+            emissiveIntensity:"",
+            color:{r:"",g:"",b:""},
+            emissive:{r:"",g:"",b:""}
+        });
 
-        watch(() =>this.currentSelectedValues, (value) => {
+        watch(() =>this.currentSelectedTransformValues, (value) => {
             if(this.selected == null) return;
-
 
             if(this.getTransformMode.value === "translate"){
                 this.selected.position.set(value.value.x, value.value.y, value.value.z);
@@ -53,9 +63,21 @@ export class EditorScene extends THREE.Scene {
             this.runOnChanged();
         },{deep:true});
 
-        this.onChanged = null;
+        watch(() =>this.currentSelectedMaterialValues, (value) => {
+            if(this.selected == null) return;
+            
+            if(this.#isMaterialMenuAvailable){
+                this.selected.material.roughness = value.value.roughness;
+                this.selected.material.metalness = value.value.metalness;
+                this.selected.material.opacity = value.value.opacity;
+                this.selected.material.emissiveIntensity = value.value.emissiveIntensity;
+            }
+        },{deep:true});
 
+        this.onChanged = null;
     }
+
+    
 
     getMeshMap(meshes) {
         let map = new Map()
@@ -87,7 +109,8 @@ export class EditorScene extends THREE.Scene {
         this.setTransformMode("translate");
 
         this.#transformControls.addEventListener('objectChange', () => {
-            this.#updateSelectedValues();
+            this.#updateSelectedTransformValues();
+            this.#updateSelectedMaterialValues();
         });
     }
 
@@ -122,14 +145,6 @@ export class EditorScene extends THREE.Scene {
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
-            // for (let asset of this.assetManager.getAssets.value) {
-            //     const intersects = raycaster.intersectObject(asset.getObject(), true);
-            //     if (intersects.length > 0) {
-            //         object = asset;
-            //     }
-            // }
-            // console.log(this.meshManager.getAssets.value);
-            
             for (let mesh of this.meshManager.getMeshes.value) {
                 const intersects = raycaster.intersectObject(mesh, true);
                 if (intersects.length > 0) {
@@ -151,7 +166,8 @@ export class EditorScene extends THREE.Scene {
             this.#transformControls.attach(object);
             //object.setSelected(selected);
         }
-        this.#updateSelectedValues();
+        this.#updateSelectedTransformValues();
+        this.#updateSelectedMaterialValues();
     }
 
     deselectAll(){
@@ -235,28 +251,55 @@ export class EditorScene extends THREE.Scene {
     setTransformMode(mode){
         this.#transformControls.setMode(mode);
         this.#currentTransformMode.value = mode;
-        this.#updateSelectedValues();
+        this.#updateSelectedTransformValues();
+    }
+
+    setMaterialMenu(value) {
+        this.#isMaterialMenuAvailable = value
+        this.#updateSelectedMaterialValues()
     }
 
     getTransformMode = computed(()=>this.#currentTransformMode.value)
-
-
 
     runOnChanged(){
         if(this.onChanged)
             this.onChanged();
     }
 
-    #updateSelectedValues(){
+    #updateSelectedTransformValues(){
+        
         if(!this.selected)
-            this.currentSelectedValues.value = {x:"",y:"", z:""};
+            this.currentSelectedTransformValues.value = {x:"",y:"", z:""};
         else if(this.getTransformMode.value === "translate"){
-            this.currentSelectedValues.value = this.selected.position;
+            this.currentSelectedTransformValues.value = this.selected.position;
         }else if(this.getTransformMode.value === "rotate"){
-            this.currentSelectedValues.value = this.selected.rotation;
+            this.currentSelectedTransformValues.value = this.selected.rotation;
         }else if(this.getTransformMode.value === "scale"){
-            this.currentSelectedValues.value = this.selected.scale;
+            this.currentSelectedTransformValues.value = this.selected.scale;
         }
+    }
+    
+    #updateSelectedMaterialValues() {
+        if(!this.selected) {
+            this.currentSelectedMaterialValues.value = {
+                metalness:"",
+                roughness:"",
+                opacity:"",
+                emissiveIntensity:"",
+                color:{r:"",g:"",b:""},
+                emissive:{r:"",g:"",b:""}
+            }
+        } else {
+            this.currentSelectedMaterialValues.value = {
+                metalness:this.selected.material.metalness,
+                roughness:this.selected.material.roughness,
+                opacity:this.selected.material.opacity,
+                emissiveIntensity:this.selected.material.emissiveIntensity,
+                color:this.selected.material.color,
+                emissive:this.selected.material.emissive
+            }
+        }
+        
     }
 }
 

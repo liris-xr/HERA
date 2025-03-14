@@ -1,8 +1,5 @@
 import {computed, shallowReactive} from "vue";
-import * as THREE from "three";
 
-
-let currentMeshId = 0;
 export class MeshManager {
     #meshes
 
@@ -23,13 +20,14 @@ export class MeshManager {
             mesh.rotation.x = meshData.rotation._x
             mesh.rotation.y = meshData.rotation._y
             mesh.rotation.z = meshData.rotation._z
-            mesh.scale.x = meshData.scale.x
-            mesh.scale.y = meshData.scale.y
-            mesh.scale.z = meshData.scale.z 
+            mesh.scale.x = 0.01
+            mesh.scale.y = 0.01
+            mesh.scale.z = 0.01
             
+            mesh.material.color = meshData.color
             mesh.material.opacity = meshData.opacity
             mesh.material.transparent = meshData.opacity != 1
-            mesh.material.emissiveColor = meshData.emissiveColor
+            mesh.material.emissive = meshData.emissive
             mesh.material.emissiveIntensity = meshData.emissiveIntensity
             mesh.material.roughness = meshData.roughness
             mesh.material.metalness = meshData.metalness

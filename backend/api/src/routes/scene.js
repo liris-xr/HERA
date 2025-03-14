@@ -237,7 +237,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
                         scale: mesh.scale,
                         color:mesh.color,
                         emissiveIntensity: mesh.emissiveIntensity,
-                        emissiveColor: mesh.emissiveColor,
+                        emissive: mesh.emissive,
                         roughenss: mesh.roughness,
                         metalness: mesh.metalness,
                         opacity: mesh.opacity
@@ -259,7 +259,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
                         color:mesh.color,
                         name: mesh.name,
                         emissiveIntensity: mesh.emissiveIntensity,
-                        emissiveColor: mesh.emissiveColor,
+                        emissive: mesh.emissive,
                         roughenss: mesh.roughness,
                         metalness: mesh.metalness,
                         opacity: mesh.opacity

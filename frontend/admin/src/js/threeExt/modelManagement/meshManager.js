@@ -20,9 +20,9 @@ export class MeshManager {
             mesh.rotation.x = meshData.rotation._x
             mesh.rotation.y = meshData.rotation._y
             mesh.rotation.z = meshData.rotation._z
-            mesh.scale.x = 0.01
-            mesh.scale.y = 0.01
-            mesh.scale.z = 0.01
+            mesh.scale.x = meshData.scale.x
+            mesh.scale.y = meshData.scale.y
+            mesh.scale.z = meshData.scale.z
             
             mesh.material.color = meshData.color
             mesh.material.opacity = meshData.opacity

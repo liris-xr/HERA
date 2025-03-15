@@ -29,11 +29,33 @@ export class AssetManager {
 
     getAssetSubMeshes(asset) {
         let subMeshes = []
-        asset.traverse( function(child) {
-            if ("material" in child) {
-               subMeshes.push(child)
+        
+        const step = (child,pos) => {
+            for(let children of child.children) {
+                if ("material" in children) {
+                    children.position.copy(pos)
+                    console.log(children);
+                    console.log(pos);
+
+                    
+                    subMeshes.push(children)
+                } else {
+                    
+                    let newPos = new THREE.Vector3(0,0,0)
+                    newPos.copy(pos)
+                    newPos.add(children.position)
+                    step(children,newPos)
+                }
+                
             }
-        });
+        }
+        step(asset,new THREE.Vector3(0,0,0))
+        // asset.traverse( function(child) {
+        //     console.log(child);
+        //     if ("material" in child) {
+        //         subMeshes.push(child)
+        //     }
+        // });
         
         return subMeshes
     }
@@ -46,9 +68,9 @@ export class AssetManager {
         }
         
         asset.load().then((mesh)=>{
+            
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
                 const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
-                
                 this.meshManager.addSubMesh(scene,subMesh,subMeshData,onAdd)
                 
             })

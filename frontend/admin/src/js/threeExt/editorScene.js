@@ -91,6 +91,7 @@ export class EditorScene extends THREE.Scene {
         this.assetManager.setMeshData(this.getMeshMap(sceneData.meshes));
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);
+
             this.assetManager.addToScene(this, asset,()=>{this.updatePlaygroundSize()});
         }
 
@@ -152,7 +153,8 @@ export class EditorScene extends THREE.Scene {
                 }
             }
         }
-
+        console.log(object);
+        
         this.setSelected(object);
 
     }

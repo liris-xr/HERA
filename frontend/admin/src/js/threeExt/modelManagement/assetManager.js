@@ -27,23 +27,37 @@ export class AssetManager {
         return this.#assets;
     });
 
-    getAssetSubMeshes(asset) {
-        let subMeshes = []
-        
+    initAssetSubMeshes(asset) {
         const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
                     children.applyMatrix4(transform)
-                    subMeshes.push(children)
                 } else {
-                    
                     let newTransform = new THREE.Matrix4
                     step(children,newTransform.multiplyMatrices(transform,children.matrix))
                 }
                 
             }
         }
+        
         step(asset,new THREE.Matrix4)
+    }
+
+    getAssetSubMeshes(asset) {
+        let subMeshes = []
+        
+        const step = (child) => {
+            for(let children of child.children) {
+                if ("material" in children) {
+                    subMeshes.push(children)
+                } else {
+                    step(children)
+                }
+                
+            }
+        }
+        
+        step(asset)
         
         return subMeshes
     }
@@ -56,11 +70,11 @@ export class AssetManager {
         }
         
         asset.load().then((mesh)=>{
+            this.initAssetSubMeshes(mesh);
             
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
                 const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
                 this.meshManager.addSubMesh(scene,subMesh,subMeshData,onAdd)
-                
             })
             if(onAdd)
                 onAdd(asset)
@@ -81,6 +95,10 @@ export class AssetManager {
                 object.splice(index, 1);
                 scene.remove(asset.getObject());
                 self.runOnChanged();
+                
+                // self.getAssetSubMeshes(currentAsset).forEach( (mesh) => {
+                //     self.meshManager.removeSubMesh(scene,mesh)
+                // })
                 return true
             }
         });
@@ -108,7 +126,6 @@ export class AssetManager {
     }
 
     getResultMeshes() {
-        // Tricky part : 
         // We need to find the meshes in the asset
         // But they are sorted in diffrents ways depending on the asset
         // We have to go down the tree until we found the meshes

@@ -32,8 +32,20 @@ export class MeshManager {
             mesh.material.roughness = meshData.roughness
             mesh.material.metalness = meshData.metalness
         }
+        // if(onAdd) {
+        //     onAdd(mesh)
+        // }
+        console.log(mesh);
         
         scene.add( mesh );
         this.#meshes.push(mesh)
+    }
+
+    removeSubMesh(scene,mesh) {
+        const index = this.#meshes.indexOf(mesh)
+        if(index > -1) {
+            this.#meshes.splice(index,1)
+        }
+        scene.remove(mesh)
     }
 }

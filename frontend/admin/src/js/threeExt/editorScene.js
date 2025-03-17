@@ -52,11 +52,17 @@ export class EditorScene extends THREE.Scene {
             if(this.selected == null) return;
 
             if(this.getTransformMode.value === "translate"){
-                this.selected.position = value.value
+                this.selected.position.x = value.value.x
+                this.selected.position.y = value.value.y
+                this.selected.position.z = value.value.z
             }else if(this.getTransformMode.value === "rotate"){
-                this.selected.rotation = value.value
+                this.selected.rotation.x = value.value.x
+                this.selected.rotation.y = value.value.y
+                this.selected.rotation.z = value.value.z
             }else if(this.getTransformMode.value === "scale"){
-                this.selected.scale = value.value
+                this.selected.scale.x = value.value.x
+                this.selected.scale.y = value.value.y
+                this.selected.scale.z = value.value.z
             }
 
             this.updatePlaygroundSize();
@@ -164,7 +170,8 @@ export class EditorScene extends THREE.Scene {
             this.#transformControls.detach();
         } else {
             this.selectedMeshKey = "mesh-"+object.id+'-'+object.name
-            this.#transformControls.attach(object);
+            if(object.isMesh)
+                this.#transformControls.attach(object);
             //object.setSelected(selected);
         }
         this.#updateSelectedTransformValues();

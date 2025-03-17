@@ -30,32 +30,20 @@ export class AssetManager {
     getAssetSubMeshes(asset) {
         let subMeshes = []
         
-        const step = (child,pos) => {
+        const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
-                    children.position.copy(pos)
-                    console.log(children);
-                    console.log(pos);
-
-                    
+                    children.applyMatrix4(transform)
                     subMeshes.push(children)
                 } else {
                     
-                    let newPos = new THREE.Vector3(0,0,0)
-                    newPos.copy(pos)
-                    newPos.add(children.position)
-                    step(children,newPos)
+                    let newTransform = new THREE.Matrix4
+                    step(children,newTransform.multiplyMatrices(transform,children.matrix))
                 }
                 
             }
         }
-        step(asset,new THREE.Vector3(0,0,0))
-        // asset.traverse( function(child) {
-        //     console.log(child);
-        //     if ("material" in child) {
-        //         subMeshes.push(child)
-        //     }
-        // });
+        step(asset,new THREE.Matrix4)
         
         return subMeshes
     }

@@ -379,7 +379,6 @@ onBeforeRouteUpdate((to, from, next)=>{
                             :active="asset.isSelected.value"
                             :error="asset.hasError.value"
                             :loading="asset.isLoading.value"
-                            @select="editor.scene.setSelected(asset)"
                             @delete="editor.scene.removeAsset(asset)"
                             @hide-in-viewer="()=>{asset.switchViewerDisplayStatus(); saved = false}"/>
                 <div v-if="scene.assets.length==0">{{$t("sceneView.leftSection.sceneAssets.noAssetsInfo")}}</div>

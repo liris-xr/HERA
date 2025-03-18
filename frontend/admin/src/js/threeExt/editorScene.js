@@ -11,7 +11,6 @@ import i18n from "@/i18n.js";
 
 
 export class EditorScene extends THREE.Scene {
-    meshManager;
     assetManager;
     labelManager;
     #errors;
@@ -29,9 +28,8 @@ export class EditorScene extends THREE.Scene {
 
     constructor(shadowMapSize) {
         super();
-        this.meshManager = new MeshManager();
         this.labelManager = new LabelManager();
-        this.assetManager = new AssetManager(this.meshManager);
+        this.assetManager = new AssetManager();
         this.#errors = ref([]);
         this.#lightSet = new LightSet(shadowMapSize);
         this.#lightSet.pushToScene(this);
@@ -72,7 +70,7 @@ export class EditorScene extends THREE.Scene {
         watch(() =>this.currentSelectedMaterialValues, (value) => {
             if(this.selected == null) return;
             
-            if(this.#isMaterialMenuAvailable){
+            if(this.#isMaterialMenuAvailable.value){
                 this.selected.material.roughness = value.value.roughness;
                 this.selected.material.metalness = value.value.metalness;
                 this.selected.material.opacity = value.value.opacity;
@@ -90,14 +88,15 @@ export class EditorScene extends THREE.Scene {
         meshes.forEach( (mesh) => {
             map.set(mesh.id,mesh)
         })
+        
         return map
     }
 
     init(sceneData){
         this.assetManager.setMeshData(this.getMeshMap(sceneData.meshes));
+        
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);
-
             this.assetManager.addToScene(this, asset,()=>{this.updatePlaygroundSize()});
         }
 
@@ -152,12 +151,15 @@ export class EditorScene extends THREE.Scene {
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
-            for (let mesh of this.meshManager.getMeshes.value) {
-                const intersects = raycaster.intersectObject(mesh, true);
-                if (intersects.length > 0) {
-                    object = mesh;
+
+            this.assetManager.meshManagerMap.forEach( (meshManager) => {
+                for (let mesh of meshManager.getMeshes.value) {
+                    const intersects = raycaster.intersectObject(mesh, true);
+                    if (intersects.length > 0) {
+                        object = mesh;
+                    }
                 }
-            }
+            })
         }
         
         this.setSelected(object);
@@ -169,10 +171,9 @@ export class EditorScene extends THREE.Scene {
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
-            this.selectedMeshKey = "mesh-"+object.id+'-'+object.name
+            this.selectedMeshKey = "mesh-"+object.name
             if(object.isMesh)
                 this.#transformControls.attach(object);
-            //object.setSelected(selected);
         }
         this.#updateSelectedTransformValues();
         this.#updateSelectedMaterialValues();
@@ -223,12 +224,13 @@ export class EditorScene extends THREE.Scene {
             hideInViewer: false
         }
         const asset = new Asset(assetData);
-        this.assetManager.addToScene(this,asset,(asset)=>this.setSelected(asset));
+        this.assetManager.addToScene(this,asset,()=>{this.updatePlaygroundSize()});
     }
 
     removeAsset(asset){
         this.setSelected(null);
         this.assetManager.removeFromScene(this,asset);
+        this.updatePlaygroundSize()
     }
 
 
@@ -288,16 +290,9 @@ export class EditorScene extends THREE.Scene {
     }
     
     #updateSelectedMaterialValues() {
-        if(!this.selected) {
-            this.currentSelectedMaterialValues.value = {
-                metalness:"",
-                roughness:"",
-                opacity:"",
-                emissiveIntensity:"",
-                color:{r:"",g:"",b:""},
-                emissive:{r:"",g:"",b:""}
-            }
-        } else {
+        console.log(this.selected);
+        
+        if(this.selected.type == "Mesh") {
             this.currentSelectedMaterialValues.value = {
                 metalness:this.selected.material.metalness,
                 roughness:this.selected.material.roughness,
@@ -305,6 +300,15 @@ export class EditorScene extends THREE.Scene {
                 emissiveIntensity:this.selected.material.emissiveIntensity,
                 color:this.selected.material.color,
                 emissive:this.selected.material.emissive
+            }
+        } else {
+            this.currentSelectedMaterialValues.value = {
+                metalness:"",
+                roughness:"",
+                opacity:"",
+                emissiveIntensity:"",
+                color:{r:"",g:"",b:""},
+                emissive:{r:"",g:"",b:""}
             }
         }
         

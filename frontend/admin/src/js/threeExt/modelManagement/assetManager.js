@@ -9,14 +9,14 @@ import { subclip } from "three/src/animation/AnimationUtils";
 let currentAssetId = 0;
 export class AssetManager {
     #assets;
-    meshManager;
+    meshManagerMap;
     meshData;
     onChanged;
     onMoved;
 
-    constructor(meshManager) {
+    constructor() {
         this.#assets = shallowReactive([]);
-        this.meshManager = meshManager;
+        this.meshManagerMap = new Map();
     }
 
     setMeshData(meshData) {
@@ -68,21 +68,23 @@ export class AssetManager {
             asset.id = 'new-asset'+currentAssetId;
             currentAssetId++;
         }
+        this.meshManagerMap.set(asset.id,new MeshManager())
         
         asset.load().then((mesh)=>{
             this.initAssetSubMeshes(mesh);
             
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                const subMeshData = this.meshData.get("mesh-"+subMesh.id+'-'+subMesh.name)
-                this.meshManager.addSubMesh(scene,subMesh,subMeshData,onAdd)
+                const subMeshData = this.meshData.get("mesh-"+subMesh.name)
+                this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
             })
+            
             if(onAdd)
                 onAdd(asset)
         }).catch(()=>{
             scene.appendError(new MeshLoadError(asset.sourceUrl))
             }
         );
-
+        
         this.#assets.push(asset);
         this.runOnChanged();
         return asset;
@@ -93,12 +95,10 @@ export class AssetManager {
         this.#assets.forEach(function(currentAsset, index, object) {
             if (asset.id === currentAsset.id) {
                 object.splice(index, 1);
-                scene.remove(asset.getObject());
                 self.runOnChanged();
                 
-                // self.getAssetSubMeshes(currentAsset).forEach( (mesh) => {
-                //     self.meshManager.removeSubMesh(scene,mesh)
-                // })
+                self.meshManagerMap.get(asset.id).clear(scene)
+                self.meshManagerMap.delete(asset.id)
                 return true
             }
         });
@@ -131,30 +131,33 @@ export class AssetManager {
         // We have to go down the tree until we found the meshes
 
         let result = []
-        for (let mesh of this.meshManager.getMeshes.value) {
-            result.push({
-                id:"mesh-"+mesh.id+'-'+mesh.name,
-                position:mesh.position,
-                rotation:mesh.rotation,
-                scale: mesh.scale,
-                assetId:1,
-                name: mesh.name,
-                color:{
-                    r:mesh.material.color.r,
-                    g:mesh.material.color.g,
-                    b:mesh.material.color.b,
-                },
-                emissive:{
-                    r:mesh.material.emissive.r,
-                    g:mesh.material.emissive.g,
-                    b:mesh.material.emissive.b,
-                },
-                emissiveIntensity: mesh.material.emissiveIntensity,
-                roughenss: mesh.material.roughness,
-                metalness: mesh.material.metalness,
-                opacity: mesh.material.opacity
-            })
-        }
+
+        this.meshManagerMap.forEach( (meshManager) => {
+            for (let mesh of meshManager.getMeshes.value) {
+                result.push({
+                    id:"mesh-"+mesh.name,
+                    position:mesh.position,
+                    rotation:mesh.rotation,
+                    scale: mesh.scale,
+                    assetId:1,
+                    name: mesh.name,
+                    color:{
+                        r:mesh.material.color.r,
+                        g:mesh.material.color.g,
+                        b:mesh.material.color.b,
+                    },
+                    emissive:{
+                        r:mesh.material.emissive.r,
+                        g:mesh.material.emissive.g,
+                        b:mesh.material.emissive.b,
+                    },
+                    emissiveIntensity: mesh.material.emissiveIntensity,
+                    roughenss: mesh.material.roughness,
+                    metalness: mesh.material.metalness,
+                    opacity: mesh.material.opacity
+                })
+            }
+        })
         
         return result;
     }
@@ -197,11 +200,14 @@ export class AssetManager {
 
     getSceneBoundingBox(){
         const boundingGroup = []
-        for (let asset of this.#assets) {
-            const assetBoundingBox = new THREE.Box3().setFromObject(asset.getObject());
-            boundingGroup.push(assetBoundingBox);
-        }
-
+        
+        this.meshManagerMap.forEach( (meshManager) => {
+            for (let mesh of meshManager.getMeshes.value) {
+                const meshBoundingBox = new THREE.Box3().setFromObject(mesh);
+                boundingGroup.push(meshBoundingBox);
+            }
+        })
+        
         let vMin = new Vector3(0,0,0);
         let vMax = new Vector3(0,0,0);
         for (let boundingBox of boundingGroup) {

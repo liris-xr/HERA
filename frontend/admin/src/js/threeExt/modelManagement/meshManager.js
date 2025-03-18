@@ -11,7 +11,7 @@ export class MeshManager {
         return this.#meshes;
     });
 
-    addSubMesh(scene,mesh,meshData,onAdd) {
+    addSubMesh(scene,mesh,meshData) {
         if(meshData) {
             mesh.position.x = meshData.position.x 
             mesh.position.y = meshData.position.y 
@@ -32,20 +32,15 @@ export class MeshManager {
             mesh.material.roughness = meshData.roughness
             mesh.material.metalness = meshData.metalness
         }
-        // if(onAdd) {
-        //     onAdd(mesh)
-        // }
-        console.log(mesh);
         
         scene.add( mesh );
         this.#meshes.push(mesh)
     }
 
-    removeSubMesh(scene,mesh) {
-        const index = this.#meshes.indexOf(mesh)
-        if(index > -1) {
-            this.#meshes.splice(index,1)
-        }
-        scene.remove(mesh)
+    clear(scene) {
+        this.#meshes.forEach( (mesh) => {
+            scene.remove(mesh)
+        })
+        this.#meshes = []
     }
 }

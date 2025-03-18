@@ -9,6 +9,7 @@ import { subclip } from "three/src/animation/AnimationUtils";
 let currentAssetId = 0;
 export class AssetManager {
     #assets;
+    sceneTitle;
     meshManagerMap;
     meshData;
     onChanged;
@@ -17,6 +18,10 @@ export class AssetManager {
     constructor() {
         this.#assets = shallowReactive([]);
         this.meshManagerMap = new Map();
+    }
+
+    setSceneTitle(title) {
+        this.sceneTitle = title
     }
 
     setMeshData(meshData) {
@@ -74,7 +79,7 @@ export class AssetManager {
             this.initAssetSubMeshes(mesh);
             
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                const subMeshData = this.meshData.get("mesh-"+subMesh.name)
+                const subMeshData = this.meshData.get("scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
                 this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
             })
             
@@ -135,7 +140,7 @@ export class AssetManager {
         this.meshManagerMap.forEach( (meshManager) => {
             for (let mesh of meshManager.getMeshes.value) {
                 result.push({
-                    id:"mesh-"+mesh.name,
+                    id:"scene-"+this.sceneTitle+"-mesh-"+mesh.name,
                     position:mesh.position,
                     rotation:mesh.rotation,
                     scale: mesh.scale,

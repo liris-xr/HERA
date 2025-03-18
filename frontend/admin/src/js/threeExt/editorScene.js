@@ -93,11 +93,14 @@ export class EditorScene extends THREE.Scene {
     }
 
     init(sceneData){
+        console.log(sceneData);
+        
+        this.assetManager.setSceneTitle(sceneData.title)
         this.assetManager.setMeshData(this.getMeshMap(sceneData.meshes));
         
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);
-            this.assetManager.addToScene(this, asset,()=>{this.updatePlaygroundSize()});
+            this.assetManager.addToScene(this, asset,()=>{this.updatePlaygroundSize()},this.title);
         }
 
         for (let labelData of sceneData.labels) {
@@ -170,7 +173,7 @@ export class EditorScene extends THREE.Scene {
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
-            this.selectedMeshKey = "mesh-"+object.name
+            this.selectedMeshKey = "scene-"+this.title+"-mesh-"+object.name
             
             if(object.isMesh) {
                 this.#transformControls.attach(object);
@@ -228,7 +231,7 @@ export class EditorScene extends THREE.Scene {
             hideInViewer: false
         }
         const asset = new Asset(assetData);
-        this.assetManager.addToScene(this,asset,()=>{this.updatePlaygroundSize()});
+        this.assetManager.addToScene(this,asset,()=>{this.updatePlaygroundSize()},this.title);
     }
 
     removeAsset(asset){

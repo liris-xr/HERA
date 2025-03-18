@@ -477,7 +477,7 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             const newMeshes = await Promise.all(scene.meshes.map(async mesh => {
                 return ArMesh.create({
                     ...mesh.get({ plain: true }),
-                    id: "scene-"+req.body.newTitle+"-mesh-"+mesh.name, // générer un nouvel id
+                    id: "project-"+newScene.projectId+"-scene-"+req.body.newTitle+"-mesh-"+mesh.name, // générer un nouvel id
                     sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
                 },{
                     transaction:t

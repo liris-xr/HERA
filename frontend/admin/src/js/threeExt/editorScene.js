@@ -11,6 +11,7 @@ import i18n from "@/i18n.js";
 
 
 export class EditorScene extends THREE.Scene {
+    projectId;
     assetManager;
     labelManager;
     #errors;
@@ -93,14 +94,15 @@ export class EditorScene extends THREE.Scene {
     }
 
     init(sceneData){
-        console.log(sceneData);
+        this.projectId = sceneData.projectId
         
         this.assetManager.setSceneTitle(sceneData.title)
+        this.assetManager.setProjectId(this.projectId)
         this.assetManager.setMeshData(this.getMeshMap(sceneData.meshes));
         
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);
-            this.assetManager.addToScene(this, asset,()=>{this.updatePlaygroundSize()},this.title);
+            this.assetManager.addToScene(this, asset,()=>{this.updatePlaygroundSize()});
         }
 
         for (let labelData of sceneData.labels) {
@@ -173,7 +175,7 @@ export class EditorScene extends THREE.Scene {
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
-            this.selectedMeshKey = "scene-"+this.title+"-mesh-"+object.name
+            this.selectedMeshKey = "project-"+this.projectId+"-scene-"+this.title+"-mesh-"+object.name
             
             if(object.isMesh) {
                 this.#transformControls.attach(object);

@@ -116,7 +116,6 @@ export class EditorScene extends THREE.Scene {
 
         this.#transformControls.addEventListener('objectChange', () => {
             this.#updateSelectedTransformValues();
-            this.#updateSelectedMaterialValues();
         });
     }
 
@@ -172,8 +171,13 @@ export class EditorScene extends THREE.Scene {
             this.#transformControls.detach();
         } else {
             this.selectedMeshKey = "mesh-"+object.name
-            if(object.isMesh)
+            
+            if(object.isMesh) {
                 this.#transformControls.attach(object);
+            } else if(object.label) {
+                this.#transformControls.attach(object.getObject());
+            }
+
         }
         this.#updateSelectedTransformValues();
         this.#updateSelectedMaterialValues();
@@ -290,9 +294,7 @@ export class EditorScene extends THREE.Scene {
     }
     
     #updateSelectedMaterialValues() {
-        console.log(this.selected);
-        
-        if(this.selected.type == "Mesh") {
+        if(this.selected?.isObject3D) {
             this.currentSelectedMaterialValues.value = {
                 metalness:this.selected.material.metalness,
                 roughness:this.selected.material.roughness,

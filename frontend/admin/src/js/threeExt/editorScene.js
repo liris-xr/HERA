@@ -9,11 +9,18 @@ import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 
+const transformModeKeys = {
+    "translate":"position",
+    "rotate":"rotation",
+    "scale":"scale"
+}
 
 export class EditorScene extends THREE.Scene {
     projectId;
     assetManager;
     labelManager;
+    meshMap;
+    sceneTitle;
     #errors;
     #gridPlane;
     #lightSet;
@@ -26,11 +33,14 @@ export class EditorScene extends THREE.Scene {
     #currentTransformMode;
     currentSelectedTransformValues;
     currentSelectedMaterialValues;
+    currentMeshes;
+    transformBeforeChange;
 
     constructor(shadowMapSize) {
         super();
         this.labelManager = new LabelManager();
         this.assetManager = new AssetManager();
+        this.meshMap = new Map();
         this.#errors = ref([]);
         this.#lightSet = new LightSet(shadowMapSize);
         this.#lightSet.pushToScene(this);
@@ -46,23 +56,15 @@ export class EditorScene extends THREE.Scene {
             color:{r:"",g:"",b:""},
             emissive:{r:"",g:"",b:""}
         });
+        this.currentMeshes = []
+        this.transformBeforeChange = null
 
         watch(() =>this.currentSelectedTransformValues, (value) => {
             if(this.selected == null) return;
-
-            if(this.getTransformMode.value === "translate"){
-                this.selected.position.x = value.value.x
-                this.selected.position.y = value.value.y
-                this.selected.position.z = value.value.z
-            }else if(this.getTransformMode.value === "rotate"){
-                this.selected.rotation.x = value.value.x
-                this.selected.rotation.y = value.value.y
-                this.selected.rotation.z = value.value.z
-            }else if(this.getTransformMode.value === "scale"){
-                this.selected.scale.x = value.value.x
-                this.selected.scale.y = value.value.y
-                this.selected.scale.z = value.value.z
-            }
+            
+            this.selected[transformModeKeys[this.getTransformMode.value]].x = value.value.x
+            this.selected[transformModeKeys[this.getTransformMode.value]].y = value.value.y
+            this.selected[transformModeKeys[this.getTransformMode.value]].z = value.value.z
 
             this.updatePlaygroundSize();
             this.runOnChanged();
@@ -84,21 +86,23 @@ export class EditorScene extends THREE.Scene {
 
     
 
-    getMeshMap(meshes) {
-        let map = new Map()
+    setMeshMap(meshes) {
         meshes.forEach( (mesh) => {
-            map.set(mesh.id,mesh)
+            this.meshMap.set(mesh.id,mesh)
         })
-        
-        return map
+    }
+
+    setSceneTitle(title) {
+        this.sceneTitle = title
     }
 
     init(sceneData){
         this.projectId = sceneData.projectId
-        
-        this.assetManager.setSceneTitle(sceneData.title)
+        this.setMeshMap(sceneData.meshes)
+        this.setSceneTitle(sceneData.title)
+        this.assetManager.setSceneTitle(this.sceneTitle)
         this.assetManager.setProjectId(this.projectId)
-        this.assetManager.setMeshData(this.getMeshMap(sceneData.meshes));
+        this.assetManager.setMeshData(this.meshMap);
         
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);
@@ -119,8 +123,33 @@ export class EditorScene extends THREE.Scene {
         this.add(this.#transformControls);
         this.setTransformMode("translate");
 
+        this.#transformControls.addEventListener('mouseDown', () => {
+            if(!this.#isMaterialMenuAvailable.value) {
+                this.transformBeforeChange = this.selected[transformModeKeys[this.getTransformMode.value]].clone()
+                
+                const currentMeshData = this.meshMap.get(this.selectedMeshKey)
+                this.currentMeshes = this.assetManager.meshManagerMap.get(currentMeshData.assetId).getMeshes.value
+            }
+        })
+        
         this.#transformControls.addEventListener('objectChange', () => {
             this.#updateSelectedTransformValues();
+            
+            if(!this.#isMaterialMenuAvailable.value) {
+                let change = new THREE.Vector3()
+                if(this.transformBeforeChange) {
+                    change.subVectors(this.selected[transformModeKeys[this.getTransformMode.value]],this.transformBeforeChange)
+                }
+                this.transformBeforeChange = this.selected[transformModeKeys[this.getTransformMode.value]].clone()
+                
+                // We're changing every mesh of the asset the same
+                // way the selected mesh has been changed
+                for (let mesh of this.currentMeshes) {
+                    const currentValue = mesh[transformModeKeys[this.getTransformMode.value]]
+                    mesh[transformModeKeys[this.getTransformMode.value]].set(change.x+currentValue.x,change.y+currentValue.y,change.z+currentValue.z)
+                    mesh.updateMatrix();
+                }
+            }
         });
     }
 
@@ -175,7 +204,7 @@ export class EditorScene extends THREE.Scene {
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
-            this.selectedMeshKey = "project-"+this.projectId+"-scene-"+this.title+"-mesh-"+object.name
+            this.selectedMeshKey = "project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+object.name
             
             if(object.isMesh) {
                 this.#transformControls.attach(object);
@@ -274,7 +303,7 @@ export class EditorScene extends THREE.Scene {
     }
 
     setMaterialMenu(value) {
-        this.#isMaterialMenuAvailable = value
+        this.#isMaterialMenuAvailable.value = value
         this.#updateSelectedMaterialValues()
     }
 

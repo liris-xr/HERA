@@ -78,6 +78,7 @@ export class AssetManager {
             asset.id = 'new-asset'+currentAssetId;
             currentAssetId++;
         }
+        
         this.meshManagerMap.set(asset.id,new MeshManager())
         
         asset.load().then((mesh)=>{
@@ -85,6 +86,7 @@ export class AssetManager {
             
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
                 const subMeshData = this.meshData.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
+                subMeshData.assetId = asset.id
                 this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
             })
             
@@ -142,14 +144,14 @@ export class AssetManager {
 
         let result = []
 
-        this.meshManagerMap.forEach( (meshManager) => {
+        this.meshManagerMap.forEach( (meshManager,assetId) => {
             for (let mesh of meshManager.getMeshes.value) {
                 result.push({
                     id:"project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+mesh.name,
                     position:mesh.position,
                     rotation:mesh.rotation,
                     scale: mesh.scale,
-                    assetId:1,
+                    assetId:assetId,
                     name: mesh.name,
                     color:{
                         r:mesh.material.color.r,

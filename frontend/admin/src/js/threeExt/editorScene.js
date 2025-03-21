@@ -118,6 +118,32 @@ export class EditorScene extends THREE.Scene {
         this.assetManager.onMoved = ()=>{this.updatePlaygroundSize()};
     }
 
+    rotateAboutPoint(obj, pivotPoint, axis, theta, pointIsWorld = false){
+        // On calcule la distance entre le pivot et l'objet
+        const originPos = obj.position.clone()
+        const originPivotVec = new THREE.Vector3()
+        originPivotVec.subVectors(originPos,originPivotVec)
+        const length = originPivotVec.length()
+
+        // On déplace l'objet au pivot
+        obj.position.set(pivotPoint.x,pivotPoint.y,pivotPoint.z)
+        
+        // On prend les axes pour pouvoir redéplacer l'objet
+        const xAxis = new THREE.Vector3()
+        const yAxis = new THREE.Vector3()
+        const zAxis = new THREE.Vector3()
+        obj.matrix.extractBasis(xAxis,yAxis,zAxis)
+        
+        const newPos = pivotPoint.clone()
+        newPos.add(zAxis.normalize().multiplyScalar(length))   
+        console.log(newPos);
+             
+
+        obj.rotateOnWorldAxis(axis,theta)
+
+        obj.position.add(newPos)
+    }   
+
     setupControls(controls){
         this.#transformControls = controls;
         this.add(this.#transformControls);
@@ -125,8 +151,12 @@ export class EditorScene extends THREE.Scene {
 
         this.#transformControls.addEventListener('mouseDown', () => {
             if(!this.#isMaterialMenuAvailable.value) {
-                this.transformBeforeChange = this.selected[transformModeKeys[this.getTransformMode.value]].clone()
-                
+                if(this.getTransformMode.value === "translate") {
+                    this.transformBeforeChange = this.selected[transformModeKeys[this.getTransformMode.value]].clone()
+                    
+                } else if(this.getTransformMode.value === "rotate") {
+                    this.transformBeforeChange = this.selected.quaternion.clone()
+                }
                 const currentMeshData = this.meshMap.get(this.selectedMeshKey)
                 this.currentMeshes = this.assetManager.meshManagerMap.get(currentMeshData.assetId).getMeshes.value
             }
@@ -136,18 +166,52 @@ export class EditorScene extends THREE.Scene {
             this.#updateSelectedTransformValues();
             
             if(!this.#isMaterialMenuAvailable.value) {
-                let change = new THREE.Vector3()
-                if(this.transformBeforeChange) {
+                if(this.getTransformMode.value === "translate") {
+                    let change = new THREE.Vector3()
                     change.subVectors(this.selected[transformModeKeys[this.getTransformMode.value]],this.transformBeforeChange)
-                }
-                this.transformBeforeChange = this.selected[transformModeKeys[this.getTransformMode.value]].clone()
-                
-                // We're changing every mesh of the asset the same
-                // way the selected mesh has been changed
-                for (let mesh of this.currentMeshes) {
-                    const currentValue = mesh[transformModeKeys[this.getTransformMode.value]]
-                    mesh[transformModeKeys[this.getTransformMode.value]].set(change.x+currentValue.x,change.y+currentValue.y,change.z+currentValue.z)
-                    mesh.updateMatrix();
+                    this.transformBeforeChange = this.selected[transformModeKeys[this.getTransformMode.value]].clone()
+                    
+                    // We're changing every mesh of the asset the same
+                    // way the selected mesh has been changed
+                    for (let mesh of this.currentMeshes) {
+                        if(mesh.uuid != this.selected.uuid) {
+                            const currentValue = mesh[transformModeKeys[this.getTransformMode.value]]
+                            mesh[transformModeKeys[this.getTransformMode.value]].set(change.x+currentValue.x,change.y+currentValue.y,change.z+currentValue.z)
+                            mesh.updateMatrix();
+                        }
+                    }
+                } else if(this.getTransformMode.value === "rotate") {
+                    let change = new THREE.Quaternion()
+                    change.multiplyQuaternions(this.selected.quaternion,this.transformBeforeChange.invert()).normalize()
+                    this.transformBeforeChange = this.selected.quaternion.clone()
+
+                    let localSelectedRotationMatrix = new THREE.Matrix4()
+                    
+                    localSelectedRotationMatrix.makeRotationFromQuaternion(change)
+                    
+                    // We're changing every mesh of the asset the same
+                    // way the selected mesh has been changed
+                    for (let mesh of this.currentMeshes) {
+                        if(mesh.uuid !== this.selected.uuid) {
+                            // const selectedWorldTransform = new THREE.Matrix4() 
+                            // selectedWorldTransform.multiplyMatrices(this.selected.matrixWorld.invert(),this.selected.matrix.invert())
+                            
+                            // const rotationMatrixInWorldBasis = new THREE.Matrix4()
+                            // rotationMatrixInWorldBasis.multiplyMatrices(selectedWorldTransform,localSelectedRotationMatrix)
+                            
+                            // const meshLocalTransform = new THREE.Matrix4()
+                            // meshLocalTransform.multiplyMatrices(mesh.matrix,mesh.matrixWorld)
+                            // const matrixInMeshLocalBasis = new THREE.Matrix4()
+                            // matrixInMeshLocalBasis.multiplyMatrices(meshLocalTransform,rotationMatrixInWorldBasis)
+                            
+                            // const rotationMatrixInMeshLocalBasis = new THREE.Matrix4()
+                            // rotationMatrixInMeshLocalBasis.extractRotation(matrixInMeshLocalBasis)
+                            
+                            // mesh.quaternion.setFromRotationMatrix(rotationMatrixInMeshLocalBasis)
+
+                            this.rotateAboutPoint(mesh,new THREE.Vector3(0,0,0),new THREE.Vector3(0,1,0),0.01)
+                        }
+                    }
                 }
             }
         });

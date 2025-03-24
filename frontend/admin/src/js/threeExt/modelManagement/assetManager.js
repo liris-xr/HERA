@@ -12,7 +12,7 @@ export class AssetManager {
     sceneTitle;
     projectId;
     meshManagerMap;
-    meshData;
+    meshMap; // Data (tranforms, materials) coming from the database
     onChanged;
     onMoved;
 
@@ -29,8 +29,14 @@ export class AssetManager {
         this.sceneTitle = title
     }
 
-    setMeshData(meshData) {
-        this.meshData = meshData;
+    setMeshMap(meshMap) {
+        this.meshMap = meshMap;
+    }
+
+    setMeshMapWithData(meshData) {
+        meshData.forEach( (mesh) => {
+            this.meshMap.set(mesh.id,mesh)
+        })
     }
 
     getAssets = computed(()=>{
@@ -85,13 +91,14 @@ export class AssetManager {
             this.initAssetSubMeshes(mesh);
             
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                const subMeshData = this.meshData.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
+                const subMeshData = this.meshMap.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
                 if(subMeshData) {
                     subMeshData.assetId = asset.id
                 }
                 
                 this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
             })
+            this.setMeshMapWithData(this.getResultMeshes())
             
             if(onAdd)
                 onAdd(asset)
@@ -146,7 +153,7 @@ export class AssetManager {
         // We have to go down the tree until we found the meshes
 
         let result = []
-
+        
         this.meshManagerMap.forEach( (meshManager,assetId) => {
             for (let mesh of meshManager.getMeshes.value) {
                 result.push({

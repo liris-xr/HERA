@@ -86,8 +86,6 @@ export class EditorScene extends THREE.Scene {
         this.onChanged = null;
     }
 
-    
-
     setMeshMap(meshes) {
         meshes.forEach( (mesh) => {
             this.meshMap.set(mesh.id,mesh)
@@ -100,11 +98,13 @@ export class EditorScene extends THREE.Scene {
 
     init(sceneData){
         this.projectId = sceneData.projectId
-        this.setMeshMap(sceneData.meshes)
+        if(sceneData.meshes) {
+            this.setMeshMap(sceneData.meshes)
+            this.assetManager.setMeshMap(this.meshMap);
+        }
         this.setSceneTitle(sceneData.title)
         this.assetManager.setSceneTitle(this.sceneTitle)
         this.assetManager.setProjectId(this.projectId)
-        this.assetManager.setMeshData(this.meshMap);
         
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);

@@ -2,7 +2,7 @@ import {SelectableInterface} from "@/js/threeExt/interfaces/selectableInterface.
 import {classes} from "@/js/utils/extender.js";
 import {computed, ref} from "vue";
 import {LoadableInterface} from "@/js/threeExt/interfaces/loadableInterface.js";
-import {Mesh} from "@/js/threeExt/modelManagement/mesh.js";
+import {Mesh} from "@/js/threeExt/modelManagement/mesh_save.js";
 import * as THREE from "three";
 
 export class Asset extends classes(SelectableInterface, LoadableInterface){

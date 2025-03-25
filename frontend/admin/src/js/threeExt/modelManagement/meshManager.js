@@ -1,20 +1,17 @@
 import {computed, shallowReactive} from "vue";
-import * as THREE from "three";
-
 
 export class MeshManager {
-    group
+    #meshes
 
-    constructor(scene,group) {
-        this.group = group
-        scene.add(this.group)
+    constructor() {
+        this.#meshes = shallowReactive([]);
     }
 
     getMeshes = computed(()=>{
-        return this.group.children
+        return this.#meshes;
     });
 
-    addSubMesh(mesh,meshData) {
+    addSubMesh(scene,mesh,meshData) {
         if(meshData) {
             mesh.position.x = meshData.position.x 
             mesh.position.y = meshData.position.y 
@@ -36,10 +33,14 @@ export class MeshManager {
             mesh.material.metalness = meshData.metalness
         }
         
-        this.group.add( mesh );
+        scene.add( mesh );
+        this.#meshes.push(mesh)
     }
 
     clear(scene) {
-        scene.remove(this.group)
+        this.#meshes.forEach( (mesh) => {
+            scene.remove(mesh)
+        })
+        this.#meshes = []
     }
 }

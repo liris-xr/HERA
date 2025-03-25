@@ -19,6 +19,7 @@ export class EditorScene extends THREE.Scene {
     projectId;
     assetManager;
     labelManager;
+    meshMap;
     sceneTitle;
     #errors;
     #gridPlane;
@@ -41,6 +42,7 @@ export class EditorScene extends THREE.Scene {
         super();
         this.labelManager = new LabelManager();
         this.assetManager = new AssetManager();
+        this.meshMap = new Map();
         this.#errors = ref([]);
         this.#lightSet = new LightSet(shadowMapSize);
         this.#lightSet.pushToScene(this);
@@ -70,9 +72,24 @@ export class EditorScene extends THREE.Scene {
             this.runOnChanged();
         },{deep:true});
 
-       
+        watch(() =>this.currentSelectedMaterialValues, (value) => {
+            if(this.selected == null) return;
+            
+            if(this.#isMaterialMenuAvailable.value){
+                this.selected.material.roughness = value.value.roughness;
+                this.selected.material.metalness = value.value.metalness;
+                this.selected.material.opacity = value.value.opacity;
+                this.selected.material.emissiveIntensity = value.value.emissiveIntensity;
+            }
+        },{deep:true});
 
         this.onChanged = null;
+    }
+
+    setMeshMap(meshes) {
+        meshes.forEach( (mesh) => {
+            this.meshMap.set(mesh.id,mesh)
+        })
     }
 
     setSceneTitle(title) {
@@ -81,11 +98,9 @@ export class EditorScene extends THREE.Scene {
 
     init(sceneData){
         this.projectId = sceneData.projectId
-        if(sceneData.groups) {
-            this.assetManager.setGroupMap(sceneData.groups)
-        }
         if(sceneData.meshes) {
-            this.assetManager.setMeshMap(sceneData.meshes);
+            this.setMeshMap(sceneData.meshes)
+            this.assetManager.setMeshMap(this.meshMap);
         }
         this.setSceneTitle(sceneData.title)
         this.assetManager.setSceneTitle(this.sceneTitle)
@@ -110,18 +125,18 @@ export class EditorScene extends THREE.Scene {
         this.add(this.#transformControls);
         this.setTransformMode("translate");
 
-        // this.#transformControls.addEventListener("mouseUp", () => {
-        //     if(!this.#isMaterialMenuAvailable.value) {
-        //         for (let mesh of this.currentMeshes) {
-        //             this.add(mesh)
-        //         }
-        //         this.#transformControls.detach()
-        //         this.remove(this.currentMeshGroup)
-        //         for (let mesh of this.currentMeshes) {
-        //             mesh.applyMatrix4(this.currentMeshGroup.matrix)
-        //         }
-        //     }
-        // })
+        this.#transformControls.addEventListener("mouseUp", () => {
+            if(!this.#isMaterialMenuAvailable.value) {
+                for (let mesh of this.currentMeshes) {
+                    this.add(mesh)
+                }
+                this.#transformControls.detach()
+                this.remove(this.currentMeshGroup)
+                for (let mesh of this.currentMeshes) {
+                    mesh.applyMatrix4(this.currentMeshGroup.matrix)
+                }
+            }
+        })
             
         this.#transformControls.addEventListener('objectChange', () => {
             this.#updateSelectedTransformValues();
@@ -159,23 +174,15 @@ export class EditorScene extends THREE.Scene {
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
-            if(this.#isMaterialMenuAvailable.value) { // We iterare over meshes
-                this.assetManager.meshManagerMap.forEach( (meshManager) => {
-                    for (let mesh of meshManager.getMeshes.value) {
-                        const intersects = raycaster.intersectObject(mesh, true);
-                        if (intersects.length > 0) {
-                            object = mesh;
-                        }
-                    }
-                })
-            } else { // We iterate over groups
-                this.assetManager.meshManagerMap.forEach( (meshManager) => {
-                    const intersects = raycaster.intersectObject(meshManager.group, true);
+
+            this.assetManager.meshManagerMap.forEach( (meshManager) => {
+                for (let mesh of meshManager.getMeshes.value) {
+                    const intersects = raycaster.intersectObject(mesh, true);
                     if (intersects.length > 0) {
-                        object = meshManager.group;
+                        object = mesh;
                     }
-                })
-            }
+                }
+            })
         }
         
         this.setSelected(object);
@@ -188,19 +195,38 @@ export class EditorScene extends THREE.Scene {
             this.#transformControls.detach();
         } else {
             
-            if(object.label) {
-                this.#transformControls.attach(object.getObject());
-            } else {
-                this.#transformControls.attach(object)
-                if(this.#isMaterialMenuAvailable.value) {
-                    this.#updateSelectedMaterialValues();
+            if(object.isMesh) {
+                if(!this.#isMaterialMenuAvailable.value) {
+                    this.attachMeshes(object)
+                } else {
+                    this.#transformControls.attach(object)
                 }
+            } else if(object.label) {
+                this.#transformControls.attach(object.getObject());
             }
 
         }
         this.#updateSelectedTransformValues();
+        this.#updateSelectedMaterialValues();
     }
 
+    // Attach every mesh related to the object to a group
+    attachMeshes(object) {
+        this.selectedMeshKey = "project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+object.name
+
+        const currentMeshData = this.meshMap.get(this.selectedMeshKey)
+        this.currentMeshes = this.assetManager.meshManagerMap.get(currentMeshData.assetId).getMeshes.value
+        
+        // We need to group up our meshes so we can move all of them
+        this.currentMeshGroup = new THREE.Group()
+        for (let mesh of this.currentMeshes) {
+            this.currentMeshGroup.add(mesh)
+        }
+        
+        this.add(this.currentMeshGroup)
+        
+        this.#transformControls.attach(this.currentMeshGroup)
+    }
 
     deselectAll(){
         this.#clearSelectedLabels();
@@ -313,7 +339,7 @@ export class EditorScene extends THREE.Scene {
     }
     
     #updateSelectedMaterialValues() {
-        if(this.selected?.material) {
+        if(this.selected?.isObject3D) {
             this.currentSelectedMaterialValues.value = {
                 metalness:this.selected.material.metalness,
                 roughness:this.selected.material.roughness,

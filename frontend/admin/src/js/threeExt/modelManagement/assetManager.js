@@ -106,7 +106,7 @@ export class AssetManager {
             this.initAssetSubMeshes(mesh);
             
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                const subMeshData = this.meshMap.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
+                const subMeshData = this.meshData.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
                 if(subMeshData) {
                     subMeshData.assetId = asset.id
                 }
@@ -181,7 +181,7 @@ export class AssetManager {
 
     getResultMeshes() {
         let result = []
-        
+
         this.meshManagerMap.forEach( (meshManager,assetId) => {
             for (let mesh of meshManager.getMeshes.value) {
                 result.push({

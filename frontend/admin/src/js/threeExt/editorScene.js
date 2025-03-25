@@ -90,7 +90,6 @@ export class EditorScene extends THREE.Scene {
         this.setSceneTitle(sceneData.title)
         this.assetManager.setSceneTitle(this.sceneTitle)
         this.assetManager.setProjectId(this.projectId)
-        this.assetManager.setMeshData(this.meshMap);
         
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);

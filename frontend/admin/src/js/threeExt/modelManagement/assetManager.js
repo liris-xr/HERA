@@ -13,12 +13,15 @@ export class AssetManager {
     projectId;
     meshManagerMap;
     meshMap; // Data (tranforms, materials) coming from the database
+    groupMap; // Data (transform) coming from the database
     onChanged;
     onMoved;
 
     constructor() {
         this.#assets = shallowReactive([]);
         this.meshManagerMap = new Map();
+        this.meshMap = new Map()
+        this.groupMap = new Map()
     }
 
     setProjectId(id) {
@@ -29,15 +32,18 @@ export class AssetManager {
         this.sceneTitle = title
     }
 
-    setMeshMap(meshMap) {
-        this.meshMap = meshMap;
-    }
-
-    setMeshMapWithData(meshData) {
+    setMeshMap(meshData) {
         meshData.forEach( (mesh) => {
             this.meshMap.set(mesh.id,mesh)
         })
     }
+
+    setGroupMap(groupData) {
+        groupData.forEach( (group) => {
+            this.meshMap.set(group.id,group)
+        })
+    }
+
 
     getAssets = computed(()=>{
         return this.#assets;
@@ -78,6 +84,15 @@ export class AssetManager {
         return subMeshes
     }
 
+    createGroup(groupData) {
+        let group = new THREE.Group()
+        if(groupData) {
+            group.position.copy(groupData.position)
+            group.rotation.copy(groupData.rotation)
+            group.scale.copy(groupData.scale)
+        }
+        return group
+    }
 
     addToScene(scene,asset,onAdd){
         if(asset.id == null){
@@ -85,7 +100,7 @@ export class AssetManager {
             currentAssetId++;
         }
         
-        this.meshManagerMap.set(asset.id,new MeshManager())
+        this.meshManagerMap.set(asset.id,new MeshManager(scene,this.createGroup(this.groupMap.get(asset.id))))
         
         asset.load().then((mesh)=>{
             this.initAssetSubMeshes(mesh);
@@ -96,9 +111,9 @@ export class AssetManager {
                     subMeshData.assetId = asset.id
                 }
                 
-                this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
+                this.meshManagerMap.get(asset.id).addSubMesh(subMesh,subMeshData)
             })
-            this.setMeshMapWithData(this.getResultMeshes())
+            this.setMeshMap(this.getResultMeshes())
             
             if(onAdd)
                 onAdd(asset)
@@ -131,6 +146,21 @@ export class AssetManager {
         return this.#assets.length>0;
     })
 
+    getResultGroups(){
+        let result = []
+        
+        this.meshManagerMap.forEach( (meshManager,assetId) => {
+            result.push({
+                id: meshManager.assetId,
+                position:meshManager.group.position,
+                rotation: meshManager.group.rotation,
+                scale: meshManager.group.scale
+            });
+        })
+        
+        return result;
+    }
+
     getResultAssets(){
         const result = []
         for (let asset of this.#assets) {
@@ -148,10 +178,6 @@ export class AssetManager {
     }
 
     getResultMeshes() {
-        // We need to find the meshes in the asset
-        // But they are sorted in diffrents ways depending on the asset
-        // We have to go down the tree until we found the meshes
-
         let result = []
         
         this.meshManagerMap.forEach( (meshManager,assetId) => {

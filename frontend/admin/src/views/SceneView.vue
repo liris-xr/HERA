@@ -200,7 +200,8 @@ async function saveAll(){
     project:scene.value.project,
     labels:editor.scene.labelManager.getResultLabel(),
     assets:editor.scene.assetManager.getResultAssets(),
-    meshes:editor.scene.assetManager.getResultMeshes()
+    meshes:editor.scene.assetManager.getResultMeshes(),
+    groups:editor.scene.assetManager.getResultGroups()
   };
 
   const uploads = editor.scene.assetManager.getResultUploads();

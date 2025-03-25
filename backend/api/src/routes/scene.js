@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArGroup, ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Sequelize} from "sequelize";
@@ -15,10 +15,6 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
     try{
         let scene = (await ArScene.findOne({
             include: [
-                {
-                    model: ArGroup,
-                    as:'groups'
-                },
                 {
                     model: ArMesh,
                     as: "meshes"
@@ -77,10 +73,6 @@ const getPostUploadData = async (req, res, next) => {
     let scene = await ArScene.findOne({
         include: [
             {
-                model:ArGroup,
-                as:'groups'
-            },
-            {
                 model: ArMesh,
                 as: "meshes"
             },
@@ -131,10 +123,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
                 {
                     model: ArAsset,
                     as: "assets"
-                },
-                {
-                    model:ArGroup,
-                    as:"groups"
                 },
                 {
                     model: ArMesh,
@@ -282,38 +270,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
                 
                 async (knownId)=>{
                     await ArMesh.destroy({where: {id: knownId},transaction:t});
-                }
-        
-            );
-
-            await updateListById(knonwMeshesIds, JSON.parse(req.body.groups),
-                async (group) => {
-                    await ArGroup.update({
-                        id:group.id,
-                        position:group.position,
-                        rotation:group.rotation,
-                        scale: group.scale,
-                    }, {
-                        where: {id: group.id},
-                        returning: true,
-                        transaction:t
-                    })
-                },
-
-                async (group)=>{
-                    await ArGroup.create({
-                        id:group.id,
-                        position:group.position,
-                        rotation:group.rotation,
-                        scale: group.scale,
-                        sceneId:scene.id,
-                    },{
-                        transaction:t
-                    })
-                },
-                
-                async (knownId)=>{
-                    await ArGroup.destroy({where: {id: knownId},transaction:t});
                 }
         
             );
@@ -468,10 +424,6 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             where: { id: sceneId },
             include: [
                 {
-                    model:ArGroup,
-                    as:'groups'
-                },
-                {
                     model:ArMesh,
                     as:'meshes'
                 },
@@ -521,17 +473,6 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
                 transaction: t
             });
 
-            //copy all groups related to scene
-            const newGroups = await Promise.all(scene.group.map(async group => {
-                return ArGroup.create({
-                    ...group.get({ plain: true }),
-                    id: group.id, 
-                    sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
-                },{
-                    transaction:t
-                });
-            }));
-
             //copy all meshes related to scene
             const newMeshes = await Promise.all(scene.meshes.map(async mesh => {
                 return ArMesh.create({
@@ -547,7 +488,7 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             const newAssets = await Promise.all(scene.assets.map(async asset => {
                 return ArAsset.create({
                     ...asset.get({ plain: true }),
-                    id: asset.id, 
+                    id: undefined, // générer un nouvel id
                     sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
                 },{
                     transaction:t

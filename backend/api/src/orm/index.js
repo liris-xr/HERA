@@ -5,6 +5,7 @@ import ArScene from "./models/arScene.js";
 import {sequelize} from './database.js'
 import ArAsset from "./models/arAsset.js";
 import ArMesh from "./models/arMesh.js";
+import ArGroup from "./models/arGroup.js";
 import ArLabel from "./models/arLabel.js";
 
 ArUser.hasMany(ArProject, { as: 'projects', foreignKey: 'userId', onDelete: 'CASCADE' });
@@ -16,8 +17,10 @@ ArScene.belongsTo(ArProject, { as: 'project', foreignKey: 'projectId' });
 ArScene.hasMany(ArAsset, { as: 'assets', foreignKey: 'sceneId', onDelete: 'CASCADE' });
 ArScene.hasMany(ArLabel, {as: 'labels', foreignKey: 'sceneId', onDelete: 'CASCADE' });
 ArScene.hasMany(ArMesh, {as: 'meshes', foreignKey: 'sceneId', onDelete: 'CASCADE' });
+ArScene.hasMany(ArGroup, {as: 'groups', foreignKey: 'sceneId', onDelete: 'CASCADE' });
 
 ArAsset.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
+ArGroup.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 ArMesh.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 ArLabel.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 
@@ -26,4 +29,4 @@ export async function initializeDatabase (options) {
     return await sequelize.sync(options);
 }
 
-export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh}
+export {ArUser, ArProject, ArScene, ArAsset, ArGroup, ArLabel, ArMesh}

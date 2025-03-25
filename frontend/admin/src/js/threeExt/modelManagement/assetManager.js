@@ -151,12 +151,13 @@ export class AssetManager {
         
         this.meshManagerMap.forEach( (meshManager,assetId) => {
             result.push({
-                id: meshManager.assetId,
+                id: assetId,
                 position:meshManager.group.position,
                 rotation: meshManager.group.rotation,
                 scale: meshManager.group.scale
             });
         })
+        console.log(result);
         
         return result;
     }
@@ -173,6 +174,7 @@ export class AssetManager {
                 hideInViewer: asset.hideInViewer.value
             });
         }
+        console.log(result);
         
         return result;
     }

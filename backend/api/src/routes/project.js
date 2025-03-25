@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArMesh, ArGroup, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware from "../middlewares/auth.js";
 import {
@@ -272,6 +272,10 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                     as: "scenes",
                     include: [
                         {
+                            model:ArGroup,
+                            as:'groups'
+                        },
+                        {
                             model:ArMesh,
                             as:'meshes'
                         },
@@ -336,10 +340,20 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                     });
                 }));
 
+                await Promise.all(scene.groups.map(async group => {
+                    return ArGroup.create({
+                        ...group.get({ plain: true }),
+                        id: group.id,
+                        sceneId: newScene.id, // lier le nouvel asset à la nouvelle scène
+                    }, {
+                        transaction:t
+                    });
+                }));
+
                 await Promise.all(scene.assets.map(async asset => {
                     return ArAsset.create({
                         ...asset.get({ plain: true }),
-                        id: undefined, // générer un nouvel id
+                        id: asset.id, 
                         sceneId: newScene.id, // lier le nouvel asset à la nouvelle scène
                         url: getUpdatedPath(asset.url, projectId, newProject.id)
                     }, {

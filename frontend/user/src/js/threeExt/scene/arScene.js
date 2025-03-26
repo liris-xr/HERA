@@ -7,13 +7,14 @@ import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
 import {LabelPlayer} from "@/js/threeExt/postProcessing/labelPlayer.js";
 import {Vector3} from "three";
 import {EmptyAsset} from "@/js/threeExt/modelManagement/emptyAsset.js";
+import { MeshManager } from "../modelManagement/meshManager";
 
 export class ArScene extends AbstractScene {
     sceneId
     title;
     description;
     #assets
-    #meshes
+    meshDataMap // Mesh data from the database
     labelPlayer;
     #shadowPlane
     #errors;
@@ -26,16 +27,16 @@ export class ArScene extends AbstractScene {
         this.title = sceneData.title;
         this.description = sceneData.description;
         this.#assets = [];
+        this.meshDataMap = new Map();
+        this.meshManager = new MeshManager()
         
         for (let assetData of sceneData.assets) {
             this.#assets.push(new Asset(assetData));
         }
-        console.log(sceneData.meshes);
         
-        // this.#meshes = [];
-        // for (let meshData of sceneData.meshes) {
-        //     this.#meshes.push(new Mesh(meshData));
-        // }
+        for (let meshData of sceneData.meshes) {
+            this.meshDataMap.set(meshData.name,meshData)
+        }
 
         if(this.#assets.length == 0) this.#assets.push(new EmptyAsset())
 
@@ -49,13 +50,38 @@ export class ArScene extends AbstractScene {
         this.#boundingBox = null;
     }
 
+    getObjectSubMeshes(object) {
+        let subMeshes = []
+
+        const step = (child,transform) => {
+            for(let children of child.children) {
+                if ("material" in children) {
+                    children.applyMatrix4(transform)
+                    subMeshes.push(children)
+                } else {
+                    let newTransform = new THREE.Matrix4()
+                    step(children,newTransform.multiplyMatrices(transform,children.matrix))
+                }
+                
+            }
+        }
+        
+        step(object,new THREE.Matrix4())
+
+        return subMeshes
+    }
+
     async init(){
         for (let assetData of this.#assets) {
             await assetData.load();
             if(assetData.hasError()){
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
             }
-            assetData.pushToScene(this);
+            this.getObjectSubMeshes(assetData.object).forEach( (subMesh) => {
+                const subMeshData = this.meshDataMap.get(subMesh.name)
+                
+                this.meshManager.addSubMesh(this,subMesh,subMeshData)
+            })
         }
         this.computeBoundingSphere(true);
         this.#shadowPlane = new ShadowPlane(this.computeBoundingBox(false));
@@ -86,12 +112,11 @@ export class ArScene extends AbstractScene {
     computeBoundingBox(forceCompute = false){
         if(forceCompute || this.#boundingBox==null){
             const group = new THREE.Group();
-            for (let asset of this.#assets) {
-                group.add(asset.object.clone());
+            for (let mesh of this.meshManager.getMeshes.value) {
+                group.add(mesh.clone());
             }
             this.#boundingBox = new THREE.Box3().setFromObject(group);
         }
-        // return new THREE.Box3();
         return this.#boundingBox
     }
 

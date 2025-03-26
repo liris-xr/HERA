@@ -12,9 +12,7 @@ export class MeshManager {
         return this.#meshes;
     });
 
-    addSubMesh(scene,meshData) {
-        const mesh = new THREE.Vector3()
-
+    addSubMesh(scene,mesh,meshData) {
         if(meshData) {
             mesh.position.x = meshData.position.x 
             mesh.position.y = meshData.position.y 

@@ -17,19 +17,18 @@ const transformModeKeys = {
 
 export class EditorScene extends THREE.Scene {
     projectId;
+    sceneTitle;
     assetManager;
     labelManager;
     meshMap;
-    sceneTitle;
     #errors;
     #gridPlane;
     #lightSet;
     #transformControls;
     
     selected;
-    selectedMeshKey;
     onChanged;
-    #isMaterialMenuAvailable
+    #meshSelectionMode
     #currentTransformMode;
     currentSelectedTransformValues;
     currentSelectedMaterialValues;
@@ -48,7 +47,7 @@ export class EditorScene extends THREE.Scene {
         this.#lightSet.pushToScene(this);
         this.#transformControls = null;
         this.#currentTransformMode = ref(null);
-        this.#isMaterialMenuAvailable = ref(false)
+        this.#meshSelectionMode = ref(false)
         this.currentSelectedTransformValues = ref({x:"",y:"", z:""});
         this.currentSelectedMaterialValues = ref({
             metalness:"",
@@ -75,10 +74,11 @@ export class EditorScene extends THREE.Scene {
         watch(() =>this.currentSelectedMaterialValues, (value) => {
             if(this.selected == null) return;
             
-            if(this.#isMaterialMenuAvailable.value){
+            if(this.#meshSelectionMode.value){
                 this.selected.material.roughness = value.value.roughness;
                 this.selected.material.metalness = value.value.metalness;
                 this.selected.material.opacity = value.value.opacity;
+                this.selected.material.transparent = value.value.opacity < 1
                 this.selected.material.emissiveIntensity = value.value.emissiveIntensity;
             }
         },{deep:true});
@@ -126,7 +126,7 @@ export class EditorScene extends THREE.Scene {
         this.setTransformMode("translate");
 
         this.#transformControls.addEventListener("mouseUp", () => {
-            if(!this.#isMaterialMenuAvailable.value) {
+            if(!this.#meshSelectionMode.value) { 
                 for (let mesh of this.currentMeshes) {
                     this.add(mesh)
                 }
@@ -196,7 +196,7 @@ export class EditorScene extends THREE.Scene {
         } else {
             
             if(object.isMesh) {
-                if(!this.#isMaterialMenuAvailable.value) {
+                if(!this.#meshSelectionMode.value) {
                     this.attachMeshes(object)
                 } else {
                     this.#transformControls.attach(object)
@@ -212,9 +212,9 @@ export class EditorScene extends THREE.Scene {
 
     // Attach every mesh related to the object to a group
     attachMeshes(object) {
-        this.selectedMeshKey = "project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+object.name
+        const selectedMeshKey = "project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+object.name
 
-        const currentMeshData = this.meshMap.get(this.selectedMeshKey)
+        const currentMeshData = this.meshMap.get(selectedMeshKey)
         this.currentMeshes = this.assetManager.meshManagerMap.get(currentMeshData.assetId).getMeshes.value
         
         // We need to group up our meshes so we can move all of them
@@ -314,7 +314,7 @@ export class EditorScene extends THREE.Scene {
     }
 
     setMaterialMenu(value) {
-        this.#isMaterialMenuAvailable.value = value
+        this.#meshSelectionMode.value = value
         this.#updateSelectedMaterialValues()
     }
 

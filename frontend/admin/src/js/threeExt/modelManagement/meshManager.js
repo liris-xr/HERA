@@ -25,8 +25,8 @@ export class MeshManager {
             mesh.scale.z = meshData.scale.z
             
             mesh.material.color = meshData.color
+            mesh.material.transparent = meshData.opacity < 1
             mesh.material.opacity = meshData.opacity
-            mesh.material.transparent = meshData.opacity != 1
             mesh.material.emissive = meshData.emissive
             mesh.material.emissiveIntensity = meshData.emissiveIntensity
             mesh.material.roughness = meshData.roughness

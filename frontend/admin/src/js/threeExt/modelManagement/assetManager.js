@@ -12,7 +12,7 @@ export class AssetManager {
     sceneTitle;
     projectId;
     meshManagerMap;
-    meshMap; // Data (tranforms, materials) coming from the database
+    meshDataMap; // Data (tranforms, materials) coming from the database
     onChanged;
     onMoved;
 
@@ -29,13 +29,13 @@ export class AssetManager {
         this.sceneTitle = title
     }
 
-    setMeshMap(meshMap) {
-        this.meshMap = meshMap;
+    setMeshMap(meshDataMap) {
+        this.meshDataMap = meshDataMap;
     }
 
     setMeshMapWithData(meshData) {
         meshData.forEach( (mesh) => {
-            this.meshMap.set(mesh.id,mesh)
+            this.meshDataMap.set(mesh.id,mesh)
         })
     }
 
@@ -43,41 +43,26 @@ export class AssetManager {
         return this.#assets;
     });
 
-    initAssetSubMeshes(asset) {
+    getAssetSubMeshes(asset) {
+        let subMeshes = []
+
         const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
                     children.applyMatrix4(transform)
+                    subMeshes.push(children)
                 } else {
-                    let newTransform = new THREE.Matrix4
+                    let newTransform = new THREE.Matrix4()
                     step(children,newTransform.multiplyMatrices(transform,children.matrix))
                 }
                 
             }
         }
         
-        step(asset,new THREE.Matrix4)
-    }
+        step(asset,new THREE.Matrix4())
 
-    getAssetSubMeshes(asset) {
-        let subMeshes = []
-        
-        const step = (child) => {
-            for(let children of child.children) {
-                if ("material" in children) {
-                    subMeshes.push(children)
-                } else {
-                    step(children)
-                }
-                
-            }
-        }
-        
-        step(asset)
-        
         return subMeshes
     }
-
 
     addToScene(scene,asset,onAdd){
         if(asset.id == null){
@@ -88,16 +73,15 @@ export class AssetManager {
         this.meshManagerMap.set(asset.id,new MeshManager())
         
         asset.load().then((mesh)=>{
-            this.initAssetSubMeshes(mesh);
-            
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                const subMeshData = this.meshMap.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
+                const subMeshData = this.meshDataMap.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
                 if(subMeshData) {
                     subMeshData.assetId = asset.id
                 }
                 
                 this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
             })
+            
             this.setMeshMapWithData(this.getResultMeshes())
             
             if(onAdd)
@@ -148,10 +132,6 @@ export class AssetManager {
     }
 
     getResultMeshes() {
-        // We need to find the meshes in the asset
-        // But they are sorted in diffrents ways depending on the asset
-        // We have to go down the tree until we found the meshes
-
         let result = []
         
         this.meshManagerMap.forEach( (meshManager,assetId) => {

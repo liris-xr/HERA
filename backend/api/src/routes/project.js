@@ -80,6 +80,10 @@ router.get(baseUrl+'project/:projectId', async (req, res) => {
                     order: [['index', 'ASC']],
                     include:[
                         {
+                            model:ArMesh,
+                            as:"meshes"
+                        },
+                        {
                             model: ArAsset,
                             as: "assets",
                             where:{

@@ -13,6 +13,7 @@ export class ArScene extends AbstractScene {
     title;
     description;
     #assets
+    #meshes
     labelPlayer;
     #shadowPlane
     #errors;
@@ -28,6 +29,11 @@ export class ArScene extends AbstractScene {
         for (let assetData of sceneData.assets) {
             this.#assets.push(new Asset(assetData));
         }
+
+        // this.#meshes = [];
+        // for (let meshData of sceneData.meshes) {
+        //     this.#meshes.push(new Mesh(meshData));
+        // }
 
         if(this.#assets.length == 0) this.#assets.push(new EmptyAsset())
 

@@ -33,6 +33,7 @@ class MeshManagerInstance {
         const mesh = new Mesh(url);
         await mesh.load();
         this.#meshes.push(mesh);
+        
         return mesh;
     }
 }

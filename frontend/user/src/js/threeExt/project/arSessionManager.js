@@ -27,7 +27,7 @@ export class ArSessionManager {
         this.domWidth = 380;
         this.domHeight = 280;
         this.#isArRunning = ref(false);
-
+        
         this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
         this.arCamera = new ArCamera();
 

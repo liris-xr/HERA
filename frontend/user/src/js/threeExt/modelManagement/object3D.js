@@ -3,16 +3,16 @@ import {Scene} from "three";
 import * as THREE from "three";
 import {getResource} from "@/js/endpoints.js";
 
-export class Mesh{
+export class Object3D {
     sourceUrl;
-    mesh
+    object
 
     #error
 
     constructor(sourceUrl) {
         this.sourceUrl = sourceUrl;
         this.#error = false
-        this.mesh = null;
+        this.object = null;
     }
 
     hasError(){
@@ -22,20 +22,20 @@ export class Mesh{
     async load(){
         const loader = ModelLoader.getInstance();
         try {
-            const mesh = await loader.loadAsync(getResource(this.sourceUrl));
+            const object = await loader.loadAsync(getResource(this.sourceUrl));
 
-            mesh.scene.traverse( function(child) {
+            object.scene.traverse( function(child) {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                 }
             });
 
-            this.mesh = mesh.scene;
+            this.object = object.scene;
 
         }catch(error){
             console.error(error);
-            this.mesh = new Scene();
+            this.object = new Scene();
             this.#error = true;
         }
     }

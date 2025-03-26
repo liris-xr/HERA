@@ -1,9 +1,9 @@
-import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
+import {ObjectManager} from "@/js/threeExt/modelManagement/objectManager.js";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 
 export class Asset extends SceneElementInterface{
 
-    mesh
+    object
     sourceUrl
     position;
     rotation;
@@ -43,20 +43,20 @@ export class Asset extends SceneElementInterface{
     }
 
     async load(){
-        const manager = MeshManager.getInstance();
-        let mesh = await manager.load(this.sourceUrl);
-        this.#error = mesh.hasError();
-        this.mesh = mesh.mesh.clone();
-        this.mesh.position.set(this.position.x, this.position.y, this.position.z);
-        this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
-        this.mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
-        this.mesh.castShadow = true;
-        this.mesh.receiveShadow = true;
+        const manager = ObjectManager.getInstance();
+        let object = await manager.load(this.sourceUrl);
+        this.#error = object.hasError();
+        this.object = object.object.clone();
+        this.object.position.set(this.position.x, this.position.y, this.position.z);
+        this.object.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
+        this.object.scale.set(this.scale.x, this.scale.y, this.scale.z);
+        this.object.castShadow = true;
+        this.object.receiveShadow = true;
     }
 
     pushToScene(scene){
-        if(!this.mesh) return false;
-        scene.add(this.mesh);
+        if(!this.object) return false;
+        scene.add(this.object);
         return true;
     }
 }

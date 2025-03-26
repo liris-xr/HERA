@@ -26,10 +26,12 @@ export class ArScene extends AbstractScene {
         this.title = sceneData.title;
         this.description = sceneData.description;
         this.#assets = [];
+        
         for (let assetData of sceneData.assets) {
             this.#assets.push(new Asset(assetData));
         }
-
+        console.log(sceneData.meshes);
+        
         // this.#meshes = [];
         // for (let meshData of sceneData.meshes) {
         //     this.#meshes.push(new Mesh(meshData));
@@ -85,11 +87,12 @@ export class ArScene extends AbstractScene {
         if(forceCompute || this.#boundingBox==null){
             const group = new THREE.Group();
             for (let asset of this.#assets) {
-                group.add(asset.mesh.clone());
+                group.add(asset.object.clone());
             }
             this.#boundingBox = new THREE.Box3().setFromObject(group);
         }
-        return this.#boundingBox;
+        // return new THREE.Box3();
+        return this.#boundingBox
     }
 
     computeBoundingSphere(forceCompute = false) {

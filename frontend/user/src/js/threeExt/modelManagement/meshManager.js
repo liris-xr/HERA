@@ -27,7 +27,7 @@ export class MeshManager {
             
             mesh.material.color = meshData.color
             mesh.material.opacity = meshData.opacity
-            mesh.material.transparent = meshData.opacity != 1
+            mesh.material.transparent = meshData.opacity < 1
             mesh.material.emissive = meshData.emissive
             mesh.material.emissiveIntensity = meshData.emissiveIntensity
             mesh.material.roughness = meshData.roughness

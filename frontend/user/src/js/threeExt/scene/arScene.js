@@ -50,9 +50,9 @@ export class ArScene extends AbstractScene {
         this.#boundingBox = null;
     }
 
-    getObjectSubMeshes(object) {
+    getAssetSubMeshes(assetData) {
         let subMeshes = []
-
+        
         const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
@@ -65,8 +65,11 @@ export class ArScene extends AbstractScene {
                 
             }
         }
-        
-        step(object,new THREE.Matrix4())
+        if(assetData.object) {
+            step(assetData.object,new THREE.Matrix4())
+        } else {
+            subMeshes.push(assetData.mesh)
+        }
 
         return subMeshes
     }
@@ -77,7 +80,8 @@ export class ArScene extends AbstractScene {
             if(assetData.hasError()){
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
             }
-            this.getObjectSubMeshes(assetData.object).forEach( (subMesh) => {
+            
+            this.getAssetSubMeshes(assetData).forEach( (subMesh) => {
                 const subMeshData = this.meshDataMap.get(subMesh.name)
                 
                 this.meshManager.addSubMesh(this,subMesh,subMeshData)

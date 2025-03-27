@@ -74,7 +74,7 @@ export class EditorScene extends THREE.Scene {
         watch(() =>this.currentSelectedMaterialValues, (value) => {
             if(this.selected == null) return;
             
-            if(this.#meshSelectionMode.value){
+            if(this.#meshSelectionMode.value && !this.selected.label){
                 this.selected.material.roughness = value.value.roughness;
                 this.selected.material.metalness = value.value.metalness;
                 this.selected.material.opacity = value.value.opacity;

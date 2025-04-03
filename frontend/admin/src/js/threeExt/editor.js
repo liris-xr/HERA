@@ -44,7 +44,9 @@ export class Editor {
         await this.scene.init(json);
         container.appendChild(this.renderer.domElement);
         container.appendChild(this.labelRenderer.domElement);
+        this.stats.dom.style.position = "absolute"
         container.appendChild(this.stats.dom)
+        container.appendChild(this.globalLights.composer.renderer.domElement)
 
         let transformControls = new TransformControls( this.camera, this.renderer.domElement );
         container.addEventListener(
@@ -97,11 +99,9 @@ export class Editor {
     onFrame(time, frame) {
         this.scene.onFrame(time, frame, this.camera.position)
         this.orbitControls.update();
-        this.renderer.render(this.scene, this.camera);
+        // this.renderer.render(this.scene, this.camera);
+        this.globalLights.composer.render()
         this.stats.update()
-        console.log(this.stats);
-        
-
 
         if(this.scene.labelManager.hasLabels.value && this.labelRenderer.isEnabled.value) {
             this.labelRenderer.render(this.scene, this.camera);

@@ -3,14 +3,18 @@ import {EditorRenderer} from "@/js/threeExt/rendering/editorRenderer.js";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
 import {EditorScene} from "@/js/threeExt/editorScene.js";
 import {EditorCamera} from "@/js/threeExt/lighting/editorCamera.js";
+import {GlobalLights} from "@/js/threeExt/lighting/globalLights";
 import {runOnNonDraggingClick} from "@/js/utils/click.js";
+import Stats from 'three/addons/libs/stats.module.js';
 
 export class Editor {
     scene
     camera;
     renderer;
     labelRenderer
+    stats;
 
+    globalLights;
     shadowMapSize;
     orbitControls;
 
@@ -26,10 +30,13 @@ export class Editor {
 
         this.scene = new EditorScene(this.shadowMapSize);
         this.camera = new EditorCamera();
+        this.stats = new Stats()
 
         this.renderer = new EditorRenderer(this.shadowMapSize,1);
         this.labelRenderer = new LabelRenderer();
         window.addEventListener("resize", this.onWindowResize.bind(this));
+
+        this.globalLights = new GlobalLights(this.scene,this.camera,this.renderer)
     }
 
 
@@ -37,6 +44,7 @@ export class Editor {
         await this.scene.init(json);
         container.appendChild(this.renderer.domElement);
         container.appendChild(this.labelRenderer.domElement);
+        container.appendChild(this.stats.dom)
 
         let transformControls = new TransformControls( this.camera, this.renderer.domElement );
         container.addEventListener(
@@ -90,6 +98,9 @@ export class Editor {
         this.scene.onFrame(time, frame, this.camera.position)
         this.orbitControls.update();
         this.renderer.render(this.scene, this.camera);
+        this.stats.update()
+        console.log(this.stats);
+        
 
 
         if(this.scene.labelManager.hasLabels.value && this.labelRenderer.isEnabled.value) {

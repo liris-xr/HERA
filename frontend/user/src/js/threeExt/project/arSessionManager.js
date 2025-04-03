@@ -4,7 +4,6 @@ import {ArRenderer} from "../rendering/arRenderer";
 import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
-import Stats from 'three/addons/libs/stats.module.js';
 
 export class ArSessionManager {
     sceneManager;

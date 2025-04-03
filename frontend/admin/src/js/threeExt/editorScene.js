@@ -5,7 +5,6 @@ import {GridPlane} from "@/js/threeExt/lighting/gridPlane.js";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {LabelManager} from "@/js/threeExt/postprocessing/labelManager.js";
 import {AssetManager} from "@/js/threeExt/modelManagement/assetManager.js";
-import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 

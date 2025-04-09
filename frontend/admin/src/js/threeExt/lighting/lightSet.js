@@ -1,23 +1,28 @@
 import * as THREE from "three";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import {classes} from "@/js/utils/extender.js"
+import { LightProbeSet } from "./lightProbeSet";
 
 export class LightSet extends classes(THREE.Group,SceneElementInterface) {
 
     #directionalLight
-    constructor(shadowMapSize) {
+    constructor(shadowMapSize,scene) {
         super();
 
         const ambientLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
 
         this.#directionalLight = new THREE.DirectionalLight( 0xffffff, 8 );
         this.setLightPosition(2,2,2)
-        this.#directionalLight.castShadow = true;
+        // this.#directionalLight.castShadow = true;
         this.#directionalLight.shadow.mapSize.width = shadowMapSize;
         this.#directionalLight.shadow.mapSize.height = shadowMapSize;
         this.#directionalLight.shadow.normalBias = 0.01;
 
-        this.add(ambientLight);
+        const probes = new LightProbeSet(new THREE.Vector3(0,6.3,0),1,10,10,10,scene,new THREE.Vector3(0,1,1))
+        this.add(probes)
+        const probes2= new LightProbeSet(new THREE.Vector3(0,6.3,0),1,10,10,10,scene,new THREE.Vector3(0,-1,-1))
+        this.add(probes2)
+        // this.add(ambientLight);
         // this.add(this.#directionalLight);
     }
 

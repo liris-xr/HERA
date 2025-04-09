@@ -42,7 +42,7 @@ export class EditorScene extends THREE.Scene {
         this.assetManager = new AssetManager();
         this.meshMap = new Map();
         this.#errors = ref([]);
-        this.#lightSet = new LightSet(shadowMapSize);
+        this.#lightSet = new LightSet(shadowMapSize,this);
         this.#lightSet.pushToScene(this);
         this.#transformControls = null;
         this.#currentTransformMode = ref(null);

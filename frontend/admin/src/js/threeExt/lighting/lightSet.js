@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import {classes} from "@/js/utils/extender.js"
-import { LightProbeSet } from "./lightProbeSet";
+import { VirtualPointLightSet } from "./virtualPointLightSet";
 
 export class LightSet extends classes(THREE.Group,SceneElementInterface) {
 
@@ -13,20 +13,21 @@ export class LightSet extends classes(THREE.Group,SceneElementInterface) {
 
         this.#directionalLight = new THREE.DirectionalLight( 0xffffff, 8 );
         this.setLightPosition(2,2,2)
-        // this.#directionalLight.castShadow = true;
+        this.#directionalLight.castShadow = true;
         this.#directionalLight.shadow.mapSize.width = shadowMapSize;
         this.#directionalLight.shadow.mapSize.height = shadowMapSize;
         this.#directionalLight.shadow.normalBias = 0.01;
 
-        const probes = new LightProbeSet(new THREE.Vector3(0,6.3,0),1,10,10,10,scene,new THREE.Vector3(0,1,1))
-        this.add(probes)
-        const probes2= new LightProbeSet(new THREE.Vector3(0,6.3,0),1,10,10,10,scene,new THREE.Vector3(0,-1,-1))
-        this.add(probes2)
-        // this.add(ambientLight);
-        // this.add(this.#directionalLight);
-    }
+        this.add(ambientLight);
+        this.add(this.#directionalLight);
 
+    }
+    
     pushToScene(scene){
+        const pl1 = new THREE.PointLight(new THREE.Color(1,1,1))
+        pl1.position.set(0,3,0);
+        const vplSet = new VirtualPointLightSet([pl1],scene)
+        vplSet.bake(1,1)
         scene.add(this);
     }
 

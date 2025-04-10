@@ -32,18 +32,18 @@ export class EditorScene extends THREE.Scene {
     currentSelectedTransformValues;
     currentSelectedMaterialValues;
     
+    shadowMapSize
     currentMeshes;
     currentMeshGroup;
     transformBeforeChange;
 
     constructor(shadowMapSize) {
         super();
+        this.shadowMapSize = shadowMapSize
         this.labelManager = new LabelManager();
         this.assetManager = new AssetManager();
         this.meshMap = new Map();
         this.#errors = ref([]);
-        this.#lightSet = new LightSet(shadowMapSize,this);
-        this.#lightSet.pushToScene(this);
         this.#transformControls = null;
         this.#currentTransformMode = ref(null);
         this.#meshSelectionMode = ref(false)
@@ -113,10 +113,12 @@ export class EditorScene extends THREE.Scene {
         for (let labelData of sceneData.labels) {
             this.labelManager.addToScene(this,labelData);
         }
+        
 
         this.#gridPlane = new GridPlane();
         this.#gridPlane.pushToScene(this);
         this.assetManager.onMoved = ()=>{this.updatePlaygroundSize()};
+
     }
 
     setupControls(controls){
@@ -153,6 +155,9 @@ export class EditorScene extends THREE.Scene {
         const target = event.target;
         let object = null;
 
+        this.#lightSet = new LightSet(this.shadowMapSize,this);
+        this.#lightSet.pushToScene(this);
+
         if(target.tagName.toLowerCase() === 'div'){ //label clicked
             for (let label of this.labelManager.getLabels.value) {
                 if(target.id === label.id){
@@ -175,7 +180,9 @@ export class EditorScene extends THREE.Scene {
 
 
             this.assetManager.meshManagerMap.forEach( (meshManager) => {
+                console.log(meshManager.getMeshes.value);
                 for (let mesh of meshManager.getMeshes.value) {
+
                     const intersects = raycaster.intersectObject(mesh, true);
                     if (intersects.length > 0) {
                         object = mesh;

@@ -4,7 +4,7 @@ import {classes} from "@/js/utils/extender.js"
 
 export class LightProbeSet extends classes(THREE.Group,SceneElementInterface) {
 
-    constructor(center,density,width,length,height,scene,dir) {
+    constructor(center,density,width,length,height,scene,dir,color) {
         super();
 
 
@@ -26,7 +26,7 @@ export class LightProbeSet extends classes(THREE.Group,SceneElementInterface) {
         // evaluate SH basis functions in direction dir
         THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
         
-        const color =  new THREE.Color(1,1,1);
+        // const color =  new THREE.Color(0,0,1);
         
         // accumulate
         for ( let j = 0; j < 9; j ++ ) {

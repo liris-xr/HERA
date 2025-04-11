@@ -1,6 +1,3 @@
-import {computed, shallowReactive} from "vue";
-
-const fragShader = `
 #define STANDARD
 #ifdef PHYSICAL
 	#define IOR
@@ -82,7 +79,7 @@ varying vec3 vViewPosition;
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
 void main() {
-	vec4 diffuseColor = vec4( vec3(1,0,0), opacity );
+	vec4 diffuseColor = vec4( 1 );
 	#include <clipping_planes_fragment>
 	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
 	vec3 totalEmissiveRadiance = emissive;
@@ -123,56 +120,4 @@ void main() {
 	#include <fog_fragment>
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
-}`
-
-export class MeshManager {
-    #meshes
-
-    constructor() {
-        this.#meshes = shallowReactive([]);
-    }
-
-    getMeshes = computed(()=>{
-        return this.#meshes;
-    });
-
-    addSubMesh(scene,mesh,meshData) {
-        
-        mesh.material.onBeforeCompile = (shader) => {
-            shader.fragmentShader = fragShader
-        }
-
-
-
-        if(meshData) {
-            mesh.position.x = meshData.position.x 
-            mesh.position.y = meshData.position.y 
-            mesh.position.z = meshData.position.z 
-            
-            mesh.rotation.x = meshData.rotation._x
-            mesh.rotation.y = meshData.rotation._y
-            mesh.rotation.z = meshData.rotation._z
-            mesh.scale.x = meshData.scale.x
-            mesh.scale.y = meshData.scale.y
-            mesh.scale.z = meshData.scale.z
-            
-            mesh.material.color = meshData.color
-            mesh.material.transparent = meshData.opacity < 1
-            mesh.material.opacity = meshData.opacity
-            mesh.material.emissive = meshData.emissive
-            mesh.material.emissiveIntensity = meshData.emissiveIntensity
-            mesh.material.roughness = meshData.roughness
-            mesh.material.metalness = meshData.metalness
-        }
-        
-        scene.add( mesh );
-        this.#meshes.push(mesh)
-    }
-
-    clear(scene) {
-        this.#meshes.forEach( (mesh) => {
-            scene.remove(mesh)
-        })
-        this.#meshes = []
-    }
 }

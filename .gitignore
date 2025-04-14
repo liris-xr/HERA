@@ -131,3 +131,12 @@ dist
 
 # Notes
 issues.txt
+
+# certificates
+
+backend/api/privatekey.key
+backend/api/certificate.crt
+
+# idea
+
+.idea/

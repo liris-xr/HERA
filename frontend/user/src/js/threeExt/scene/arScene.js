@@ -42,13 +42,15 @@ export class ArScene extends AbstractScene {
         this.#boundingSphere = null;
         this.#boundingBox = null;
 
-        this.environment = new EXRLoader()
-                        .load(getResource(sceneData.envmapUrl), (texture) => {
-                            texture.mapping = THREE.EquirectangularReflectionMapping
 
-                            this.background = texture
-                        })
+        this.environment = new EXRLoader()
+            .load(getResource(sceneData.envmapUrl), (texture) => {
+                texture.mapping = THREE.EquirectangularReflectionMapping
+
+                this.background = texture
+            })
         console.log(this)
+
 
     }
 

@@ -33,6 +33,31 @@ export const uploadCover = multer({ storage: multer.diskStorage({
 
 
 
+export const uploadEnvmap = multer({ storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            const projectId = req.body.id;
+            if(!projectId) throw new Error('Project Id is missing');
+
+            const uploadDirectory = path.join(DIRNAME, getEnvmapsDirectory(projectId))
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory, { recursive: true });
+            }
+
+            cb(null, uploadDirectory);
+        },
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname);
+
+            const filename = "envmap" + Date.now() + ext
+            req.uploadedUrl = path.join(getEnvmapsDirectory(req.body.id), filename);
+
+            cb(null, filename);
+        }
+    })});
+
+
+
+
 
 export const uploadAsset = multer({ storage: multer.diskStorage({
         destination: (req, file, cb) => {
@@ -76,6 +101,10 @@ function getImagesDirectory(projectId){
 
 function getAssetsDirectory(projectId){
     return path.join(getProjectDirectory(projectId),'assets');
+}
+
+function getEnvmapsDirectory(projectId){
+    return path.join(getProjectDirectory(projectId),'envmaps');
 }
 
 

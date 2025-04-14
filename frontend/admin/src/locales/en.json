@@ -88,6 +88,9 @@
         "label": "Image:",
         "alt": "Project image"
       },
+      "projectEnvmap": {
+        "label": "Envmap:"
+      },
       "buttons": {
         "duplicate": "Duplicate project",
         "delete": "Delete project"

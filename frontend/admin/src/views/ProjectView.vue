@@ -374,6 +374,7 @@ onBeforeRouteUpdate((to, from, next)=>{
             <img ref="projectPictureTag" :src="getImage" :alt="$t('projectView.leftSection.title')">
           </div>
 
+
           <div class="inlineFlex">
             <button-view :text="$t('projectView.leftSection.buttons.duplicate')" icon="/icons/duplicate.svg" @click="showDuplicateProjectModal = true"></button-view>
             <filled-button-view :text="$t('projectView.leftSection.buttons.delete')" theme="danger" icon="/icons/delete.svg" @click="showDeleteProjectModal = true"></filled-button-view>

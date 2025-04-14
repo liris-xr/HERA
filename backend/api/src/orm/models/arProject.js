@@ -62,5 +62,6 @@ export default sequelize.define('ArProject', {
     userId:{
         type: DataTypes.UUID,
         allowNull: false,
-    }
+    },
+
 })

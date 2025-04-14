@@ -2,7 +2,6 @@ import multer from "multer";
 import {DIRNAME} from "../../app.js";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import arScene from "../orm/models/arScene.js";
 import arAsset from "../orm/models/arAsset.js";
 import {Op} from "sequelize";
 
@@ -55,10 +54,11 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
             } else cb(null, "")
         },
         filename: (req, file, cb) => {
+            const projectId = req.projectId;
             const ext = path.extname(file.originalname);
             if(file.fieldname === 'uploadedEnvmap') {
                 const filename = "envmap" + Date.now() + ext
-                req.uploadedUrl = path.join(getEnvmapsDirectory(req.body.id), filename);
+                req.uploadedUrl = path.join(getEnvmapsDirectory(projectId), filename);
 
                 cb(null, filename);
             } else if (file.fieldname === "uploads") {
@@ -76,31 +76,6 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
             } else cb(null, "")
         }
     })})
-
-
-
-
-export const uploadEnvmap = multer({ storage: multer.diskStorage({
-        destination: (req, file, cb) => {
-            const projectId = req.body.id;
-            if(!projectId) throw new Error('Project Id is missing');
-
-            const uploadDirectory = path.join(DIRNAME, getEnvmapsDirectory(projectId))
-            if (!fs.existsSync(uploadDirectory)) {
-                fs.mkdirSync(uploadDirectory, { recursive: true });
-            }
-
-            cb(null, uploadDirectory);
-        },
-        filename: (req, file, cb) => {
-            const ext = path.extname(file.originalname);
-
-            const filename = "envmap" + Date.now() + ext
-            req.uploadedUrl = path.join(getEnvmapsDirectory(req.body.id), filename);
-
-            cb(null, filename);
-        }
-    })});
 
 
 

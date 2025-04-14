@@ -5,7 +5,7 @@ import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Sequelize} from "sequelize";
 import {updateListById} from "../utils/updateListById.js";
-import {deleteAsset, deleteFile, uploadAsset, uploadEnvmap, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
+import {deleteAsset, deleteFile, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
 
 const router = express.Router()
 

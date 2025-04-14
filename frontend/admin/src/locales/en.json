@@ -89,7 +89,8 @@
         "alt": "Project image"
       },
       "projectEnvmap": {
-        "label": "Envmap:"
+        "label": "Envmap:",
+        "current": "Envmap actuelle:"
       },
       "buttons": {
         "duplicate": "Duplicate project",

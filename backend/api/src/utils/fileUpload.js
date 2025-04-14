@@ -33,6 +33,53 @@ export const uploadCover = multer({ storage: multer.diskStorage({
 
 
 
+export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            const sceneId = req.params.sceneId;
+            if(!sceneId) throw new Error('Scene Id is missing');
+
+            if(file.fieldname === 'uploadedEnvmap') {
+                const uploadDirectory = path.join(DIRNAME, getEnvmapsDirectory(sceneId))
+                if (!fs.existsSync(uploadDirectory)) {
+                    fs.mkdirSync(uploadDirectory, { recursive: true });
+                }
+
+                cb(null, uploadDirectory);
+            } else if (file.fieldname === "assets") {
+                const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(sceneId))
+                if (!fs.existsSync(uploadDirectory)) {
+                    fs.mkdirSync(uploadDirectory, { recursive: true });
+                }
+
+                cb(null, uploadDirectory);
+            } else cb(null, "")
+        },
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname);
+            if(file.fieldname === 'uploadedEnvmap') {
+                const filename = "envmap" + Date.now() + ext
+                req.uploadedUrl = path.join(getEnvmapsDirectory(req.body.id), filename);
+
+                cb(null, filename);
+            } else if (file.fieldname === "assets") {
+                if(!req.currentAssetCount){
+                    req.currentAssetCount = 0
+                }
+                const filename = "asset" + Date.now() + req.currentAssetCount + ext
+                req.currentAssetCount++;
+
+                if(!req.uploadedFilenames)
+                    req.uploadedFilenames = [];
+                req.uploadedFilenames.push(path.join(getAssetsDirectory(req.sceneId), filename));
+
+                cb(null, filename);
+            } else cb(null, "")
+        }
+    })})
+
+
+
+
 export const uploadEnvmap = multer({ storage: multer.diskStorage({
         destination: (req, file, cb) => {
             const projectId = req.body.id;
@@ -103,8 +150,8 @@ function getAssetsDirectory(projectId){
     return path.join(getProjectDirectory(projectId),'assets');
 }
 
-function getEnvmapsDirectory(projectId){
-    return path.join(getProjectDirectory(projectId),'envmaps');
+function getEnvmapsDirectory(sceneId){
+    return path.join(getProjectDirectory(sceneId),'envmaps');
 }
 
 

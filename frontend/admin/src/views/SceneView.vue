@@ -63,7 +63,7 @@ const uploadedEnvmap = ref({
   tmpUrl:"",
 })
 
-const MAX_FILE_SIZE = 5; // 5 Mo
+const MAX_FILE_SIZE = 10; // 10 Mo
 
 
 
@@ -176,6 +176,10 @@ async function saveScene(sceneData, uploads, envmapFile) {
       uploads.forEach(file => {
         formData.append('uploads', file);
       });
+    }
+
+    if (envmapFile != null) {
+      formData.append('uploadedEnvmap', envmapFile);
     }
 
 
@@ -362,6 +366,7 @@ onBeforeRouteUpdate((to, from, next)=>{
               <label for="envMap">{{$t("projectView.leftSection.projectEnvmap.label")}}</label>
               <input type="file" accept=".exr" @change="updateEnvmap($event)">
             </div>
+            <p>{{$t("projectView.leftSection.projectEnvmap.current")}} {{scene.envmapUrl}}</p>
           </div>
 
           <div class="multilineField">

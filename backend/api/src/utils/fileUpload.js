@@ -35,18 +35,18 @@ export const uploadCover = multer({ storage: multer.diskStorage({
 
 export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
         destination: (req, file, cb) => {
-            const sceneId = req.params.sceneId;
-            if(!sceneId) throw new Error('Scene Id is missing');
+            const projectId = req.projectId;
+            if(!projectId) throw new Error('Project Id is missing');
 
             if(file.fieldname === 'uploadedEnvmap') {
-                const uploadDirectory = path.join(DIRNAME, getEnvmapsDirectory(sceneId))
+                const uploadDirectory = path.join(DIRNAME, getEnvmapsDirectory(projectId))
                 if (!fs.existsSync(uploadDirectory)) {
                     fs.mkdirSync(uploadDirectory, { recursive: true });
                 }
 
                 cb(null, uploadDirectory);
-            } else if (file.fieldname === "assets") {
-                const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(sceneId))
+            } else if (file.fieldname === "uploads") {
+                const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId))
                 if (!fs.existsSync(uploadDirectory)) {
                     fs.mkdirSync(uploadDirectory, { recursive: true });
                 }
@@ -61,7 +61,7 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
                 req.uploadedUrl = path.join(getEnvmapsDirectory(req.body.id), filename);
 
                 cb(null, filename);
-            } else if (file.fieldname === "assets") {
+            } else if (file.fieldname === "uploads") {
                 if(!req.currentAssetCount){
                     req.currentAssetCount = 0
                 }
@@ -70,7 +70,7 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
 
                 if(!req.uploadedFilenames)
                     req.uploadedFilenames = [];
-                req.uploadedFilenames.push(path.join(getAssetsDirectory(req.sceneId), filename));
+                req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
 
                 cb(null, filename);
             } else cb(null, "")
@@ -139,7 +139,6 @@ export const uploadAsset = multer({ storage: multer.diskStorage({
 
 export function getProjectDirectory(projectId){
     return path.join('public','files',projectId);
-
 }
 
 function getImagesDirectory(projectId){
@@ -150,8 +149,8 @@ function getAssetsDirectory(projectId){
     return path.join(getProjectDirectory(projectId),'assets');
 }
 
-function getEnvmapsDirectory(sceneId){
-    return path.join(getProjectDirectory(sceneId),'envmaps');
+function getEnvmapsDirectory(projectId){
+    return path.join(getProjectDirectory(projectId),'envmaps');
 }
 
 

@@ -104,9 +104,10 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         maxCount: 1
     },
     {
-        name: "assets",
+        name: "uploads",
         maxCount: 16
-    }]), async (req, res) => {
+    }]
+    ), async (req, res) => {
     let token = req.user
     let sceneId = req.params.sceneId
     let uploadedUrl = req.uploadedUrl;

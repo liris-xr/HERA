@@ -2,6 +2,8 @@
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
+import {onMounted} from "vue";
+import {Asset} from "@/js/threeExt/modelManagement/asset.js";
 
 const props = defineProps({
   index: {type: Number, default: 0},
@@ -18,6 +20,13 @@ defineEmits(['select','delete','duplicate','hideInViewer'])
 const onClick = (cb) => {
   if(!(props.loading)) cb()
 }
+
+let arAsset;
+
+onMounted(() => {
+  console.log(props.downloadUrl)
+})
+
 </script>
 
 <template>

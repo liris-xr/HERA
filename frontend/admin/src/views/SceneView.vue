@@ -278,6 +278,7 @@ async function updateEnvmap(event){
 }
 
 function handleKeydown(event) {
+  if(event.keyCode !== 46 && event.keyCode !== 8) return
   if(document.activeElement === document.body && editor.scene.getSelected() != null)
     editor.scene.removeSelected()
 }

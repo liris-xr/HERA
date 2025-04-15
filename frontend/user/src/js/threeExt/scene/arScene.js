@@ -20,6 +20,7 @@ export class ArScene extends AbstractScene {
     #errors;
     #boundingSphere
     #boundingBox;
+    clock
 
     constructor(sceneData) {
         super();
@@ -50,6 +51,7 @@ export class ArScene extends AbstractScene {
                     // this.background = texture
                 })
 
+        this.clock = new THREE.Clock();
 
     }
 
@@ -110,6 +112,13 @@ export class ArScene extends AbstractScene {
 
     onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition){
         worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
+
+        // animation
+        const delta = this.clock.getDelta()
+        for(let asset of this.#assets)
+            if (asset.animationMixer)
+                asset.animationMixer.update(delta)
+
 
         this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition);
     }

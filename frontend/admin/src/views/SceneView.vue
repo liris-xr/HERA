@@ -158,6 +158,8 @@ onMounted(async () => {
 
   saved.value = true;
 
+  window.addEventListener("keydown", handleKeydown)
+
 })
 
 
@@ -272,6 +274,18 @@ async function updateEnvmap(event){
       saved.value = false;
     }
 
+  }
+}
+
+function handleKeydown(event) {
+  if((event.keyCode === 46 || event.keyCode === 8) &&
+    document.activeElement === document.body && editor.scene.getSelected() != null)
+      editor.scene.removeSelected()
+
+  console.log(event)
+  if(event.keyCode === 68 && event.ctrlKey) {
+    event.preventDefault()
+    editor.scene.duplicateAsset(editor.scene.getSelected())
   }
 }
 
@@ -455,6 +469,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                             :loading="asset.isLoading.value"
                             @select="editor.scene.setSelected(asset)"
                             @delete="editor.scene.removeAsset(asset)"
+                            @duplicate="editor.scene.duplicateAsset(asset)"
                             @hide-in-viewer="()=>{asset.switchViewerDisplayStatus(); saved = false}"/>
                 <div v-if="scene.assets.length==0">{{$t("sceneView.leftSection.sceneAssets.noAssetsInfo")}}</div>
               </div>

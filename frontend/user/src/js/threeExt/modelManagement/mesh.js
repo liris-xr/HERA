@@ -6,6 +6,7 @@ import {getResource} from "@/js/endpoints.js";
 export class Mesh{
     sourceUrl;
     mesh
+    animations
 
     #error
 
@@ -17,6 +18,14 @@ export class Mesh{
 
     hasError(){
         return this.#error;
+    }
+
+    test() {
+        console.log("salut")
+    }
+
+    hasAnimations() {
+        return (this.animations && this.animations.length !== 0);
     }
 
     async load(){
@@ -31,6 +40,7 @@ export class Mesh{
                 }
             });
 
+            this.animations = mesh.animations
             this.mesh = mesh.scene;
 
         }catch(error){

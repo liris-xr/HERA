@@ -21,6 +21,8 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
     #isLoading;
     #isSelected;
 
+    copiedUrl
+
 
 
 
@@ -52,6 +54,9 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
             this.scale = {x:1,y:1, z:1};
         this.#hasError = ref(false);
         this.#isLoading = ref(true);
+
+        if(assetData?.copiedUrl)
+            this.copiedUrl = assetData.copiedUrl;
     }
 
     hasError = computed(()=>{
@@ -135,4 +140,25 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
         result.z = this.getObject().scale.z;
         return result;
     }
+
+    clone() {
+        const clonedData = {
+            id: crypto.randomUUID(),
+            name: this.name,
+            url: this.sourceUrl,
+            hideInViewer: this.hideInViewer.value,
+            uploadData: this.uploadData,
+            position: { ...this.position },
+            rotation: { ...this.rotation },
+            scale: { ...this.scale }
+        };
+
+        const clonedAsset = new Asset(clonedData);
+        // penser a load le nouvel asset
+
+        return clonedAsset;
+    }
+
+
+
 }

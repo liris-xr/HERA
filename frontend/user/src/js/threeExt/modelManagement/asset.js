@@ -1,5 +1,6 @@
 import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
+import * as THREE from 'three';
 
 export class Asset extends SceneElementInterface{
 
@@ -9,6 +10,8 @@ export class Asset extends SceneElementInterface{
     rotation;
     scale;
     name;
+
+    animationMixer
 
     #error;
 
@@ -46,12 +49,30 @@ export class Asset extends SceneElementInterface{
         const manager = MeshManager.getInstance();
         let mesh = await manager.load(this.sourceUrl);
         this.#error = mesh.hasError();
-        this.mesh = mesh.mesh.clone();
+
+        this.mesh = mesh.mesh;
+        if(mesh?.animations?.length > 0) {
+            console.log("les anims sont ", mesh.animations);
+            this.mesh.animations = mesh.animations
+            console.log("donc ", this.mesh.animations);
+        }
+        //TODO : enlever le clone n'est pas la solution, il faudrait arriver faire un deep copy via clone
+
+
         this.mesh.position.set(this.position.x, this.position.y, this.position.z);
         this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
         this.mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
         this.mesh.castShadow = true;
         this.mesh.receiveShadow = true;
+
+        this.animationMixer = new THREE.AnimationMixer(this.mesh)
+
+        if(this.mesh?.animations?.length > 0) {
+           this.animationMixer.clipAction(this.mesh?.animations[0])
+            let action = this.animationMixer._actions[0]
+            console.log(action)
+            action.play()
+        }
     }
 
     pushToScene(scene){

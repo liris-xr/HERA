@@ -5,7 +5,7 @@ import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Sequelize} from "sequelize";
 import {updateListById} from "../utils/updateListById.js";
-import {deleteAsset, deleteFile, uploadAsset} from "../utils/fileUpload.js";
+import {deleteAsset, deleteFile, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
 
 const router = express.Router()
 
@@ -98,9 +98,19 @@ const getPostUploadData = async (req, res, next) => {
 };
 
 
-router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadAsset.array('uploads',16), async (req, res) => {
+router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
+    uploadEnvmapAndAssets.fields([{
+        name: "uploadedEnvmap",
+        maxCount: 1
+    },
+    {
+        name: "uploads",
+        maxCount: 16
+    }]
+    ), async (req, res) => {
     let token = req.user
     let sceneId = req.params.sceneId
+    let uploadedUrl = req.uploadedUrl;
 
     try {
         const fetchScene = async () => await ArScene.findOne({
@@ -270,12 +280,18 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData, uploadA
         
             );
 
-
+            let updatedUrl = req.uploadedUrl;
+            if(uploadedUrl && scene.envmapUrl !== ""){
+                console.log(scene.envmapUrl);
+                deleteFile(scene.envmapUrl);
+                updatedUrl = uploadedUrl
+            }
 
             //update the main scene
             await ArScene.update({
                 title: req.body.title,
                 description: req.body.description,
+                envmapUrl: updatedUrl || req.body.envmapUrl
             },{
                 where: {id: sceneId},
                 transaction:t,

@@ -57,6 +57,7 @@
   "projectView": {
     "selectedFile": {
       "notAnImageError": "El archivo seleccionado no es una imagen.",
+      "notAnExrError": "El archivo seleccionado no es un archivo EXR válido.",
       "sizeError": {
         "part1": "La imagen seleccionada es demasiado grande",
         "part2": "Por favor elige otro archivo"
@@ -85,6 +86,10 @@
       "projectImage": {
         "label": "Imagen:",
         "alt": "Imagen del proyecto"
+      },
+      "projectEnvmap": {
+        "label": "Envmap:",
+        "current": "Envmap actuelle:"
       },
       "buttons": {
         "duplicate": "Duplicar proyecto",

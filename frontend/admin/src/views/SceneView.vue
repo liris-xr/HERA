@@ -23,9 +23,14 @@ import ButtonTool from "@/components/buttonTool.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import LabelEditModal from "@/components/modal/labelEditModal.vue";
 import MaterialView from "@/components/materialView.vue";
+import {bytesToMBytes} from "@/js/projectPicture.js";
+import EnvmapItem from "@/components/listItem/envmapItem.vue";
+import {useI18n} from "vue-i18n";
+import {EXRLoader} from "three/addons";
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
+const {t} = useI18n()
 
 const editor = new Editor();
 
@@ -57,7 +62,14 @@ const showSceneDuplicateModal = ref(false);
 const showLabelEditModal = ref(false);
 let lastClickedLabel = null
 
+const uploadedEnvmap = ref({
+  rawData:null,
+  tmpUrl:"",
+})
 
+const envmapElement = ref(null);
+
+const MAX_FILE_SIZE = 10; // 10 Mo
 
 async function fetchScene(sceneId) {
   loading.value = true;
@@ -150,7 +162,7 @@ onMounted(async () => {
 
 
 
-async function saveScene(sceneData, uploads) {
+async function saveScene(sceneData, uploads, envmapFile) {
   try {
     const formData = new FormData();
 
@@ -168,6 +180,11 @@ async function saveScene(sceneData, uploads) {
         formData.append('uploads', file);
       });
     }
+
+    if (envmapFile != null) {
+      formData.append('uploadedEnvmap', envmapFile);
+    }
+
 
     const res = await fetch(`${ENDPOINT}scenes/${sceneData.id}`,
     {
@@ -200,14 +217,17 @@ async function saveAll(){
     project:scene.value.project,
     labels:editor.scene.labelManager.getResultLabel(),
     assets:editor.scene.assetManager.getResultAssets(),
-    meshes:editor.scene.assetManager.getResultMeshes()
+    meshes:editor.scene.assetManager.getResultMeshes(),
+    envmapUrl: scene.value.envmapUrl || "",
   };
 
   const uploads = editor.scene.assetManager.getResultUploads();
 
-  const r = await saveScene(resultScene, uploads);
+  const r = await saveScene(resultScene, uploads, uploadedEnvmap.value.rawData);
 
   if (r != null) {
+    uploadedEnvmap.value.rawData = null;
+    scene.value.envmapUrl = r.scene.envmapUrl;
     await sleep(1000);
     saved.value = true;
     editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching)
@@ -217,7 +237,43 @@ async function saveAll(){
 
 }
 
+async function updateEnvmap(event){
+  const file = event.target.files[0];
+  if (file) {
+    const size = bytesToMBytes(file.size)
+    if(!file.name.endsWith(".exr")){
+      alert(t('projectView.selectedFile.notAnExrError'))
+      uploadedEnvmap.value.rawData = null;
+      event.target.value = ""
+    }else if(size > MAX_FILE_SIZE){
+      alert(t('projectView.selectedFile.sizeError.part1')+" ("+size+"Mo). " + t("projectView.selectedFile.sizeError.part2")+" < "+MAX_FILE_SIZE+"Mo");
+      uploadedEnvmap.value.rawData = null;
+      event.target.value = ""
+    }else{
 
+      // vérifier que l'exr uploadé est valide
+      try {
+        const buffer = await file.arrayBuffer()
+        new EXRLoader().parse(buffer)
+      } catch(error) {
+        alert(t('projectView.selectedFile.notAnExrError'))
+        uploadedEnvmap.value.rawData = null;
+        event.target.value = ""
+        return;
+      }
+
+
+      uploadedEnvmap.value.rawData = file
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedEnvmap.value.tmpUrl = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      saved.value = false;
+    }
+
+  }
+}
 
 
 
@@ -260,6 +316,10 @@ function beforeRedirect(to, from, next){
   }
 }
 
+function removeEnvmap() {
+  scene.value.envmapUrl = "";
+}
+
 onBeforeRouteLeave( (to, from, next)=>{
   beforeRedirect(to, from, next)
 })
@@ -269,13 +329,15 @@ onBeforeRouteUpdate((to, from, next)=>{
 })
 
 
+
+
 </script>
 
 <template>
   <main>
     <form @submit.prevent="saveAll">
 
-      <section>
+      <section ref="box">
         <notification
             theme="default"
             icon="/icons/spinner.svg"
@@ -324,6 +386,19 @@ onBeforeRouteUpdate((to, from, next)=>{
 
           <div class="multilineField">
             <div class="inlineFlex">
+              <label for="envMap">{{$t("projectView.leftSection.projectEnvmap.label")}}</label>
+              <input type="file" accept=".exr" @change="updateEnvmap($event)">
+            </div>
+              <envmap-item
+                          ref="envmapElement"
+                          :text="scene.envmapUrl"
+                          :download-url="getResource(scene.envmapUrl)"
+                          :hide-in-viewer=false
+                          @delete="removeEnvmap" />
+          </div>
+
+          <div class="multilineField">
+            <div class="inlineFlex">
               <label>{{$t("sceneView.leftSection.sceneLabels.label")}}</label>
               <button-view :text="$t('sceneView.leftSection.sceneLabels.addLabelButton')" icon="/icons/add.svg" @click="editor.scene.addNewLabel()"></button-view>
             </div>
@@ -357,7 +432,6 @@ onBeforeRouteUpdate((to, from, next)=>{
                 }">
             </label-edit-modal>
           </Teleport>
-
 
           <div class="multilineField">
             <div class="inlineFlex">

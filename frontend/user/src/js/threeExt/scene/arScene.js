@@ -7,6 +7,8 @@ import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
 import {LabelPlayer} from "@/js/threeExt/postProcessing/labelPlayer.js";
 import {Vector3} from "three";
 import {EmptyAsset} from "@/js/threeExt/modelManagement/emptyAsset.js";
+import {EXRLoader} from "three/addons";
+import {getResource} from "@/js/endpoints.js";
 
 export class ArScene extends AbstractScene {
     sceneId
@@ -39,6 +41,16 @@ export class ArScene extends AbstractScene {
         this.#errors = [];
         this.#boundingSphere = null;
         this.#boundingBox = null;
+
+        if(sceneData.envmapUrl)
+            this.environment = new EXRLoader()
+                .load(getResource(sceneData.envmapUrl), (texture) => {
+                    texture.mapping = THREE.EquirectangularReflectionMapping
+
+                    // this.background = texture
+                })
+
+
     }
 
     async init(){

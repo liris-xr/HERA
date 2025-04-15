@@ -34,8 +34,8 @@ app.use(cors({}))
 
 async function main () {
     await initializeDatabase({force: false});
-    // await resetDatabase();
-    // await insertDefaults();
+      // await resetDatabase();
+      // await insertDefaults();
 
     app.use(project);
     app.use(auth);

@@ -7,6 +7,7 @@ import { sequelize } from '../database.js'
  * @property {string} title
  * @property {string} description
  * @property {string} projectId
+ * @property {string} envmapUrl
  */
 
 export default sequelize.define('ArScene', {
@@ -36,8 +37,14 @@ export default sequelize.define('ArScene', {
         allowNull: false,
     },
 
+    envmapUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null
+    },
+
     projectId:{
         type: DataTypes.UUID,
         allowNull: false,
-    }
+    },
 })

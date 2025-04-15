@@ -62,6 +62,7 @@
   "projectView": {
     "selectedFile": {
       "notAnImageError": "Le fichier sélectionné n'est pas une image.",
+      "notAnExrError": "Le fichier sélectionné n'est pas un fichier EXR valide.",
       "sizeError": {
         "part1": "L'image sélectionnée est trop volumineuse",
         "part2": "Veuillez choisir un fichier"

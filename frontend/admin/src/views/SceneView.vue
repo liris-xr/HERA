@@ -25,9 +25,12 @@ import LabelEditModal from "@/components/modal/labelEditModal.vue";
 import MaterialView from "@/components/materialView.vue";
 import {bytesToMBytes} from "@/js/projectPicture.js";
 import EnvmapItem from "@/components/listItem/envmapItem.vue";
+import {useI18n} from "vue-i18n";
+import {EXRLoader} from "three/addons";
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
+const {t} = useI18n()
 
 const editor = new Editor();
 
@@ -234,12 +237,12 @@ async function saveAll(){
 
 }
 
-function updateEnvmap(event){
+async function updateEnvmap(event){
   const file = event.target.files[0];
   if (file) {
     const size = bytesToMBytes(file.size)
     if(!file.name.endsWith(".exr")){
-      alert(t('projectView.selectedFile.notAnImageError'))
+      alert(t('projectView.selectedFile.notAnExrError'))
       uploadedEnvmap.value.rawData = null;
       event.target.value = ""
     }else if(size > MAX_FILE_SIZE){
@@ -247,6 +250,19 @@ function updateEnvmap(event){
       uploadedEnvmap.value.rawData = null;
       event.target.value = ""
     }else{
+
+      // vérifier que l'exr uploadé est valide
+      try {
+        const buffer = await file.arrayBuffer()
+        new EXRLoader().parse(buffer)
+      } catch(error) {
+        alert(t('projectView.selectedFile.notAnExrError'))
+        uploadedEnvmap.value.rawData = null;
+        event.target.value = ""
+        return;
+      }
+
+
       uploadedEnvmap.value.rawData = file
       const reader = new FileReader();
       reader.onload = (e) => {

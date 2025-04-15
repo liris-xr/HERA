@@ -278,9 +278,15 @@ async function updateEnvmap(event){
 }
 
 function handleKeydown(event) {
-  if(event.keyCode !== 46 && event.keyCode !== 8) return
-  if(document.activeElement === document.body && editor.scene.getSelected() != null)
-    editor.scene.removeSelected()
+  if((event.keyCode === 46 || event.keyCode === 8) &&
+    document.activeElement === document.body && editor.scene.getSelected() != null)
+      editor.scene.removeSelected()
+
+  console.log(event)
+  if(event.keyCode === 68 && event.ctrlKey) {
+    event.preventDefault()
+    editor.scene.duplicateAsset(editor.scene.getSelected())
+  }
 }
 
 

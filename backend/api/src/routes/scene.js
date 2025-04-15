@@ -196,8 +196,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 }
             );
 
-
-
             await updateListById(knownAssetsIds, JSON.parse(req.body.assets),
                 async (asset)=>{
                     await ArAsset.update({
@@ -213,16 +211,26 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 },
 
                 async (asset)=>{
-                    const newAsset = await ArAsset.create({
+                    console.log("abcd " + JSON.stringify(asset))
+
+                    let data = {
                         position:asset.position,
                         rotation:asset.rotation,
                         scale: asset.scale,
                         sceneId:scene.id,
-                        url: req.uploadedFilenames[insertedCount++],
                         name: asset.name,
-                    },{
+                    }
+                    if(asset.copiedUrl) {
+                        data.url = asset.copiedUrl
+                    } else
+                        data.url = req.uploadedFilenames[insertedCount++]
+
+                    const newAsset = await ArAsset.create(data,{
                         transaction:t
                     })
+
+
+
 
                     assetsIdMatching.push({
                         tempId:asset.id,
@@ -282,7 +290,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
             let updatedUrl = req.uploadedUrl;
             if(uploadedUrl && scene.envmapUrl !== ""){
-                console.log(scene.envmapUrl);
                 deleteFile(scene.envmapUrl);
                 updatedUrl = uploadedUrl
             }

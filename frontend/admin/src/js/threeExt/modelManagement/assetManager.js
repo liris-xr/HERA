@@ -21,8 +21,7 @@ export class AssetManager {
 
     addToScene(scene,asset,onAdd){
         if(asset.id == null){
-            asset.id = 'new-asset'+currentAssetId;
-            currentAssetId++;
+            asset.id = 'new-asset'+currentAssetId++;
         }
 
         asset.load().then((mesh)=>{
@@ -65,7 +64,8 @@ export class AssetManager {
                 position:asset.getResultPosition(),
                 rotation: asset.getResultRotation(),
                 scale: asset.getResultScale(),
-                hideInViewer: asset.hideInViewer.value
+                hideInViewer: asset.hideInViewer.value,
+                copiedUrl: asset?.copiedUrl
             });
         }
         return result;

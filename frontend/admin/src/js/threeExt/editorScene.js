@@ -194,6 +194,27 @@ export class EditorScene extends THREE.Scene {
         this.assetManager.removeFromScene(this,asset);
     }
 
+    duplicateAsset(asset){
+        this.setSelected(null);
+
+        const assetData = {
+            id:null,
+            url: asset.sourceUrl,
+            name: asset.name,
+            hideInViewer: asset.hideInViewer,
+            position: asset.position,
+            rotation: asset.rotation,
+            scale: asset.scale,
+            copiedUrl: asset.sourceUrl,
+        }
+        const newAsset = new Asset(assetData);
+        console.log(newAsset)
+
+        this.assetManager.addToScene(this,newAsset,(newAsset)=>this.setSelected(newAsset));
+
+        // this.assetManager.duplicateFromScene(this,asset);
+    }
+
     removeSelected(){
         const selected = toRaw(this.getSelected())
 

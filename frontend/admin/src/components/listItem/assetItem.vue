@@ -16,7 +16,7 @@ const props = defineProps({
 defineEmits(['select','delete','hideInViewer'])
 
 const onClick = (cb) => {
-  if(!(props.error || props.loading)) cb()
+  if(!(props.loading)) cb()
 }
 </script>
 

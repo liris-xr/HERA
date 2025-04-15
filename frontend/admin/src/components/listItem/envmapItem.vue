@@ -1,9 +1,6 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
-import Tag from "@/components/tag.vue";
-import {getFileExtension} from "@/js/utils/fileUtils.js";
 import {computed, onMounted, reactive, ref} from "vue";
-import {texture} from "three/nodes";
 
 const props = defineProps({
   text: {type: String, required: true},

@@ -6,7 +6,6 @@ import {getResource} from "@/js/endpoints.js";
 export class Mesh{
     sourceUrl;
     mesh
-    parent
     animations
 
     #error
@@ -41,7 +40,6 @@ export class Mesh{
                 }
             });
 
-            this.parent = mesh;
             this.animations = mesh.animations
             this.mesh = mesh.scene;
 

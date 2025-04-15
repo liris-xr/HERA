@@ -5,7 +5,6 @@ import * as THREE from 'three';
 export class Asset extends SceneElementInterface{
 
     mesh
-    wrappingScene
     sourceUrl
     position;
     rotation;
@@ -50,9 +49,16 @@ export class Asset extends SceneElementInterface{
         const manager = MeshManager.getInstance();
         let mesh = await manager.load(this.sourceUrl);
         this.#error = mesh.hasError();
-        this.wrappingScene = mesh.parent
-        this.mesh = mesh.mesh; // j'ai enlevé le .clone(), ça posait probleme puisque les enfants n'étaient pas affectés
-                               // par les transformations, peut-être qu'il avait qq chose à faire là mais ça a l'air de marcher
+
+        this.mesh = mesh.mesh;
+        if(mesh?.animations?.length > 0) {
+            console.log("les anims sont ", mesh.animations);
+            this.mesh.animations = mesh.animations
+            console.log("donc ", this.mesh.animations);
+        }
+        //TODO : enlever le clone n'est pas la solution, il faudrait arriver faire un deep copy via clone
+
+
         this.mesh.position.set(this.position.x, this.position.y, this.position.z);
         this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
         this.mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
@@ -61,8 +67,8 @@ export class Asset extends SceneElementInterface{
 
         this.animationMixer = new THREE.AnimationMixer(this.mesh)
 
-        if(mesh.hasAnimations()) {
-           this.animationMixer.clipAction(mesh?.parent?.animations[0])
+        if(this.mesh?.animations?.length > 0) {
+           this.animationMixer.clipAction(this.mesh?.animations[0])
             let action = this.animationMixer._actions[0]
             console.log(action)
             action.play()

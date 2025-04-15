@@ -26,10 +26,11 @@ class MeshManagerInstance {
     }
 
     async load(url){
-        if(this.isLoaded(url)) {
-            console.warn("mesh already loaded");
-            return this.getMesh(url);
-        }
+        // if(this.isLoaded(url)) {
+        //     console.warn("mesh already loaded");
+        //     return this.getMesh(url);
+        // }
+        // maintenant qu'on peut les dupliquer, plusieurs assets peuvent partager la meme url
         const mesh = new Mesh(url);
         await mesh.load();
         this.#meshes.push(mesh);

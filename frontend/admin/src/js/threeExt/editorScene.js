@@ -190,7 +190,6 @@ export class EditorScene extends THREE.Scene {
     }
 
     removeAsset(asset){
-        console.log(asset)
         this.setSelected(null);
         this.assetManager.removeFromScene(this,asset);
     }

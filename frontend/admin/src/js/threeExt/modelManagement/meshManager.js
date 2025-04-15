@@ -1,4 +1,6 @@
 import {computed, shallowReactive} from "vue";
+import * as THREE from "three";
+import {BASE_URL} from "@/js/endpoints.js";
 
 const fragShader = `
 #define STANDARD
@@ -11,6 +13,9 @@ uniform vec3 emissive;
 uniform float roughness;
 uniform float metalness;
 uniform float opacity;
+uniform sampler2D lightMap;
+uniform int nbLightX;
+uniform int nbLightY;
 #ifdef IOR
 	uniform float ior;
 #endif
@@ -82,7 +87,8 @@ varying vec3 vViewPosition;
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
 void main() {
-	vec4 diffuseColor = vec4( vec3(1,0,0), opacity );
+
+	vec4 diffuseColor = vec4( diffuse, opacity );
 	#include <clipping_planes_fragment>
 	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
 	vec3 totalEmissiveRadiance = emissive;
@@ -117,6 +123,24 @@ void main() {
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
+
+	// Virtual Point Light evaluation
+	float incrX = float(1) / float(nbLightX); 
+	float incrY = float(1) / float(nbLightY);
+	// We need to iterate the lightPos texture between 0 and 1
+
+	int totalNbLights = nbLightX*nbLightY;
+	float vplEvaluation = 0.;
+	for(float x = 0.;x<1.;x+=incrX) {
+		for(float y = 0.;y<1.;y+=incrY) {
+			vec3 lightPos = (texture(lightMap,vec2(x,y)).rgb * 256.) - 128.;
+			vec3 dir = normalize(lightPos - geometryPosition);
+
+			vplEvaluation += max(dot(normal,dir),0.)/float(totalNbLights); 
+		}
+	}
+	outgoingLight = diffuse * vplEvaluation;
+	// outgoingLight = texture(lightMap,vec2(0,0)).rgb; 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>
@@ -127,9 +151,16 @@ void main() {
 
 export class MeshManager {
     #meshes
+	textureLoader
+	lightTex
 
     constructor() {
         this.#meshes = shallowReactive([]);
+		this.textureLoader = new THREE.TextureLoader();
+		
+		this.lightTex = this.textureLoader.load( BASE_URL+'textures/lightMap.png' );
+
+		this.lightTex.colorSpace = THREE.SRGBColorSpace;
     }
 
     getMeshes = computed(()=>{
@@ -140,6 +171,10 @@ export class MeshManager {
         
         mesh.material.onBeforeCompile = (shader) => {
             shader.fragmentShader = fragShader
+			
+			shader.uniforms.lightMap = {value: this.lightTex}
+			shader.uniforms.nbLightX = {value: 4}
+			shader.uniforms.nbLightY = {value: 4}
         }
 
 

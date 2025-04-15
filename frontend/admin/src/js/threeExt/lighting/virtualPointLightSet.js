@@ -20,15 +20,8 @@ export class VirtualPointLightSet extends classes(THREE.Group,SceneElementInterf
         this.raycaster = new THREE.Raycaster()
     }
 
-    // **Bounces** >= 1
-    // The more bounces you have, the more lights layer you have
-    // **nbSample** 
-    // The number of lights created for one light source
-    bake(bounces,nbSample) {
-        
-        for(let light of this.primaryLights) {
-            const origin = light.position
-
+    addVirtualLights(origin,nbLight,currentEnergy,nbBounces) {
+        for(let i = 0;i<nbLight;i++) {
             // Variables used to generate random direction on a sphere
             // Source : https://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf (33)
             const r1 = randFloat(0,1);
@@ -46,21 +39,53 @@ export class VirtualPointLightSet extends classes(THREE.Group,SceneElementInterf
 
             this.raycaster.set(origin,direction)
 
-            this.scene.add(new THREE.ArrowHelper(this.raycaster.ray.direction, this.raycaster.ray.origin, 300, 0xff0000) );
+            // this.scene.add(new THREE.ArrowHelper(this.raycaster.ray.direction, this.raycaster.ray.origin, 300, 0xff0000) );
+
+            let closestIntersect = {
+                distance: Infinity
+            };
 
             this.scene.assetManager.meshManagerMap.forEach( (meshManager) => {
-                console.log(meshManager.getMeshes.value);
                 for (let mesh of meshManager.getMeshes.value) {
                     
-                    const intersects = this.raycaster.intersectObject(mesh, true);
-                    console.log(intersects);
+                    // Closest intersection found by the ray in the mesh
+                    const intersect = this.raycaster.intersectObject(mesh);
+                    
+                    if(intersect.length > 0) {
+                        if(intersect[0].distance < closestIntersect.distance) closestIntersect = intersect[0] 
+                    }
                 }
             })
+            // console.log(closestIntersect.object.material);
             
-            
-            
+            if(closestIntersect.distance < Infinity) {
+                const newLightEnergy = currentEnergy - closestIntersect.object.material.roughness
+                
+                const newLight = new THREE.PointLight(0xffffff,1)
+                newLight.color = closestIntersect.object.material.color
+                newLight.position.copy(closestIntersect.point)
+    
+                this.add(newLight)
+                // console.log(nbBounces);
+                
+                if(nbBounces > 0) {
+                    this.addVirtualLights(newLight.position,nbLight,1,nbBounces-1)
+                }
+            }
 
-            
+        }
+    }
+
+    // **Bounces** >= 1
+    // The more bounces you have, the more lights layer you have
+    // **nbSample** 
+    // The number of lights created for one light source
+    bake(bounces,nbSample) {
+        
+        for(let light of this.primaryLights) {
+            const origin = light.position
+            this.add(light)
+            this.addVirtualLights(origin,nbSample,1,bounces)
         }
     }
 

@@ -18,16 +18,18 @@ export class LightSet extends classes(THREE.Group,SceneElementInterface) {
         this.#directionalLight.shadow.mapSize.height = shadowMapSize;
         this.#directionalLight.shadow.normalBias = 0.01;
 
-        this.add(ambientLight);
-        this.add(this.#directionalLight);
+        // this.add(ambientLight);
+        // this.add(this.#directionalLight);
 
+        // const pl1 = new THREE.PointLight(new THREE.Color(1,1,1))
+        // pl1.position.set(0,3,0);
+        // const vplSet = new VirtualPointLightSet([pl1],scene)
+        // vplSet.bake(1,10)
+        // this.add(vplSet)
+        
     }
     
     pushToScene(scene){
-        const pl1 = new THREE.PointLight(new THREE.Color(1,1,1))
-        pl1.position.set(0,3,0);
-        const vplSet = new VirtualPointLightSet([pl1],scene)
-        vplSet.bake(1,1)
         scene.add(this);
     }
 

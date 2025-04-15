@@ -32,7 +32,7 @@ const onClick = (cb) => {
       <icon-svg url="/icons/spinner.svg" theme="default" v-if="loading"/>
       <tag :text="'3D/'+getFileExtension(text)" icon="/icons/3d.svg"/>
 
-      <a v-if="downloadUrl" target="_blank" rel="noopener noreferrer" :href="downloadUrl">
+      <a v-if="downloadUrl && !error && !loading" target="_blank" rel="noopener noreferrer" :href="downloadUrl">
         <icon-svg url="/icons/download.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop=""/>
       </a>
       

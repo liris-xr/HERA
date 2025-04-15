@@ -1,12 +1,13 @@
 import * as THREE from "three";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
-import {computed, nextTick, ref, watch} from "vue";
+import {computed, nextTick, ref, toRaw, watch} from "vue";
 import {GridPlane} from "@/js/threeExt/lighting/gridPlane.js";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {LabelManager} from "@/js/threeExt/postprocessing/labelManager.js";
 import {AssetManager} from "@/js/threeExt/modelManagement/assetManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
+import {Label} from "@/js/threeExt/postprocessing/label.js";
 
 
 export class EditorScene extends THREE.Scene {
@@ -136,6 +137,10 @@ export class EditorScene extends THREE.Scene {
         this.#updateSelectedValues();
     }
 
+    getSelected() {
+        return this.#selected.value;
+    }
+
     deselectAll(){
         this.#clearSelectedLabels();
         this.#clearSelectedObjects();
@@ -185,8 +190,19 @@ export class EditorScene extends THREE.Scene {
     }
 
     removeAsset(asset){
+        console.log(asset)
         this.setSelected(null);
         this.assetManager.removeFromScene(this,asset);
+    }
+
+    removeSelected(){
+        const selected = toRaw(this.getSelected())
+
+        if(selected instanceof Asset)
+            this.removeAsset(selected)
+
+        else if (selected instanceof Label)
+            this.removeLabel(selected)
     }
 
 

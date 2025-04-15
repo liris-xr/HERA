@@ -158,6 +158,8 @@ onMounted(async () => {
 
   saved.value = true;
 
+  window.addEventListener("keydown", handleKeydown)
+
 })
 
 
@@ -273,6 +275,11 @@ async function updateEnvmap(event){
     }
 
   }
+}
+
+function handleKeydown(event) {
+  if(document.activeElement === document.body && editor.scene.getSelected() != null)
+    editor.scene.removeSelected()
 }
 
 

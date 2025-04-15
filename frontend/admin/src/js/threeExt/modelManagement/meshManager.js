@@ -2,6 +2,56 @@ import {computed, shallowReactive} from "vue";
 import * as THREE from "three";
 import {BASE_URL} from "@/js/endpoints.js";
 
+const vertexShader = `
+#define STANDARD
+varying vec3 vViewPosition;
+out vec4 wPosition; 
+#ifdef USE_TRANSMISSION
+	varying vec3 vWorldPosition;
+#endif
+#include <common>
+#include <batching_pars_vertex>
+#include <uv_pars_vertex>
+#include <displacementmap_pars_vertex>
+#include <color_pars_vertex>
+#include <fog_pars_vertex>
+#include <normal_pars_vertex>
+#include <morphtarget_pars_vertex>
+#include <skinning_pars_vertex>
+#include <shadowmap_pars_vertex>
+#include <logdepthbuf_pars_vertex>
+#include <clipping_planes_pars_vertex>
+void main() {
+	vec4 localPosition = vec4(position,1.);
+	wPosition = modelMatrix * localPosition;
+	#include <uv_vertex>
+	#include <color_vertex>
+	#include <morphinstance_vertex>
+	#include <morphcolor_vertex>
+	#include <batching_vertex>
+	#include <beginnormal_vertex>
+	#include <morphnormal_vertex>
+	#include <skinbase_vertex>
+	#include <skinnormal_vertex>
+	#include <defaultnormal_vertex>
+	#include <normal_vertex>
+	#include <begin_vertex>
+	#include <morphtarget_vertex>
+	#include <skinning_vertex>
+	#include <displacementmap_vertex>
+	#include <project_vertex>
+	#include <logdepthbuf_vertex>
+	#include <clipping_planes_vertex>
+	vViewPosition = - mvPosition.xyz;
+	#include <worldpos_vertex>
+	#include <shadowmap_vertex>
+	#include <fog_vertex>
+#ifdef USE_TRANSMISSION
+	vWorldPosition = worldPosition.xyz;
+#endif
+}
+`
+
 const fragShader = `
 #define STANDARD
 #ifdef PHYSICAL
@@ -16,6 +66,7 @@ uniform float opacity;
 uniform sampler2D lightMap;
 uniform int nbLightX;
 uniform int nbLightY;
+in vec4 wPosition;
 #ifdef IOR
 	uniform float ior;
 #endif
@@ -133,14 +184,17 @@ void main() {
 	float vplEvaluation = 0.;
 	for(float x = 0.;x<1.;x+=incrX) {
 		for(float y = 0.;y<1.;y+=incrY) {
-			vec3 lightPos = (texture(lightMap,vec2(x,y)).rgb * 256.) - 128.;
-			vec3 dir = normalize(lightPos - geometryPosition);
+			vec3 lightPos = (texture(lightMap,vec2(x,y)).rgb*256.)-128.;
+			vec3 plVec = lightPos - wPosition.xyz;
 
-			vplEvaluation += max(dot(normal,dir),0.)/float(totalNbLights); 
+			vec3 lightDir = normalize(plVec);
+
+			// float attenuation = getDistanceAttenuation(length(plVec),0.0,2.);
+
+			vplEvaluation += (saturate(dot(normal,lightDir))/float(totalNbLights)); 
 		}
 	}
 	outgoingLight = diffuse * vplEvaluation;
-	// outgoingLight = texture(lightMap,vec2(0,0)).rgb; 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>
@@ -159,8 +213,8 @@ export class MeshManager {
 		this.textureLoader = new THREE.TextureLoader();
 		
 		this.lightTex = this.textureLoader.load( BASE_URL+'textures/lightMap.png' );
+		this.lightTex.magFilter = THREE.NearestFilter;
 
-		this.lightTex.colorSpace = THREE.SRGBColorSpace;
     }
 
     getMeshes = computed(()=>{
@@ -170,11 +224,12 @@ export class MeshManager {
     addSubMesh(scene,mesh,meshData) {
         
         mesh.material.onBeforeCompile = (shader) => {
+			shader.vertexShader = vertexShader;
             shader.fragmentShader = fragShader
 			
 			shader.uniforms.lightMap = {value: this.lightTex}
-			shader.uniforms.nbLightX = {value: 4}
-			shader.uniforms.nbLightY = {value: 4}
+			shader.uniforms.nbLightX = {value: 10}
+			shader.uniforms.nbLightY = {value: 5}
         }
 
 

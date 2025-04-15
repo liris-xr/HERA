@@ -24,6 +24,7 @@ import RedirectMessage from "@/components/notification/redirect-message.vue";
 import LabelEditModal from "@/components/modal/labelEditModal.vue";
 import MaterialView from "@/components/materialView.vue";
 import {bytesToMBytes} from "@/js/projectPicture.js";
+import EnvmapItem from "@/components/listItem/envmapItem.vue";
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
@@ -63,10 +64,9 @@ const uploadedEnvmap = ref({
   tmpUrl:"",
 })
 
+const envmapElement = ref(null);
+
 const MAX_FILE_SIZE = 10; // 10 Mo
-
-
-
 
 async function fetchScene(sceneId) {
   loading.value = true;
@@ -214,7 +214,8 @@ async function saveAll(){
     project:scene.value.project,
     labels:editor.scene.labelManager.getResultLabel(),
     assets:editor.scene.assetManager.getResultAssets(),
-    meshes:editor.scene.assetManager.getResultMeshes()
+    meshes:editor.scene.assetManager.getResultMeshes(),
+    envmapUrl: scene.value.envmapUrl || "",
   };
 
   const uploads = editor.scene.assetManager.getResultUploads();
@@ -223,7 +224,7 @@ async function saveAll(){
 
   if (r != null) {
     uploadedEnvmap.value.rawData = null;
-    scene.value.envmapUrl = r.envmapUrl;
+    scene.value.envmapUrl = r.scene.envmapUrl;
     await sleep(1000);
     saved.value = true;
     editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching)
@@ -299,6 +300,10 @@ function beforeRedirect(to, from, next){
   }
 }
 
+function removeEnvmap() {
+  scene.value.envmapUrl = "";
+}
+
 onBeforeRouteLeave( (to, from, next)=>{
   beforeRedirect(to, from, next)
 })
@@ -308,13 +313,15 @@ onBeforeRouteUpdate((to, from, next)=>{
 })
 
 
+
+
 </script>
 
 <template>
   <main>
     <form @submit.prevent="saveAll">
 
-      <section>
+      <section ref="box">
         <notification
             theme="default"
             icon="/icons/spinner.svg"
@@ -366,7 +373,12 @@ onBeforeRouteUpdate((to, from, next)=>{
               <label for="envMap">{{$t("projectView.leftSection.projectEnvmap.label")}}</label>
               <input type="file" accept=".exr" @change="updateEnvmap($event)">
             </div>
-            <p>{{$t("projectView.leftSection.projectEnvmap.current")}} {{scene.envmapUrl}}</p>
+              <envmap-item
+                          ref="envmapElement"
+                          :text="scene.envmapUrl"
+                          :download-url="getResource(scene.envmapUrl)"
+                          :hide-in-viewer=false
+                          @delete="removeEnvmap" />
           </div>
 
           <div class="multilineField">

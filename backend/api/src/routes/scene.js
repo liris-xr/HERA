@@ -291,7 +291,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
             await ArScene.update({
                 title: req.body.title,
                 description: req.body.description,
-                envmapUrl: updatedUrl
+                envmapUrl: updatedUrl || req.body.envmapUrl
             },{
                 where: {id: sceneId},
                 transaction:t,

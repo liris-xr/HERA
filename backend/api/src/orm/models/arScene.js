@@ -39,8 +39,8 @@ export default sequelize.define('ArScene', {
 
     envmapUrl: {
         type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: ""
+        allowNull: true,
+        defaultValue: null
     },
 
     projectId:{

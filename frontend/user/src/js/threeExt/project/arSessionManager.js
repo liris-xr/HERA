@@ -103,10 +103,11 @@ export class ArSessionManager {
         this.reset();
         this.#isArRunning.value = true;
 
+
         this.arSession = await navigator.xr.requestSession(
             'immersive-ar',
             {
-                requiredFeatures: ['hit-test', 'dom-overlay'/*,'light-estimation'*/],
+                requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
                 domOverlay: {
                     root: this.domOverlay
                 }

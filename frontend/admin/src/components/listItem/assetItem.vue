@@ -77,7 +77,7 @@ onMounted(async () => {
       
       <icon-svg v-if="hideInViewer" url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer',true)})"/>
       <icon-svg v-else url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer', false)})"/>
-      <icon-svg url="/icons/duplicate.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('duplicate')})"/>
+      <icon-svg v-if="downloadUrl" url="/icons/duplicate.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('duplicate')})"/>
       <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete')})"/>
     </div>
   </div>

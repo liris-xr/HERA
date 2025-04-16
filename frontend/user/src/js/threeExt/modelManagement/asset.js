@@ -12,6 +12,7 @@ export class Asset extends SceneElementInterface{
     name;
 
     animationMixer
+    activeAnimation
 
     #error;
 
@@ -23,6 +24,8 @@ export class Asset extends SceneElementInterface{
 
         this.sourceUrl = assetData.url;
         this.name = assetData.name != null ? assetData.name : assetData.url;
+        this.activeAnimation = assetData.activeAnimation || null;
+
         if(assetData.position)
             this.position = assetData.position;
         else
@@ -52,12 +55,8 @@ export class Asset extends SceneElementInterface{
 
         this.mesh = mesh.mesh;
         if(mesh?.animations?.length > 0) {
-            console.log("les anims sont ", mesh.animations);
             this.mesh.animations = mesh.animations
-            console.log("donc ", this.mesh.animations);
         }
-        //TODO : enlever le clone n'est pas la solution, il faudrait arriver faire un deep copy via clone
-
 
         this.mesh.position.set(this.position.x, this.position.y, this.position.z);
         this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
@@ -65,12 +64,17 @@ export class Asset extends SceneElementInterface{
         this.mesh.castShadow = true;
         this.mesh.receiveShadow = true;
 
-        this.animationMixer = new THREE.AnimationMixer(this.mesh)
 
-        if(this.mesh?.animations?.length > 0) {
-           this.animationMixer.clipAction(this.mesh?.animations[0])
-            let action = this.animationMixer._actions[0]
-            console.log(action)
+        if(this.activeAnimation && this.mesh?.animations?.length > 0) {
+
+            this.animationMixer = new THREE.AnimationMixer(this.mesh)
+            this.animationMixer.clipAction(this.mesh?.animations[0])
+            let action = this.animationMixer.clipAction(THREE.AnimationClip.findByName(this.mesh?.animations, this.activeAnimation))
+
+            if(!action) {
+                console.error("Animation " + this.activeAnimation + " not found for asset " + this.name)
+                return
+            }
             action.play()
         }
     }

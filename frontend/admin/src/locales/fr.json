@@ -5,6 +5,8 @@
     "logout": "Déconnexion"
   },
 
+  "none": "Aucun",
+
   "login": {
     "emailLabel": "Adresse e-mail",
     "emailPlaceholder": "Votre adresse e-mail",

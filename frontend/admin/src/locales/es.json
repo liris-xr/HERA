@@ -4,6 +4,9 @@
     "home": "Mis proyectos",
     "logout": "Cerrar sesión"
   },
+
+  "none": "Ninguno",
+
   "login": {
     "emailLabel": "Correo electrónico",
     "emailPlaceholder": "Tu correo electrónico",

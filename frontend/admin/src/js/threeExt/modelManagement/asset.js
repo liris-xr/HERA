@@ -21,6 +21,9 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
     #isLoading;
     #isSelected;
 
+    animationMixer
+    activeAnimation
+
     copiedUrl
 
 
@@ -34,7 +37,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
         this.name = assetData.name;
         this.hideInViewer = ref(assetData.hideInViewer);
         this.uploadData = assetData.uploadData || null;
-
+        this.activeAnimation = assetData.activeAnimation || null;
 
         this.mesh = new THREE.Mesh();
 
@@ -153,10 +156,8 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
             scale: { ...this.scale }
         };
 
-        const clonedAsset = new Asset(clonedData);
         // penser a load le nouvel asset
-
-        return clonedAsset;
+        return new Asset(clonedData);
     }
 
 

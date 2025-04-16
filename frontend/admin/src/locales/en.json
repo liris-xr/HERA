@@ -4,6 +4,9 @@
     "home": "My projects",
     "logout": "Logout"
   },
+
+  "none": "None",
+
   "login": {
     "emailLabel": "Email",
     "emailPlaceholder": "Your email",

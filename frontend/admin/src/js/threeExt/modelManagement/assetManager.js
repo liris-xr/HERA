@@ -65,7 +65,8 @@ export class AssetManager {
                 rotation: asset.getResultRotation(),
                 scale: asset.getResultScale(),
                 hideInViewer: asset.hideInViewer.value,
-                copiedUrl: asset?.copiedUrl
+                copiedUrl: asset?.copiedUrl,
+                activeAnimation: asset.activeAnimation
             });
         }
         return result;

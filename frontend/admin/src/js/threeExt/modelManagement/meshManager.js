@@ -228,8 +228,8 @@ export class MeshManager {
             shader.fragmentShader = fragShader
 			
 			shader.uniforms.lightMap = {value: this.lightTex}
-			shader.uniforms.nbLightX = {value: 10}
-			shader.uniforms.nbLightY = {value: 5}
+			shader.uniforms.nbLightX = {value: 1}
+			shader.uniforms.nbLightY = {value: 1}
         }
 
 

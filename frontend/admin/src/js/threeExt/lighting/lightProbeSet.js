@@ -2,7 +2,7 @@ import * as THREE from "three";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import {classes} from "@/js/utils/extender.js"
 
-export class LightProbeSet extends classes(THREE.Group,SceneElementInterface) {
+export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface) {
 
     constructor(center,density,width,length,height,scene,dir,color) {
         super();

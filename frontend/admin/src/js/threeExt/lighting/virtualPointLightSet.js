@@ -56,7 +56,6 @@ export class VirtualPointLightSet extends classes(THREE.Group,SceneElementInterf
                     }
                 }
             })
-            // console.log(closestIntersect.object.material);
             
             if(closestIntersect.distance < Infinity) {
                 const newLightEnergy = currentEnergy - closestIntersect.object.material.roughness
@@ -66,7 +65,6 @@ export class VirtualPointLightSet extends classes(THREE.Group,SceneElementInterf
                 newLight.position.copy(closestIntersect.point)
     
                 this.add(newLight)
-                // console.log(nbBounces);
                 
                 if(nbBounces > 0) {
                     this.addVirtualLights(newLight.position,nbLight,1,nbBounces-1)

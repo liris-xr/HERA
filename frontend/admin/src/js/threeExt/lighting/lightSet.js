@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import {classes} from "@/js/utils/extender.js"
-import { VirtualPointLightSet } from "./virtualPointLightSet";
 
 export class LightSet extends classes(THREE.Group,SceneElementInterface) {
 
@@ -20,13 +19,6 @@ export class LightSet extends classes(THREE.Group,SceneElementInterface) {
 
         // this.add(ambientLight);
         // this.add(this.#directionalLight);
-
-        // const pl1 = new THREE.PointLight(new THREE.Color(1,1,1))
-        // pl1.position.set(0,3,0);
-        // const vplSet = new VirtualPointLightSet([pl1],scene)
-        // vplSet.bake(1,10)
-        // this.add(vplSet)
-        
     }
     
     pushToScene(scene){

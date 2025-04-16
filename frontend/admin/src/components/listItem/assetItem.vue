@@ -6,6 +6,7 @@ import {computed, onMounted, ref} from "vue";
 import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
 import {useI18n} from "vue-i18n";
+import object3DNode from "three/addons/nodes/accessors/Object3DNode.js";
 
 const props = defineProps({
   index: {type: Number, default: 0},
@@ -16,6 +17,7 @@ const props = defineProps({
   error: {type: Boolean, default: false},
   loading: {type: Boolean, default: false},
   activeAnimation: {type: String, default: null},
+  asset: {type: Object, default: null}
 })
 
 defineEmits(['select','delete','duplicate','hideInViewer', 'animationChanged'])
@@ -24,23 +26,24 @@ const onClick = (cb) => {
   if(!(props.loading)) cb()
 }
 
-let asset = ref(null)
-
-let hasAnimations = computed(() => asset.value?.mesh?.animations?.length > 0)
 
 let animations = ref([])
+let hasAnimations = computed(() => animations.value.length > 0)
+
 
 const selectedOption = ref(null)
 
 onMounted(async () => {
-  const newAsset = new Asset({url: props.downloadUrl.split("8080/")[1]})
-  await newAsset.load()
+  if(props.asset)
+    await props.asset.load()
 
-  asset.value = newAsset
-  if(asset.value?.mesh?.animations)
-    animations.value = asset.value.mesh.animations.map((el) => el.name)
+  if(props.asset.animations)
+    animations.value = props.asset.animations.map((el) => el.name)
 
   selectedOption.value = props.activeAnimation ?? "none"
+
+
+  console.log(props.asset.animations)
 })
 
 

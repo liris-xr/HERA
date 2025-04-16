@@ -467,6 +467,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                             :active="asset.isSelected.value"
                             :error="asset.hasError.value"
                             :loading="asset.isLoading.value"
+                            :asset="asset"
                             @select="editor.scene.setSelected(asset)"
                             @delete="editor.scene.removeAsset(asset)"
                             @duplicate="editor.scene.duplicateAsset(asset)"

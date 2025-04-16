@@ -22,6 +22,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
     #isSelected;
 
     animationMixer
+    animations
     activeAnimation
 
     copiedUrl
@@ -92,6 +93,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 this.mesh = mesh;
+                this.animations = mesh.animations;
                 resolve(this.mesh)
             }).catch(()=>{
                     this.#isLoading.value = false;

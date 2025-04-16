@@ -82,6 +82,9 @@
         "true": "Public",
         "false":"Privé"
       },
+      "mode": {
+        "label": "Mode d'affichage"
+      },
       "projectTitle": {
         "label": "Titre :",
         "placeholder": "Titre de votre projet"

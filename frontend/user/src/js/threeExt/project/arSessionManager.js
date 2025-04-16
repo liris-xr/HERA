@@ -15,7 +15,6 @@ export class ArSessionManager {
     shadowMapSize;
     controls;
 
-
     #isArRunning;
 
     domOverlay;
@@ -99,19 +98,19 @@ export class ArSessionManager {
     })
 
 
-    async start() {
+    async start(mode='immersive-ar') {
         this.reset();
         this.#isArRunning.value = true;
 
 
         this.arSession = await navigator.xr.requestSession(
-            'immersive-ar',
-            {
+            mode,
+            mode === "immersive-ar" ? {
                 requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
                 domOverlay: {
                     root: this.domOverlay
                 }
-            }
+            } : {}
         );
         await this.onSessionStarted();
     }

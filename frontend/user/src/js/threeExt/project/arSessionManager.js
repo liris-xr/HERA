@@ -4,6 +4,7 @@ import {ArRenderer} from "../rendering/arRenderer";
 import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
+import * as THREE from "three";
 
 export class ArSessionManager {
     sceneManager;
@@ -14,7 +15,8 @@ export class ArSessionManager {
     shadowMapSize;
     controls;
 
-    #isArRunning;
+    #isXrRunning;
+    xrMode;
 
     domOverlay;
     domWidth;
@@ -24,7 +26,7 @@ export class ArSessionManager {
         this.shadowMapSize = 4096
         this.domWidth = 380;
         this.domHeight = 280;
-        this.#isArRunning = ref(false);
+        this.#isXrRunning = ref(false);
 
         this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
         this.arCamera = new ArCamera();
@@ -93,13 +95,13 @@ export class ArSessionManager {
     }
 
     isArRunning = computed(() => {
-        return this.#isArRunning.value;
+        return this.#isXrRunning.value;
     })
 
 
     async start(displayMode='ar') {
         this.reset();
-        this.#isArRunning.value = true;
+        this.#isXrRunning.value = true;
 
 
         this.arSession = await navigator.xr.requestSession(
@@ -111,6 +113,9 @@ export class ArSessionManager {
                 }
             } : {}
         );
+
+        this.xrMode = displayMode;
+
         await this.onSessionStarted();
     }
 
@@ -120,6 +125,7 @@ export class ArSessionManager {
         await this.arRenderer.xr.setSession( this.arSession );
         this.referenceSpace = await this.arRenderer.xr.getReferenceSpace();
         this.viewerSpace = await this.arSession.requestReferenceSpace('viewer');
+
         this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
 
         this.sceneManager.isArRunning.value = true;
@@ -136,7 +142,7 @@ export class ArSessionManager {
         this.arSession.removeEventListener( 'end', this.onSessionEnded.bind(this) );
         this.arSession = null;
         this.sceneManager.scenePlacementManager.hitTestSource = null
-        this.#isArRunning.value = false;
+        this.#isXrRunning.value = false;
         this.sceneManager.isArRunning.value = false;
         this.#resetCameraPosition()
     }
@@ -151,11 +157,11 @@ export class ArSessionManager {
 
         this.arRenderer.render(this.sceneManager.active.value, this.arCamera);
 
-        if(this.sceneManager.active.value.hasLabels.value && this.labelRenderer.isEnabled.value) {
-            this.labelRenderer.render(this.sceneManager.active.value, this.arCamera);
-        }else{
-            this.labelRenderer.clear();
-        }
+        // if(this.sceneManager.active.value.hasLabels.value && this.labelRenderer.isEnabled.value) {
+        //     this.labelRenderer.render(this.sceneManager.active.value, this.arCamera);
+        // }else{
+        //     this.labelRenderer.clear();
+        // }
     }
 
 

@@ -1,4 +1,5 @@
 import {CSS2DObject} from "three/addons";
+import * as THREE from "three";
 
 export class Label{
     content;
@@ -26,8 +27,10 @@ export class Label{
         this.setContent(this.content);
 
         this.label = new CSS2DObject(htmlLabel);
+        this.label = this.#createXRLabel()
+
         this.label.position.set(this.position.x, this.position.y, this.position.z);
-        this.label.center.set( 0.5, 1);
+        // this.label.center.set( 0.5, 1);
     }
 
     #createHtmlLabel(){
@@ -70,8 +73,66 @@ export class Label{
         return boundingBox;
     }
 
+    #createXRLabel(options={}) { // nouvelle méthode, nécessaire pour la compatibilité VR
+        const {
+            font = '48px sans-serif',
+            padding = 20,
+            backgroundColor = 'rgba(0, 0, 0, 0.6)',
+            textColor = 'white',
+            scale = 0.25, // facteur de mise à l'échelle pour ajuster la taille générale du label
+        } = options;
+
+        // 1. Mesurer le texte
+        const tmpCanvas = document.createElement('canvas');
+        const tmpCtx = tmpCanvas.getContext('2d');
+        tmpCtx.font = font;
+        const textWidth = tmpCtx.measureText(this.content).width;
+        const textHeight = parseInt(font, 10); // La hauteur du texte, basée sur la taille de la police
+
+        // Ajouter un padding autour du texte
+        const canvasWidth = textWidth + padding * 2;
+        const canvasHeight = textHeight + padding * 2;
+
+        // 2. Créer le vrai canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext('2d');
+
+        // Dessiner un fond pour le label
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Dessiner le texte
+        ctx.font = font;
+        ctx.fillStyle = textColor;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.content, canvasWidth / 2, canvasHeight / 2);
+
+        // Créer la texture de Three.js à partir du canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter; // améliore le rendu proche
+
+        // 3. Adapter dynamiquement la géométrie en fonction du texte mesuré
+        const worldWidth = scale * canvasWidth / 100;  // Conversion en mètres (en fonction de la taille du texte et de l'échelle)
+        const worldHeight = scale * canvasHeight / 100; // Idem pour la hauteur
+
+        // Créer la géométrie et la matérialisation pour l'objet 3D
+        const geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+        });
+
+        // Créer le mesh et renvoyer l'objet 3D
+        const mesh = new THREE.Mesh(geometry, material);
+        return mesh;
+    }
+
     setContent(text){
-        this.#htmlContent.innerHTML = text;
+        this.content = text;
+        this.label = this.#createXRLabel();
     }
 
     setVisible(visible){

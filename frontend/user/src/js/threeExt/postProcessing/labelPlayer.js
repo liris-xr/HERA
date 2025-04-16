@@ -25,6 +25,7 @@ export class LabelPlayer extends RenderLoopInterface{
 
 
     addToScene(scene,labelData){
+        console.log(labelData);
         const newLabel = new Label(labelData);
         if(newLabel.timestampStart > this.#maxTimestamp) this.#maxTimestamp = newLabel.timestampStart;
         if(newLabel.timestampEnd > this.#maxTimestamp) this.#maxTimestamp = newLabel.timestampEnd;
@@ -79,6 +80,7 @@ export class LabelPlayer extends RenderLoopInterface{
         const t = this.#currentTime - this.#startOffset
         for (let label of this.#labels) {
             label.setVisible(label.shouldBeVisible(t));
+            label.label.lookAt(cameraPosition)
         }
 
         if(t>=this.#maxTimestamp) this.pause();

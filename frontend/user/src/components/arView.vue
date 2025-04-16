@@ -26,7 +26,7 @@ const labelContainer = ref(null);
 const contextMenu = ref(null);
 
 const arCompatible = ref(false);
-arCompatible.value = await arSessionManager.isArCompatible();
+arCompatible.value = await arSessionManager.isArCompatible(props.json.displayMode);
 const loaded = ref(false);
 
 

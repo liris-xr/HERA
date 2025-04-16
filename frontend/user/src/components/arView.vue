@@ -41,8 +41,9 @@ function toggleContextMenuStatus(){
 }
 
 const buttonText = computed(() => {
-    return $t('projectView.arView.startAr.button')
-  return $t('projectView.arView.startVr.button')
+  if(props.json.displayMode === "ar")
+    return t('projectView.arView.startAr.button')
+  return t('projectView.arView.startVr.button')
 })
 
 </script>

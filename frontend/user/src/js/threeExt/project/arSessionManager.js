@@ -103,8 +103,8 @@ export class ArSessionManager {
 
 
         this.arSession = await navigator.xr.requestSession(
-            "immersive-"+mode,
-            mode === "ar" ? {
+            "immersive-"+displayMode,
+            displayMode === "ar" ? {
                 requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
                 domOverlay: {
                     root: this.domOverlay

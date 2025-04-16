@@ -39,6 +39,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
         this.hideInViewer = ref(assetData.hideInViewer);
         this.uploadData = assetData.uploadData || null;
         this.activeAnimation = assetData.activeAnimation || null;
+        this.animations = []
 
         this.mesh = new THREE.Mesh();
 

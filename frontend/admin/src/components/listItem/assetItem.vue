@@ -2,7 +2,7 @@
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
-import {computed, onMounted, ref} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
 import {useI18n} from "vue-i18n";
@@ -30,21 +30,20 @@ const onClick = (cb) => {
 let animations = ref([])
 let hasAnimations = computed(() => animations.value.length > 0)
 
+watch(
+    ()=>props.asset,
+    (asset)=> {
+      animations.value = asset.animations.map((el) => el.name)
+    },
+    {immediate: true, deep: true}
+)
 
 const selectedOption = ref(null)
 
 onMounted(async () => {
-  if(props.asset)
-    await props.asset.load()
-
-  if(props.asset.animations)
-    animations.value = props.asset.animations.map((el) => el.name)
-
   selectedOption.value = props.activeAnimation ?? "none"
-
-
-  console.log(props.asset.animations)
 })
+
 
 
 </script>

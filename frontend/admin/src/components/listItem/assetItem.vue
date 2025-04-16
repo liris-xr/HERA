@@ -2,6 +2,11 @@
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
+import {computed, onMounted, ref, watch} from "vue";
+import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
+import {Asset} from "@/js/threeExt/modelManagement/asset.js";
+import {useI18n} from "vue-i18n";
+import object3DNode from "three/addons/nodes/accessors/Object3DNode.js";
 
 const props = defineProps({
   index: {type: Number, default: 0},
@@ -11,13 +16,36 @@ const props = defineProps({
   active: {type: Boolean, default: false},
   error: {type: Boolean, default: false},
   loading: {type: Boolean, default: false},
+  activeAnimation: {type: String, default: null},
+  asset: {type: Object, default: null}
 })
 
-defineEmits(['select','delete','duplicate','hideInViewer'])
+defineEmits(['select','delete','duplicate','hideInViewer', 'animationChanged'])
 
 const onClick = (cb) => {
   if(!(props.loading)) cb()
 }
+
+
+let animations = ref([])
+let hasAnimations = computed(() => animations.value.length > 0)
+
+watch(
+    ()=>props.asset,
+    (asset)=> {
+      animations.value = asset.animations.map((el) => el.name)
+    },
+    {immediate: true, deep: true}
+)
+
+const selectedOption = ref(null)
+
+onMounted(async () => {
+  selectedOption.value = props.activeAnimation ?? "none"
+})
+
+
+
 </script>
 
 <template>
@@ -27,9 +55,20 @@ const onClick = (cb) => {
       <span :class="{textStrike: hideInViewer||error}">{{text}}</span>
       <span v-if="hideInViewer" class="notDisplayedInfo">{{$t("sceneView.leftSection.sceneAssets.assetNotDisplayed")}}</span>
     </div>
+
     <div class="inlineFlex">
       <icon-svg url="/icons/warning.svg" theme="danger" v-if="error" :title="$t('sceneView.leftSection.sceneAssets.assetLoadFailed')" class="iconAction"/>
       <icon-svg url="/icons/spinner.svg" theme="default" v-if="loading"/>
+
+      <div v-if="hasAnimations">
+        <select v-model="selectedOption" @change="$emit('animationChanged', selectedOption === 'none' ? null : selectedOption)">
+          <option value="none">{{ $t("none") }}</option>
+          <option v-for="option in animations" :key="option" :value="option">
+            {{ option }}
+          </option>
+        </select>
+      </div>
+
       <tag :text="'3D/'+getFileExtension(text)" icon="/icons/3d.svg"/>
 
       <a v-if="downloadUrl && !error && !loading" target="_blank" rel="noopener noreferrer" :href="downloadUrl">
@@ -38,7 +77,7 @@ const onClick = (cb) => {
       
       <icon-svg v-if="hideInViewer" url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer',true)})"/>
       <icon-svg v-else url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer', false)})"/>
-      <icon-svg url="/icons/duplicate.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('duplicate')})"/>
+      <icon-svg v-if="downloadUrl" url="/icons/duplicate.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('duplicate')})"/>
       <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete')})"/>
     </div>
   </div>
@@ -86,6 +125,10 @@ const onClick = (cb) => {
   font-size: 10pt;
   font-style: italic;
   color: var(--textImportantColor);
+}
+
+select {
+  width: 100px;
 }
 
 </style>

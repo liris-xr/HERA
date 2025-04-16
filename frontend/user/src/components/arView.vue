@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {ArSessionManager} from "@/js/threeExt/project/arSessionManager.js";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
@@ -9,7 +9,9 @@ import ToggleableContextMenuItem from "@/components/utils/ToggleableContextMenuI
 import IconContextMenuItem from "@/components/utils/IconContextMenuItem.vue";
 import ActionBubble from "@/components/utils/actionBubble.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
+import {useI18n} from "vue-i18n";
 
+const {t} = useI18n()
 
 const props = defineProps({
   json: {type: Object, required: true}
@@ -38,11 +40,16 @@ function toggleContextMenuStatus(){
   contextMenu.value.toggleStatus()
 }
 
+const buttonText = computed(() => {
+    return $t('projectView.arView.startAr.button')
+  return $t('projectView.arView.startVr.button')
+})
+
 </script>
 
 <template>
   <div id="startButton">
-    <button-view icon="/icons/ar.svg" :text="$t('projectView.arView.startAr.button')" @click="arSessionManager.start()" :disabled="!loaded || !arCompatible" :class="{buttonDisabled:!loaded || !arCompatible }" v-if="loaded"></button-view>
+    <button-view icon="/icons/ar.svg" :text="buttonText" @click="arSessionManager.start(props.json.displayMode)" :disabled="!loaded || !arCompatible" :class="{buttonDisabled:!loaded || !arCompatible }" v-if="loaded"></button-view>
     <span v-if="!loaded">
       {{$t("projectView.arView.startAr.loading")}}
       <icon-svg url="/icons/spinner.svg"></icon-svg>

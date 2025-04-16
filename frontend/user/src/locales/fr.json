@@ -29,6 +29,9 @@
         "loading": "Chargement",
         "incompatibleDevice": "Appareil incompatible !"
       },
+      "startVr": {
+        "button": "Voir en VR"
+      },
       "arOverlay": {
         "contextMenu": {
           "reset": "Réinitialiser",

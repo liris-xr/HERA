@@ -4,7 +4,6 @@ import {ArRenderer} from "../rendering/arRenderer";
 import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
-import Stats from 'three/addons/libs/stats.module.js';
 
 export class ArSessionManager {
     sceneManager;
@@ -89,8 +88,8 @@ export class ArSessionManager {
     }
 
 
-    async isArCompatible() {
-        return navigator.xr && await navigator.xr.isSessionSupported("immersive-ar");
+    async isArCompatible(displayMode="ar") {
+        return navigator.xr && await navigator.xr.isSessionSupported("immersive-"+displayMode);
     }
 
     isArRunning = computed(() => {
@@ -98,14 +97,14 @@ export class ArSessionManager {
     })
 
 
-    async start(mode='immersive-ar') {
+    async start(displayMode='ar') {
         this.reset();
         this.#isArRunning.value = true;
 
 
         this.arSession = await navigator.xr.requestSession(
-            mode,
-            mode === "immersive-ar" ? {
+            "immersive-"+mode,
+            mode === "ar" ? {
                 requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
                 domOverlay: {
                     root: this.domOverlay

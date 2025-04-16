@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import {classes} from "@/js/utils/extender.js"
+import { LightProbeVolume } from "./lightProbeVolume";
 
 export class LightSet extends classes(THREE.Group,SceneElementInterface) {
 
@@ -17,8 +18,11 @@ export class LightSet extends classes(THREE.Group,SceneElementInterface) {
         this.#directionalLight.shadow.mapSize.height = shadowMapSize;
         this.#directionalLight.shadow.normalBias = 0.01;
 
-        // this.add(ambientLight);
-        // this.add(this.#directionalLight);
+        this.add(ambientLight);
+        this.add(this.#directionalLight);
+
+        const lightProbeVolume = new LightProbeVolume(new THREE.Vector3(0,5.2,0),1,30,20,16,scene);
+        lightProbeVolume.bake(1,256);
     }
     
     pushToScene(scene){

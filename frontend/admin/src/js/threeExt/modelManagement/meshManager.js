@@ -224,8 +224,8 @@ export class MeshManager {
     addSubMesh(scene,mesh,meshData) {
         
         mesh.material.onBeforeCompile = (shader) => {
-			shader.vertexShader = vertexShader;
-            shader.fragmentShader = fragShader
+			// shader.vertexShader = vertexShader;
+            // shader.fragmentShader = fragShader
 			
 			shader.uniforms.lightMap = {value: this.lightTex}
 			shader.uniforms.nbLightX = {value: 1}

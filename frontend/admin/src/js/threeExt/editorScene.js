@@ -105,8 +105,7 @@ export class EditorScene extends THREE.Scene {
         this.assetManager.setSceneTitle(this.sceneTitle)
         this.assetManager.setProjectId(this.projectId)
 
-        this.#lightSet = new LightSet(this.shadowMapSize,this);
-        this.#lightSet.pushToScene(this);
+        
         
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);
@@ -157,6 +156,9 @@ export class EditorScene extends THREE.Scene {
     onSceneClick(event, camera){
         const target = event.target;
         let object = null;
+
+        this.#lightSet = new LightSet(this.shadowMapSize,this);
+        this.#lightSet.pushToScene(this);
 
         if(target.tagName.toLowerCase() === 'div'){ //label clicked
             for (let label of this.labelManager.getLabels.value) {

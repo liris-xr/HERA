@@ -77,7 +77,6 @@ router.get(baseUrl+'users/:userId/projects/:page', authMiddleware , async (req, 
 router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (req, res) => {
     const userId = req.params.userId;
     const projectId = req.params.projectId;
-    const token = req.user
 
     let project = (await ArProject.findOne({
             where: {id: projectId },
@@ -114,7 +113,7 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
         'Content-Type': 'application/json'
     })
 
-    if(userId !== project.owner.id){
+    if(userId !== project.owner.id && !req.user.admin){
         res.status(401);
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }

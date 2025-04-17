@@ -4,6 +4,7 @@ import { JWT_SECRET } from '../consts/secret.js'
 import express from 'express'
 import { getDetails } from '../validators/index.js'
 import {baseUrl} from "./baseUrl.js";
+import authMiddleware from "../middlewares/auth.js";
 
 const router = express.Router()
 
@@ -14,8 +15,15 @@ const router = express.Router()
  * @property {string} password
  */
 
-router.post(baseUrl+'auth/register', async (req, res) => {
+router.post(baseUrl+'auth/register', authMiddleware, async (req, res) => {
     try {
+        const user = req.user
+
+        if(!user.admin) {
+            res.status(401);
+            return res.send({ error: 'Unauthorized', details: 'User not granted' })
+        }
+
         const reqBody = req.body
         const { username, email, password } = reqBody
 

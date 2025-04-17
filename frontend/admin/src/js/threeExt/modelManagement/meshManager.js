@@ -63,9 +63,23 @@ uniform vec3 emissive;
 uniform float roughness;
 uniform float metalness;
 uniform float opacity;
-uniform sampler2D lightMap;
-uniform int nbLightX;
-uniform int nbLightY;
+uniform sampler3D sh0;
+uniform sampler3D sh1;
+uniform sampler3D sh2;
+
+uniform sampler3D sh3;
+uniform sampler3D sh4;
+uniform sampler3D sh5;
+
+uniform sampler3D sh6;
+uniform sampler3D sh7;
+uniform sampler3D sh8;
+
+uniform vec3 lpvCenter;
+uniform float lpvWidth;
+uniform float lpvDepth;
+uniform float lpvHeight;
+
 in vec4 wPosition;
 #ifdef IOR
 	uniform float ior;
@@ -175,26 +189,13 @@ void main() {
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
 
-	// Virtual Point Light evaluation
-	float incrX = float(1) / float(nbLightX); 
-	float incrY = float(1) / float(nbLightY);
-	// We need to iterate the lightPos texture between 0 and 1
-
-	int totalNbLights = nbLightX*nbLightY;
-	float vplEvaluation = 0.;
-	for(float x = 0.;x<1.;x+=incrX) {
-		for(float y = 0.;y<1.;y+=incrY) {
-			vec3 lightPos = (texture(lightMap,vec2(x,y)).rgb*256.)-128.;
-			vec3 plVec = lightPos - wPosition.xyz;
-
-			vec3 lightDir = normalize(plVec);
-
-			// float attenuation = getDistanceAttenuation(length(plVec),0.0,2.);
-
-			vplEvaluation += (saturate(dot(normal,lightDir))/float(totalNbLights)); 
-		}
-	}
-	outgoingLight = diffuse * vplEvaluation;
+	vec3 texcoord = vec3(
+							(((wPosition.x - lpvCenter.x) / lpvWidth) + 1.) / 2.,
+							(((wPosition.z - lpvCenter.z) / lpvDepth) + 1.) / 2.,
+							(((wPosition.y - lpvCenter.y) / lpvHeight) + 1.) / 2.
+						);
+	outgoingLight = texture(sh0,texcoord).rgb;
+	// outgoingLight = vec3(1);
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>
@@ -222,14 +223,34 @@ export class MeshManager {
     });
 
     addSubMesh(scene,mesh,meshData) {
+		
+		mesh.material.customProgramCacheKey = () => {
+			mesh.material.needsUpdate = true;
+			return scene.shTextures ? '1' : '0';
+		}
         
         mesh.material.onBeforeCompile = (shader) => {
-			// shader.vertexShader = vertexShader;
-            // shader.fragmentShader = fragShader
+			if(scene.shTextures) {
+				shader.vertexShader = vertexShader;
+				shader.fragmentShader = fragShader
+
+				for(let i = 0;i<9;i++) {
+					const sh3DTexture = new THREE.Data3DTexture(scene.shTextures[i],scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
+					sh3DTexture.magFilter = THREE.LinearFilter;
+					sh3DTexture.type = THREE.FloatType;
+					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
+					sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
+					sh3DTexture.wrapR = THREE.ClampToEdgeWrapping
+					sh3DTexture.needsUpdate = true;
+					
+					shader.uniforms["sh"+i] = {value: sh3DTexture};
+				}
+				shader.uniforms.lpvCenter = {value : scene.shTexturesCenter};
+				shader.uniforms.lpvWidth = {value : scene.shTexturesWidth};
+				shader.uniforms.lpvDepth = {value : scene.shTexturesDepth};
+				shader.uniforms.lpvHeight = {value : scene.shTexturesHeight};
+			}
 			
-			shader.uniforms.lightMap = {value: this.lightTex}
-			shader.uniforms.nbLightX = {value: 1}
-			shader.uniforms.nbLightY = {value: 1}
         }
 
 

@@ -17,12 +17,18 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         super();
 
         this.scene = scene;
+
+        this.scene.shTexturesWidth = width*density;
+        this.scene.shTexturesDepth = depth*density;
+        this.scene.shTexturesHeight = height*density;
+        this.scene.shTexturesCenter = center;
+
         this.raycaster = new THREE.Raycaster()
         this.rawData = [];
         this.shTextures = [];
 
         for(let i = 0;i<9;i++) {
-            this.shTextures.push(new Float32Array(width*depth*height*3));                 
+            this.shTextures.push(new Float32Array(width*depth*height*4*density*density*density));                 
         }
 		
         const freq = 1/density;
@@ -37,7 +43,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                     this.rawData.push(newProbe)
 
                     const geometry = new THREE.SphereGeometry(0.01,30,30) 
-                    const material = new THREE.MeshBasicMaterial( { color: new THREE.Color(1,1,1) } ); 
+                    const material = new THREE.MeshBasicMaterial( { color: new THREE.Color(1,0,1) } ); 
                     const sphere = new THREE.Mesh( geometry, material ); 
                     sphere.position.copy(pos)
                     scene.add( sphere );
@@ -89,7 +95,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
     // Bounces : number of light bounces
     // nbSample : number of ray for each bounces
 
-    // Return 9 textures, each texture containing 1 float of the 9 coefficients of a spherical harmonics
+    // Fill the 9 "textures" of shTextures, each texture containing 1 float of the 9 coefficients of a spherical harmonics
     bake(bounces,nbSample) {
 
         const weight = 1 / nbSample;
@@ -117,7 +123,6 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                             closestIntersect.object.material.emissive.b != 0 
                         )
                     ) {
-                        console.log(probeId);
                         
                         // evaluate SH basis functions in direction dir
                         THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
@@ -135,13 +140,12 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
             probe.sh = sh;
 
             for(let coef = 0;coef<9;coef++) {
-                for(let color = 0;color<3;color++) {
-                    const value = color === 0 ? probe.sh.coefficients[coef].x : color === 1 ? probe.sh.coefficients[coef].y : probe.sh.coefficients[coef].z;
-                    this.shTextures[coef][(probeId*3)+color] = value;
+                for(let color = 0;color<4;color++) {
+                    const value = color === 0 ? probe.sh.coefficients[coef].x : color === 1 ? probe.sh.coefficients[coef].y : color === 2 ? probe.sh.coefficients[coef].z : 0;
+                    this.shTextures[coef][(probeId*4)+color] = value;
                 }
             }
         }
-        console.log(this.shTextures);
+        this.scene.shTextures = this.shTextures;
     }
-    
 }

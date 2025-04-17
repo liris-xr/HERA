@@ -19,7 +19,7 @@ const {t} = useI18n()
 
 const users = ref([])
 const editingUser = ref(null)
-
+const deletingUser = ref(null)
 
 if (!isAuthenticated.value) {
   router.push({ name: "login" })
@@ -50,6 +50,23 @@ async function confirmUserEdit() {
   }
 
   editingUser.value = null
+}
+
+async function confirmUserDelete() {
+  const res = await fetch(`${ENDPOINT}users/${deletingUser.value.id}`,{
+    method: "DELETE",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token.value}`,
+    },
+  })
+
+  if(res.ok) {
+    const index = users.value.findIndex(user => user.id === deletingUser.value.id)
+    if(index !== -1)
+      users.value.splice(index, index+1)
+  }
+  deletingUser.value = null
 }
 
 async function fetchUsers() {
@@ -100,7 +117,7 @@ onMounted(async () => {
             <td>
               <div class="inline-flex">
                 <button-view icon="/icons/edit.svg" @click="editingUser = {...user}"></button-view>
-                <button-view icon="/icons/delete.svg" theme="danger" @click=""></button-view>
+                <button-view icon="/icons/delete.svg" theme="danger" @click="deletingUser = user"></button-view>
               </div>
             </td>
           </tr>
@@ -131,6 +148,8 @@ onMounted(async () => {
 
   </main>
 
+  <!-- Interfaces modales -->
+
   <div class="modal" v-if="editingUser">
     <div>
       <h2>Modifier l'utilisateur</h2>
@@ -150,10 +169,28 @@ onMounted(async () => {
         <button @click="confirmUserEdit">Confirmer</button>
       </div>
       <div>
-        <button>Annuler</button>
+        <button @click="editingUser = null">Annuler</button>
       </div>
     </div>
   </div>
+
+  <div class="modal" v-if="deletingUser">
+    <div>
+      <h2>Supprimer l'utilisateur</h2>
+      <div>
+        <p>Vous-vous vraiment supprimer {{deletingUser.username}} ?</p>
+        <p class="danger">⚠Cette action est irréversible⚠</p>
+
+      </div>
+      <div>
+        <button @click="confirmUserDelete">Confirmer</button>
+      </div>
+      <div>
+        <button @click="deletingUser = null">Annuler</button>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 
@@ -235,6 +272,11 @@ table td {
 
 .modal button {
   color: black;
+}
+
+.danger {
+  color: #FF4040;
+  text-align: center;
 }
 
 </style>

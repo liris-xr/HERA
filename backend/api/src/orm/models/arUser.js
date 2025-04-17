@@ -6,6 +6,7 @@ import { sequelize } from '../database.js'
  * @property {string} id
  * @property {string} username
  * @property {string} email
+ *
  * @property {string} password
  */
 
@@ -30,6 +31,11 @@ export default sequelize.define('ArUser', {
         validate: {
             isEmail: true
         }
+    },
+    admin: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
     },
     password: {
         type: DataTypes.STRING,

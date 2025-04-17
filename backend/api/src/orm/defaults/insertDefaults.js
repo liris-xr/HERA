@@ -10,6 +10,7 @@ export async function insertDefaults() {
         id: '3e6d3402-8a53-4354-bc63-647ee1b6a59b',
         username: 'admin',
         email: 'admin@gmail.com',
+        admin: true,
         password: 'admin',
     });
 

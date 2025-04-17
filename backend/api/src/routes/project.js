@@ -2,7 +2,7 @@ import express from 'express'
 import {baseUrl} from "./baseUrl.js";
 import {ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
-import authMiddleware from "../middlewares/auth.js";
+import authMiddleware, {optionnalAuthMiddleware} from "../middlewares/auth.js";
 import {
     deleteFile,
     deleteFolder,
@@ -70,7 +70,7 @@ router.get(baseUrl+'projects/:page', async (req, res) => {
 
 
 router.get(baseUrl+'project/:projectId', async (req, res) => {
-    let project = (await ArProject.findOne({
+    let project = await ArProject.findOne({
             where: { published: true, id: req.params.projectId },
             include:[
                 {
@@ -102,7 +102,7 @@ router.get(baseUrl+'project/:projectId', async (req, res) => {
 
             ],
         })
-    )
+
     res.set({
         'Content-Type': 'application/json'
     })
@@ -129,7 +129,6 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
 
     try {
 
-
         let project = await ArProject.findOne({
             where: {id: projectId},
         })
@@ -137,7 +136,7 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
         if (project == null)
             return res.status(404).send({error: 'Project not found'})
 
-        if (project.userId != token.id)
+        if (project.userId !== token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
 
@@ -155,7 +154,6 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             pictureUrl: updatedUrl,
             unit: req.body.unit,
             calibrationMessage: req.body.calibrationMessage,
-            userId: token.id,
         }, {
             returning: true
         })

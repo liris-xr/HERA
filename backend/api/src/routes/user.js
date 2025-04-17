@@ -104,7 +104,7 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
                 {
                     model: ArUser,
                     as: "owner",
-                    attributes: ["username"],
+                    attributes: ["username", "id"],
                 }
 
             ],
@@ -114,7 +114,7 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
         'Content-Type': 'application/json'
     })
 
-    if(token.id !== userId){
+    if(userId !== project.owner.id){
         res.status(401);
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }

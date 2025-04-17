@@ -27,4 +27,18 @@ const authMiddleware = (req, res, next) => {
     })
 }
 
+export const optionnalAuthMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization
+    const token = authHeader && authHeader.split(' ')[1]
+
+    jwt.verify(token, JWT_SECRET, (err, decodedToken) => {
+        if (err) {
+            return res.status(401).json({ error: 'Unauthorized', details: 'Invalid token' })
+        }
+
+        req.user = decodedToken
+    })
+    next()
+}
+
 export default authMiddleware

@@ -17,7 +17,7 @@ const props = defineProps({
   json: {type: Object, required: true}
 })
 
-const arSessionManager = new XrSessionManager(props.json);
+const xrSessionManager = new XrSessionManager(props.json);
 
 const container = ref(null);
 const arOverlay = ref(null);
@@ -25,13 +25,13 @@ const labelContainer = ref(null);
 
 const contextMenu = ref(null);
 
-const arCompatible = ref(false);
-arCompatible.value = await arSessionManager.isArCompatible(props.json.displayMode);
+const xrCompatible = ref(false);
+xrCompatible.value = await xrSessionManager.isXrCompatible(props.json.displayMode);
 const loaded = ref(false);
 
 
 onMounted(async () => {
-  await arSessionManager.init(container.value, arOverlay.value);
+  await xrSessionManager.init(container.value, arOverlay.value);
   loaded.value = true;
 })
 
@@ -50,12 +50,12 @@ const buttonText = computed(() => {
 
 <template>
   <div id="startButton">
-    <button-view icon="/icons/ar.svg" :text="buttonText" @click="arSessionManager.start(props.json.displayMode)" :disabled="!loaded || !arCompatible" :class="{buttonDisabled:!loaded || !arCompatible }" v-if="loaded"></button-view>
+    <button-view icon="/icons/ar.svg" :text="buttonText" @click="xrSessionManager.start(props.json.displayMode)" :disabled="!loaded || !xrCompatible" :class="{buttonDisabled:!loaded || !xrCompatible }" v-if="loaded"></button-view>
     <span v-if="!loaded">
       {{$t("projectView.arView.startAr.loading")}}
       <icon-svg url="/icons/spinner.svg"></icon-svg>
     </span>
-    <span v-if="loaded && !arCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
+    <span v-if="loaded && !xrCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
 
   </div>
 
@@ -64,10 +64,10 @@ const buttonText = computed(() => {
 
     <div ref="container" id="container"></div>
 
-    <section ref="arOverlay" id="arOverlay" :class="{overlayInvisible:!arSessionManager.isArRunning.value, overlayVisible: arSessionManager.isArRunning.value}">
+    <section ref="arOverlay" id="arOverlay" :class="{overlayInvisible:!xrSessionManager.isArRunning.value, overlayVisible: xrSessionManager.isArRunning.value}">
       <div ref="labelContainer" id="labelContainer"></div>
       <div id="overlayTop" class="overlayBlur">
-        <button @click="arSessionManager.stop()">
+        <button @click="xrSessionManager.stop()">
           <icon-svg url="/icons/close.svg" theme="text"/>
         </button>
         <h2>{{props.json.title}}</h2>
@@ -77,40 +77,40 @@ const buttonText = computed(() => {
                                :text="$t('projectView.arView.arOverlay.contextMenu.reset')"
                                @click="()=>{
                                   toggleContextMenuStatus();
-                                  arSessionManager.reset()
+                                  xrSessionManager.reset()
                                }"/>
           <toggleable-context-menu-item :text="$t('projectView.arView.arOverlay.contextMenu.showLabels')"
-                                        :checked="arSessionManager.labelRenderer.isEnabled.value"
+                                        :checked="xrSessionManager.labelRenderer.isEnabled.value"
                                         @click="()=>{
                                           toggleContextMenuStatus();
-                                          arSessionManager.labelRenderer.toggleStatus()
+                                          xrSessionManager.labelRenderer.toggleStatus()
                                         }"/>
         </hot-dog-menu>
       </div>
 
       
-      <div id="overlayMiddle" @click="arSessionManager.sceneManager.onSceneClick($event)">
-        <ar-notification icon="/icons/info.svg" :visible="!arSessionManager.sceneManager.scenePlacementManager.isStabilized.value">
+      <div id="overlayMiddle" @click="xrSessionManager.sceneManager.onSceneClick($event)">
+        <ar-notification icon="/icons/info.svg" :visible="!xrSessionManager.sceneManager.scenePlacementManager.isStabilized.value">
         <template #content><p>{{$t("projectView.arView.arOverlay.slowMoveMessage")}}</p></template>
         </ar-notification>
 
-        <ar-notification icon="/icons/3d.svg" :visible="arSessionManager.sceneManager.scenePlacementManager.isStabilized.value && arSessionManager.sceneManager.scenePlacementManager.isEnabled.value">
+        <ar-notification icon="/icons/3d.svg" :visible="xrSessionManager.sceneManager.scenePlacementManager.isStabilized.value && xrSessionManager.sceneManager.scenePlacementManager.isEnabled.value">
           <template #content><p>{{props.json.calibrationMessage}}</p></template>
         </ar-notification>
 
-        <expandable-ar-notification v-if="arSessionManager.sceneManager.active.value.hasDescription()" :title="$t('projectView.arView.arOverlay.scene.descriptionTitle')" :text="arSessionManager.sceneManager.active.value.description"></expandable-ar-notification>
-        <expandable-ar-notification v-for="error in arSessionManager.sceneManager.active.value.getErrors.value" :title="error.title" :text="error.message"></expandable-ar-notification>
+        <expandable-ar-notification v-if="xrSessionManager.sceneManager.active.value.hasDescription()" :title="$t('projectView.arView.arOverlay.scene.descriptionTitle')" :text="xrSessionManager.sceneManager.active.value.description"></expandable-ar-notification>
+        <expandable-ar-notification v-for="error in xrSessionManager.sceneManager.active.value.getErrors.value" :title="error.title" :text="error.message"></expandable-ar-notification>
 
 
-        <div id="playerActions" v-if="arSessionManager.sceneManager.active.value.hasAnimation.value">
+        <div id="playerActions" v-if="xrSessionManager.sceneManager.active.value.hasAnimation.value">
           <action-bubble
-              :icon="arSessionManager.sceneManager.active.value.labelPlayer.isPlaying.value ? '/icons/pause.svg' : '/icons/play.svg'"
-              @click="arSessionManager.sceneManager.active.value.labelPlayer.togglePlaying()"
+              :icon="xrSessionManager.sceneManager.active.value.labelPlayer.isPlaying.value ? '/icons/pause.svg' : '/icons/play.svg'"
+              @click="xrSessionManager.sceneManager.active.value.labelPlayer.togglePlaying()"
           />
 
           <action-bubble
               icon="/icons/restart.svg"
-              @click="arSessionManager.sceneManager.active.value.labelPlayer.reset()"
+              @click="xrSessionManager.sceneManager.active.value.labelPlayer.reset()"
           />
 
         </div>
@@ -119,22 +119,22 @@ const buttonText = computed(() => {
       <div id="overlayBottom" class="overlayBlur">
         <button class="arrowButton"
                 id="arrowButtonPrevious"
-                :class="{buttonDisabled:!arSessionManager.sceneManager.hasPrevious.value}"
-                @click="arSessionManager.sceneManager.setPreviousActive()"
-                :disabled="!arSessionManager.sceneManager.hasPrevious.value">
+                :class="{buttonDisabled:!xrSessionManager.sceneManager.hasPrevious.value}"
+                @click="xrSessionManager.sceneManager.setPreviousActive()"
+                :disabled="!xrSessionManager.sceneManager.hasPrevious.value">
           <div>
             <icon-svg url="/icons/previous.svg" theme="text"/>
             <span>{{$t("projectView.arView.arOverlay.scene.previousButton")}}</span>
           </div>
-          <span v-if="arSessionManager.sceneManager.hasPrevious.value"> {{arSessionManager.sceneManager.previous.value.title}}</span>
+          <span v-if="xrSessionManager.sceneManager.hasPrevious.value"> {{xrSessionManager.sceneManager.previous.value.title}}</span>
         </button>
 
 
 
         <div id="overlayBottomSelector">
           <h3>{{props.json.unit}}</h3>
-          <select v-model="arSessionManager.sceneManager.activeSceneId.value">
-            <option v-for="scene in arSessionManager.sceneManager.scenes" :value="scene.sceneId">
+          <select v-model="xrSessionManager.sceneManager.activeSceneId.value">
+            <option v-for="scene in xrSessionManager.sceneManager.scenes" :value="scene.sceneId">
               {{scene.title}}
             </option>
           </select>
@@ -143,14 +143,14 @@ const buttonText = computed(() => {
 
         <button class="arrowButton"
                 id="arrowButtonNext"
-                :class="{buttonDisabled:!arSessionManager.sceneManager.hasNext.value}"
-                @click="arSessionManager.sceneManager.setNextActive()"
-                :disabled="!arSessionManager.sceneManager.hasNext.value">
+                :class="{buttonDisabled:!xrSessionManager.sceneManager.hasNext.value}"
+                @click="xrSessionManager.sceneManager.setNextActive()"
+                :disabled="!xrSessionManager.sceneManager.hasNext.value">
           <div>
             <span>{{$t("projectView.arView.arOverlay.scene.nextButton")}}</span>
             <icon-svg url="/icons/next.svg" theme="text"/>
           </div>
-          <span v-if="arSessionManager.sceneManager.hasNext.value"> {{arSessionManager.sceneManager.next.value.title}}</span>
+          <span v-if="xrSessionManager.sceneManager.hasNext.value"> {{xrSessionManager.sceneManager.next.value.title}}</span>
         </button>
       </div>
 

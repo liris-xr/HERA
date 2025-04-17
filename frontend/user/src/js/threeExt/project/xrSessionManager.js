@@ -40,6 +40,7 @@ export class XrSessionManager {
         this.sceneManager.onSceneChanged = function(){
             this.labelRenderer.clear()
             this.sceneManager.active.value.add(this.arCamera)
+            if(this.vrController) this.vrController.onSceneChanged();
         }.bind(this);
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
@@ -96,7 +97,7 @@ export class XrSessionManager {
     }
 
 
-    async isArCompatible(displayMode="ar") {
+    async isXrCompatible(displayMode="ar") {
         return navigator.xr && await navigator.xr.isSessionSupported("immersive-"+displayMode);
     }
 
@@ -117,9 +118,7 @@ export class XrSessionManager {
                 domOverlay: {
                     root: this.domOverlay
                 }
-            } : {
-                optionalFeatures: ['screen']
-            }
+            } : {}
         );
 
         this.xrMode = displayMode;
@@ -136,6 +135,7 @@ export class XrSessionManager {
         if(this.xrMode === "vr") {
             this.vrController = new VrController(this.xrSession, this.referenceSpace, this.sceneManager, this.arCamera, this.arRenderer)
             this.vrController.init()
+            this.vrController.showUI()
         } else if (this.xrMode === "ar") {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.xrSession.requestHitTestSource({space: this.viewerSpace});
             this.sceneManager.isArRunning.value = true;
@@ -156,6 +156,9 @@ export class XrSessionManager {
         this.#isXrRunning.value = false;
         this.sceneManager.isArRunning.value = false;
         this.#resetCameraPosition()
+
+        if(this.vrController)
+            this.vrController.hideUI()
     }
 
     reset() {

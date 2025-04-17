@@ -79,7 +79,7 @@ export class Label{
             padding = 20,
             backgroundColor = 'rgba(0, 0, 0, 0.6)',
             textColor = 'white',
-            scale = 0.25, // facteur de mise à l'échelle pour ajuster la taille générale du label
+            scale = 0.25,
         } = options;
 
         // 1. Mesurer le texte
@@ -87,7 +87,7 @@ export class Label{
         const tmpCtx = tmpCanvas.getContext('2d');
         tmpCtx.font = font;
         const textWidth = tmpCtx.measureText(this.content).width;
-        const textHeight = parseInt(font, 10); // La hauteur du texte, basée sur la taille de la police
+        const textHeight = parseInt(font, 10);
 
         // Ajouter un padding autour du texte
         const canvasWidth = textWidth + padding * 2;

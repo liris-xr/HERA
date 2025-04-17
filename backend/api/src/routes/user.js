@@ -129,4 +129,21 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
 })
 
 
+
+// routes pour le mode admin
+router.get(baseUrl+'users', authMiddleware, async (req, res) => {
+    const user = req.user
+
+    if(!user.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    const users = await ArUser.findAll({attributes: ["username", "id", "email", "admin"]});
+    res.status(200);
+    res.send(users);
+})
+
+
+
 export default router

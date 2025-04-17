@@ -234,7 +234,7 @@ router.delete(baseUrl+'project/:projectId', authMiddleware, async (req, res) => 
             return res.status(404).send({error: 'Project not found'})
         }
 
-        if(project.owner.id != token.id)
+        if(project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: 'User not granted'})
 
 
@@ -295,7 +295,7 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        if(project.owner.id != token.id){
+        if(project.owner.id != token.id && !req.user.admin){
             return res.status(403).send({error: 'User not granted'});
         }
 

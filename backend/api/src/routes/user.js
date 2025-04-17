@@ -48,7 +48,7 @@ router.get(baseUrl+'users/:userId/projects/:page', authMiddleware , async (req, 
             'Content-Type': 'application/json'
         });
 
-        if(token.id !== userId){
+        if(token.id !== userId && !req.user.admin){
             res.status(401);
             return res.send({ error: 'Unauthorized', details: 'User not granted' })
         }

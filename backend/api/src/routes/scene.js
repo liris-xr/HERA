@@ -47,7 +47,7 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
         if (scene == null)
             return res.status(404).send({error: 'Scene not found'})
 
-        if (scene.project.owner.id != token.id)
+        if (scene.project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
         res.status(200);
@@ -148,7 +148,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         if (scene == null)
             return res.status(404).send({error: 'Scene not found'})
 
-        if (scene.project.owner.id != token.id)
+        if (scene.project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
 
@@ -340,7 +340,7 @@ router.post(baseUrl+'scenes', authMiddleware, async (req, res) => {
             }]
         })
 
-        if (project.owner.id != token.id)
+        if (project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
 
@@ -412,7 +412,7 @@ router.delete(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
             return res.status(404).send({error: 'Scene not found'})
         }
 
-        if(scene.project.owner.id != token.id)
+        if(scene.project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: 'User not granted'})
 
 
@@ -473,7 +473,7 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Scene not found' });
         }
 
-        if(scene.project.owner.id != token.id){
+        if(scene.project.owner.id != token.id && !req.user.admin){
             return res.status(403).send({error: 'User not granted'});
         }
 

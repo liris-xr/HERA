@@ -2,7 +2,8 @@
   "locale": "es-ES",
   "header": {
     "home": "Mis proyectos",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "administration": "panel de administración"
   },
   "login": {
     "emailLabel": "Correo electrónico",
@@ -215,6 +216,32 @@
       }
     }
   },
+
+  "admin": {
+    "title": "panel de administración",
+    "sections": {
+      "accounts": {
+        "title": "Cuentas",
+        "username": "Nom d'utilisateur",
+        "email": "Adresse mail",
+        "admin": "Administrateur",
+        "actions": "Actions"
+      },
+      "projects": {
+        "title": "Proyectos"
+      },
+      "scenes": {
+        "title": "Escenas"
+      },
+      "assets": {
+        "title": "Recursos"
+      },
+      "labels": {
+        "title": "Etiquetas"
+      }
+    }
+  },
+
   "textInputModal": {
     "confirmButton": "Crear",
     "cancelButton": "Cancelar"

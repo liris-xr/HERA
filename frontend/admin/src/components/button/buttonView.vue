@@ -2,7 +2,7 @@
 import IconSvg from "@/components/icons/IconSvg.vue";
 
 const props = defineProps({
-  text: {type: String, required: true},
+  text: {type: String, required: false},
   theme: {type: String, default: "default"},
   icon:{type: String, default: ""},
   disabled: {type: Boolean, default: false},
@@ -17,7 +17,7 @@ let textTheme = props.theme
 
 <template>
     <button :class="{[`${textTheme}${themeKeyword}`]: true, 'disabled':disabled}" type="button" :disabled="disabled">
-    <span :class="textTheme+themeKeyword">{{text}}</span>
+    <span v-if="props.text" :class="textTheme+themeKeyword">{{text}}</span>
     <IconSvg v-if="hasIcon" :url="icon" :theme="textTheme"></IconSvg>
   </button>
 </template>

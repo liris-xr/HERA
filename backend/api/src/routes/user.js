@@ -118,13 +118,12 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    if(project == null){
+    if(project == null) {
         res.status(404);
         res.send({ error: 'Unable to find project'});
-    }else{
+    } else {
         res.status(200);
         res.send(project);
-
     }
 })
 
@@ -142,6 +141,50 @@ router.get(baseUrl+'users', authMiddleware, async (req, res) => {
     const users = await ArUser.findAll({attributes: ["username", "id", "email", "admin"]});
     res.status(200);
     res.send(users);
+})
+
+router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
+    const authUser = req.user
+    const userId = req.params.userId;
+
+    if(authUser.id !== userId && !authUser.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    try {
+
+        const user = await ArUser.findOne({
+            where: {id: userId},
+        })
+
+        await user.update({
+            username: req.body?.username,
+            email: req.body?.email,
+            admin: authUser.admin ? req.body?.admin : undefined,
+        }, {
+            returning: true
+        })
+
+        console.log("user", user)
+
+        return res.status(200).send(user)
+
+    } catch(e) {
+        console.log(e)
+        res.set({
+            'Content-Type': 'application/json'
+        })
+        res.status(400);
+        return res.send({ error: 'Unable to save user'});
+    }
+
+
+
+
+
+
+
 })
 
 

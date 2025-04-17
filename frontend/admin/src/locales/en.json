@@ -2,7 +2,8 @@
   "locale": "en-Us",
   "header": {
     "home": "My projects",
-    "logout": "Logout"
+    "logout": "Logout",
+    "administration": "Admin pannel"
   },
   "login": {
     "emailLabel": "Email",
@@ -225,7 +226,30 @@
     }
   },
 
-
+  "admin": {
+    "title": "Admin pannel",
+    "sections": {
+      "accounts": {
+        "title": "Accounts",
+        "username": "Username",
+        "email": "Email address",
+        "admin": "Admin",
+        "actions": "Actions"
+      },
+      "projects": {
+        "title": "Projects"
+      },
+      "scenes": {
+        "title": "Scenes"
+      },
+      "assets": {
+        "title": "Assets"
+      },
+      "labels": {
+        "title": "Labels"
+      }
+    }
+  },
 
 
   "textInputModal":{

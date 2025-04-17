@@ -8,8 +8,6 @@ const {logout, userData, isAuthenticated} = useAuthStore();
 
 if(!isAuthenticated.value) logoutAndRedirect();
 
-
-
 function logoutAndRedirect(){
   logout()
   router.push({ name: "login" });
@@ -24,6 +22,7 @@ function logoutAndRedirect(){
 
 
       <div>
+        <RouterLink :to="{name:'admin'}" v-if="userData?.admin">{{$t("header.administration")}}</RouterLink>
         <locale-changer></locale-changer>
         <span v-if="isAuthenticated">{{userData.username}}</span>
         <button-view :text="$t('header.logout')" @click="logoutAndRedirect()"/>

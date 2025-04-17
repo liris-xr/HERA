@@ -2,7 +2,8 @@
   "locale": "fr-Fr",
   "header": {
     "home": "Mes projets",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "administration": "Administration"
   },
 
   "login": {
@@ -219,6 +220,31 @@
         "save": "Sauvegarder",
         "saved": "Sauvegardé",
         "saving": "Sauvegarde en cours"
+      }
+    }
+  },
+
+  "admin": {
+    "title": "Administration",
+    "sections": {
+      "accounts": {
+        "title": "Accounts",
+        "username": "Nom d'utilisateur",
+        "email": "Adresse mail",
+        "admin": "Administrateur",
+        "actions": "Actions"
+      },
+      "projects": {
+        "title": "Projects"
+      },
+      "scenes": {
+        "title": "Scenes"
+      },
+      "assets": {
+        "title": "Assets"
+      },
+      "labels": {
+        "title": "Labels"
       }
     }
   },

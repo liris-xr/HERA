@@ -1,6 +1,6 @@
 <script setup>
 import {computed, onMounted, ref} from "vue";
-import {ArSessionManager} from "@/js/threeExt/project/arSessionManager.js";
+import {XrSessionManager} from "@/js/threeExt/project/xrSessionManager.js";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
 import ArNotification from "@/components/notification/arNotification.vue";
@@ -17,7 +17,7 @@ const props = defineProps({
   json: {type: Object, required: true}
 })
 
-const arSessionManager = new ArSessionManager(props.json);
+const arSessionManager = new XrSessionManager(props.json);
 
 const container = ref(null);
 const arOverlay = ref(null);

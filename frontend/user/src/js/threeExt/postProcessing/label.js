@@ -26,7 +26,7 @@ export class Label{
         const htmlLabel = this.#createHtmlLabel();
         this.setContent(this.content);
 
-        this.label = new CSS2DObject(htmlLabel);
+        // this.label = new CSS2DObject(htmlLabel);
         this.label = this.#createXRLabel()
 
         this.label.position.set(this.position.x, this.position.y, this.position.z);
@@ -114,20 +114,23 @@ export class Label{
         const texture = new THREE.CanvasTexture(canvas);
         texture.minFilter = THREE.LinearFilter; // améliore le rendu proche
 
-        // 3. Adapter dynamiquement la géométrie en fonction du texte mesuré
-        const worldWidth = scale * canvasWidth / 100;  // Conversion en mètres (en fonction de la taille du texte et de l'échelle)
-        const worldHeight = scale * canvasHeight / 100; // Idem pour la hauteur
-
-        // Créer la géométrie et la matérialisation pour l'objet 3D
-        const geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
-        const material = new THREE.MeshBasicMaterial({
+        // 3. Créer un Sprite pour afficher le texte
+        const spriteMaterial = new THREE.SpriteMaterial({
             map: texture,
             transparent: true,
         });
 
-        // Créer le mesh et renvoyer l'objet 3D
-        const mesh = new THREE.Mesh(geometry, material);
-        return mesh;
+        const sprite = new THREE.Sprite(spriteMaterial);
+
+        // Calculer l'échelle du Sprite en fonction du texte
+        const worldWidth = scale * canvasWidth / 100;  // Conversion en mètres (en fonction de la taille du texte et de l'échelle)
+        const worldHeight = scale * canvasHeight / 100; // Idem pour la hauteur
+        sprite.scale.set(worldWidth, worldHeight, 1);
+
+        // afficher le label au dessus des autres sprites, peut-être pas une bonne idée ?
+        spriteMaterial.depthTest = false
+
+        return sprite;
     }
 
     setContent(text){

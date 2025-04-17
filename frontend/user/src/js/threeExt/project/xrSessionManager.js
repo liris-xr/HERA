@@ -4,9 +4,9 @@ import {ArRenderer} from "../rendering/arRenderer";
 import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
-import * as THREE from "three";
+import {VrController} from "@/js/threeExt/controllers/VrController.js";
 
-export class ArSessionManager {
+export class XrSessionManager {
     sceneManager;
     arCamera;
     arRenderer;
@@ -22,6 +22,8 @@ export class ArSessionManager {
     domWidth;
     domHeight;
 
+    vrController;
+
     constructor(json) {
         this.shadowMapSize = 4096
         this.domWidth = 380;
@@ -30,11 +32,15 @@ export class ArSessionManager {
 
         this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
         this.arCamera = new ArCamera();
+        this.sceneManager.active.value.add(this.arCamera)
 
         this.arRenderer = new ArRenderer(this.shadowMapSize,1);
         this.labelRenderer = new LabelRenderer();
 
-        this.sceneManager.onSceneChanged = function(){this.labelRenderer.clear()}.bind(this);
+        this.sceneManager.onSceneChanged = function(){
+            this.labelRenderer.clear()
+            this.sceneManager.active.value.add(this.arCamera)
+        }.bind(this);
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
     }
@@ -104,42 +110,47 @@ export class ArSessionManager {
         this.#isXrRunning.value = true;
 
 
-        this.arSession = await navigator.xr.requestSession(
+        this.xrSession = await navigator.xr.requestSession(
             "immersive-"+displayMode,
             displayMode === "ar" ? {
                 requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
                 domOverlay: {
                     root: this.domOverlay
                 }
-            } : {}
+            } : {
+                optionalFeatures: ['screen']
+            }
         );
 
         this.xrMode = displayMode;
-
         await this.onSessionStarted();
     }
 
     async onSessionStarted() {
-        this.arSession.addEventListener( 'end', this.onSessionEnded.bind(this) );
+        this.xrSession.addEventListener( 'end', this.onSessionEnded.bind(this) );
         this.arRenderer.xr.setReferenceSpaceType( 'local' );
-        await this.arRenderer.xr.setSession( this.arSession );
+        await this.arRenderer.xr.setSession( this.xrSession );
         this.referenceSpace = await this.arRenderer.xr.getReferenceSpace();
-        this.viewerSpace = await this.arSession.requestReferenceSpace('viewer');
+        this.viewerSpace = await this.xrSession.requestReferenceSpace('viewer');
 
-        this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
-
-        this.sceneManager.isArRunning.value = true;
+        if(this.xrMode === "vr") {
+            this.vrController = new VrController(this.xrSession, this.referenceSpace, this.sceneManager, this.arCamera, this.arRenderer)
+            this.vrController.init()
+        } else if (this.xrMode === "ar") {
+            this.sceneManager.scenePlacementManager.hitTestSource = await this.xrSession.requestHitTestSource({space: this.viewerSpace});
+            this.sceneManager.isArRunning.value = true;
+        }
     }
 
 
 
     async stop(){
-        if(this.arSession != null)
-            await this.arSession.end();
+        if(this.xrSession != null)
+            await this.xrSession.end();
     }
 
     onSessionEnded() {
-        this.arSession.removeEventListener( 'end', this.onSessionEnded.bind(this) );
+        this.xrSession.removeEventListener( 'end', this.onSessionEnded.bind(this) );
         this.arSession = null;
         this.sceneManager.scenePlacementManager.hitTestSource = null
         this.#isXrRunning.value = false;
@@ -157,11 +168,11 @@ export class ArSessionManager {
 
         this.arRenderer.render(this.sceneManager.active.value, this.arCamera);
 
-        // if(this.sceneManager.active.value.hasLabels.value && this.labelRenderer.isEnabled.value) {
-        //     this.labelRenderer.render(this.sceneManager.active.value, this.arCamera);
-        // }else{
-        //     this.labelRenderer.clear();
-        // }
+        if(this.sceneManager.active.value.hasLabels.value && this.labelRenderer.isEnabled.value) {
+            this.labelRenderer.render(this.sceneManager.active.value, this.arCamera);
+        }else{
+            this.labelRenderer.clear();
+        }
     }
 
 

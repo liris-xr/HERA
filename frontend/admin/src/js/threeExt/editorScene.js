@@ -157,8 +157,10 @@ export class EditorScene extends THREE.Scene {
         const target = event.target;
         let object = null;
 
-        this.#lightSet = new LightSet(this.shadowMapSize,this);
-        this.#lightSet.pushToScene(this);
+        if(!this.#lightSet) {
+            this.#lightSet = new LightSet(this.shadowMapSize,this);
+            this.#lightSet.pushToScene(this);
+        }
 
         if(target.tagName.toLowerCase() === 'div'){ //label clicked
             for (let label of this.labelManager.getLabels.value) {

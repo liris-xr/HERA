@@ -188,13 +188,24 @@ void main() {
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
-
 	vec3 texcoord = vec3(
-							(((wPosition.x - lpvCenter.x) / lpvWidth) + 1.) / 2.,
-							(((wPosition.z - lpvCenter.z) / lpvDepth) + 1.) / 2.,
-							(((wPosition.y - lpvCenter.y) / lpvHeight) + 1.) / 2.
+							(((wPosition.x-lpvCenter.x) / (lpvWidth/2.)) + 1.) / 2.,
+							(((wPosition.z-lpvCenter.z) / (lpvDepth/2.)) + 1.) / 2.,
+							(((wPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
 						);
-	outgoingLight = texture(sh0,texcoord).rgb;
+	vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
+		texture(sh1,texcoord).rgb,
+		texture(sh2,texcoord).rgb,
+		texture(sh3,texcoord).rgb,
+		texture(sh4,texcoord).rgb,
+		texture(sh5,texcoord).rgb,
+		texture(sh6,texcoord).rgb,
+		texture(sh7,texcoord).rgb,
+		texture(sh8,texcoord).rgb
+	);
+
+
+	outgoingLight = diffuse * getLightProbeIrradiance(interpolatedLightProbe,normal);
 	// outgoingLight = vec3(1);
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
@@ -246,9 +257,9 @@ export class MeshManager {
 					shader.uniforms["sh"+i] = {value: sh3DTexture};
 				}
 				shader.uniforms.lpvCenter = {value : scene.shTexturesCenter};
-				shader.uniforms.lpvWidth = {value : scene.shTexturesWidth};
-				shader.uniforms.lpvDepth = {value : scene.shTexturesDepth};
-				shader.uniforms.lpvHeight = {value : scene.shTexturesHeight};
+				shader.uniforms.lpvWidth = {value : scene.lpvWidth};
+				shader.uniforms.lpvDepth = {value : scene.lpvDepth};
+				shader.uniforms.lpvHeight = {value : scene.lpvHeight};
 			}
 			
         }

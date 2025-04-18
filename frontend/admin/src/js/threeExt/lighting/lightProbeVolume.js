@@ -3,6 +3,22 @@ import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterf
 import {classes} from "@/js/utils/extender.js"
 import { randFloat } from "three/src/math/MathUtils";
 
+// Tableau des triangles émissifs de la scène
+// + Tableau de pondération en fonctiond de la taille des triangles
+// class LightSource {  
+//     public:
+    
+//         std::vector<unsigned int> triangleIds;
+//         std::vector<float> weights;
+//         let area;
+        
+
+//         LightSource() {
+//             this->area = 0;
+//         }
+// };
+
+
 export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface) {
 
     rawData; // 1D table of probes
@@ -21,6 +37,9 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         this.scene.shTexturesWidth = width*density;
         this.scene.shTexturesDepth = depth*density;
         this.scene.shTexturesHeight = height*density;
+        this.scene.lpvWidth = width;
+        this.scene.lpvDepth = depth;
+        this.scene.lpvHeight = height;
         this.scene.shTexturesCenter = center;
 
         this.raycaster = new THREE.Raycaster()
@@ -42,11 +61,11 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                     newProbe.position.copy(pos);
                     this.rawData.push(newProbe)
 
-                    const geometry = new THREE.SphereGeometry(0.01,30,30) 
-                    const material = new THREE.MeshBasicMaterial( { color: new THREE.Color(1,0,1) } ); 
-                    const sphere = new THREE.Mesh( geometry, material ); 
-                    sphere.position.copy(pos)
-                    scene.add( sphere );
+                    // const geometry = new THREE.SphereGeometry(0.01,30,30) 
+                    // const material = new THREE.MeshBasicMaterial( { color: new THREE.Color(1,0,1) } ); 
+                    // const sphere = new THREE.Mesh( geometry, material ); 
+                    // sphere.position.copy(pos)
+                    // scene.add( sphere );
                 }
             }
         }
@@ -67,6 +86,11 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         const direction = pointOnSphere.sub(origin).normalize()
 
         return direction;
+    }
+
+    getRandomDirectionTowardLightSource(origin) {
+        const point = new THREE.Vector3(randFloat(-0.25,0.25),2,randFloat(-0.20,0.20));
+        return point.sub(origin).normalize();
     }
 
     getClosestIntersection() {
@@ -109,7 +133,8 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
             const shBasis = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
             
             for(let i = 0;i<nbSample;i++) {
-                const dir = this.getRandomSphereDirection(probe.position);
+                // const dir = this.getRandomSphereDirection(probe.position);
+                const dir = this.getRandomDirectionTowardLightSource(probe.position);
 
                 this.raycaster.set(probe.position,dir);
                 // this.scene.add(new THREE.ArrowHelper(this.raycaster.ray.direction, this.raycaster.ray.origin, 300, 0xff0000) );
@@ -123,7 +148,6 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                             closestIntersect.object.material.emissive.b != 0 
                         )
                     ) {
-                        
                         // evaluate SH basis functions in direction dir
                         THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
                         const color = closestIntersect.object.material.emissive;

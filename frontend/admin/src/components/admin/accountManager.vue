@@ -3,12 +3,14 @@ import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
 import * as sea from "node:sea";
+import GenericTable from "@/components/admin/genericTable.vue";
 
 
 const props = defineProps({
   token: {type: String, required: true},
 })
 
+const table = ref(null)
 
 const users = ref([])
 const editingUser = ref(null)
@@ -16,9 +18,6 @@ const deletingUser = ref(null)
 const creatingUser = ref(null)
 
 const totalPages = ref(1)
-const currentPage = ref(1)
-
-const searchQuery = ref({})
 
 async function confirmUserEdit() {
   const res = await fetch(`${ENDPOINT}admin/users/${editingUser.value.id}`,{
@@ -73,17 +72,22 @@ async function confirmUserCreate() {
     const newUser = data.user
     users.value.push(newUser)
 
-    currentPage.value = data.redirectPage
+    table.value.currentPage = data.redirectPage
   }
 
   creatingUser.value = null
 }
 
-async function fetchUsers() {
-  try {
-    const searchParams = new URLSearchParams(searchQuery.value)
+async function fetchUsers(data=null) {
+  const searchQuery = data?.searchQuery
+  const currentPage = data?.currentPage ?? 1
 
-    const res = await fetch(`${ENDPOINT}admin/users/${currentPage.value}?${searchParams.toString()}`,
+  console.log()
+
+  try {
+    const searchParams = new URLSearchParams(searchQuery)
+
+    const res = await fetch(`${ENDPOINT}admin/users/${currentPage}?${searchParams.toString()}`,
         {
           headers: {
             'Authorization': `Bearer ${props.token}`,
@@ -104,92 +108,26 @@ async function fetchUsers() {
 
 onMounted(async () => {
   await fetchUsers()
-  watch(currentPage, fetchUsers)
-  watch(searchQuery, fetchUsers, {deep: true})
 })
 
-const pageNumbers = computed(() => {
-  const numbers = []
-
-  numbers.push(1)
-
-  const start = Math.max(currentPage.value - 2, 2)
-  const end = Math.min(currentPage.value + 2, totalPages.value - 1)
-
-  if(start > 2)
-    numbers.push("...")
-
-  for(let i = start; i <= end; i++)
-    numbers.push(i)
-
-  if(end < totalPages.value - 1)
-    numbers.push("...")
-
-  if(totalPages.value > 1)
-    numbers.push(totalPages.value)
-
-  return numbers
-})
 
 </script>
 
 <template>
-  <section>
-    <div class="title">
-      <h2>{{$t("admin.sections.accounts.title")}}</h2>
-      <button-view icon="/icons/add.svg" @click="creatingUser = {}"></button-view>
-    </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>{{$t("admin.sections.accounts.username")}}</th>
-          <th>{{$t("admin.sections.accounts.email")}}</th>
-          <th>{{$t("admin.sections.accounts.actions")}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="search">
-          <td>
-            <input
-              :placeholder="$t('admin.research')"
-              v-model="searchQuery.username">
-          </td>
-          <td>
-            <input
-              :placeholder="$t('admin.research')"
-              v-model="searchQuery.email">
-          </td>
-          <td></td>
-        </tr>
+    <generic-table
+        ref="table"
+        section-name="accounts"
+        :fields="['username', 'email']"
+        :data="users"
+        :total-pages="totalPages"
 
-        <tr v-for="user in users">
-          <td>{{user.username}}</td>
-          <td>{{user.email}}</td>
-          <td>
-            <div class="inline-flex">
-              <button-view icon="/icons/edit.svg" @click="editingUser = {...user}"></button-view>
-              <button-view icon="/icons/delete.svg" theme="danger" @click="deletingUser = user"></button-view>
-            </div>
-          </td>
-        </tr>
+        @create="creatingUser = {}"
+        @edit="editingUser = $event"
+        @delete="deletingUser = $event"
+        @fetch="fetchUsers"
+    />
 
-        <tr>
-          <td colspan="3">
-            <div class="pagination">
-              <button
-                  v-for="page in pageNumbers"
-                  :disabled="page === '...'"
-                  :class="{active: currentPage === page, pagination_button: page !== '...'}"
-                  @click="currentPage = page">
-                {{page}}
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
 
   <!-- Interfaces modales -->
 
@@ -263,39 +201,5 @@ const pageNumbers = computed(() => {
 </template>
 
 <style scoped>
-
-.title {
-  display: flex;
-  gap:10px
-}
-
-.pagination button:not(.pagination_button) {
-  border: none;
-  background: transparent;
-  color: black
-}
-
-.pagination_button {
-  margin: 0 4px;
-  padding: 4px 8px;
-  border: none;
-  border-radius: 4px;
-  background-color: var(--accentColor);
-  color: var(--backgroundColor);
-  cursor: pointer;
-}
-
-.active {
-  background-color: var(--textImportantColor) !important;
-}
-
-.search td {
-  padding: 5px;
-}
-
-.search input {
-  width: 90%;
-  height: 30px;
-}
 
 </style>

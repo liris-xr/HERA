@@ -132,15 +132,21 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
 
 // routes pour le mode admin
 
-router.get(baseUrl+'admin/users', authMiddleware, async (req, res) => {
+router.get(baseUrl+'admin/users/:page?', authMiddleware, async (req, res) => {
     const user = req.user
+    const page = req.params.page || 1
 
     if(!user.admin) {
         res.status(401);
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    const users = await ArUser.findAll({attributes: ["username", "id", "email", "admin"]});
+    const users = await ArUser.findAll({
+        attributes: ["username", "id", "email", "admin"],
+        limit: PAGE_LENGTH,
+        offset: (page - 1) * PAGE_LENGTH,
+        order: [['createdAt', 'ASC']],
+    });
     res.status(200);
     res.send(users);
 })

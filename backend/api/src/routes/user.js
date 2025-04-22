@@ -3,6 +3,7 @@ import {baseUrl} from "./baseUrl.js";
 import {ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware from "../middlewares/auth.js";
+import {passwordHash} from "../utils/passwordHash.js";
 
 const router = express.Router()
 
@@ -216,10 +217,12 @@ router.post(baseUrl+"admin/users", authMiddleware, async (req, res) => {
 
     try {
 
+        const password = passwordHash(req.body.password)
+
         const newUser = await ArUser.create({
             username: req.body.username,
             email: req.body.email,
-            password: req.body.password,
+            password: password,
             admin: req.body?.admin,
         })
 

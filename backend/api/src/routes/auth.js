@@ -5,6 +5,7 @@ import express from 'express'
 import { getDetails } from '../validators/index.js'
 import {baseUrl} from "./baseUrl.js";
 import authMiddleware from "../middlewares/auth.js";
+import {passwordHash, passwordVerify} from "../utils/passwordHash.js";
 
 const router = express.Router()
 
@@ -25,7 +26,9 @@ router.post(baseUrl+'auth/register', authMiddleware, async (req, res) => {
         }
 
         const reqBody = req.body
-        const { username, email, password } = reqBody
+        const { username, email, unhashedPassword } = reqBody
+
+        const password = passwordHash(unhashedPassword)
 
         // Vérifier si l'utilisateur existe déjà
         const userWithSameEmail = await ArUser.findOne({ where: { email }})
@@ -82,7 +85,7 @@ router.post(baseUrl+'auth/login', async (req, res) => {
 
 
         // Vérifier le mot de passe de l'utilisateur
-        if (user.password !== password) {
+        if (!passwordVerify(password, user.password)) {
             return res.status(401).json({ error: 'Invalid credentials.' })
         }
 

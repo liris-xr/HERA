@@ -2,6 +2,7 @@
 import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
+import * as sea from "node:sea";
 
 
 const props = defineProps({
@@ -17,6 +18,7 @@ const creatingUser = ref(null)
 const totalPages = ref(1)
 const currentPage = ref(1)
 
+const searchQuery = ref({})
 
 async function confirmUserEdit() {
   const res = await fetch(`${ENDPOINT}admin/users/${editingUser.value.id}`,{
@@ -79,7 +81,9 @@ async function confirmUserCreate() {
 
 async function fetchUsers() {
   try {
-    const res = await fetch(`${ENDPOINT}admin/users/${currentPage.value}`,
+    const searchParams = new URLSearchParams(searchQuery.value)
+
+    const res = await fetch(`${ENDPOINT}admin/users/${currentPage.value}?${searchParams.toString()}`,
         {
           headers: {
             'Authorization': `Bearer ${props.token}`,
@@ -101,6 +105,7 @@ async function fetchUsers() {
 onMounted(async () => {
   await fetchUsers()
   watch(currentPage, fetchUsers)
+  watch(searchQuery, fetchUsers, {deep: true})
 })
 
 const pageNumbers = computed(() => {
@@ -144,6 +149,20 @@ const pageNumbers = computed(() => {
         </tr>
       </thead>
       <tbody>
+        <tr class="search">
+          <td>
+            <input
+              :placeholder="$t('admin.research')"
+              v-model="searchQuery.username">
+          </td>
+          <td>
+            <input
+              :placeholder="$t('admin.research')"
+              v-model="searchQuery.email">
+          </td>
+          <td></td>
+        </tr>
+
         <tr v-for="user in users">
           <td>{{user.username}}</td>
           <td>{{user.email}}</td>
@@ -268,6 +287,15 @@ const pageNumbers = computed(() => {
 
 .active {
   background-color: var(--textImportantColor) !important;
+}
+
+.search td {
+  padding: 5px;
+}
+
+.search input {
+  width: 90%;
+  height: 30px;
 }
 
 </style>

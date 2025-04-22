@@ -226,6 +226,8 @@
 
   "admin": {
     "title": "Administration",
+    "research": "Recherche",
+    "noResult": "Aucun résultat",
     "sections": {
       "accounts": {
         "title": "Accounts",

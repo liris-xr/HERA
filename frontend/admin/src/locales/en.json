@@ -228,6 +228,8 @@
 
   "admin": {
     "title": "Admin pannel",
+    "research": "Research",
+    "noResult": "No result",
     "sections": {
       "accounts": {
         "title": "Accounts",

@@ -4,6 +4,7 @@ import {ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware from "../middlewares/auth.js";
 import {passwordHash} from "../utils/passwordHash.js";
+import {Op} from "sequelize";
 
 const router = express.Router()
 
@@ -143,11 +144,24 @@ router.get(baseUrl+'admin/users/:page?', authMiddleware, async (req, res) => {
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
+    const where = {}
+
+    if(req.query?.username)
+        where.username = {
+            [Op.like]: `%${req.query?.username}%`
+        }
+    if(req.query?.email)
+        where.email = {
+            [Op.like]: `%${req.query?.email}%`
+        }
+
+
     const { count, rows } = await ArUser.findAndCountAll({
         attributes: ["username", "id", "email", "admin"],
         limit: USERS_PAGE_LENGTH,
         offset: (page - 1) * USERS_PAGE_LENGTH,
         order: [['createdAt', 'ASC']],
+        where
     });
 
     res.status(200);

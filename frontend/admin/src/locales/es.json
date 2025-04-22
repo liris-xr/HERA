@@ -219,6 +219,8 @@
 
   "admin": {
     "title": "panel de administración",
+    "research": "Recherche",
+    "noResult": "Aucun résultat",
     "sections": {
       "accounts": {
         "title": "Cuentas",

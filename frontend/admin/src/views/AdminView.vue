@@ -67,7 +67,7 @@ if(!userData.value.admin) {
 </template>
 
 
-<style >
+<style>
 
 table {
   width: 80%;
@@ -87,6 +87,10 @@ table th {
 
 table td {
   text-align: center;
+}
+
+table tr:hover {
+  background-color: var(--darkerBackgroundColor);
 }
 
 .inline-flex {

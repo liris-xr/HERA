@@ -115,18 +115,20 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
         'Content-Type': 'application/json'
     })
 
+
+    if(project == null) {
+        res.status(404);
+        return res.send({ error: 'Unable to find project'});
+    }
+    
     if(userId !== project.owner.id && !req.user.admin){
         res.status(401);
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    if(project == null) {
-        res.status(404);
-        res.send({ error: 'Unable to find project'});
-    } else {
-        res.status(200);
-        res.send(project);
-    }
+    res.status(200);
+    return res.send(project);
+
 })
 
 

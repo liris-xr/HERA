@@ -173,57 +173,57 @@ onMounted(async () => {
 
   <!-- Interfaces modales -->
 
-  <div class="modal" v-if="editingProject">
+  <generic-modal
+      title="edit"
+      section-name="projects"
+
+      :subject="editingProject"
+      :fields="[
+          {
+            name: 'title',
+            type: 'text',
+            placeholder: 'Musée des confluences',
+          },
+          {
+            name: 'description',
+            type: 'big-text',
+            placeholder: 'Le musée des Confluences, situé à Lyon, est un musée d\'histoire naturelle, d\'anthropologie et des sociétés. Son architecture audacieuse et futuriste reflète sa vocation : explorer l’origine de l’humanité et la diversité des cultures à travers le temps.',
+          },
+          {
+            name: 'calibrationMessage',
+            type: 'text',
+            placeholder: 'Appuyer n\'importe où pour afficher le modèle',
+          },
+          {
+            name: 'unit',
+            type: 'text',
+            placeholder: 'Année',
+          },
+          {
+            name: 'published',
+            type: 'boolean',
+          }
+      ]"
+
+      @confirm="confirmProjectEdit"
+      @cancel="editingProject = null">
+
     <div>
-      <h2>Modifier le projet</h2>
-      <div>
-        <label for="title">{{$t("admin.sections.projects.title")}}</label>
-        <input v-model="editingProject.title" id="title" name="title">
-      </div>
-
-      <div>
-        <label for="description">{{$t("admin.sections.projects.description")}}</label>
-        <textarea rows="5" cols="50" v-model="editingProject.description" id="description" name="description"></textarea>
-      </div>
-
-      <div>
-        <label for="calibrationMessage">{{$t("admin.sections.projects.calibrationMessage")}}</label>
-        <input v-model="editingProject.calibrationMessage" id="calibrationMessage" name="calibrationMessage">
-      </div>
-
-      <div>
-        <label for="unit">{{$t("admin.sections.projects.unit")}}</label>
-        <input v-model="editingProject.unit" id="unit" name="unit">
-      </div>
-
-      <div>
-        <label for="published">{{$t("admin.sections.projects.published")}}</label>
-        <input v-model="editingProject.published" type="checkbox" id="published" name="published">
-      </div>
-
-      <div>
-        <p>Scenes</p>
-        <div class="scenes">
-          <div v-for="scene in editingProject.scenes" class="sceneItem">
+      <p>Scenes</p>
+      <div class="scenes">
+        <div v-for="scene in editingProject.scenes" class="sceneItem">
             <span>
               {{scene.title}}
             </span>
-            <div class="actions">
-              <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editScene(scene.id)"/>
-              <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deletingScene=scene"/>
-            </div>
+          <div class="actions">
+            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editScene(scene.id)"/>
+            <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deletingScene=scene"/>
           </div>
         </div>
       </div>
-
-      <div>
-        <button @click="confirmProjectEdit">Confirmer</button>
-      </div>
-      <div>
-        <button @click="editingProject = null">Annuler</button>
-      </div>
     </div>
-  </div>
+
+  </generic-modal>
 
   <generic-modal
       title="delete"

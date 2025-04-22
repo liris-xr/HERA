@@ -1,6 +1,6 @@
 <script setup>
 import {ENDPOINT} from "@/js/endpoints.js";
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
 
 
@@ -13,6 +13,9 @@ const users = ref([])
 const editingUser = ref(null)
 const deletingUser = ref(null)
 const creatingUser = ref(null)
+
+const totalPages = ref(1)
+const currentPage = ref(1)
 
 
 async function confirmUserEdit() {
@@ -64,17 +67,19 @@ async function confirmUserCreate() {
   })
 
   if(res.ok) {
-    const newUser = await res.json()
+    const data = await res.json()
+    const newUser = data.user
     users.value.push(newUser)
+
+    currentPage.value = data.redirectPage
   }
 
   creatingUser.value = null
 }
 
 async function fetchUsers() {
-  console.log("fetching users")
   try {
-    const res = await fetch(`${ENDPOINT}admin/users/`,
+    const res = await fetch(`${ENDPOINT}admin/users/${currentPage.value}`,
         {
           headers: {
             'Authorization': `Bearer ${props.token}`,
@@ -82,9 +87,11 @@ async function fetchUsers() {
         })
 
     if(res.ok) {
-      return await res.json()
+      const data = await res.json()
+
+      users.value = data.users
+      totalPages.value = data.totalPages
     }
-    throw new Error("ko")
   } catch(error) {
     console.log(error)
     //TODO
@@ -92,49 +99,80 @@ async function fetchUsers() {
 }
 
 onMounted(async () => {
-  users.value = await fetchUsers()
+  await fetchUsers()
+  watch(currentPage, fetchUsers)
+})
+
+const pageNumbers = computed(() => {
+  const numbers = []
+
+  numbers.push(1)
+
+  const start = Math.max(currentPage.value - 2, 2)
+  const end = Math.min(currentPage.value + 2, totalPages.value - 1)
+
+  if(start > 2)
+    numbers.push("...")
+
+  for(let i = start; i <= end; i++)
+    numbers.push(i)
+
+  if(end < totalPages.value - 1)
+    numbers.push("...")
+
+  if(totalPages.value > 1)
+    numbers.push(totalPages.value)
+
+  return numbers
 })
 
 </script>
 
 <template>
   <section>
-    <h2>{{$t("admin.sections.accounts.title")}}</h2>
+    <div class="title">
+      <h2>{{$t("admin.sections.accounts.title")}}</h2>
+      <button-view icon="/icons/add.svg" @click="creatingUser = {}"></button-view>
+    </div>
 
     <table>
       <thead>
-      <tr>
-        <th>{{$t("admin.sections.accounts.username")}}</th>
-        <th>{{$t("admin.sections.accounts.email")}}</th>
-        <th>{{$t("admin.sections.accounts.actions")}}</th>
-      </tr>
+        <tr>
+          <th>{{$t("admin.sections.accounts.username")}}</th>
+          <th>{{$t("admin.sections.accounts.email")}}</th>
+          <th>{{$t("admin.sections.accounts.actions")}}</th>
+        </tr>
       </thead>
       <tbody>
-      <tr v-for="user in users">
-        <td>{{user.username}}</td>
-        <td>{{user.email}}</td>
-        <td>
-          <div class="inline-flex">
-            <button-view icon="/icons/edit.svg" @click="editingUser = {...user}"></button-view>
-            <button-view icon="/icons/delete.svg" theme="danger" @click="deletingUser = user"></button-view>
-          </div>
-        </td>
-      </tr>
+        <tr v-for="user in users">
+          <td>{{user.username}}</td>
+          <td>{{user.email}}</td>
+          <td>
+            <div class="inline-flex">
+              <button-view icon="/icons/edit.svg" @click="editingUser = {...user}"></button-view>
+              <button-view icon="/icons/delete.svg" theme="danger" @click="deletingUser = user"></button-view>
+            </div>
+          </td>
+        </tr>
 
-      <tr>
-        <td colspan="3">
-          <div class="inline-flex">
-            <button-view icon="/icons/add.svg" @click="creatingUser = {}"></button-view>
-          </div>
-        </td>
-      </tr>
+        <tr>
+          <td colspan="3">
+            <div class="pagination">
+              <button
+                  v-for="page in pageNumbers"
+                  :disabled="page === '...'"
+                  :class="{active: currentPage === page, pagination_button: page !== '...'}"
+                  @click="currentPage = page">
+                {{page}}
+              </button>
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
   </section>
 
   <!-- Interfaces modales -->
-
-  <!-- user -->
 
   <div class="modal" v-if="editingUser">
     <div>
@@ -206,5 +244,30 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+
+.title {
+  display: flex;
+  gap:10px
+}
+
+.pagination button:not(.pagination_button) {
+  border: none;
+  background: transparent;
+  color: black
+}
+
+.pagination_button {
+  margin: 0 4px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--accentColor);
+  color: var(--backgroundColor);
+  cursor: pointer;
+}
+
+.active {
+  background-color: var(--textImportantColor) !important;
+}
 
 </style>

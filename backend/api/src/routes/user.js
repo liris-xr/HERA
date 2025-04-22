@@ -132,23 +132,30 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
 
 // routes pour le mode admin
 
+const USERS_PAGE_LENGTH = 10;
+
 router.get(baseUrl+'admin/users/:page?', authMiddleware, async (req, res) => {
     const user = req.user
-    const page = req.params.page || 1
+    const page = Number(req.params.page) || 1
 
     if(!user.admin) {
         res.status(401);
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    const users = await ArUser.findAll({
+    const { count, rows } = await ArUser.findAndCountAll({
         attributes: ["username", "id", "email", "admin"],
-        limit: PAGE_LENGTH,
-        offset: (page - 1) * PAGE_LENGTH,
+        limit: USERS_PAGE_LENGTH,
+        offset: (page - 1) * USERS_PAGE_LENGTH,
         order: [['createdAt', 'ASC']],
     });
+
     res.status(200);
-    res.send(users);
+    res.send({
+        users: rows,
+        totalPages: Math.ceil(count / USERS_PAGE_LENGTH),
+        currentPage: page,
+    });
 })
 
 router.put(baseUrl+"admin/users/:userId", authMiddleware, async (req, res) => {
@@ -233,12 +240,16 @@ router.post(baseUrl+"admin/users", authMiddleware, async (req, res) => {
         })
 
         newUser.password = undefined
+        const totalPages = Math.ceil(await ArUser.count() / USERS_PAGE_LENGTH)
 
         res.set({
             'Content-Type': 'application/json'
         });
         res.status(200);
-        return res.send(newUser);
+        return res.send({
+            user: newUser,
+            redirectPage: totalPages,
+        });
 
     } catch(e) {
         console.log(e)

@@ -20,6 +20,7 @@ const {t} = useI18n()
 const users = ref([])
 const editingUser = ref(null)
 const deletingUser = ref(null)
+const creatingUser = ref(null)
 
 if (!isAuthenticated.value) {
   router.push({ name: "login" })
@@ -30,9 +31,7 @@ if(!userData.value.admin) {
 }
 
 async function confirmUserEdit() {
-  //TODO: appel à l'api
-
-  const res = await fetch(`${ENDPOINT}users/${editingUser.value.id}`,{
+  const res = await fetch(`${ENDPOINT}admin/users/${editingUser.value.id}`,{
     method: "PUT",
     headers: {
       'Content-Type': 'application/json',
@@ -53,7 +52,7 @@ async function confirmUserEdit() {
 }
 
 async function confirmUserDelete() {
-  const res = await fetch(`${ENDPOINT}users/${deletingUser.value.id}`,{
+  const res = await fetch(`${ENDPOINT}admin/users/${deletingUser.value.id}`,{
     method: "DELETE",
     headers: {
       'Content-Type': 'application/json',
@@ -69,9 +68,27 @@ async function confirmUserDelete() {
   deletingUser.value = null
 }
 
+async function confirmUserCreate() {
+  const res = await fetch(`${ENDPOINT}admin/users`,{
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token.value}`,
+    },
+    body: JSON.stringify(creatingUser.value),
+  })
+
+  if(res.ok) {
+    const newUser = await res.json()
+    users.value.push(newUser)
+  }
+
+  creatingUser.value = null
+}
+
 async function fetchUsers() {
   try {
-    const res = await fetch(`${ENDPOINT}users/`,
+    const res = await fetch(`${ENDPOINT}admin/users/`,
         {
           headers: {
             'Authorization': `Bearer ${token.value}`,
@@ -121,6 +138,14 @@ onMounted(async () => {
               </div>
             </td>
           </tr>
+
+          <tr>
+            <td colspan="3">
+              <div class="inline-flex">
+                <button-view icon="/icons/add.svg" @click="creatingUser = {}"></button-view>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </section>
@@ -149,6 +174,8 @@ onMounted(async () => {
   </main>
 
   <!-- Interfaces modales -->
+
+  <!-- user -->
 
   <div class="modal" v-if="editingUser">
     <div>
@@ -180,13 +207,40 @@ onMounted(async () => {
       <div>
         <p>Vous-vous vraiment supprimer {{deletingUser.username}} ?</p>
         <p class="danger">⚠Cette action est irréversible⚠</p>
-
       </div>
       <div>
         <button @click="confirmUserDelete">Confirmer</button>
       </div>
       <div>
         <button @click="deletingUser = null">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" v-if="creatingUser">
+    <div>
+      <h2>Créer un utilisateur</h2>
+      <div>
+        <label for="username">{{$t("admin.sections.accounts.username")}}</label>
+        <input v-model="creatingUser.username" id="username" name="username" placeholder="Jean01000">
+      </div>
+      <div>
+        <label for="email">{{$t("admin.sections.accounts.email")}}</label>
+        <input v-model="creatingUser.email" id="email" name="email" placeholder="Jean">
+      </div>
+      <div>
+        <label for="password">{{$t("admin.sections.accounts.password")}}</label>
+        <input v-model="creatingUser.password" type="password" id="password" name="password" placeholder="********">
+      </div>
+      <div>
+        <label for="admin">{{$t("admin.sections.accounts.admin")}}</label>
+        <input v-model="creatingUser.admin" type="checkbox" id="admin" name="admin">
+      </div>
+      <div>
+        <button @click="confirmUserCreate">Confirmer</button>
+      </div>
+      <div>
+        <button @click="creatingUser = null">Annuler</button>
       </div>
     </div>
   </div>
@@ -214,17 +268,6 @@ table th {
 
 table td {
   text-align: center;
-}
-
-.btn-edit {
-  width: 24px;
-  height: 24px;
-}
-
-.btn-edit span {
-  mask: url("/editor/icons/edit.svg") no-repeat center;
-  width: 24px;
-  height: 24px;
 }
 
 .inline-flex {

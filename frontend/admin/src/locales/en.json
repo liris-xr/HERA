@@ -233,6 +233,7 @@
         "title": "Accounts",
         "username": "Username",
         "email": "Email address",
+        "password": "Password",
         "admin": "Admin",
         "actions": "Actions"
       },

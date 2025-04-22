@@ -231,6 +231,7 @@
         "title": "Accounts",
         "username": "Nom d'utilisateur",
         "email": "Adresse mail",
+        "password": "Mot de passe",
         "admin": "Administrateur",
         "actions": "Actions"
       },

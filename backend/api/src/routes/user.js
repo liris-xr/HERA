@@ -137,39 +137,46 @@ const USERS_PAGE_LENGTH = 10;
 
 router.get(baseUrl+'admin/users/:page?', authMiddleware, async (req, res) => {
     const user = req.user
-    const page = Number(req.params.page) || 1
+    const page = parseInt(req.params.page) || 1
 
     if(!user.admin) {
         res.status(401);
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    const where = {}
+    try {
+        const where = {}
 
-    if(req.query?.username)
-        where.username = {
-            [Op.like]: `%${req.query?.username}%`
-        }
-    if(req.query?.email)
-        where.email = {
-            [Op.like]: `%${req.query?.email}%`
-        }
+        if(req.query?.username)
+            where.username = {
+                [Op.like]: `%${req.query?.username}%`
+            }
+        if(req.query?.email)
+            where.email = {
+                [Op.like]: `%${req.query?.email}%`
+            }
 
 
-    const { count, rows } = await ArUser.findAndCountAll({
-        attributes: ["username", "id", "email", "admin"],
-        limit: USERS_PAGE_LENGTH,
-        offset: (page - 1) * USERS_PAGE_LENGTH,
-        order: [['createdAt', 'ASC']],
-        where
-    });
+        const { count, rows } = await ArUser.findAndCountAll({
+            attributes: ["username", "id", "email", "admin"],
+            limit: USERS_PAGE_LENGTH,
+            offset: (page - 1) * USERS_PAGE_LENGTH,
+            order: [['createdAt', 'ASC']],
+            where
+        });
 
-    res.status(200);
-    res.send({
-        users: rows,
-        totalPages: Math.ceil(count / USERS_PAGE_LENGTH),
-        currentPage: page,
-    });
+        res.status(200);
+        res.send({
+            users: rows,
+            totalPages: Math.ceil(count / USERS_PAGE_LENGTH),
+            currentPage: page,
+        });
+    } catch (e){
+        console.log(e);
+        res.status(400);
+        return res.send({error: 'Unable to fetch users'});
+    }
+
 })
 
 router.put(baseUrl+"admin/users/:userId", authMiddleware, async (req, res) => {

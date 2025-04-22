@@ -230,7 +230,7 @@
     "noResult": "Aucun résultat",
     "sections": {
       "accounts": {
-        "title": "Accounts",
+        "h1": "Accounts",
         "username": "Nom d'utilisateur",
         "email": "Adresse mail",
         "password": "Mot de passe",
@@ -238,16 +238,21 @@
         "actions": "Actions"
       },
       "projects": {
-        "title": "Projects"
+        "h1": "Projets",
+        "title": "Titre",
+        "published": "Public",
+        "description": "Description",
+        "calibrationMessage": "Message de calibration",
+        "unit": "Nom du paramètre"
       },
       "scenes": {
-        "title": "Scenes"
+        "h1": "Scenes"
       },
       "assets": {
-        "title": "Assets"
+        "h1": "Assets"
       },
       "labels": {
-        "title": "Labels"
+        "h1": "Labels"
       }
     }
   },

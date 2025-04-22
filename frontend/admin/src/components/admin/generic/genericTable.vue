@@ -47,6 +47,11 @@ defineExpose({currentPage})
 onMounted(() => {
   watch(searchQuery, () => emit("fetch", {searchQuery: searchQuery.value, currentPage: currentPage.value}), {deep: true})
   watch(currentPage, () => emit("fetch", {searchQuery: searchQuery.value, currentPage: currentPage.value}))
+
+  watch(props.data, () => {
+    if(props.data?.length === 0)
+      currentPage.value = 1
+  })
 })
 
 
@@ -56,7 +61,7 @@ onMounted(() => {
   <section>
 
     <div class="title">
-      <h2>{{$t(`admin.sections.${props.sectionName}.title`)}}</h2>
+      <h2>{{$t(`admin.sections.${props.sectionName}.h1`)}}</h2>
       <button-view icon="/icons/add.svg" @click="$emit('create')"></button-view>
     </div>
 
@@ -77,7 +82,7 @@ onMounted(() => {
           <td></td>
         </tr>
 
-        <tr v-for="element in props.data">
+        <tr v-if="props.data.length > 0" v-for="element in props.data">
           <td v-for="field in props.fields">{{element[field]}}</td>
 
           <td>
@@ -85,6 +90,11 @@ onMounted(() => {
               <button-view icon="/icons/edit.svg" @click="$emit('edit', {...element})"></button-view>
               <button-view icon="/icons/delete.svg" theme="danger" @click="$emit('delete', element)"></button-view>
             </div>
+          </td>
+        </tr>
+        <tr v-else>
+          <td :colspan="fields.length+1">
+            {{ $t("admin.noResult") }}
           </td>
         </tr>
 
@@ -111,7 +121,8 @@ onMounted(() => {
 
 .title {
   display: flex;
-  gap:10px
+  gap:10px;
+  margin-bottom: 10px;
 }
 
 

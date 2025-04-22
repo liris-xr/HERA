@@ -11,6 +11,7 @@ import {
     getUpdatedPath,
     uploadCover
 } from "../utils/fileUpload.js";
+import {Op} from "sequelize";
 
 
 const router = express.Router()
@@ -140,7 +141,6 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             return res.status(403).send({error: "User not granted"})
 
 
-
         let updatedUrl = req.body.pictureUrl;
         if(uploadedUrl){
             deleteFile(req.body.pictureUrl);
@@ -148,25 +148,26 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
         }
 
         await project.update({
-            published: req.body.published,
-            title: req.body.title,
-            description: req.body.description,
+            published: req.body?.published,
+            title: req.body?.title,
+            description: req.body?.description,
             pictureUrl: updatedUrl,
-            unit: req.body.unit,
-            calibrationMessage: req.body.calibrationMessage,
+            unit: req.body?.unit,
+            calibrationMessage: req.body?.calibrationMessage,
         }, {
             returning: true
         })
 
-
-        let currentIndex = 0;
-        for (let scene of JSON.parse(req.body.scenes)) {
-            await ArScene.update({
-                index:currentIndex,
-            },{
-                where: {id: scene.id},
-            });
-            currentIndex++;
+        if(req.body.scenes) {
+            let currentIndex = 0;
+            for (let scene of JSON.parse(req.body.scenes)) {
+                await ArScene.update({
+                    index:currentIndex,
+                },{
+                    where: {id: scene.id},
+                });
+                currentIndex++;
+            }
         }
 
 
@@ -367,5 +368,92 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
         res.status(400).json({ error: 'Unable to duplicate project' });
     }
 })
+
+
+// routes pour le mode admin
+
+const PROJECTS_PAGE_LENGTH = 10;
+
+router.get(baseUrl+'admin/projects/:page?', async (req, res) => {
+    const page = parseInt(req.params.page) || 1;
+    try{
+        const where = {}
+
+        if(req.query?.title)
+            where.title = {
+                [Op.like]: `%${req.query?.title}%`
+            }
+
+        const rows = await ArProject.findAll({
+            subQuery: false,
+            attributes: [
+                "id",
+                "title",
+                "description",
+                "published",
+                "calibrationMessage",
+                "unit",
+                "pictureUrl",
+                "updatedAt",
+            ],
+            include: [
+                {
+                    model: ArScene,
+                    as: "scenes",
+                    separate: true
+                },
+                {
+                    model: ArUser,
+                    as: "owner",
+                    attributes: ["username"],
+                }
+            ],
+            where,
+            group: ['ArProject.id'],
+            limit: PROJECTS_PAGE_LENGTH,
+            offset: (page - 1) * PROJECTS_PAGE_LENGTH,
+            order: [['updatedAt', 'DESC']],
+        });
+
+        const count = await ArProject.count({
+            where
+        })
+
+        res.set({
+            'Content-Type': 'application/json'
+        });
+
+        if(rows == null){
+            res.status(404);
+            return res.send({ error: 'No project found'});
+        }else{
+            res.status(200);
+            return res.send({
+                projects: rows,
+                totalPages: Math.ceil(count / PROJECTS_PAGE_LENGTH),
+                currentPage: page,
+            });
+        }
+    }catch (e){
+        console.log(e);
+        res.status(400);
+        return res.send({error: 'Unable to fetch projects'});
+    }
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default router

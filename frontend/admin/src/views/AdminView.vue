@@ -11,6 +11,7 @@ import TextInputModal from "@/components/modal/textInputModal.vue"
 import RedirectMessage from "@/components/notification/redirect-message.vue"
 import {useI18n} from "vue-i18n"
 import AccountManager from "@/components/admin/accountManager.vue";
+import ProjectManager from "@/components/admin/projectManager.vue";
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()
@@ -39,23 +40,20 @@ if(!userData.value.admin) {
 
     <account-manager :token="token"></account-manager>
 
+    <project-manager :token="token"></project-manager>
+
     <section>
-      <h2>{{$t("admin.sections.projects.title")}}</h2>
+      <h2>{{$t("admin.sections.scenes.h1")}}</h2>
 
     </section>
 
     <section>
-      <h2>{{$t("admin.sections.scenes.title")}}</h2>
+      <h2>{{$t("admin.sections.assets.h1")}}</h2>
 
     </section>
 
     <section>
-      <h2>{{$t("admin.sections.assets.title")}}</h2>
-
-    </section>
-
-    <section>
-      <h2>{{$t("admin.sections.labels.title")}}</h2>
+      <h2>{{$t("admin.sections.labels.h1")}}</h2>
 
     </section>
 
@@ -118,6 +116,10 @@ table tr:hover {
   text-align: center;
   padding: 50px;
   border-radius: 15px;
+}
+
+.modal > div > * {
+  text-align: center;
 }
 
 .modal div h2 {

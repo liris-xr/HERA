@@ -3,7 +3,7 @@ import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
 import * as sea from "node:sea";
-import GenericTable from "@/components/admin/genericTable.vue";
+import GenericTable from "@/components/admin/generic/genericTable.vue";
 
 
 const props = defineProps({
@@ -81,8 +81,6 @@ async function confirmUserCreate() {
 async function fetchUsers(data=null) {
   const searchQuery = data?.searchQuery
   const currentPage = data?.currentPage ?? 1
-
-  console.log()
 
   try {
     const searchParams = new URLSearchParams(searchQuery)

@@ -230,9 +230,14 @@
     "title": "Admin pannel",
     "research": "Research",
     "noResult": "No result",
+    "deleteConfirm": "Are you sure you want to delete",
+    "irreversibleAction": "This action can't be undone",
     "sections": {
       "accounts": {
         "h1": "Accounts",
+        "edit": "Edit user",
+        "delete": "Delete user",
+        "create": "Create a new user",
         "username": "Username",
         "email": "Email address",
         "password": "Password",
@@ -241,6 +246,9 @@
       },
       "projects": {
         "h1": "Projects",
+        "edit": "Edit project",
+        "delete": "Delete  project",
+        "create": "Create a new project",
         "title": "Title",
         "published": "Published",
         "description": "Description",

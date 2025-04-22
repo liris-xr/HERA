@@ -221,9 +221,14 @@
     "title": "panel de administración",
     "research": "Recherche",
     "noResult": "Aucun résultat",
+    "deleteConfirm": "Vous-vous vraiment supprimer",
+    "irreversibleAction": "Cette action est irréversible",
     "sections": {
       "accounts": {
         "h1": "Cuentas",
+        "edit": "Modifier l'utilisateur",
+        "delete": "Supprimer l'utilisateur",
+        "create": "Créer un utilisatue",
         "username": "Nom d'utilisateur",
         "email": "Adresse mail",
         "password": "Mot de passe",
@@ -232,6 +237,9 @@
       },
       "projects": {
         "h1": "Proyectos",
+        "edit": "Modifier le projet",
+        "delete": "Supprimer le projet",
+        "create": "Créer un projet",
         "title": "Titre",
         "published": "Public",
         "description": "Description",

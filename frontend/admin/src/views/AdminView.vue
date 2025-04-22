@@ -38,9 +38,14 @@ if(!userData.value.admin) {
 
     <h1>{{$t("admin.title")}}</h1>
 
-    <account-manager :token="token"></account-manager>
+    <account-manager
+        :token="token"
+    />
 
-    <project-manager :token="token"></project-manager>
+    <project-manager
+        :token="token"
+        @edit-scene="console.log($event)"
+    />
 
     <section>
       <h2>{{$t("admin.sections.scenes.h1")}}</h2>
@@ -99,6 +104,7 @@ table tr:hover {
   align-items: center;
   gap: 10px
 }
+
 .modal {
   position: fixed;
   top: 0;
@@ -106,6 +112,7 @@ table tr:hover {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
 
   display: flex;
   justify-content: center;
@@ -118,7 +125,7 @@ table tr:hover {
   border-radius: 15px;
 }
 
-.modal > div > * {
+.modal > div > *, .modal > div p {
   text-align: center;
 }
 
@@ -130,7 +137,7 @@ table tr:hover {
   margin-right: 10px;
 }
 
-.modal div input {
+.modal div input, .modal div textarea {
   color: black;
 }
 

@@ -62,6 +62,25 @@ async function editScene(sceneId) {
 
 }
 
+async function confirmProjectCreate() {
+  const res = await fetch(`${ENDPOINT}project`,{
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${props.token}`,
+    },
+    body: JSON.stringify(creatingProject.value),
+  })
+
+  if(res.ok) {
+    const data = await res.json()
+    const newProject = data
+    projects.value.push(newProject)
+  }
+
+  creatingProject.value = null
+}
+
 async function confirmProjectEdit() {
   editingProject.value.scenes = undefined
 
@@ -222,22 +241,41 @@ onMounted(async () => {
 
   </generic-modal>
 
-  <div class="modal" v-if="deletingScene">
-    <div>
-      <h2>Supprimer la scène</h2>
-      <div>
-        <p>Vous-vous vraiment supprimer {{deletingScene.title}} ?</p>
-        <p class="danger">⚠Cette action est irréversible⚠</p>
-      </div>
+  <generic-modal
+      title="create"
+      section-name="projects"
 
-      <div>
-        <button @click="confirmSceneDelete">Confirmer</button>
-      </div>
-      <div>
-        <button @click="deletingScene = null">Annuler</button>
-      </div>
-    </div>
-  </div>
+      :subject="creatingProject"
+      :fields="[
+          {
+            name: 'title',
+            type: 'text',
+            placeholder: 'Musée des confluences',
+          },
+          {
+            name: 'description',
+            type: 'big-text',
+            placeholder: 'Le musée des Confluences, situé à Lyon, est un musée d\'histoire naturelle, d\'anthropologie et des sociétés. Son architecture audacieuse et futuriste reflète sa vocation : explorer l’origine de l’humanité et la diversité des cultures à travers le temps.',
+          },
+          {
+            name: 'calibrationMessage',
+            type: 'text',
+            placeholder: 'Appuyer n\'importe où pour afficher le modèle',
+          },
+          {
+            name: 'unit',
+            type: 'text',
+            placeholder: 'Année',
+          },
+          {
+            name: 'published',
+            type: 'boolean',
+          }
+      ]"
+
+      @confirm="confirmProjectCreate"
+      @cancel="creatingProject = null"
+  />
 
 
 

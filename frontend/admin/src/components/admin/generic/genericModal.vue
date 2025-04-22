@@ -27,7 +27,7 @@ const inputType = (field) => {
 
       <div v-for="field in fields">
         <label :for="field.name">{{$t(`admin.sections.${sectionName}.${field.name}`)}}</label>
-        <textarea v-if="field.type==='big-text'" v-model="subject[field.name]" :name="subject[field.name]" :id="subject[field.name]" :placeholder="field?.placeholder"></textarea>
+        <textarea  rows="5" cols="50" v-if="field.type==='big-text'" v-model="subject[field.name]" :name="subject[field.name]" :id="subject[field.name]" :placeholder="field?.placeholder"></textarea>
         <input v-else v-model="subject[field.name]" :name="field.name" :id="field.name" :type="inputType(field)" :placeholder="field?.placeholder">
       </div>
 

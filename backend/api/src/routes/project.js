@@ -194,6 +194,7 @@ router.post(baseUrl+'project', authMiddleware, async (req, res) => {
             unit: req.body.unit,
             calibrationMessage: req.body.calibrationMessage,
             userId: token.id,
+            published: req.body?.published,
         });
 
         res.set({

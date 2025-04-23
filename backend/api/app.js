@@ -8,6 +8,7 @@ import user from "./src/routes/user.js";
 import scene from "./src/routes/scene.js";
 import dev from "./src/routes/dev.js";
 import asset from "./src/routes/asset.js";
+import label from "./src/routes/label.js";
 import cors from 'cors'
 
 
@@ -44,6 +45,7 @@ async function main () {
     app.use(scene)
     app.use(dev)
     app.use(asset)
+    app.use(label)
     app.use('/public', express.static('public'));       //serving static files
 
     https.createServer(options, app).listen(8080, () => {

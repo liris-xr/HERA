@@ -64,6 +64,10 @@ if(!userData.value.admin) {
         ref="sceneManager"
 
         :token="token"
+        @edit-asset="assetManager.editingAsset = $event"
+        @delete-asset="assetManager.deletingAsset = $event"
+        @edit-label="labelManager.editingLabel = $event"
+        @delete-label="labelManager.deletingLabel = $event"
     />
 
     <asset-manager

@@ -247,7 +247,7 @@
       "projects": {
         "h1": "Projects",
         "edit": "Edit project",
-        "delete": "Delete  project",
+        "delete": "Delete project",
         "create": "Create a new project",
         "title": "Title",
         "published": "Published",
@@ -257,6 +257,9 @@
       },
       "scenes": {
         "h1": "Scenes",
+        "edit": "Edit scene",
+        "delete": "Delete scene",
+        "create": "Create a new scene",
         "title": "Title",
         "description": "Description",
         "assets": "Assets",

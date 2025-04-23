@@ -216,8 +216,8 @@ onMounted(async () => {
 
     <div>
       <p>Scenes</p>
-      <div class="scenes">
-        <div v-for="scene in editingProject.scenes" class="sceneItem">
+      <div class="list">
+        <div v-for="scene in editingProject.scenes" class="item">
             <span>
               {{scene.title}}
             </span>
@@ -289,24 +289,5 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-
-.scenes {
-  display: flex;
-  flex-direction: column;
-  align-content: center;
-  gap: 10px;
-}
-
-.sceneItem {
-  padding: 5px;
-  border-radius: 5px;
-  background: var(--darkerBackgroundColor);
-  display: flex;
-  justify-content: space-between;
-}
-
-.sceneItem .actions {
-  display: flex;
-}
 
 </style>

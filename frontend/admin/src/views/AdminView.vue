@@ -62,11 +62,6 @@ if(!userData.value.admin) {
     />
 
     <section>
-      <h2>{{$t("admin.sections.scenes.h1")}}</h2>
-
-    </section>
-
-    <section>
       <h2>{{$t("admin.sections.assets.h1")}}</h2>
 
     </section>
@@ -170,6 +165,26 @@ table tr:hover {
 .danger {
   color: #FF4040;
   text-align: center;
+}
+
+
+.list {
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  gap: 10px;
+}
+
+.item {
+  padding: 5px;
+  border-radius: 5px;
+  background: var(--darkerBackgroundColor);
+  display: flex;
+  justify-content: space-between;
+}
+
+.item .actions {
+  display: flex;
 }
 
 </style>

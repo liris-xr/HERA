@@ -248,6 +248,9 @@
       },
       "scenes": {
         "h1": "Escenas",
+        "edit": "Modifier la scène",
+        "delete": "Supprimer la scène",
+        "create": "Créer une scène",
         "title": "Titre",
         "description": "Description",
         "assets": "Assets",

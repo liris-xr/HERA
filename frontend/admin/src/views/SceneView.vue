@@ -192,7 +192,6 @@ async function saveScene(sceneData, uploads, envmapFile) {
     {
           method: "PUT",
           headers: {
-            'Content-Type': "application/json",
             'Authorization': `Bearer ${token.value}`,
           },
           body: formData,

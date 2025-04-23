@@ -274,7 +274,18 @@
         }
       },
       "labels": {
-        "h1": "Etiquetas"
+        "h1": "Etiquetas",
+        "edit": "Modifier le label",
+        "delete": "Supprimer le label",
+        "create": "Créer un label",
+        "text": "Contenu",
+        "timestampStart": "Timestamp d'apparition",
+        "timestampEnd": "Timestamp de disparition",
+        "scene": {
+          "project": {
+            "title": "Projet"
+          }
+        }
       }
     }
   },

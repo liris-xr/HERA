@@ -14,6 +14,7 @@ import AccountManager from "@/components/admin/accountManager.vue";
 import ProjectManager from "@/components/admin/projectManager.vue";
 import SceneManager from "@/components/admin/sceneManager.vue";
 import AssetManager from "@/components/admin/assetManager.vue";
+import LabelManager from "@/components/admin/labelManager.vue";
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()
@@ -24,6 +25,7 @@ const accountManager = ref(null)
 const projectManager = ref(null)
 const sceneManager = ref(null)
 const assetManager = ref(null)
+const labelManager = ref(null)
 
 
 
@@ -70,11 +72,11 @@ if(!userData.value.admin) {
         :token="token"
     />
 
-    <section>
-      <h2>{{$t("admin.sections.labels.h1")}}</h2>
+    <label-manager
+        ref="labelManager"
 
-    </section>
-
+        :token="token"
+    />
 
   </main>
 

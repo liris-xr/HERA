@@ -25,9 +25,9 @@ router.get(baseUrl+'admin/labels/:page?', authMiddleware, async (req, res) => {
         const where = {}
         const whereProject = {}
 
-        if(req.query?.name)
-            where.name = {
-                [Op.like]: `%${req.query?.name}%`
+        if(req.query?.text)
+            where.text = {
+                [Op.like]: `%${req.query?.text}%`
             }
         if(req.query["scene.project.title"])
             whereProject.title = {

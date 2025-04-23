@@ -283,7 +283,18 @@
         }
       },
       "labels": {
-        "h1": "Labels"
+        "h1": "Labels",
+        "edit": "Edit label",
+        "delete": "Delete label",
+        "create": "Create a new label",
+        "text": "Content",
+        "timestampStart": "Appearance timestamp",
+        "timestampEnd": "Disappearance timestamp",
+        "scene": {
+          "project": {
+            "title": "Project"
+          }
+        }
       }
     }
   },

@@ -17,6 +17,12 @@ const inputType = (field) => {
   return field.type
 }
 
+function handleFile(event, fieldName) {
+  const file = event.target.files[0]
+  if(file)
+    props.subject[fieldName] = file
+}
+
 </script>
 
 <template>
@@ -26,9 +32,42 @@ const inputType = (field) => {
       <h2>{{$t(`admin.sections.${sectionName}.${title}`)}}</h2>
 
       <div v-for="field in fields">
+
         <label :for="field.name">{{$t(`admin.sections.${sectionName}.${field.name}`)}}</label>
-        <textarea  rows="5" cols="50" v-if="field.type==='big-text'" v-model="subject[field.name]" :name="subject[field.name]" :id="subject[field.name]" :placeholder="field?.placeholder"></textarea>
-        <input v-else v-model="subject[field.name]" :name="field.name" :id="field.name" :type="inputType(field)" :placeholder="field?.placeholder">
+
+
+        <textarea
+            rows="5"
+            cols="50"
+
+            v-if="field.type==='big-text'"
+            v-model="subject[field.name]"
+
+            :name="field.name"
+            :id="field.name"
+            :placeholder="field?.placeholder"></textarea>
+
+        <input
+          v-else-if="field.type==='file'"
+
+          type="file"
+
+          :name="field.name"
+          :id="field.name"
+
+          :accept="field?.accept"
+          @change="handleFile($event, field.name)"
+          >
+
+        <input
+            v-else
+            v-model="subject[field.name]"
+
+            :name="field.name"
+            :id="field.name"
+            :type="inputType(field)"
+            :placeholder="field?.placeholder">
+
       </div>
 
       <slot></slot>

@@ -44,7 +44,24 @@ async function confirmAssetDelete() {
 }
 
 async function confirmAssetEdit() {
+  const res = await fetch(`${ENDPOINT}admin/assets/${editingAsset.value.id}`,{
+    method: "PUT",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${props.token}`,
+    },
+    body: JSON.stringify(editingAsset.value),
+  })
 
+  if(res.ok) {
+    const data = await res.json()
+
+    const index = assets.value.findIndex(asset => asset.id === data.id)
+    if(index !== -1)
+      assets.value[index] = { ...editingAsset.value }
+  }
+
+  editingAsset.value = null
 }
 
 async function fetchAssets(data=null) {
@@ -114,10 +131,6 @@ onMounted(async () => {
           {
             name: 'hideInViewer',
             type: 'boolean'
-          },
-          {
-            name: 'asset',
-            type: 'file',
           }
       ]"
 

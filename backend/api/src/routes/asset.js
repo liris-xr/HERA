@@ -95,6 +95,39 @@ router.delete(baseUrl+"admin/assets/:assetId", authMiddleware, async (req, res) 
     }
 })
 
+router.put(baseUrl+"admin/assets/:assetId", authMiddleware, async (req, res) => {
+    const authUser = req.user
+    const assetId = req.params.assetId
+
+    if(!authUser.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    try {
+        const asset = await ArAsset.findOne({
+            where: {id: assetId},
+        })
+
+        await asset.update({
+            name: req.body?.name,
+            hideInViewer: req.body?.hideInViewer,
+        }, {
+            returning: true
+        })
+
+        return res.status(200).send(asset)
+
+    } catch(e) {
+        console.log(e)
+        res.set({
+            'Content-Type': 'application/json'
+        })
+        res.status(400);
+        return res.send({ error: 'Unable to save asset'});
+    }
+})
+
 /*
 router.put(baseUrl+"admin/users/:userId", authMiddleware, async (req, res) => {
     const authUser = req.user
@@ -128,74 +161,6 @@ router.put(baseUrl+"admin/users/:userId", authMiddleware, async (req, res) => {
         })
         res.status(400);
         return res.send({ error: 'Unable to save user'});
-    }
-})
-
-router.delete(baseUrl+"admin/users/:userId", authMiddleware, async (req, res) => {
-    const authUser = req.user
-    const userId = req.params.userId;
-
-    if(!authUser.admin) {
-        res.status(401);
-        return res.send({ error: 'Unauthorized', details: 'User not granted' })
-    }
-
-    try {
-        const user = await ArUser.findOne({
-            where: {id: userId},
-        })
-
-        await user.destroy()
-
-        return res.status(200).send()
-    } catch(e) {
-        console.log(e)
-        res.set({
-            'Content-Type': 'application/json'
-        })
-        res.status(400);
-        return res.send({ error: 'Unable to delete user'});
-    }
-})
-
-router.post(baseUrl+"admin/users", authMiddleware, async (req, res) => {
-    const authUser = req.user
-
-    if(!authUser.admin) {
-        res.status(401);
-        return res.send({ error: 'Unauthorized', details: 'User not granted' })
-    }
-
-    try {
-
-        const password = passwordHash(req.body.password)
-
-        const newUser = await ArUser.create({
-            username: req.body.username,
-            email: req.body.email,
-            password: password,
-            admin: req.body?.admin,
-        })
-
-        newUser.password = undefined
-        const totalPages = Math.ceil(await ArUser.count() / USERS_PAGE_LENGTH)
-
-        res.set({
-            'Content-Type': 'application/json'
-        });
-        res.status(200);
-        return res.send({
-            user: newUser,
-            redirectPage: totalPages,
-        });
-
-    } catch(e) {
-        console.log(e)
-        res.set({
-            'Content-Type': 'application/json'
-        })
-        res.status(400);
-        return res.send({ error: 'Unable to create user'});
     }
 })
 */

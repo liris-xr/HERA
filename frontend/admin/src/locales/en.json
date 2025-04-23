@@ -5,6 +5,9 @@
     "logout": "Logout",
     "administration": "Admin pannel"
   },
+
+  "none": "None",
+
   "login": {
     "emailLabel": "Email",
     "emailPlaceholder": "Your email",

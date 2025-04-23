@@ -5,6 +5,9 @@
     "logout": "Cerrar sesión",
     "administration": "panel de administración"
   },
+
+  "none": "Ninguno",
+
   "login": {
     "emailLabel": "Correo electrónico",
     "emailPlaceholder": "Tu correo electrónico",

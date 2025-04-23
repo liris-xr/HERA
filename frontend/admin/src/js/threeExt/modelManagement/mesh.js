@@ -31,6 +31,7 @@ export class Mesh extends LoadableInterface {
         const loader = ModelLoader.getInstance();
 
         const onLoad = (mesh) => {
+            mesh.scene.animations = mesh.animations
             mesh.scene.traverse( function(child) {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;

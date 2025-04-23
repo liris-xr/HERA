@@ -8,6 +8,7 @@ import { sequelize } from '../database.js'
  * @property {Object} position
  * @property {Object} rotation
  * @property {Object} scale
+ * @property {string} activeAnimation
  */
 
 export default sequelize.define('ArAsset', {
@@ -50,6 +51,11 @@ export default sequelize.define('ArAsset', {
         type: DataTypes.JSON,
         allowNull: false,
         defaultValue: {x:1, y:1, z:1},
+    },
+    activeAnimation:{
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
     },
     sceneId:{
         type: DataTypes.UUID,

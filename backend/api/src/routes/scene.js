@@ -202,7 +202,8 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                         position:asset.position,
                         rotation:asset.rotation,
                         scale: asset.scale,
-                        hideInViewer: asset.hideInViewer
+                        hideInViewer: asset.hideInViewer,
+                        activeAnimation: asset.activeAnimation,
                     }, {
                         where: {id: asset.id},
                         returning: true,
@@ -217,6 +218,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                         scale: asset.scale,
                         sceneId:scene.id,
                         name: asset.name,
+                        activeAnimation: asset.activeAnimation,
                     }
                     if(asset.copiedUrl) {
                         data.url = asset.copiedUrl

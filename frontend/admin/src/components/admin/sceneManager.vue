@@ -12,6 +12,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+
 const table = ref(null)
 
 const scenes = ref([])
@@ -21,12 +22,14 @@ const creatingScene = ref(null)
 
 const totalPages = ref(1)
 
+defineExpose({editingScene, deletingScene})
+
 
 async function deleteLabel(label) {
   //TODO
 }
 
-async function editLabel(labelId) {
+async function editLabel(label) {
   //TODO
 }
 
@@ -34,12 +37,49 @@ async function deleteAsset(asset) {
   //TODO
 }
 
-async function editAsset(assetId) {
+async function editAsset(asset) {
   //TODO
 }
 
-async function confirmSceneEdit() {
+async function confirmSceneDelete() {
 
+  const res = await fetch(`${ENDPOINT}scenes/${deletingScene.value.id}`,{
+    method: "DELETE",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${props.token}`,
+    },
+  })
+
+  if(res.ok) {
+    const index = scenes.value.findIndex(scene => scene.id === deletingScene.value.id)
+    if(index !== -1)
+      scenes.value.splice(index, 1)
+  }
+
+  deletingScene.value = null
+
+}
+
+async function confirmSceneEdit() {
+  const res = await fetch(`${ENDPOINT}scenes/${editingScene.value.id}`,{
+    method: "PUT",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${props.token}`,
+    },
+    body: JSON.stringify(editingScene.value),
+  })
+
+  if(res.ok) {
+    const data = (await res.json()).scene
+
+    const index = scenes.value.findIndex(scene => scene.id === data.id)
+    if(index !== -1)
+      scenes.value[index] = { ...data }
+  }
+
+  editingScene.value = null
 }
 
 async function fetchScenes(data=null) {
@@ -121,7 +161,7 @@ onMounted(async () => {
               {{asset.name}}
             </span>
           <div class="actions">
-            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editAsset(asset.id)"/>
+            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editAsset(asset)"/>
             <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteAsset(asset)"/>
           </div>
         </div>
@@ -133,14 +173,30 @@ onMounted(async () => {
       <div class="list">
         <div v-for="label in editingScene.labels" class="item">
             <span>
-              {{label.name}}
+              {{label.text}}
             </span>
           <div class="actions">
-            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editAsset(asset.id)"/>
-            <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteAsset(asset)"/>
+            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editLabel(label)"/>
+            <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteLabel(label)"/>
           </div>
         </div>
       </div>
+    </div>
+
+  </generic-modal>
+
+  <generic-modal
+      title="delete"
+      section-name="scenes"
+
+      :subject="deletingScene"
+
+      @confirm="confirmSceneDelete"
+      @cancel="deletingScene = null">
+
+    <div>
+      <p>{{$t("admin.deleteConfirm")}} {{deletingScene.title}} ?</p>
+      <p class="danger">⚠{{$t("admin.irreversibleAction")}}⚠</p>
     </div>
 
   </generic-modal>

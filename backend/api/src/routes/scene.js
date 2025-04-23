@@ -165,7 +165,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         if(!req.uploadedFilenames) req.uploadedFilenames = [];
 
         await sequelize.transaction(async (t) => {
-            await updateListById(knownLabelsIds, JSON.parse(req.body.labels),
+            await updateListById(knownLabelsIds, typeof req.body.labels === "object" ? req.body.labels : JSON.parse(req.body.labels),
                 async (label)=>{
                     await ArLabel.update({
                         text:label.text,
@@ -196,7 +196,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 }
             );
 
-            await updateListById(knownAssetsIds, JSON.parse(req.body.assets),
+            await updateListById(knownAssetsIds, typeof req.body.assets === "object" ? req.body.assets : JSON.parse(req.body.assets),
                 async (asset)=>{
                     await ArAsset.update({
                         position:asset.position,
@@ -211,8 +211,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 },
 
                 async (asset)=>{
-                    console.log("abcd " + JSON.stringify(asset))
-
                     let data = {
                         position:asset.position,
                         rotation:asset.rotation,
@@ -246,7 +244,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 }
             );
 
-            await updateListById(knonwMeshesIds, JSON.parse(req.body.meshes),
+            await updateListById(knonwMeshesIds, typeof req.body.meshes === "object" ? req.body.meshes : JSON.parse(req.body.meshes),
                 async (mesh) => {
                     await ArMesh.update({
                         position:mesh.position,

@@ -52,7 +52,8 @@ if(!userData.value.admin) {
         ref="projectManager"
 
         :token="token"
-        @edit-scene="console.log($event)"
+        @edit-scene="sceneManager.editingScene = $event"
+        @delete-scene="sceneManager.deletingScene = $event"
     />
 
     <scene-manager
@@ -181,6 +182,12 @@ table tr:hover {
   background: var(--darkerBackgroundColor);
   display: flex;
   justify-content: space-between;
+}
+
+.item span {
+  max-width: 80%;
+  word-break: keep-all;
+  overflow: hidden;
 }
 
 .item .actions {

@@ -12,7 +12,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
-const emit = defineEmits(['editScene'])
+const emit = defineEmits(['editScene', 'deleteScene'])
 
 const table = ref(null)
 
@@ -22,33 +22,14 @@ const editingProject = ref(null)
 const deletingProject = ref(null)
 const creatingProject = ref(null)
 
-const deletingScene = ref(null)
-
 const totalPages = ref(1)
 
-async function confirmSceneDelete() {
 
+defineExpose({projects})
 
-  const res = await fetch(`${ENDPOINT}scenes/${deletingScene.value.id}`,{
-    method: "DELETE",
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${props.token}`,
-    },
-  })
-
-  if(res.ok) {
-    const index = editingProject.value.scenes.findIndex(scene => scene.id === deletingScene.value.id)
-    if(index !== -1)
-      editingProject.value.scenes.splice(index, 1)
-  }
-
-  deletingScene.value = null
-
-}
 
 async function deleteScene(scene) {
-  // TODO: faire un emit pour que le scenemanager gère la suppression
+  emit("deleteScene", {scene, project: editingProject})
 }
 
 async function editScene(sceneId) {

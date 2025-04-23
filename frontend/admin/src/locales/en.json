@@ -256,7 +256,14 @@
         "unit": "Parameter name"
       },
       "scenes": {
-        "h1": "Scenes"
+        "h1": "Scenes",
+        "title": "Title",
+        "description": "Description",
+        "assets": "Assets",
+        "labels": "Labels",
+        "project": {
+          "title": "Project"
+        }
       },
       "assets": {
         "h1": "Assets"

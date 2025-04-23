@@ -28,6 +28,7 @@ const totalPages = ref(1)
 
 async function confirmSceneDelete() {
 
+
   const res = await fetch(`${ENDPOINT}scenes/${deletingScene.value.id}`,{
     method: "DELETE",
     headers: {
@@ -37,13 +38,17 @@ async function confirmSceneDelete() {
   })
 
   if(res.ok) {
-    const index = editingProject.value.scenes.findIndex(user => user.id === deletingScene.value.id)
+    const index = editingProject.value.scenes.findIndex(scene => scene.id === deletingScene.value.id)
     if(index !== -1)
-      editingProject.value.scenes.splice(index, index+1)
+      editingProject.value.scenes.splice(index, 1)
   }
 
   deletingScene.value = null
 
+}
+
+async function deleteScene(scene) {
+  // TODO: faire un emit pour que le scenemanager gère la suppression
 }
 
 async function editScene(sceneId) {
@@ -100,7 +105,6 @@ async function confirmProjectEdit() {
     const index = projects.value.findIndex(project => project.id === data.id)
     if(index !== -1)
       projects.value[index] = { ...editingProject.value }
-    console.log(editingProject.value)
   }
 
   editingProject.value = null
@@ -118,7 +122,7 @@ async function confirmProjectDelete() {
   if(res.ok) {
     const index = projects.value.findIndex(project => project.id === deletingProject.value.id)
     if(index !== -1)
-      projects.value.splice(index, index+1)
+      projects.value.splice(index, 1)
   }
 
   deletingProject.value = null
@@ -219,7 +223,7 @@ onMounted(async () => {
             </span>
           <div class="actions">
             <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editScene(scene.id)"/>
-            <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deletingScene=scene"/>
+            <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteScene(scene)"/>
           </div>
         </div>
       </div>

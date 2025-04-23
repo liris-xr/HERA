@@ -12,12 +12,16 @@ import RedirectMessage from "@/components/notification/redirect-message.vue"
 import {useI18n} from "vue-i18n"
 import AccountManager from "@/components/admin/accountManager.vue";
 import ProjectManager from "@/components/admin/projectManager.vue";
+import SceneManager from "@/components/admin/sceneManager.vue";
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()
 const router = useRouter()
 const {t} = useI18n()
 
+const accountManager = ref(null)
+const projectManager = ref(null)
+const sceneManager = ref(null)
 
 
 
@@ -39,12 +43,22 @@ if(!userData.value.admin) {
     <h1>{{$t("admin.title")}}</h1>
 
     <account-manager
+        ref="accountManager"
+
         :token="token"
     />
 
     <project-manager
+        ref="projectManager"
+
         :token="token"
         @edit-scene="console.log($event)"
+    />
+
+    <scene-manager
+        ref="sceneManager"
+
+        :token="token"
     />
 
     <section>

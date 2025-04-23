@@ -54,6 +54,12 @@ onMounted(() => {
   })
 })
 
+function getProperty(obj, prop) {
+  if(!prop.includes("."))
+    return obj[prop]
+
+  return prop.split(".").reduce((acc, part) => acc && acc[part], obj)
+}
 
 </script>
 
@@ -83,7 +89,7 @@ onMounted(() => {
         </tr>
 
         <tr v-if="props.data.length > 0" v-for="element in props.data">
-          <td v-for="field in props.fields">{{element[field]}}</td>
+          <td v-for="field in props.fields">{{getProperty(element, field)}}</td>
 
           <td>
             <div class="inline-flex">

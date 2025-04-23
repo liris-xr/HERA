@@ -254,7 +254,14 @@
         "unit": "Nom du paramètre"
       },
       "scenes": {
-        "h1": "Scenes"
+        "h1": "Scenes",
+        "title": "Titre",
+        "description": "Description",
+        "assets": "Assets",
+        "labels": "Labels",
+        "project": {
+          "title": "Projet"
+        }
       },
       "assets": {
         "h1": "Assets"

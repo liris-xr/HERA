@@ -3,7 +3,7 @@ import {baseUrl} from "./baseUrl.js";
 import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
-import {Sequelize} from "sequelize";
+import {Op, Sequelize} from "sequelize";
 import {updateListById} from "../utils/updateListById.js";
 import {deleteAsset, deleteFile, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
 
@@ -520,6 +520,93 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
         res.status(400).json({ error: 'Unable to duplicate scene' });
     }
 })
+
+// routes pour le mode admin
+
+const SCENES_PAGE_LENGTH = 10;
+
+router.get(baseUrl+'admin/scenes/:page?', authMiddleware, async (req, res) => {
+    const sceneId = req.params.sceneId;
+    const token = req.user
+    const page = parseInt(req.params.page) || 1
+
+    if (!token.admin)
+        return res.status(403).send({error: "User not granted"})
+
+    try{
+        const where = {}
+        const whereProject = {}
+
+        if(req.query?.title)
+            where.title = {
+                [Op.like]: `%${req.query?.title}%`
+            }
+        if(req.query["project.title"])
+            whereProject.title = {
+                [Op.like]: `%${req.query["project.title"]}%`
+            }
+
+        console.log(whereProject)
+
+        let rows = (await ArScene.findAll({
+            subQuery: false,
+            include: [
+                {
+                    model: ArMesh,
+                    separate: true,
+                    as: "meshes"
+                },
+                {
+                    model: ArAsset,
+                    separate: true,
+                    as: "assets",
+                },
+                {
+                    model: ArLabel,
+                    separate: true,
+                    as: "labels",
+                },
+                {
+                    model: ArProject,
+                    as: "project",
+                    attributes: ["id","title", "unit"],
+                    where: whereProject,
+                    include:[{
+                        model: ArUser,
+                        as:"owner",
+                        attributes:["id", "username"]
+                    }]
+                }
+            ],
+            order: [['createdAt', 'ASC']],
+            limit: SCENES_PAGE_LENGTH,
+            offset: (page - 1) * SCENES_PAGE_LENGTH,
+            where
+        }));
+
+        let count = await ArScene.count({
+            where
+        })
+
+        res.set({
+            'Content-Type': 'application/json'
+        });
+
+        res.status(200);
+        return res.send({
+            scenes: rows,
+            totalPages: Math.ceil(count / SCENES_PAGE_LENGTH),
+            currentPage: page,
+        });
+
+    }catch (e){
+        console.log(e);
+        res.status(400);
+        return res.send({ error: 'Unable to fetch scene'});
+    }
+
+})
+
 
 
 

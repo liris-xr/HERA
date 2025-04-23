@@ -260,7 +260,18 @@
         }
       },
       "assets": {
-        "h1": "Recursos"
+        "h1": "Recursos",
+        "edit": "Modifier l'asset",
+        "delete": "Supprimer l'asset",
+        "create": "Créer un asset",
+        "name": "Nom",
+        "asset": "Fichier",
+        "hideInViewer": "Masqué",
+        "scene": {
+          "project": {
+            "title": "Projet"
+          }
+        }
       },
       "labels": {
         "h1": "Etiquetas"

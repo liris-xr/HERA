@@ -269,7 +269,18 @@
         }
       },
       "assets": {
-        "h1": "Assets"
+        "h1": "Assets",
+        "edit": "Edit asset",
+        "delete": "Delete asset",
+        "create": "Create a new asset",
+        "name": "Name",
+        "asset": "File",
+        "hideInViewer": "Hidden",
+        "scene": {
+          "project": {
+            "title": "Project"
+          }
+        }
       },
       "labels": {
         "h1": "Labels"

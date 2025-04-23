@@ -12,6 +12,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const emit = defineEmits(['editAsset', 'deleteAsset', 'editLabel', 'deleteLabel'])
 
 const table = ref(null)
 
@@ -26,19 +27,19 @@ defineExpose({editingScene, deletingScene})
 
 
 async function deleteLabel(label) {
-  //TODO
+  emit("deleteLabel", label)
 }
 
 async function editLabel(label) {
-  //TODO
+  emit("editLabel", label)
 }
 
 async function deleteAsset(asset) {
-  //TODO
+  emit("deleteAsset", asset)
 }
 
 async function editAsset(asset) {
-  //TODO
+  emit("editAsset", asset)
 }
 
 async function confirmSceneDelete() {
@@ -121,6 +122,7 @@ onMounted(async () => {
         ref="table"
         section-name="scenes"
         :fields="['title', 'project.title']"
+        :create="false"
         :data="scenes"
         :total-pages="totalPages"
 

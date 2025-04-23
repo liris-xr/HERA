@@ -9,6 +9,7 @@ const props = defineProps({
   fields: {type: Array, required: true},
   data:  {type: Array, required: true},
   totalPages: {type: Number, required: true},
+  create: {type: Boolean, default: true},
 })
 
 const emit = defineEmits(["edit", "delete", "create", "fetch", "page"])
@@ -68,7 +69,7 @@ function getProperty(obj, prop) {
 
     <div class="title">
       <h2>{{$t(`admin.sections.${props.sectionName}.h1`)}}</h2>
-      <button-view icon="/icons/add.svg" @click="$emit('create')"></button-view>
+      <button-view v-if="create" icon="/icons/add.svg" @click="$emit('create')"></button-view>
     </div>
 
     <table>

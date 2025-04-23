@@ -29,7 +29,7 @@ defineExpose({projects})
 
 
 async function deleteScene(scene) {
-  emit("deleteScene", {scene, project: editingProject})
+  emit("deleteScene", scene)
 }
 
 async function editScene(sceneId) {

@@ -13,6 +13,7 @@ import {useI18n} from "vue-i18n"
 import AccountManager from "@/components/admin/accountManager.vue";
 import ProjectManager from "@/components/admin/projectManager.vue";
 import SceneManager from "@/components/admin/sceneManager.vue";
+import AssetManager from "@/components/admin/assetManager.vue";
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()
@@ -22,6 +23,7 @@ const {t} = useI18n()
 const accountManager = ref(null)
 const projectManager = ref(null)
 const sceneManager = ref(null)
+const assetManager = ref(null)
 
 
 
@@ -62,10 +64,11 @@ if(!userData.value.admin) {
         :token="token"
     />
 
-    <section>
-      <h2>{{$t("admin.sections.assets.h1")}}</h2>
+    <asset-manager
+        ref="assetManager"
 
-    </section>
+        :token="token"
+    />
 
     <section>
       <h2>{{$t("admin.sections.labels.h1")}}</h2>

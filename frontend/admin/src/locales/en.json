@@ -249,6 +249,7 @@
       },
       "projects": {
         "h1": "Projects",
+        "cautionMessage": "Deleting a project will also delete all its scenes, assets and labels",
         "edit": "Edit project",
         "delete": "Delete project",
         "create": "Create a new project",
@@ -260,6 +261,7 @@
       },
       "scenes": {
         "h1": "Scenes",
+        "cautionMessage": "Deleting a scene will also delete all its assets and labels",
         "edit": "Edit scene",
         "delete": "Delete scene",
         "create": "Create a new scene",

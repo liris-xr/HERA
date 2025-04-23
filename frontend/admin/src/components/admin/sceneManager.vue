@@ -199,6 +199,7 @@ onMounted(async () => {
     <div>
       <p>{{$t("admin.deleteConfirm")}} {{deletingScene.title}} ?</p>
       <p class="danger">⚠{{$t("admin.irreversibleAction")}}⚠</p>
+      <p class="danger">{{$t("admin.sections.scenes.cautionMessage")}}</p>
     </div>
 
   </generic-modal>

@@ -240,6 +240,7 @@
       },
       "projects": {
         "h1": "Proyectos",
+        "cautionMessage": "La suppression d'un projet entrainera la suppression de toutes ses scènes, assets et labels",
         "edit": "Modifier le projet",
         "delete": "Supprimer le projet",
         "create": "Créer un projet",
@@ -251,6 +252,7 @@
       },
       "scenes": {
         "h1": "Escenas",
+        "cautionMessage": "La suppression d'une scène entrainera la suppression de tous ses assets et labels",
         "edit": "Modifier la scène",
         "delete": "Supprimer la scène",
         "create": "Créer une scène",

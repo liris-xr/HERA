@@ -82,7 +82,8 @@ async function confirmProjectCreate() {
 }
 
 async function confirmProjectEdit() {
-  editingProject.value.scenes = undefined
+  const temp = { ...editingProject.value }
+  temp.scenes = undefined
 
   const res = await fetch(`${ENDPOINT}projects/${editingProject.value.id}`,{
     method: "PUT",
@@ -90,7 +91,7 @@ async function confirmProjectEdit() {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${props.token}`,
     },
-    body: JSON.stringify(editingProject.value),
+    body: JSON.stringify(temp),
   })
 
   if(res.ok) {
@@ -98,7 +99,8 @@ async function confirmProjectEdit() {
 
     const index = projects.value.findIndex(project => project.id === data.id)
     if(index !== -1)
-      projects.value[index] = { ...data }
+      projects.value[index] = { ...editingProject.value }
+    console.log(editingProject.value)
   }
 
   editingProject.value = null

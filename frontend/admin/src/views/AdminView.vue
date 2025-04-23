@@ -72,6 +72,10 @@ if(!userData.value.admin) {
 
 <style>
 
+main > section + section {
+  margin-top: 15px;
+}
+
 table {
   width: 80%;
   background-color: white;

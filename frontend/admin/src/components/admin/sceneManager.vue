@@ -12,7 +12,10 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
-const emit = defineEmits(['createAsset', 'editAsset', 'deleteAsset', 'createLabel', 'editLabel', 'deleteLabel'])
+const emit = defineEmits([
+  'createAsset', 'editAsset', 'deleteAsset',
+  'createLabel', 'editLabel', 'deleteLabel',
+  'newScene', 'supprScene'])
 
 const table = ref(null)
 
@@ -23,58 +26,86 @@ const creatingScene = ref(null)
 
 const totalPages = ref(1)
 
-async function deleteLabel(label) {
+function deleteLabel(label) {
   emit("deleteLabel", label)
 }
 
-async function editLabel(label) {
+function editLabel(label) {
   emit("editLabel", label)
 }
 
-async function createLabel() {
+function createLabel() {
   emit("createLabel", editingScene.value)
 }
 
-async function deleteAsset(asset) {
+function deleteAsset(asset) {
   emit("deleteAsset", asset)
 }
 
-async function editAsset(asset) {
+function editAsset(asset) {
   emit("editAsset", asset)
 }
 
-async function createAsset() {
+function createAsset() {
   emit("createAsset", editingScene.value)
 }
 
 async function newLabel(label) {
   const index = scenes.value.findIndex(scene => scene.id === label.sceneId)
 
-  scenes.value[index].labels.push(label)
+  if(index !== -1)
+    scenes.value[index].labels.push(label)
 }
 
 async function supprLabel(label) {
   const index = scenes.value.findIndex(scene => scene.id === label.sceneId)
-  const scene = scenes.value[index]
 
-  const index2 = scene.labels.findIndex(l => l.id === label.id)
+  if(index !== -1) {
+    const scene = scenes.value[index]
+    const index2 = scene.labels.findIndex(l => l.id === label.id)
 
-  scene.labels.splice(index2, 1)
+    if(index2 !== -1)
+      scene.labels.splice(index2, 1)
+  }
 }
 
 async function newAsset(asset) {
   const index = scenes.value.findIndex(scene => scene.id === asset.sceneId)
 
-  scenes.value[index].assets.push(asset)
+  if(index !== -1)
+    scenes.value[index].assets.push(asset)
 }
 
 async function supprAsset(asset) {
   const index = scenes.value.findIndex(scene => scene.id === asset.sceneId)
   const scene = scenes.value[index]
 
-  const index2 = scene.assets.findIndex(a => a.id === asset.id)
+  if(index !== -1) {
+    const index2 = scene.assets.findIndex(a => a.id === asset.id)
 
-  scene.assets.splice(index2, 1)
+    if(index2 !== -1)
+      scene.assets.splice(index2, 1)
+  }
+}
+
+async function confirmSceneCreate() {
+  const res = await fetch(`${ENDPOINT}scenes`,{
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${props.token}`,
+    },
+    body: JSON.stringify(creatingScene.value),
+  })
+
+  if(res.ok) {
+    const data = await res.json()
+    scenes.value.push(data)
+
+    emit("newScene", data)
+  }
+
+  creatingScene.value = null
 }
 
 async function confirmSceneDelete() {
@@ -91,6 +122,7 @@ async function confirmSceneDelete() {
     const index = scenes.value.findIndex(scene => scene.id === deletingScene.value.id)
     if(index !== -1)
       scenes.value.splice(index, 1)
+    emit("supprScene", deletingScene.value)
   }
 
   deletingScene.value = null
@@ -148,7 +180,7 @@ onMounted(async () => {
   await fetchScenes()
 })
 
-defineExpose({editingScene, deletingScene, newLabel, supprLabel, newAsset, supprAsset})
+defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, newAsset, supprAsset})
 
 </script>
 
@@ -173,6 +205,26 @@ defineExpose({editingScene, deletingScene, newLabel, supprLabel, newAsset, suppr
   <!-- Interfaces modales -->
 
   <generic-modal
+      title="create"
+      section-name="scenes"
+
+      :subject="creatingScene"
+      :fields="[
+          {
+            name: 'title',
+            type: 'text',
+          },
+          {
+            name: 'description',
+            type: 'big-text',
+          }
+      ]"
+
+      @confirm="confirmSceneCreate"
+      @cancel="creatingScene = null"
+  />
+
+  <generic-modal
       title="edit"
       section-name="scenes"
 
@@ -193,7 +245,7 @@ defineExpose({editingScene, deletingScene, newLabel, supprLabel, newAsset, suppr
 
     <div>
       <div class="inline-flex">
-        <p>Assets</p>
+        <p>{{ $t("admin.sections.scenes.assets") }}</p>
         <button-view icon="/icons/add.svg" @click="createAsset"></button-view>
       </div>
       <div v-if="editingScene?.assets?.length > 0" class="list">
@@ -214,7 +266,7 @@ defineExpose({editingScene, deletingScene, newLabel, supprLabel, newAsset, suppr
 
     <div>
       <div class="inline-flex">
-        <p>Labels</p>
+        <p>{{ $t("admin.sections.scenes.labels") }}</p>
         <button-view icon="/icons/add.svg" @click="createLabel"></button-view>
       </div>
       <div v-if="editingScene?.labels?.length > 0" class="list">

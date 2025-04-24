@@ -12,7 +12,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
-const emit = defineEmits(['editScene', 'deleteScene'])
+const emit = defineEmits(['createScene', 'editScene', 'deleteScene'])
 
 const table = ref(null)
 
@@ -25,10 +25,34 @@ const creatingProject = ref(null)
 const totalPages = ref(1)
 
 
-defineExpose({projects})
+function newScene(scene) {
+  console.log("new", scene)
+  const index = projects.value.findIndex(project => project.id === scene.projectId)
 
+  if(index !== -1)
+    projects.value[index].scenes.push(scene)
+}
 
-async function deleteScene(scene) {
+function supprScene(scene) {
+  console.log("suppr", scene)
+  const index = projects.value.findIndex(project => project.id === scene.projectId)
+
+  console.log("before", projects.value[index].scenes)
+  if(index !== -1) {
+    const project = projects.value[index]
+    const index2 = project.scenes.findIndex(s => s.id === scene.id)
+
+    projects.value[index].scenes.splice(index2, 1)
+  }
+
+  console.log("after", projects.value[index].scenes)
+}
+
+function createScene() {
+  emit("createScene", editingProject.value)
+}
+
+function deleteScene(scene) {
   emit("deleteScene", scene)
 }
 
@@ -141,6 +165,8 @@ onMounted(async () => {
 })
 
 
+defineExpose({projects, newScene, supprScene})
+
 </script>
 
 <template>
@@ -196,8 +222,11 @@ onMounted(async () => {
       @cancel="editingProject = null">
 
     <div>
-      <p>Scenes</p>
-      <div class="list">
+      <div class="inline-flex">
+        <p>{{ $t("admin.sections.projects.scenes") }}</p>
+        <button-view icon="/icons/add.svg" @click="createScene"></button-view>
+      </div>
+      <div v-if="editingProject.scenes?.length > 0" class="list">
         <div v-for="scene in editingProject.scenes" class="item">
             <span>
               {{scene.title}}
@@ -207,6 +236,9 @@ onMounted(async () => {
             <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteScene(scene)"/>
           </div>
         </div>
+      </div>
+      <div v-else>
+        {{$t("none")}}
       </div>
     </div>
 

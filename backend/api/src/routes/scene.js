@@ -360,6 +360,7 @@ router.post(baseUrl+'scenes', authMiddleware, async (req, res) => {
 
         let newScene = await ArScene.create({
             title: req.body.title,
+            description: req.body?.description,
             projectId: req.body.projectId,
             index: newIndex
         });

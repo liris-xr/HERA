@@ -254,6 +254,7 @@
         "delete": "Delete project",
         "create": "Create a new project",
         "title": "Title",
+        "scenes": "Scenes",
         "published": "Published",
         "description": "Description",
         "calibrationMessage": "Calibration message",

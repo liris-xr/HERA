@@ -251,6 +251,7 @@
         "delete": "Supprimer le projet",
         "create": "Créer un projet",
         "title": "Titre",
+        "scenes": "Scènes",
         "published": "Public",
         "description": "Description",
         "calibrationMessage": "Message de calibration",

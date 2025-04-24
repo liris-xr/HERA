@@ -58,6 +58,7 @@ if(!userData.value.admin) {
         :token="token"
         @edit-scene="sceneManager.editingScene = $event"
         @delete-scene="sceneManager.deletingScene = $event"
+        @create-scene="sceneManager.creatingScene = { projectId: $event.id }"
     />
 
     <scene-manager
@@ -72,6 +73,9 @@ if(!userData.value.admin) {
         @edit-label="labelManager.editingLabel = $event"
         @delete-label="labelManager.deletingLabel = $event"
         @create-label="labelManager.creatingLabel = { sceneId: $event.id }"
+
+        @new-scene="projectManager.newScene($event)"
+        @suppr-scene="projectManager.supprScene($event)"
     />
 
     <asset-manager

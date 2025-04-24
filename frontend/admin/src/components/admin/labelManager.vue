@@ -12,7 +12,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
-const emit = defineEmits(["newLabel"])
+const emit = defineEmits(["newLabel", "supprLabel"])
 
 const table = ref(null)
 
@@ -53,10 +53,12 @@ async function confirmLabelDelete() {
     },
   })
 
+
   if(res.ok) {
     const index = labels.value.findIndex(label => label.id === deletingLabel.value.id)
     if(index !== -1)
       labels.value.splice(index, 1)
+    emit("supprLabel", deletingLabel.value)
   }
 
   deletingLabel.value = null

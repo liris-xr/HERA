@@ -86,6 +86,7 @@ if(!userData.value.admin) {
         :token="token"
 
         @new-label="sceneManager.newLabel($event)"
+        @suppr-label="sceneManager.supprLabel($event)"
     />
 
   </main>

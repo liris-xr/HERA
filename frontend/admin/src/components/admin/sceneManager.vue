@@ -53,6 +53,15 @@ async function newLabel(label) {
   scenes.value[index].labels.push(label)
 }
 
+async function supprLabel(label) {
+  const index = scenes.value.findIndex(scene => scene.id === label.sceneId)
+  const scene = scenes.value[index]
+
+  const index2 = scene.labels.findIndex(label => label.id === label.id)
+
+  scene.labels.splice(index2, 1)
+}
+
 async function confirmSceneDelete() {
 
   const res = await fetch(`${ENDPOINT}scenes/${deletingScene.value.id}`,{
@@ -124,7 +133,7 @@ onMounted(async () => {
   await fetchScenes()
 })
 
-defineExpose({editingScene, deletingScene, newLabel})
+defineExpose({editingScene, deletingScene, newLabel, supprLabel})
 
 </script>
 

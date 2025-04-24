@@ -135,9 +135,8 @@ onMounted(async () => {
       ]"
 
       @confirm="confirmAssetEdit"
-      @cancel="editingAsset = null">
-
-  </generic-modal>
+      @cancel="editingAsset = null"
+  />
 
   <generic-modal
       title="delete"
@@ -154,6 +153,26 @@ onMounted(async () => {
     </div>
 
   </generic-modal>
+
+  <generic-modal
+      title="create"
+      section-name="assets"
+
+      :subject="creatingAsset"
+      :fields="[
+          {
+            name: 'name',
+            type: 'text',
+          },
+          {
+            name: 'hideInViewer',
+            type: 'boolean'
+          }
+      ]"
+
+      @confirm="confirmAssetEdit"
+      @cancel="editingAsset = null"
+  />
 
 </template>
 

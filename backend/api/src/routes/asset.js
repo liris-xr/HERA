@@ -5,6 +5,7 @@ import {sequelize} from "../orm/database.js";
 import authMiddleware from "../middlewares/auth.js";
 import {passwordHash} from "../utils/passwordHash.js";
 import {Op} from "sequelize";
+import {deleteAsset} from "../utils/fileUpload.js";
 
 const router = express.Router()
 
@@ -82,6 +83,7 @@ router.delete(baseUrl+"admin/assets/:assetId", authMiddleware, async (req, res) 
             where: {id: assetId},
         })
 
+        await deleteAsset(asset)
         await asset.destroy()
 
         return res.status(200).send()

@@ -117,8 +117,8 @@ export class EditorScene extends THREE.Scene {
         }
         
 
-        this.#gridPlane = new GridPlane();
-        this.#gridPlane.pushToScene(this);
+        // this.#gridPlane = new GridPlane();
+        // this.#gridPlane.pushToScene(this);
         this.assetManager.onMoved = ()=>{this.updatePlaygroundSize()};
 
     }
@@ -307,9 +307,9 @@ export class EditorScene extends THREE.Scene {
 
         const double = maxComponent*2
 
-        this.remove(this.#gridPlane);
-        this.#gridPlane = new GridPlane(double);
-        this.#gridPlane.pushToScene(this);
+        // this.remove(this.#gridPlane);
+        // this.#gridPlane = new GridPlane(double);
+        // this.#gridPlane.pushToScene(this);
 
 
 

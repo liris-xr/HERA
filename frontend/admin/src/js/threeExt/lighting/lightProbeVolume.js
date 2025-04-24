@@ -116,52 +116,161 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         return closestIntersect;
     }
 
+    updateDirectLighting(origin, coefficients,weight) {
+        // const dir = this.getRandomSphereDirection(probe.position);
+        const dir = this.getRandomDirectionTowardLightSource(origin);
+
+        this.raycaster.set(origin,dir);
+        // this.scene.add(new THREE.ArrowHelper(this.raycaster.ray.direction, this.raycaster.ray.origin, 300, 0xff0000) );
+        
+        const closestIntersect = this.getClosestIntersection();
+
+        if(closestIntersect.distance < Infinity) {
+            if(closestIntersect.object.material.emissiveIntensity && (
+                    closestIntersect.object.material.emissive.r != 0 ||
+                    closestIntersect.object.material.emissive.g != 0 ||
+                    closestIntersect.object.material.emissive.b != 0 
+                )
+            ) {
+                const shBasis = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+
+                // evaluate SH basis functions in direction dir
+                THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
+                const color = closestIntersect.object.material.emissive;
+                for ( let j = 0; j < 9; j ++ ) {
+                    
+                    coefficients[ j ].x += shBasis[ j ] * color.r * weight;
+                    coefficients[ j ].y += shBasis[ j ] * color.g * weight;
+                    coefficients[ j ].z += shBasis[ j ] * color.b * weight;
+                    
+                }
+            }
+        }
+    }
+
+    updateIndirectLighting(origin,coefficients,nbDirectSamples,nbIndirectSamples,directWeight,indirectWeight) {
+        const pdf = 1/(4*Math.PI)
+        // We shoot nbSamble ray in random directions
+        for(let i = 0;i<nbIndirectSamples;i++) {
+            const dir = this.getRandomSphereDirection(origin);
+    
+            this.raycaster.set(origin,dir);
+            
+            const closestIntersect = this.getClosestIntersection();
+    
+            if(closestIntersect.distance < Infinity) {
+                const shBasis = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+                THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
+                if(closestIntersect.object.material.emissiveIntensity && ( // Light emitter touched
+                        closestIntersect.object.material.emissive.r > 0 ||
+                        closestIntersect.object.material.emissive.g > 0 ||
+                        closestIntersect.object.material.emissive.b > 0 
+                    )
+                ) {
+
+                    // evaluate SH basis functions in direction dir
+                    // const color = closestIntersect.object.material.emissive;
+                    // for ( let j = 0; j < 9; j ++ ) {
+                        
+                    //     coefficients[ j ].x += shBasis[ j ] * color.r * indirectWeight;
+                    //     coefficients[ j ].y += shBasis[ j ] * color.g * indirectWeight;
+                    //     coefficients[ j ].z += shBasis[ j ] * color.b * indirectWeight;
+                        
+                    // }
+                } else if(closestIntersect.object.material.roughness > 0) { // Light reflector touched
+                    var lightReflectorColor = new THREE.Vector3()
+                    const color = closestIntersect.object.material.color;
+                    const touchedObjectNormal = closestIntersect.normal.clone();
+                    const lightReflectorOrigin = closestIntersect.point.clone().add(touchedObjectNormal.multiplyScalar(0.01))
+                    for(let n = 0;n<16;n++) {
+                        const dirLightSource = this.getRandomDirectionTowardLightSource(lightReflectorOrigin);
+                        this.raycaster.set(lightReflectorOrigin,dirLightSource); 
+
+                        const ci = this.getClosestIntersection();
+
+                        if(ci.distance < Infinity) {
+                            if(ci.object.material.emissiveIntensity && (
+                                    ci.object.material.emissive.r != 0 ||
+                                    ci.object.material.emissive.g != 0 ||
+                                    ci.object.material.emissive.b != 0 
+                                )
+                            ) {
+                                
+                                // lightReflectorColor.x += color.r * 0.03125; 
+                                // lightReflectorColor.y += color.g * 0.03125; 
+                                // lightReflectorColor.z += color.b * 0.03125; 
+                                lightReflectorColor.x += color.r * 0.0625; 
+                                lightReflectorColor.y += color.g * 0.0625; 
+                                lightReflectorColor.z += color.b * 0.0625; 
+                            }
+                        }
+                    }
+                    
+                    // We update our light probes coefficients depending on color, roughness and received light from the light source
+                    for ( let j = 0; j < 9; j ++ ) {
+                        coefficients[ j ].x += (shBasis[j] * lightReflectorColor.x * closestIntersect.object.material.roughness) / pdf;
+                        coefficients[ j ].y += (shBasis[j] * lightReflectorColor.y * closestIntersect.object.material.roughness) / pdf;
+                        coefficients[ j ].z += (shBasis[j] * lightReflectorColor.z * closestIntersect.object.material.roughness) / pdf;
+                    }
+                    // const sh = new THREE.SphericalHarmonics3();
+                    // const shCoefficients = sh.coefficients;
+                    // const touchedObjectOrigin = closestIntersect.point.clone()
+
+                    // // We shoot nbDirectSamples ray toward the lights
+                    // for(let n = 0;n<16;n++) {
+                    //     this.updateDirectLighting(touchedObjectOrigin.add(touchedObjectNormal.multiplyScalar(0.01)),shCoefficients,0.0625);
+                    // }
+
+                    // // We update our light probes coefficients depending on color, roughness and received light from the light source
+                    // for ( let j = 0; j < 9; j ++ ) {
+                    //     coefficients[ j ].x += shCoefficients[j].x * shBasis[ j ] * closestIntersect.object.material.color.r*indirectWeight;
+                    //     coefficients[ j ].y += shCoefficients[j].y * shBasis[ j ] * closestIntersect.object.material.color.g*indirectWeight;
+                    //     coefficients[ j ].z += shCoefficients[j].z * shBasis[ j ] * closestIntersect.object.material.color.b*indirectWeight;
+                    // }
+
+                }
+            }
+        }
+        
+        // for ( let j = 0; j < 9; j ++ ) {
+        //     coefficients[ j ].x /= (1+percentOfObjectTouched);
+        //     coefficients[ j ].y /= (1+percentOfObjectTouched);
+        //     coefficients[ j ].z /= (1+percentOfObjectTouched);
+        // }
+    }
+
     // Bounces : number of light bounces
     // nbSample : number of ray for each bounces
 
     // Fill the 9 "textures" of shTextures, each texture containing 1 float of the 9 coefficients of a spherical harmonics
-    bake(bounces,nbSample) {
+    bake(bounces,directSamples,indirectSamples) {
+        console.log(this.rawData.length);
+        
 
-        const weight = 1 / nbSample;
+        const directWeight = 1 / directSamples;
+        const indirectWeight = 1 / indirectSamples;
         
         for(let probeId = 0;probeId<this.rawData.length;probeId++) {
             let probe = this.rawData[probeId];
             
             const sh = new THREE.SphericalHarmonics3();
             const shCoefficients = sh.coefficients;
+
+            const shIndirect = new THREE.SphericalHarmonics3();
+            const shCoefficientsIndirect = shIndirect.coefficients;
     
-            const shBasis = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
-            
-            for(let i = 0;i<nbSample;i++) {
-                // const dir = this.getRandomSphereDirection(probe.position);
-                const dir = this.getRandomDirectionTowardLightSource(probe.position);
-
-                this.raycaster.set(probe.position,dir);
-                // this.scene.add(new THREE.ArrowHelper(this.raycaster.ray.direction, this.raycaster.ray.origin, 300, 0xff0000) );
-                
-                const closestIntersect = this.getClosestIntersection();
-
-                if(closestIntersect.distance < Infinity) {
-                    if(closestIntersect.object.material.emissiveIntensity && (
-                            closestIntersect.object.material.emissive.r != 0 ||
-                            closestIntersect.object.material.emissive.g != 0 ||
-                            closestIntersect.object.material.emissive.b != 0 
-                        )
-                    ) {
-                        // evaluate SH basis functions in direction dir
-                        THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
-                        const color = closestIntersect.object.material.emissive;
-                        for ( let j = 0; j < 9; j ++ ) {
-                            
-                            shCoefficients[ j ].x += shBasis[ j ] * color.r * weight;
-                            shCoefficients[ j ].y += shBasis[ j ] * color.g * weight;
-                            shCoefficients[ j ].z += shBasis[ j ] * color.b * weight;
-                            
-                        }
-                    }
-                }
+            if(probeId % 100 === 0) {
+                console.log(probeId);
             }
-            probe.sh = sh;
+            
+            for(let i = 0;i<directSamples;i++) {
+                this.updateDirectLighting(probe.position,shCoefficients,directWeight);
+            }
+            for(let j = 0;j<bounces;j++) {
+                this.updateIndirectLighting(probe.position,shCoefficientsIndirect,directSamples,indirectSamples,directWeight,indirectWeight)
+            }
+
+            probe.sh = sh.lerp(shIndirect,0.1);
 
             for(let coef = 0;coef<9;coef++) {
                 for(let color = 0;color<4;color++) {

@@ -151,6 +151,24 @@ varying vec3 vViewPosition;
 #include <metalnessmap_pars_fragment>
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
+
+// r1,r2 : [0,1]
+vec3 getRandomHemisphereDirection(vec3 n,float r1,float r2) {
+		float phi = 2.*3.14159*r1;
+		float theta = acos(r2); 
+
+		float x = cos(phi) * sqrt(1.-(r2*r2));
+		float y = sin(phi) * sqrt(1.-(r2*r2));
+		float z = r2;
+
+		vec3 dir = vec3(x,y,z);
+
+		if(dot(n,dir) > 0.) {
+			return dir;
+		} else {
+			return -dir; 
+		}
+	}
 void main() {
 
 	vec4 diffuseColor = vec4( diffuse, opacity );
@@ -203,9 +221,18 @@ void main() {
 		texture(sh7,texcoord).rgb,
 		texture(sh8,texcoord).rgb
 	);
+	
+	vec3 probeIrradiance = vec3(0);
+	float step = 0.0625;
+	for(float i = 0.;i<1.;i += step) {
+		for(float j = 0.;j<1.;j = j + step) {
+			vec3 dir = getRandomHemisphereDirection(normal,i,j);
+			probeIrradiance += getLightProbeIrradiance(interpolatedLightProbe,dir);
+		}
+	}
+	probeIrradiance /= 256.;
 
-
-	outgoingLight = diffuse * getLightProbeIrradiance(interpolatedLightProbe,normal);
+	outgoingLight = material.diffuseColor * probeIrradiance;
 	// outgoingLight = vec3(1);
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>

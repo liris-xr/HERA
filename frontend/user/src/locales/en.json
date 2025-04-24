@@ -2,6 +2,8 @@
   "locale": "en-Us",
   "header": {
     "home": "Home",
+    "login": "Login",
+    "logout": "Logout",
     "allProjects": "All projects"
   },
 

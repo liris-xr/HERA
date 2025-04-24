@@ -2,6 +2,8 @@
   "locale": "es-ES",
   "header": {
     "home": "Inicio",
+    "login": "Connexion",
+    "logout": "Déconnexion",
     "allProjects": "Todos los proyectos"
   },
 

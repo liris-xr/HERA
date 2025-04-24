@@ -2,6 +2,8 @@
   "locale": "fr-Fr",
   "header": {
     "home": "Accueil",
+    "login": "Connexion",
+    "logout": "Déconnexion",
     "allProjects": "Tous les projets"
   },
 

@@ -5,18 +5,25 @@ import { randFloat } from "three/src/math/MathUtils";
 
 // Tableau des triangles émissifs de la scène
 // + Tableau de pondération en fonctiond de la taille des triangles
-// class LightSource {  
-//     public:
-    
-//         std::vector<unsigned int> triangleIds;
-//         std::vector<float> weights;
-//         let area;
-        
+class LightSources {  
+    triangleIds;
+    weights;
+    area;
 
-//         LightSource() {
-//             this->area = 0;
-//         }
-// };
+    LightSource() {
+        this.area = 0;
+        this.triangleIds = []
+        this.weights = []
+    }
+
+    initLightSources(scene) {
+        // this.scene.assetManager.meshManagerMap.forEach( (meshManager) => {
+        //     for (let mesh of meshManager.getMeshes.value) {
+        //         mesh.geometry.attributes
+        //     }
+        // })
+    }
+};
 
 
 export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface) {
@@ -181,8 +188,9 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                     var lightReflectorColor = new THREE.Vector3()
                     const color = closestIntersect.object.material.color;
                     const touchedObjectNormal = closestIntersect.normal.clone();
+                    touchedObjectNormal.set(touchedObjectNormal.x,touchedObjectNormal.z,-touchedObjectNormal.y);
                     const lightReflectorOrigin = closestIntersect.point.clone().add(touchedObjectNormal.multiplyScalar(0.01))
-                    for(let n = 0;n<16;n++) {
+                    for(let n = 0;n<32;n++) {
                         const dirLightSource = this.getRandomDirectionTowardLightSource(lightReflectorOrigin);
                         this.raycaster.set(lightReflectorOrigin,dirLightSource); 
 
@@ -196,21 +204,21 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                                 )
                             ) {
                                 
-                                // lightReflectorColor.x += color.r * 0.03125; 
-                                // lightReflectorColor.y += color.g * 0.03125; 
-                                // lightReflectorColor.z += color.b * 0.03125; 
-                                lightReflectorColor.x += color.r * 0.0625; 
-                                lightReflectorColor.y += color.g * 0.0625; 
-                                lightReflectorColor.z += color.b * 0.0625; 
+                                lightReflectorColor.x += color.r * 0.03125; 
+                                lightReflectorColor.y += color.g * 0.03125; 
+                                lightReflectorColor.z += color.b * 0.03125; 
+                                // lightReflectorColor.x += color.r * 0.0625; 
+                                // lightReflectorColor.y += color.g * 0.0625; 
+                                // lightReflectorColor.z += color.b * 0.0625; 
                             }
                         }
                     }
                     
                     // We update our light probes coefficients depending on color, roughness and received light from the light source
                     for ( let j = 0; j < 9; j ++ ) {
-                        coefficients[ j ].x += (shBasis[j] * lightReflectorColor.x * closestIntersect.object.material.roughness) / pdf;
-                        coefficients[ j ].y += (shBasis[j] * lightReflectorColor.y * closestIntersect.object.material.roughness) / pdf;
-                        coefficients[ j ].z += (shBasis[j] * lightReflectorColor.z * closestIntersect.object.material.roughness) / pdf;
+                        coefficients[ j ].x += (shBasis[j] * lightReflectorColor.x * closestIntersect.object.material.roughness) * indirectWeight * 20;
+                        coefficients[ j ].y += (shBasis[j] * lightReflectorColor.y * closestIntersect.object.material.roughness) * indirectWeight * 20;
+                        coefficients[ j ].z += (shBasis[j] * lightReflectorColor.z * closestIntersect.object.material.roughness) * indirectWeight * 20;
                     }
                     // const sh = new THREE.SphericalHarmonics3();
                     // const shCoefficients = sh.coefficients;
@@ -270,7 +278,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                 this.updateIndirectLighting(probe.position,shCoefficientsIndirect,directSamples,indirectSamples,directWeight,indirectWeight)
             }
 
-            probe.sh = sh.lerp(shIndirect,0.1);
+            probe.sh = sh.lerp(shIndirect,0.4);
 
             for(let coef = 0;coef<9;coef++) {
                 for(let color = 0;color<4;color++) {

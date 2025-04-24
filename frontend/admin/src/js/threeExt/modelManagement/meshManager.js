@@ -226,7 +226,7 @@ void main() {
 	float step = 0.0625;
 	for(float i = 0.;i<1.;i += step) {
 		for(float j = 0.;j<1.;j = j + step) {
-			vec3 dir = getRandomHemisphereDirection(normal,i,j);
+			vec3 dir = getRandomHemisphereDirection(geometryNormal,i,j);
 			probeIrradiance += getLightProbeIrradiance(interpolatedLightProbe,dir);
 		}
 	}

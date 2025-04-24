@@ -340,7 +340,7 @@ router.post(baseUrl+'scenes', authMiddleware, async (req, res) => {
             }]
         })
 
-        if (project.owner.id != token.id && !req.user.admin)
+        if (project.owner.id !== token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
 

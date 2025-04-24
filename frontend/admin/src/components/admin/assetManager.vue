@@ -21,7 +21,7 @@ const creatingAsset = ref(null)
 
 const totalPages = ref(1)
 
-defineExpose({editingAsset, deletingAsset})
+defineExpose({editingAsset, deletingAsset, creatingAsset})
 
 
 

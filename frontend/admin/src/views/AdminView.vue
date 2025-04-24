@@ -64,10 +64,14 @@ if(!userData.value.admin) {
         ref="sceneManager"
 
         :token="token"
+
         @edit-asset="assetManager.editingAsset = $event"
         @delete-asset="assetManager.deletingAsset = $event"
+        @create-asset="assetManager.creatingAsset = { sceneId: $event.id }"
+
         @edit-label="labelManager.editingLabel = $event"
         @delete-label="labelManager.deletingLabel = $event"
+        @create-label="labelManager.creatingLabel = { sceneId: $event.id }"
     />
 
     <asset-manager
@@ -146,6 +150,10 @@ table tr:hover {
   text-align: center;
   padding: 50px;
   border-radius: 15px;
+
+  overflow-y: scroll;
+
+  max-width: 50%;
 }
 
 .modal > div > *, .modal > div p {
@@ -183,6 +191,9 @@ table tr:hover {
   flex-direction: column;
   align-content: center;
   gap: 10px;
+
+  max-height: 200px;
+  overflow-y: scroll;
 }
 
 .item {

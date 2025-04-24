@@ -129,4 +129,55 @@ router.put(baseUrl+"admin/labels/:labelId", authMiddleware, async (req, res) => 
     }
 })
 
+router.post(baseUrl+"admin/labels/", authMiddleware, async (req, res) => {
+    const authUser = req.user
+
+    if(!authUser.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    try {
+        const project = await ArProject.findOne({
+            where: {
+                id: req.body.projectId
+            }
+        })
+
+        if(!project) {
+            res.status(404);
+            return res.send({ error: 'Project not found' })
+        }
+
+        let newLabel = await ArLabel.create({
+            text: req.body.text,
+            timestampStart: req.body?.timestampStart,
+            timestampEnd: req.body?.timestampEnd,
+            sceneId: req.body.sceneId,
+        })
+
+        res.set({
+            'Content-Type': 'application/json'
+        });
+        res.status(200);
+        return res.send(newLabel);
+
+    }catch (e){
+        console.log(e);
+        res.status(400);
+        return res.send({ error: 'Unable to create label'});
+    }
+
+
+
+
+
+
+
+
+
+
+
+})
+
 export default router

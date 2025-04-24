@@ -12,7 +12,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
-const emit = defineEmits(['editAsset', 'deleteAsset', 'editLabel', 'deleteLabel'])
+const emit = defineEmits(['createAsset', 'editAsset', 'deleteAsset', 'createLabel', 'editLabel', 'deleteLabel'])
 
 const table = ref(null)
 
@@ -34,12 +34,20 @@ async function editLabel(label) {
   emit("editLabel", label)
 }
 
+async function createLabel() {
+  emit("createLabel", editingScene.value)
+}
+
 async function deleteAsset(asset) {
   emit("deleteAsset", asset)
 }
 
 async function editAsset(asset) {
   emit("editAsset", asset)
+}
+
+async function createAsset() {
+  emit("createAsset", editingScene.value)
 }
 
 async function confirmSceneDelete() {
@@ -156,9 +164,12 @@ onMounted(async () => {
       @cancel="editingScene = null">
 
     <div>
-      <p>Assets</p>
-      <div class="list">
-        <div v-for="asset in editingScene.assets" class="item">
+      <div class="inline-flex">
+        <p>Assets</p>
+        <button-view icon="/icons/add.svg" @click="createAsset"></button-view>
+      </div>
+      <div v-if="editingScene?.assets?.length > 0" class="list">
+        <div  v-for="asset in editingScene?.assets" class="item">
             <span>
               {{asset.name}}
             </span>
@@ -168,12 +179,18 @@ onMounted(async () => {
           </div>
         </div>
       </div>
+      <div v-else>
+        {{$t("none")}}
+      </div>
     </div>
 
     <div>
-      <p>Labels</p>
-      <div class="list">
-        <div v-for="label in editingScene.labels" class="item">
+      <div class="inline-flex">
+        <p>Labels</p>
+        <button-view icon="/icons/add.svg" @click="createLabel"></button-view>
+      </div>
+      <div v-if="editingScene?.labels?.length > 0" class="list">
+        <div v-for="label in editingScene?.labels" class="item">
             <span>
               {{label.text}}
             </span>
@@ -182,6 +199,9 @@ onMounted(async () => {
             <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteLabel(label)"/>
           </div>
         </div>
+      </div>
+      <div v-else>
+        {{$t("none")}}
       </div>
     </div>
 

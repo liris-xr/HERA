@@ -21,9 +21,11 @@ const creatingLabel = ref(null)
 
 const totalPages = ref(1)
 
-defineExpose({editingLabel, deletingLabel})
+defineExpose({editingLabel, deletingLabel, creatingLabel})
 
-
+async function confirmLabelCreate() {
+  
+}
 
 async function confirmLabelDelete() {
   const res = await fetch(`${ENDPOINT}admin/labels/${deletingLabel.value.id}`,{
@@ -137,9 +139,8 @@ onMounted(async () => {
       ]"
 
       @confirm="confirmLabelEdit"
-      @cancel="editingLabel = null">
-
-  </generic-modal>
+      @cancel="editingLabel = null"
+  />
 
   <generic-modal
       title="delete"
@@ -156,6 +157,30 @@ onMounted(async () => {
     </div>
 
   </generic-modal>
+
+  <generic-modal
+      title="create"
+      section-name="labels"
+
+      :subject="creatingLabel"
+      :fields="[
+          {
+            name: 'text',
+            type: 'big-text',
+          },
+          {
+            name: 'timestampStart',
+            type: 'number'
+          },
+          {
+            name: 'timestampEnd',
+            type: 'number'
+          }
+      ]"
+
+      @confirm="confirmLabelCreate"
+      @cancel="creatingLabel = null"
+  />
 
 </template>
 

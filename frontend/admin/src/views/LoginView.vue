@@ -99,12 +99,16 @@ const loginUser = async () => {
       </form>
 
 
+      <!--
+
       <span>
         {{$t("login.noAccount")}}
         <router-link :to="{ name: 'register' }">
         {{$t("login.createAccount")}}
         </router-link>
       </span>
+      
+      -->
     </section>
 
 

@@ -4,6 +4,18 @@
     "home": "Accueil",
     "allProjects": "Tous les projets"
   },
+
+  "login": {
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "Votre adresse e-mail",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "Votre mot de passe",
+    "login": "Se connecter",
+    "loginIn": "Connexion en cours",
+    "noAccount": "Pas de compte ?",
+    "createAccount": "Créer un compte"
+  },
+
   "homeView": {
     "title": "Projets récents",
     "loadingInfo": "Chargement...",

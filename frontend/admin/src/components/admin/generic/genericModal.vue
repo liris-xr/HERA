@@ -1,6 +1,9 @@
 <script setup>
 
-import {computed} from "vue";
+import {computed, ref} from "vue";
+import {useI18n} from "vue-i18n";
+
+const {t} = useI18n()
 
 const props = defineProps({
   title: {type: String, required: true},
@@ -9,7 +12,9 @@ const props = defineProps({
   subject: {type: Object},
 })
 
-const emit = defineEmits(['confirm', 'cancel'])
+const fieldRefs = ref({})
+
+defineEmits(['confirm', 'cancel'])
 
 const inputType = (field) => {
   if(field.type === "boolean")
@@ -21,6 +26,27 @@ function handleFile(event, fieldName) {
   const file = event.target.files[0]
   if(file)
     props.subject[fieldName] = file
+}
+
+function validateFields() {
+  let ok = true;
+
+  console.log(fieldRefs.value)
+
+  for(const field of props.fields) {
+    const elem = fieldRefs.value[field.name];
+
+    if(field.required && !elem.value) {
+      ok = false;
+      elem.classList.add("error")
+      elem.setCustomValidity(t("admin.required"))
+      elem.reportValidity()
+    } else {
+      elem.classList.remove("error")
+    }
+  }
+
+  return ok;
 }
 
 </script>
@@ -37,6 +63,8 @@ function handleFile(event, fieldName) {
 
 
         <textarea
+            :ref="el => fieldRefs[field.name] = el"
+
             rows="5"
             cols="50"
 
@@ -48,6 +76,8 @@ function handleFile(event, fieldName) {
             :placeholder="field?.placeholder"></textarea>
 
         <input
+          :ref="el => fieldRefs[field.name] = el"
+
           v-else-if="field.type==='file'"
 
           type="file"
@@ -60,6 +90,8 @@ function handleFile(event, fieldName) {
           >
 
         <input
+            :ref="el => fieldRefs[field.name] = el"
+
             v-else
             v-model="subject[field.name]"
 
@@ -73,7 +105,7 @@ function handleFile(event, fieldName) {
       <slot></slot>
 
       <div>
-        <button @click="$emit('confirm')">Confirmer</button>
+        <button @click="validateFields() && $emit('confirm')">Confirmer</button>
       </div>
       <div>
         <button @click="$emit('cancel')">Annuler</button>
@@ -84,5 +116,9 @@ function handleFile(event, fieldName) {
 </template>
 
 <style scoped>
+
+.error {
+  border-color: var(--dangerColor);
+}
 
 </style>

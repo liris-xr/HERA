@@ -196,6 +196,7 @@ defineExpose({projects, newScene, supprScene})
             name: 'title',
             type: 'text',
             placeholder: 'Musée des confluences',
+            required: true,
           },
           {
             name: 'description',
@@ -270,6 +271,7 @@ defineExpose({projects, newScene, supprScene})
             name: 'title',
             type: 'text',
             placeholder: 'Musée des confluences',
+            required: true,
           },
           {
             name: 'description',

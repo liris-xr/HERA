@@ -231,6 +231,7 @@
 
   "admin": {
     "title": "Admin pannel",
+    "required": "This field is required",
     "research": "Research",
     "noResult": "No result",
     "deleteConfirm": "Are you sure you want to delete",

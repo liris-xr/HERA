@@ -154,6 +154,7 @@ onMounted(async () => {
           {
             name: 'name',
             type: 'text',
+            required: true,
           },
           {
             name: 'hideInViewer',
@@ -190,6 +191,7 @@ onMounted(async () => {
           {
             name: 'name',
             type: 'text',
+            required: true,
           },
           {
             name: 'hideInViewer',
@@ -199,6 +201,7 @@ onMounted(async () => {
             name: 'asset',
             type: 'file',
             accept: '.glb, .gltf',
+            required: true,
           }
       ]"
 

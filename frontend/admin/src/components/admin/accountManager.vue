@@ -140,10 +140,12 @@ onMounted(async () => {
           {
             name: 'username',
             type: 'text',
+            required: true,
           },
           {
             name: 'email',
             type: 'text',
+            required: true,
           },
           {
             name: 'admin',
@@ -181,16 +183,19 @@ onMounted(async () => {
             name: 'username',
             type: 'text',
             placeholder: 'Jean01000',
+            required: true,
           },
           {
             name: 'email',
             type: 'text',
-            placeholder: 'Jean',
+            placeholder: 'Jean@gmail.com',
+            required: true,
           },
           {
             name: 'password',
             type: 'password',
             placeholder: '********',
+            required: true,
           },
           {
             name: 'admin',

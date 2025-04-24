@@ -213,6 +213,7 @@ defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, 
           {
             name: 'title',
             type: 'text',
+            required: true,
           },
           {
             name: 'description',
@@ -233,6 +234,7 @@ defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, 
           {
             name: 'title',
             type: 'text',
+            required: true,
           },
           {
             name: 'description',

@@ -222,6 +222,7 @@
 
   "admin": {
     "title": "panel de administración",
+    "required": "Ce champ est requis",
     "research": "Recherche",
     "noResult": "Aucun résultat",
     "deleteConfirm": "Vous-vous vraiment supprimer",

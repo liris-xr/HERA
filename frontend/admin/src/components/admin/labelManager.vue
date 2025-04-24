@@ -146,6 +146,7 @@ onMounted(async () => {
           {
             name: 'text',
             type: 'big-text',
+            required: true,
           },
           {
             name: 'timestampStart',
@@ -186,6 +187,7 @@ onMounted(async () => {
           {
             name: 'text',
             type: 'big-text',
+            required: true,
           },
           {
             name: 'timestampStart',

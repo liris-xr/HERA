@@ -228,6 +228,7 @@
 
   "admin": {
     "title": "Administration",
+    "required": "Ce champ est requis",
     "research": "Recherche",
     "noResult": "Aucun résultat",
     "deleteConfirm": "Vous-vous vraiment supprimer",

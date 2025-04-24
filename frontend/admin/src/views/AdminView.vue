@@ -77,6 +77,8 @@ if(!userData.value.admin) {
     <asset-manager
         ref="assetManager"
 
+        @new-asset="sceneManager.newAsset($event)"
+        @suppr-asset="sceneManager.supprAsset($event)"
         :token="token"
     />
 

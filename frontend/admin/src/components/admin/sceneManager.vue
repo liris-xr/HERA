@@ -57,9 +57,24 @@ async function supprLabel(label) {
   const index = scenes.value.findIndex(scene => scene.id === label.sceneId)
   const scene = scenes.value[index]
 
-  const index2 = scene.labels.findIndex(label => label.id === label.id)
+  const index2 = scene.labels.findIndex(l => l.id === label.id)
 
   scene.labels.splice(index2, 1)
+}
+
+async function newAsset(asset) {
+  const index = scenes.value.findIndex(scene => scene.id === asset.sceneId)
+
+  scenes.value[index].assets.push(asset)
+}
+
+async function supprAsset(asset) {
+  const index = scenes.value.findIndex(scene => scene.id === asset.sceneId)
+  const scene = scenes.value[index]
+
+  const index2 = scene.assets.findIndex(a => a.id === asset.id)
+
+  scene.assets.splice(index2, 1)
 }
 
 async function confirmSceneDelete() {
@@ -133,7 +148,7 @@ onMounted(async () => {
   await fetchScenes()
 })
 
-defineExpose({editingScene, deletingScene, newLabel, supprLabel})
+defineExpose({editingScene, deletingScene, newLabel, supprLabel, newAsset, supprAsset})
 
 </script>
 

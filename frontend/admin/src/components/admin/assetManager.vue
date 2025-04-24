@@ -12,6 +12,8 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const emit = defineEmits(["newAsset", "supprAsset"])
+
 const table = ref(null)
 
 const assets = ref([])
@@ -24,6 +26,30 @@ const totalPages = ref(1)
 defineExpose({editingAsset, deletingAsset, creatingAsset})
 
 
+async function confirmAssetCreate() {
+  const formData = new FormData()
+
+  for(const key in creatingAsset.value)
+    if(creatingAsset.value.hasOwnProperty(key))
+      formData.append(key, creatingAsset.value[key]);
+
+  const res = await fetch(`${ENDPOINT}admin/assets`,{
+    method: "POST",
+    headers: {
+      'Authorization': `Bearer ${props.token}`,
+    },
+    body: formData
+  })
+
+  if(res.ok) {
+    const data = await res.json()
+    assets.value.push(data)
+
+    emit("newAsset", data)
+  }
+
+  creatingAsset.value = null
+}
 
 async function confirmAssetDelete() {
   const res = await fetch(`${ENDPOINT}admin/assets/${deletingAsset.value.id}`,{
@@ -38,6 +64,7 @@ async function confirmAssetDelete() {
     const index = assets.value.findIndex(asset => asset.id === deletingAsset.value.id)
     if(index !== -1)
       assets.value.splice(index, 1)
+    emit("supprAsset", deletingAsset.value)
   }
 
   deletingAsset.value = null
@@ -166,12 +193,17 @@ onMounted(async () => {
           },
           {
             name: 'hideInViewer',
-            type: 'boolean'
+            type: 'boolean',
+          },
+          {
+            name: 'asset',
+            type: 'file',
+            accept: '.glb, .gltf',
           }
       ]"
 
-      @confirm="confirmAssetEdit"
-      @cancel="editingAsset = null"
+      @confirm="confirmAssetCreate"
+      @cancel="creatingAsset = null"
   />
 
 </template>

@@ -1,11 +1,11 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArAsset, ArLabel, ArMesh, ArProject, ArScene, ArUser} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware from "../middlewares/auth.js";
 import {passwordHash} from "../utils/passwordHash.js";
 import {Op} from "sequelize";
-import {deleteAsset} from "../utils/fileUpload.js";
+import {adminUploadAsset, deleteAsset, uploadAsset} from "../utils/fileUpload.js";
 
 const router = express.Router()
 
@@ -128,6 +128,45 @@ router.put(baseUrl+"admin/assets/:assetId", authMiddleware, async (req, res) => 
         res.status(400);
         return res.send({ error: 'Unable to save asset'});
     }
+})
+
+router.post(baseUrl+"admin/assets", authMiddleware, adminUploadAsset.single("asset"), async (req, res) => {
+    const authUser = req.user
+
+    if(!authUser.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    try {
+        const fileUrl = req.uploadedFilenames[0]
+
+        console.log(req.body)
+
+        const newAsset = await ArAsset.create({
+            name: req.body.name,
+            hideInViewer: req.body?.hideInViewer,
+            url: fileUrl,
+            sceneId: req.body.sceneId,
+        })
+
+        res.set({
+            'Content-Type': 'application/json'
+        });
+        res.status(200);
+        return res.send(newAsset);
+
+    } catch(e) {
+        console.log(e)
+        res.set({
+            'Content-Type': 'application/json'
+        })
+        res.status(400);
+        return res.send({ error: 'Unable to save asset'});
+    }
+
+
+
 })
 
 export default router

@@ -22,8 +22,8 @@ function logoutAndRedirect(){
 
 
       <div>
-        <RouterLink :to="{name:'admin'}" v-if="userData?.admin">{{$t("header.administration")}}</RouterLink>
         <locale-changer></locale-changer>
+        <RouterLink :to="{name:'admin'}" v-if="userData?.admin">{{$t("header.administration")}}</RouterLink>
         <span v-if="isAuthenticated">{{userData.username}}</span>
         <button-view :text="$t('header.logout')" @click="logoutAndRedirect()"/>
       </div>
@@ -66,7 +66,7 @@ nav>div{
   display: flex;
 }
 
-nav>div>span{
+nav>div>*{
   margin-right: 16px;
 }
 </style>

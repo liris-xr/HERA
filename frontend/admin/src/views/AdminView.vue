@@ -28,7 +28,6 @@ const assetManager = ref(null)
 const labelManager = ref(null)
 
 
-
 if (!isAuthenticated.value) {
   router.push({ name: "login" })
 }

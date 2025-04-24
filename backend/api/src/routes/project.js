@@ -18,9 +18,24 @@ const router = express.Router()
 
 const PAGE_LENGTH = 20;
 
-router.get(baseUrl+'projects/:page', async (req, res) => {
+router.get(baseUrl+'projects/:page', optionnalAuthMiddleware, async (req, res) => {
     const page = parseInt(req.params.page);
     try{
+
+        let where = {}
+        if(req.user)
+            where = {
+                [Op.or]: {
+                    published: true,
+                    userId: req.user.id,
+                }
+            }
+        else
+            where = {published:true}
+
+        console.log("user", req.user)
+
+
         let projects = (await ArProject.findAll({
             subQuery: false,
             attributes: [
@@ -42,7 +57,7 @@ router.get(baseUrl+'projects/:page', async (req, res) => {
                     attributes: ["username"],
                 }
             ],
-            where: {published:true},
+            where,
             group: ['ArProject.id'],
             limit: PAGE_LENGTH,
             offset: page * PAGE_LENGTH,
@@ -70,9 +85,21 @@ router.get(baseUrl+'projects/:page', async (req, res) => {
 
 
 
-router.get(baseUrl+'project/:projectId', async (req, res) => {
+router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, res) => {
+    let where = {}
+    if(req.user)
+        where = {
+            id: req.params.projectId,
+            [Op.or]: {
+                published: true,
+                userId: req.user.id,
+            }
+        }
+    else
+        where = {published:true, id: req.params.projectId}
+
     let project = await ArProject.findOne({
-            where: { published: true, id: req.params.projectId },
+            where,
             include:[
                 {
                     model: ArScene,

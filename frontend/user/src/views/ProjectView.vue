@@ -8,6 +8,9 @@ import ArNotification from "@/components/notification/arNotification.vue";
 import ProjectInfo from "@/components/projectInfo.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import router from "@/router/index.js";
+import {useAuthStore} from "@/store/auth.js";
+
+const { isAuthenticated, token } = useAuthStore()
 
 const route = useRoute();
 const project = ref({});
@@ -18,7 +21,11 @@ async function fetchProject(projectId) {
   loading.value = true;
   error.value = false;
   try {
-    const res = await fetch(`${ENDPOINT}project/${projectId}`);
+    const headers = {}
+    if(isAuthenticated.value)
+      headers["Authorization"] = `Bearer ${token.value}`
+
+    const res = await fetch(`${ENDPOINT}project/${projectId}`, {headers});
     if(res.ok){
       return await res.json();
     }

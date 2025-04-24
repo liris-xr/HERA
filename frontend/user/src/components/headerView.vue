@@ -8,6 +8,14 @@ import router from "@/router/index.js";
 
 const {isAuthenticated, userData, logout } = useAuthStore()
 
+function logoutAndRedirect(){
+  logout()
+  if(router.currentRoute.value.name === "home") {
+    router.go(0)
+  }else
+    router.push({ name: "home" });
+}
+
 </script>
 
 <template>
@@ -17,11 +25,13 @@ const {isAuthenticated, userData, logout } = useAuthStore()
       <RouterLink :to="{name:'projects'}">{{$t("header.allProjects")}}</RouterLink>
 
       <div>
+        <locale-changer></locale-changer>
+
+
         <span v-if="isAuthenticated">{{userData.username}}</span>
-        <button-view v-if="isAuthenticated" :text="$t('header.logout')" @click="logout()"/>
+        <button-view v-if="isAuthenticated" :text="$t('header.logout')" @click="logoutAndRedirect()"/>
 
         <button-view v-else :text="$t('header.login')" @click="router.push({ name: 'login' })"/>
-        <locale-changer></locale-changer>
       </div>
     </nav>
   </header>

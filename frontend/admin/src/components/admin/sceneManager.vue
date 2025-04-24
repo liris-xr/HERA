@@ -23,9 +23,6 @@ const creatingScene = ref(null)
 
 const totalPages = ref(1)
 
-defineExpose({editingScene, deletingScene})
-
-
 async function deleteLabel(label) {
   emit("deleteLabel", label)
 }
@@ -48,6 +45,12 @@ async function editAsset(asset) {
 
 async function createAsset() {
   emit("createAsset", editingScene.value)
+}
+
+async function newLabel(label) {
+  const index = scenes.value.findIndex(scene => scene.id === label.sceneId)
+
+  scenes.value[index].labels.push(label)
 }
 
 async function confirmSceneDelete() {
@@ -121,6 +124,7 @@ onMounted(async () => {
   await fetchScenes()
 })
 
+defineExpose({editingScene, deletingScene, newLabel})
 
 </script>
 

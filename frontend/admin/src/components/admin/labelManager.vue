@@ -12,6 +12,8 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const emit = defineEmits(["newLabel"])
+
 const table = ref(null)
 
 const labels = ref([])
@@ -24,7 +26,22 @@ const totalPages = ref(1)
 defineExpose({editingLabel, deletingLabel, creatingLabel})
 
 async function confirmLabelCreate() {
-  
+  const res = await fetch(`${ENDPOINT}admin/labels`,{
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${props.token}`,
+    },
+    body: JSON.stringify(creatingLabel.value),
+  })
+
+  if(res.ok) {
+    const data = await res.json()
+    labels.value.push(data)
+    emit("newLabel", data)
+  }
+
+  creatingLabel.value = null
 }
 
 async function confirmLabelDelete() {

@@ -129,7 +129,7 @@ router.put(baseUrl+"admin/labels/:labelId", authMiddleware, async (req, res) => 
     }
 })
 
-router.post(baseUrl+"admin/labels/", authMiddleware, async (req, res) => {
+router.post(baseUrl+"admin/labels", authMiddleware, async (req, res) => {
     const authUser = req.user
 
     if(!authUser.admin) {
@@ -138,15 +138,15 @@ router.post(baseUrl+"admin/labels/", authMiddleware, async (req, res) => {
     }
 
     try {
-        const project = await ArProject.findOne({
+        const scene = await ArScene.findOne({
             where: {
-                id: req.body.projectId
+                id: req.body.sceneId
             }
         })
 
-        if(!project) {
+        if(!scene) {
             res.status(404);
-            return res.send({ error: 'Project not found' })
+            return res.send({ error: 'Scene not found' })
         }
 
         let newLabel = await ArLabel.create({

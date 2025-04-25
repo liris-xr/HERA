@@ -222,18 +222,18 @@ void main() {
 		texture(sh8,texcoord).rgb
 	);
 	
-	vec3 probeIrradiance = vec3(0);
-	float step = 0.0625;
-	for(float i = 0.;i<1.;i += step) {
-		for(float j = 0.;j<1.;j = j + step) {
-			vec3 dir = getRandomHemisphereDirection(geometryNormal,i,j);
-			probeIrradiance += getLightProbeIrradiance(interpolatedLightProbe,dir);
-		}
-	}
-	probeIrradiance /= 256.;
+	// vec3 probeIrradiance = vec3(0);
+	// float step = 0.0625;
+	// for(float i = 0.;i<1.;i += step) {
+	// 	for(float j = 0.;j<1.;j = j + step) {
+	// 		vec3 dir = getRandomHemisphereDirection(geometryNormal,i,j);
+	// 		probeIrradiance += getLightProbeIrradiance(interpolatedLightProbe,dir);
+	// 	}
+	// }
+	// probeIrradiance /= 256.;
 
-	outgoingLight = material.diffuseColor * probeIrradiance;
-	// outgoingLight = vec3(1);
+	// outgoingLight = material.diffuseColor * probeIrradiance;
+	outgoingLight = material.diffuseColor * getLightProbeIrradiance(interpolatedLightProbe,normal);
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>

@@ -3,26 +3,104 @@ import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterf
 import {classes} from "@/js/utils/extender.js"
 import { randFloat } from "three/src/math/MathUtils";
 
+// Source : https://gist.github.com/brannondorsey/dc4cfe00d6b124aebd3277159dcbdb14
+// draw a discrete sample (index) from a probability distribution (an array of probabilities)
+// probs will be rescaled to sum to 1.0 if the values do not already
+function sample(probs) {
+    const sum = probs.reduce((a, b) => a + b, 0)
+    if (sum <= 0) throw Error('probs must sum to a value greater than zero')
+    const normalized = probs.map(prob => prob / sum)
+    const sample = Math.random()
+    let total = 0
+    for (let i = 0; i < normalized.length; i++) {
+        total += normalized[i]
+        if (sample < total) return i
+    }
+}
+
+
+class Triangle {
+    a;
+    b;
+    c;
+
+    normal;
+    area;
+
+    constructor(a,b,c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+}
+
 // Tableau des triangles émissifs de la scène
 // + Tableau de pondération en fonctiond de la taille des triangles
 class LightSources {  
-    triangleIds;
+    triangles;
     weights;
-    area;
+    lightSourceArea;
 
-    LightSource() {
-        this.area = 0;
-        this.triangleIds = []
+    constructor() {
+        this.lightSourceArea = 0;
+        this.triangles = []
         this.weights = []
     }
 
     initLightSources(scene) {
-        // this.scene.assetManager.meshManagerMap.forEach( (meshManager) => {
-        //     for (let mesh of meshManager.getMeshes.value) {
-        //         mesh.geometry.attributes
-        //     }
-        // })
+        scene.assetManager.meshManagerMap.forEach( (meshManager) => {
+            
+            for (let mesh of meshManager.getMeshes.value) {
+                if(mesh.material.emissiveIntensity && (
+                    mesh.material.emissive.r != 0 ||
+                    mesh.material.emissive.g != 0 ||
+                    mesh.material.emissive.b != 0 
+                )
+            ) { 
+                    const indexes = mesh.geometry.getIndex().array;
+                    const positionBufferAttribute = mesh.geometry.getAttribute("position").clone();
+                    positionBufferAttribute.applyMatrix4(mesh.matrix)
+                    const positionBuffer = positionBufferAttribute.array
+
+                    for(let i = 0;i<mesh.geometry.getIndex().count;i+=3) {
+                        const aId = indexes[i];
+                        const bId = indexes[i+1];
+                        const cId = indexes[i+2];
+
+                        const t = new Triangle(
+                            new THREE.Vector3(positionBuffer[(aId*3)],positionBuffer[(aId*3)+1],positionBuffer[(aId*3)+2]),
+                            new THREE.Vector3(positionBuffer[(bId*3)],positionBuffer[(bId*3)+1],positionBuffer[(bId*3)+2]),
+                            new THREE.Vector3(positionBuffer[(cId*3)],positionBuffer[(cId*3)+1],positionBuffer[(cId*3)+2])
+                        );
+                        
+                        const ab = new THREE.Vector3().subVectors(t.b,t.a);
+                        const ac = new THREE.Vector3().subVectors(t.c,t.a);
+
+                        const normal = new THREE.Vector3().crossVectors(ab,ac);
+
+                        t.area = normal.length();
+                        t.normal = normal.normalize()
+                        this.lightSourceArea += t.area;
+                        
+                        this.triangles.push(t);
+                    }
+                }
+            }
+        })
+
+        for(let triangle of this.triangles) {
+            this.weights.push(triangle.area/this.lightSourceArea);
+        }
     }
+
+    
+
+    // Return a triangle based on its area
+    // The bigger it is, the more likely it is to be picked
+    getRandomWeightedTriangle() {
+        return this.triangles[sample(this.weights)];
+    }
+
 };
 
 
@@ -34,6 +112,8 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
     shTextures;
 
     scene;
+
+    ls;
 
     // Mostly, place probes
     constructor(center,density,width,depth,height,scene) {
@@ -52,6 +132,9 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         this.raycaster = new THREE.Raycaster()
         this.rawData = [];
         this.shTextures = [];
+
+        this.ls = new LightSources();
+        this.ls.initLightSources(this.scene);
 
         for(let i = 0;i<9;i++) {
             this.shTextures.push(new Float32Array(width*depth*height*4*density*density*density));                 
@@ -76,6 +159,9 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                 }
             }
         }
+        for(let i = 0;i<10;i++) {
+            this.getRandomDirectionTowardLightSource(new THREE.Vector3())
+        }
     }
 
     getRandomSphereDirection(origin) {
@@ -96,7 +182,22 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
     }
 
     getRandomDirectionTowardLightSource(origin) {
-        const point = new THREE.Vector3(randFloat(-0.25,0.25),2,randFloat(-0.20,0.20));
+        const t = this.ls.getRandomWeightedTriangle();
+
+        const r1 = randFloat(0,0.5);
+        const r2 = randFloat(0,0.5);
+
+        const ab = new THREE.Vector3().subVectors(t.b,t.a);
+        const ac = new THREE.Vector3().subVectors(t.c,t.a);
+        const randomVector = new THREE.Vector3().addVectors(
+            ab.multiplyScalar(r1),
+            ac.multiplyScalar(r2)
+        );
+        const point = new THREE.Vector3().copy(t.a)
+        .add(randomVector)
+        .addScaledVector(t.normal,0.001);
+
+
         return point.sub(origin).normalize();
     }
 
@@ -168,23 +269,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
             if(closestIntersect.distance < Infinity) {
                 const shBasis = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
                 THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
-                if(closestIntersect.object.material.emissiveIntensity && ( // Light emitter touched
-                        closestIntersect.object.material.emissive.r > 0 ||
-                        closestIntersect.object.material.emissive.g > 0 ||
-                        closestIntersect.object.material.emissive.b > 0 
-                    )
-                ) {
-
-                    // evaluate SH basis functions in direction dir
-                    // const color = closestIntersect.object.material.emissive;
-                    // for ( let j = 0; j < 9; j ++ ) {
-                        
-                    //     coefficients[ j ].x += shBasis[ j ] * color.r * indirectWeight;
-                    //     coefficients[ j ].y += shBasis[ j ] * color.g * indirectWeight;
-                    //     coefficients[ j ].z += shBasis[ j ] * color.b * indirectWeight;
-                        
-                    // }
-                } else if(closestIntersect.object.material.roughness > 0) { // Light reflector touched
+                if(closestIntersect.object.material.roughness > 0) { // Light reflector touched
                     var lightReflectorColor = new THREE.Vector3()
                     const color = closestIntersect.object.material.color;
                     const touchedObjectNormal = closestIntersect.normal.clone();
@@ -220,31 +305,10 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                         coefficients[ j ].y += (shBasis[j] * lightReflectorColor.y * closestIntersect.object.material.roughness) * indirectWeight * 20;
                         coefficients[ j ].z += (shBasis[j] * lightReflectorColor.z * closestIntersect.object.material.roughness) * indirectWeight * 20;
                     }
-                    // const sh = new THREE.SphericalHarmonics3();
-                    // const shCoefficients = sh.coefficients;
-                    // const touchedObjectOrigin = closestIntersect.point.clone()
-
-                    // // We shoot nbDirectSamples ray toward the lights
-                    // for(let n = 0;n<16;n++) {
-                    //     this.updateDirectLighting(touchedObjectOrigin.add(touchedObjectNormal.multiplyScalar(0.01)),shCoefficients,0.0625);
-                    // }
-
-                    // // We update our light probes coefficients depending on color, roughness and received light from the light source
-                    // for ( let j = 0; j < 9; j ++ ) {
-                    //     coefficients[ j ].x += shCoefficients[j].x * shBasis[ j ] * closestIntersect.object.material.color.r*indirectWeight;
-                    //     coefficients[ j ].y += shCoefficients[j].y * shBasis[ j ] * closestIntersect.object.material.color.g*indirectWeight;
-                    //     coefficients[ j ].z += shCoefficients[j].z * shBasis[ j ] * closestIntersect.object.material.color.b*indirectWeight;
-                    // }
 
                 }
             }
         }
-        
-        // for ( let j = 0; j < 9; j ++ ) {
-        //     coefficients[ j ].x /= (1+percentOfObjectTouched);
-        //     coefficients[ j ].y /= (1+percentOfObjectTouched);
-        //     coefficients[ j ].z /= (1+percentOfObjectTouched);
-        // }
     }
 
     // Bounces : number of light bounces

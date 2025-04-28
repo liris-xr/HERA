@@ -72,6 +72,8 @@ function getProperty(obj, prop) {
       <button-view v-if="create" icon="/icons/add.svg" @click="$emit('create')"></button-view>
     </div>
 
+    <slot></slot>
+
     <table>
       <thead>
         <tr>

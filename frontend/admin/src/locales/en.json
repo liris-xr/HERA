@@ -231,6 +231,8 @@
 
   "admin": {
     "title": "Admin pannel",
+    "loading": "Loading...",
+    "loadingError": "An error occured while loading the data",
     "required": "This field is required",
     "research": "Research",
     "noResult": "No result",

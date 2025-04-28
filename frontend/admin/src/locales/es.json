@@ -222,6 +222,8 @@
 
   "admin": {
     "title": "panel de administración",
+    "loading": "Chargement des données",
+    "loadingError": "Erreur dans le chargement des données",
     "required": "Ce champ est requis",
     "research": "Recherche",
     "noResult": "Aucun résultat",

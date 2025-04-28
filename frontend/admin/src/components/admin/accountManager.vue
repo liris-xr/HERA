@@ -5,11 +5,18 @@ import ButtonView from "@/components/button/buttonView.vue";
 import * as sea from "node:sea";
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
+import Notification from "@/components/notification/notification.vue";
+import RedirectMessage from "@/components/notification/redirect-message.vue";
 
 
 const props = defineProps({
   token: {type: String, required: true},
 })
+
+
+const loading = ref(false)
+const error = ref(false)
+
 
 const table = ref(null)
 
@@ -80,6 +87,8 @@ async function confirmUserCreate() {
 }
 
 async function fetchUsers(data=null) {
+  loading.value = true
+
   const searchQuery = data?.searchQuery
   const currentPage = data?.currentPage ?? 1
 
@@ -98,10 +107,14 @@ async function fetchUsers(data=null) {
 
       users.value = data.users
       totalPages.value = data.totalPages
-    }
+    } else
+      error.value = true
+
   } catch(error) {
+    error.value = true
     console.log(error)
-    //TODO
+  } finally {
+    loading.value = false
   }
 }
 
@@ -124,8 +137,25 @@ onMounted(async () => {
         @create="creatingUser = {}"
         @edit="editingUser = $event"
         @delete="deletingUser = $event"
-        @fetch="fetchUsers"
-    />
+        @fetch="fetchUsers">
+
+      <notification
+          theme="default"
+          icon="/icons/spinner.svg"
+          v-if="loading">
+        <template #content><p>{{$t("admin.loading")}}</p></template>
+      </notification>
+
+      <notification
+          theme="danger"
+          icon="/icons/info.svg"
+          v-if="error">
+        <template #content><p>{{$t("admin.loadingError")}}</p></template>
+      </notification>
+
+    </generic-table>
+
+
 
 
 

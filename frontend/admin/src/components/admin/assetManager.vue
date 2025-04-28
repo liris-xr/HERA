@@ -6,11 +6,17 @@ import * as sea from "node:sea";
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
+import Notification from "@/components/notification/notification.vue";
 
 
 const props = defineProps({
   token: {type: String, required: true},
 })
+
+
+const loading = ref(false)
+const error = ref(false)
+
 
 const emit = defineEmits(["newAsset", "supprAsset"])
 
@@ -92,6 +98,8 @@ async function confirmAssetEdit() {
 }
 
 async function fetchAssets(data=null) {
+  loading.value = true
+
   const searchQuery = data?.searchQuery
   const currentPage = data?.currentPage ?? 1
 
@@ -111,10 +119,14 @@ async function fetchAssets(data=null) {
       assets.value = data.assets
 
       totalPages.value = data.totalPages
-    }
+    } else
+      error.value = true
+
   } catch(error) {
+    error.value = true
     console.log(error)
-    //TODO
+  } finally {
+    loading.value = false
   }
 }
 
@@ -138,8 +150,23 @@ onMounted(async () => {
         @create="creatingAsset = {}"
         @edit="editingAsset = $event"
         @delete="deletingAsset = $event"
-        @fetch="fetchAssets"
-    />
+        @fetch="fetchAssets">
+
+      <notification
+          theme="default"
+          icon="/icons/spinner.svg"
+          v-if="loading">
+        <template #content><p>{{$t("admin.loading")}}</p></template>
+      </notification>
+
+      <notification
+          theme="danger"
+          icon="/icons/info.svg"
+          v-if="error">
+        <template #content><p>{{$t("admin.loadingError")}}</p></template>
+      </notification>
+
+    </generic-table>
 
 
 

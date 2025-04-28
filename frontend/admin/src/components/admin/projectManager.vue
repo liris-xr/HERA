@@ -6,11 +6,17 @@ import * as sea from "node:sea";
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
+import Notification from "@/components/notification/notification.vue";
 
 
 const props = defineProps({
   token: {type: String, required: true},
 })
+
+
+const loading = ref(false)
+const error = ref(false)
+
 
 const emit = defineEmits(['createScene', 'editScene', 'deleteScene'])
 
@@ -135,6 +141,8 @@ async function confirmProjectDelete() {
 
 
 async function fetchProjects(data=null) {
+  loading.value = true
+
   const searchQuery = data?.searchQuery
   const currentPage = data?.currentPage ?? 1
 
@@ -153,10 +161,14 @@ async function fetchProjects(data=null) {
 
       projects.value = data.projects
       totalPages.value = data.totalPages
-    }
+    } else
+      error.value = true
+
   } catch(error) {
+    error.value = true
     console.log(error)
-    //TODO
+  } finally {
+    loading.value = false
   }
 }
 
@@ -181,8 +193,23 @@ defineExpose({projects, newScene, supprScene})
         @create="creatingProject = {}"
         @edit="editingProject = $event"
         @delete="deletingProject = $event"
-        @fetch="fetchProjects"
-    />
+        @fetch="fetchProjects">
+
+      <notification
+          theme="default"
+          icon="/icons/spinner.svg"
+          v-if="loading">
+        <template #content><p>{{$t("admin.loading")}}</p></template>
+      </notification>
+
+      <notification
+          theme="danger"
+          icon="/icons/info.svg"
+          v-if="error">
+        <template #content><p>{{$t("admin.loadingError")}}</p></template>
+      </notification>
+
+    </generic-table>
 
   <!-- Interfaces modales -->
 

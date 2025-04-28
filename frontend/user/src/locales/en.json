@@ -83,6 +83,17 @@
     }
   },
 
+  "presentation": {
+    "sceneTitle": "Scene",
+    "controls": {
+      "title": "Controls",
+      "connected": {
+        "true": "Connected",
+        "false": "Disconnected"
+      }
+    }
+  },
+
   "projectCard": {
     "scene": "scene | scenes",
     "pictureAlt": "Project picture",

@@ -24,6 +24,8 @@ export const DIRNAME = path.dirname(__filename);
 //for https only :
 import * as fs from "node:fs";
 import * as https from "node:https";
+import {Server} from "socket.io";
+import setupSocket from "./src/socket/index.js";
 const options = {
     key: fs.readFileSync('privatekey.key'),
     cert: fs.readFileSync('certificate.crt')
@@ -48,7 +50,21 @@ async function main () {
     app.use(label)
     app.use('/public', express.static('public'));       //serving static files
 
-    https.createServer(options, app).listen(8080, () => {
+    const httpsServer = https.createServer(options, app)
+
+    // mise en place du socket
+    const io = new Server(httpsServer, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"],
+        },
+        path: "/api/socket"
+    })
+    setupSocket(io)
+    console.log(io)
+
+
+    httpsServer.listen(8080, () => {
         console.log('Server started on port 8080')
     })
 }

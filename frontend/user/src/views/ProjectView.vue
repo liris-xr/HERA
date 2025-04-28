@@ -96,6 +96,7 @@ onBeforeRouteUpdate((to, from, next)=>{
         <filled-button-view
             v-if="isAuthenticated"
 
+            icon="/icons/play.svg"
             class="center"
             :text="$t('projectView.startPresentation')"
             @click="router.push({ name: 'presentation' });" />

@@ -1,7 +1,7 @@
 <script setup>
 import ArView from "@/components/arView.vue";
 import ProjectDetail from "@/components/projectDetail.vue";
-import {ref} from "vue";
+import {computed, onMounted, reactive, ref} from "vue";
 import {onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
@@ -10,23 +10,45 @@ import RedirectMessage from "@/components/notification/redirect-message.vue";
 import router from "@/router/index.js";
 import {useAuthStore} from "@/store/auth.js";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
+import {io} from "socket.io-client";
+import {SocketConnection} from "@/js/threeExt/socket/socketConnection.js";
+import {useI18n} from "vue-i18n";
 
 const { isAuthenticated, token } = useAuthStore()
+const {t} = useI18n()
+
+if (!isAuthenticated.value) {
+  router.push({ name: "login" })
+}
 
 const route = useRoute();
 const project = ref({});
 const loading = ref(true);
 const error = ref(false);
 
+const socket = reactive(
+    new SocketConnection(
+        ENDPOINT.replace("/api/", ""),
+        "/api/socket",
+        {
+          auth: {
+            token: `Bearer ${token.value}`,
+          },
+          transports: ['websocket']
+        }
+    ))
+
+
 async function fetchProject(projectId) {
   loading.value = true;
   error.value = false;
   try {
-    const headers = {}
-    if(isAuthenticated.value)
-      headers["Authorization"] = `Bearer ${token.value}`
-
-    const res = await fetch(`${ENDPOINT}project/${projectId}`, {headers});
+    const res = await fetch(`${ENDPOINT}project/${projectId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token.value}`
+          }
+        });
     if(res.ok){
       return await res.json();
     }
@@ -36,11 +58,22 @@ async function fetchProject(projectId) {
   }
 }
 
-
 fetchProject(route.params.projectId).then((r)=>{
   project.value=r
   loading.value = false;
 });
+
+
+onMounted(() => {
+  console.log(socket)
+
+})
+
+const connectedText = computed(() => {
+  if(socket.state.connected)
+    return t("presentation.controls.connected.true");
+  return t("presentation.controls.connected.false");
+})
 
 </script>
 <template>
@@ -68,11 +101,21 @@ fetchProject(route.params.projectId).then((r)=>{
       </ar-notification>
     </section>
 
+
+
     <section class="flex">
+      <section>
+        <h1>{{$t("presentation.controls.title")}}</h1>
+
+        <p v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">
+          {{connectedText}}
+        </p>
+
+      </section>
       <span></span>
       <section>
+        <h1>{{$t("presentation.sceneTitle")}}</h1>
         <ar-view v-if="!(loading || error)" :json="project"></ar-view>
-        <project-info v-if="!(loading || error)" :project-info="project"></project-info>
       </section>
     </section>
   </main>
@@ -83,6 +126,14 @@ fetchProject(route.params.projectId).then((r)=>{
 
 .center {
   margin: auto;
+}
+
+.danger {
+  color: var(--dangerColor);
+}
+
+.success {
+  color: var(--succesColor)
 }
 
 

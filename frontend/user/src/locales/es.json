@@ -83,6 +83,17 @@
     }
   },
 
+  "presentation": {
+    "sceneTitle": "Scène",
+    "controls": {
+      "title": "Contrôles",
+      "connected": {
+        "true": "Connecté",
+        "false": "Non connecté"
+      }
+    }
+  },
+
   "projectCard": {
     "scene": "escena | escenas",
     "pictureAlt": "Imagen del proyecto",

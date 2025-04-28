@@ -205,7 +205,7 @@ export class EditorScene extends THREE.Scene {
             position: asset.position,
             rotation: asset.rotation,
             scale: asset.scale,
-            copiedUrl: asset.sourceUrl,
+            copiedUrl: asset.sourceUrl ?? asset.copiedUrl,
         }
         const newAsset = new Asset(assetData);
         console.log(newAsset)

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import {classes} from "@/js/utils/extender.js"
 import { randFloat } from "three/src/math/MathUtils";
+import { LightProbe } from "./lightProbe";
 
 // Source : https://gist.github.com/brannondorsey/dc4cfe00d6b124aebd3277159dcbdb14
 // draw a discrete sample (index) from a probability distribution (an array of probabilities)
@@ -108,10 +109,11 @@ class LightSources {
 
 export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface) {
 
-    rawData; // 1D table of probes
+    probes; // 1D table of probes
     raycaster;
 
     shTextures;
+    invalidityTexture; // Source : https://advances.realtimerendering.com/s2022/SIGGRAPH2022-Advances-Enemies-Ciardi%20et%20al.pdf
 
     scene;
 
@@ -132,8 +134,9 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         this.scene.shTexturesCenter = center;
 
         this.raycaster = new THREE.Raycaster()
-        this.rawData = [];
+        this.probes = [];
         this.shTextures = [];
+        this.invalidityTexture = new Float32Array(width*depth*height*density*density*density)
 
         this.ls = new LightSources();
         this.ls.initLightSources(this.scene);
@@ -142,22 +145,18 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
             this.shTextures.push(new Float32Array(width*depth*height*4*density*density*density));                 
         }
 		
+        let nbProbe = 0;
         const freq = 1/density;
         for(let y = -height/2;y<height/2;y = y + freq) {
             for(let z = -depth/2;z<depth/2;z = z + freq) {
                 for(let x = -width/2;x<width/2;x = x + freq) {
-
+                    
                     const pos = new THREE.Vector3(x,y,z).add(center);
-
-                    const newProbe = new THREE.LightProbe()
+                    
+                    const newProbe = new LightProbe(nbProbe)
                     newProbe.position.copy(pos);
-                    this.rawData.push(newProbe)
-
-                    // const geometry = new THREE.SphereGeometry(0.01,30,30) 
-                    // const material = new THREE.MeshBasicMaterial( { color: new THREE.Color(1,0,1) } ); 
-                    // const sphere = new THREE.Mesh( geometry, material ); 
-                    // sphere.position.copy(pos)
-                    // scene.add( sphere );
+                    this.probes.push(newProbe)
+                    nbProbe++;
                 }
             }
         }
@@ -224,8 +223,20 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         return closestIntersect;
     }
 
-    isBackFaceTouched(rayDirection,normal) {
-        return normal.dot(rayDirection.negate()) > 0
+    getFaceNormal(face,positionBuffer) {
+        const a = new THREE.Vector3(positionBuffer[(face.a*3)],positionBuffer[(face.a*3)+1],positionBuffer[(face.a*3)+2]);
+        const b = new THREE.Vector3(positionBuffer[(face.b*3)],positionBuffer[(face.b*3)+1],positionBuffer[(face.b*3)+2]);
+        const c = new THREE.Vector3(positionBuffer[(face.c*3)],positionBuffer[(face.c*3)+1],positionBuffer[(face.c*3)+2]);
+        const ab = new THREE.Vector3().subVectors(b,a);
+        const ac = new THREE.Vector3().subVectors(c,a);
+
+        return new THREE.Vector3().crossVectors(ab,ac).normalize();
+    }
+
+    isBackFaceTouched(rayDirection,face,positionBuffer) {
+        const normal = this.getFaceNormal(face,positionBuffer)
+        
+        return normal.dot(rayDirection.negate()) < 0
     } 
 
     updateDirectLighting(origin, coefficients,weight) {
@@ -260,24 +271,32 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         }
     }
 
-    updateIndirectLighting(origin,coefficients,nbDirectSamples,nbIndirectSamples,directWeight,indirectWeight) {
+    updateIndirectLighting(probeId,origin,coefficients,nbDirectSamples,nbIndirectSamples,directWeight,indirectWeight) {
         // We shoot nbSamble ray in random directions
+        let totalIntersection = 0;
         for(let i = 0;i<nbIndirectSamples;i++) {
             const dir = this.getRandomSphereDirection(origin);
     
             this.raycaster.set(origin,dir);
             
             const closestIntersect = this.getClosestIntersection();
-    
+            
             if(closestIntersect.distance < Infinity) {
+                totalIntersection++;
+                const positionBufferAttribute = closestIntersect.object.geometry.getAttribute("position").clone();
+                positionBufferAttribute.applyMatrix4(closestIntersect.object.matrix)
+                const positionBuffer = positionBufferAttribute.array
+                if(this.isBackFaceTouched(dir,closestIntersect.face,positionBuffer)) {
+                    this.invalidityTexture[probeId]++;
+                }
+
                 const shBasis = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
                 THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
                 if(closestIntersect.object.material.roughness > 0) { // Light reflector touched
+                    const intersectionNormal = new THREE.Vector3(closestIntersect.normal.x,closestIntersect.normal.z,-closestIntersect.normal.y)
                     var lightReflectorColor = new THREE.Vector3()
                     const color = closestIntersect.object.material.color;
-                    const touchedObjectNormal = closestIntersect.normal.clone();
-                    touchedObjectNormal.set(touchedObjectNormal.x,touchedObjectNormal.z,-touchedObjectNormal.y);
-                    const lightReflectorOrigin = closestIntersect.point.clone().add(touchedObjectNormal.multiplyScalar(0.01))
+                    const lightReflectorOrigin = closestIntersect.point.clone().add(intersectionNormal.multiplyScalar(0.01))
                     for(let n = 0;n<nbDirectSamples;n++) {
                         const dirLightSource = this.getRandomDirectionTowardLightSource(lightReflectorOrigin);
                         this.raycaster.set(lightReflectorOrigin,dirLightSource); 
@@ -309,6 +328,94 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                 }
             }
         }
+        if(totalIntersection) {
+            this.invalidityTexture[probeId] /= totalIntersection;
+        }
+    }
+
+    addNeighbour(probeId,neighbours) {
+        if(probeId >= 0 && probeId <= this.probes.length) {
+            neighbours.push(this.probes[probeId])
+        }
+    }
+
+    add3DNeighbours(probeId,neighbours) {
+        this.addNeighbour(probeId-1,neighbours)
+        this.addNeighbour(probeId+1,neighbours)
+
+        this.addNeighbour((probeId-1)-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId)-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId+1)-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+
+        this.addNeighbour((probeId-1)+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId)+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId+1)+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+
+        this.addNeighbour((probeId)-this.scene.shTexturesWidth,neighbours)
+        this.addNeighbour((probeId-1)-this.scene.shTexturesWidth,neighbours)
+        this.addNeighbour((probeId+1)-this.scene.shTexturesWidth,neighbours)
+
+        this.addNeighbour((probeId)+this.scene.shTexturesWidth,neighbours)
+        this.addNeighbour((probeId-1)+this.scene.shTexturesWidth,neighbours)
+        this.addNeighbour((probeId+1)+this.scene.shTexturesWidth,neighbours)
+
+        this.addNeighbour((probeId-1)-this.scene.shTexturesWidth+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId)-this.scene.shTexturesWidth+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId+1)-this.scene.shTexturesWidth+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+
+        this.addNeighbour((probeId-1)+this.scene.shTexturesWidth+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId)+this.scene.shTexturesWidth+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId+1)+this.scene.shTexturesWidth+this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+
+        this.addNeighbour((probeId-1)+this.scene.shTexturesWidth-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId)+this.scene.shTexturesWidth-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId+1)+this.scene.shTexturesWidth-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+
+        this.addNeighbour((probeId-1)-this.scene.shTexturesWidth-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId)-this.scene.shTexturesWidth-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+        this.addNeighbour((probeId+1)-this.scene.shTexturesWidth-this.scene.shTexturesWidth*this.scene.shTexturesDepth,neighbours)
+
+    }
+
+    getClosestNeighbourDistance(position,neighbours) {
+        let minDist = Infinity
+        for(let neighbour of neighbours) {
+            let dist = neighbour.position.distanceTo(position)
+            if(neighbour.position < minDist) {
+                minDist = dist;
+            }
+        }
+        return minDist;
+    }
+
+    updateBasedOnInvalidity() {
+        for(let probeId = 0;probeId<this.probes.length;probeId++) {
+            let probe = this.probes[probeId];
+            let invalidity = this.invalidityTexture[probeId]
+            
+            // Based on the probe's invalidity score
+            // We create a meaned spherical harmonics of the surrounding probes (weighted with their own score)
+            // Then we lerp between both, based on the probe's invalidity score
+            if(invalidity > 0) {
+                const newSphericalHarmonics = new THREE.SphericalHarmonics3();
+                const neighbours = [];
+                this.add3DNeighbours(probeId,neighbours);
+                const maxDist = this.getClosestNeighbourDistance(probe.position,neighbours) * 2
+
+                // Quantity of sh added to newSphericalHarmonics
+                let shAmount = 0;
+                for(let neighbour of neighbours) {
+                    if(neighbour.position.distanceTo(probe.position) < maxDist) {
+                        const amount = 1 - this.invalidityTexture[neighbour.probeId]
+                        newSphericalHarmonics.addScaledSH(neighbour.sh,amount);
+                        shAmount += amount;
+                    }
+                }
+                newSphericalHarmonics.scale(1/shAmount)
+
+                probe.sh.lerp(newSphericalHarmonics,invalidity);
+             }
+        }
     }
 
     // Bounces : number of light bounces
@@ -316,7 +423,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
 
     // Fill the 9 "textures" of shTextures, each texture containing 1 float of the 9 coefficients of a spherical harmonics
     bake(bounces,directSamples,indirectSamples,directIndirectSamples) {
-        console.log(this.rawData.length);
+        console.log(this.probes.length);
         
 
         const directWeight = 1 / directSamples;
@@ -324,8 +431,8 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
 
         const directIndirectWeight = 1 / directIndirectSamples;
         
-        for(let probeId = 0;probeId<this.rawData.length;probeId++) {
-            let probe = this.rawData[probeId];
+        for(let probeId = 0;probeId<this.probes.length;probeId++) {
+            let probe = this.probes[probeId];
             
             const sh = new THREE.SphericalHarmonics3();
             const shCoefficients = sh.coefficients;
@@ -341,10 +448,17 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                 this.updateDirectLighting(probe.position,shCoefficients,directWeight);
             }
             for(let j = 0;j<bounces;j++) {
-                this.updateIndirectLighting(probe.position,shCoefficientsIndirect,directIndirectSamples,indirectSamples,directIndirectWeight,indirectWeight)
+                this.updateIndirectLighting(probeId,probe.position,shCoefficientsIndirect,directIndirectSamples,indirectSamples,directIndirectWeight,indirectWeight)
             }
 
-            probe.sh = sh.lerp(shIndirect,0.4);
+            probe.sh = sh
+            // sh 0.0 ------- 1.0 shIndirect
+            // probe.sh = sh.lerp(shIndirect,0.4);
+        }
+        this.updateBasedOnInvalidity();
+
+        for(let probeId = 0;probeId<this.probes.length;probeId++) {
+            let probe = this.probes[probeId];
 
             for(let coef = 0;coef<9;coef++) {
                 for(let color = 0;color<4;color++) {

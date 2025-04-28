@@ -131,6 +131,38 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
 
 })
 
+router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
+    const authUser = req.user
+    const userId = req.params.userId;
+
+    if(userId !== authUser.id && !authUser.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    try {
+
+        const user = await ArUser.findOne({
+            where: {id: userId},
+        })
+
+        await user.update({
+            password: passwordHash(req.body.password)
+        }, {
+            returning: true
+        })
+
+        return res.status(200).send()
+
+    } catch(e) {
+        console.log(e)
+        res.set({
+            'Content-Type': 'application/json'
+        })
+        res.status(400);
+        return res.send({ error: 'Unable to save user'});
+    }
+})
 
 
 // routes pour le mode admin

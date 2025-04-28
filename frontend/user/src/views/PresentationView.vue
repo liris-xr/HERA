@@ -11,7 +11,7 @@ import router from "@/router/index.js";
 import {useAuthStore} from "@/store/auth.js";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
 import {io} from "socket.io-client";
-import {SocketConnection} from "@/js/threeExt/socket/socketConnection.js";
+import {SocketConnection} from "@/js/socket/socketConnection.js";
 import {useI18n} from "vue-i18n";
 
 const { isAuthenticated, token } = useAuthStore()

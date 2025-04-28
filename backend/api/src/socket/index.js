@@ -3,7 +3,6 @@ import safeHandler from "./utils/safeHandler.js"
 import {createPresentation} from "./routes/presentation/create.js";
 
 export default function setupSocket(io) {
-    console.log("setup socket");
     io.use(socketAuthMiddleware)
 
     io.on("connection", (socket) => {
@@ -11,7 +10,6 @@ export default function setupSocket(io) {
         initConnection(socket)
         setupSocketEvents(io, socket)
     })
-    console.log("setup socket done");
 }
 
 function initConnection(socket) {

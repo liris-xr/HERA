@@ -42,25 +42,6 @@ fetchProject(route.params.projectId).then((r)=>{
   loading.value = false;
 });
 
-
-const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
-
-async function beforeRedirect(to, from, next) {
-  await next(true)
-  await sleep(0)
-  window.location.reload();
-}
-
-onBeforeRouteLeave( (to, from, next)=>{
-  beforeRedirect(to, from, next)
-})
-
-onBeforeRouteUpdate((to, from, next)=>{
-  beforeRedirect(to, from, next)
-})
-
-
-
 </script>
 <template>
   <main>
@@ -88,17 +69,8 @@ onBeforeRouteUpdate((to, from, next)=>{
     </section>
 
     <section class="flex">
-      <section>
-        <project-detail v-if="!(loading || error)" :project-data="project"></project-detail>
-      </section>
       <span></span>
       <section>
-        <filled-button-view
-            v-if="isAuthenticated"
-
-            class="center"
-            :text="$t('projectView.startPresentation')"
-            @click="router.push({ name: 'presentation' });" />
         <ar-view v-if="!(loading || error)" :json="project"></ar-view>
         <project-info v-if="!(loading || error)" :project-info="project"></project-info>
       </section>

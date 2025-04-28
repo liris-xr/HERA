@@ -12,6 +12,7 @@
   "dependencies": {
     "@types/webxr": "^0.5.15",
     "jwt-decode": "^4.0.0",
+    "socket.io-client": "^4.8.1",
     "three": "^0.163.0",
     "vite-plugin-mkcert": "^1.17.5",
     "vue": "^3.4.21",

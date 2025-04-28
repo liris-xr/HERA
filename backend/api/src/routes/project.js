@@ -141,7 +141,6 @@ router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, re
     }else{
         res.status(200);
         res.send(project);
-
     }
 })
 

@@ -9,6 +9,7 @@ import ProjectInfo from "@/components/projectInfo.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import router from "@/router/index.js";
 import {useAuthStore} from "@/store/auth.js";
+import FilledButtonView from "@/components/button/filledButtonView.vue";
 
 const { isAuthenticated, token } = useAuthStore()
 
@@ -92,6 +93,10 @@ onBeforeRouteUpdate((to, from, next)=>{
       </section>
       <span></span>
       <section>
+        <filled-button-view
+            class="center"
+            :text="$t('projectView.startPresentation')"
+            @click="" />
         <ar-view v-if="!(loading || error)" :json="project"></ar-view>
         <project-info v-if="!(loading || error)" :project-info="project"></project-info>
       </section>
@@ -102,6 +107,9 @@ onBeforeRouteUpdate((to, from, next)=>{
 
 <style scoped>
 
+.center {
+  margin: auto;
+}
 
 
 @media  screen and (min-width: 900px) {

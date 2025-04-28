@@ -63,7 +63,8 @@
       "updatedOn": "Updated on : ",
       "sceneCount": "Scene count : ",
       "at": "at"
-    }
+    },
+    "startPresentation": "Start a new presentation"
   },
 
   "account": {

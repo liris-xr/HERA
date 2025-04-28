@@ -29,6 +29,9 @@ const size = computed(()=>props.size+"px")
 }
 
 
+.backgroundIcon{
+  background-color: var(--backgroundColor);
+}
 .textIcon{
   background-color: var(--textColor);
 }

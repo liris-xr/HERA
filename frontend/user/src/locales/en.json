@@ -15,6 +15,7 @@
     "login": "Login",
     "loginIn": "Login in",
     "noAccount": "Don't have an account?",
+    "register": "To sign up, please contact an administrator :",
     "createAccount": "Create one"
   },
   "homeView": {

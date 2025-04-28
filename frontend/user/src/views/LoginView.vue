@@ -10,6 +10,8 @@ import RedirectMessage from "@/components/notification/redirect-message.vue";
 const { login, isAuthenticated } = useAuthStore();
 const router = useRouter();
 
+const ADMIN_MAIL = import.meta.env.VITE_ADMIN_MAIL
+
 if (isAuthenticated.value) {
   router.push({ name: "home" });
 }
@@ -98,6 +100,17 @@ const loginUser = async () => {
         />
       </form>
 
+      <span>
+        {{$t("login.noAccount")}}<br>
+        {{$t("login.register")}}<br>
+        <u>{{ADMIN_MAIL}}</u>
+
+        <!--
+        <router-link :to="{ name: 'register' }">
+        {{$t("login.createAccount")}}
+        </router-link>
+        -->
+      </span>
 
     </section>
 

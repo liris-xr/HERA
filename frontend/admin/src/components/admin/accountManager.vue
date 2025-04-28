@@ -7,6 +7,10 @@ import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import Notification from "@/components/notification/notification.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
+import {toast} from "vue3-toastify";
+import {useI18n} from "vue-i18n";
+
+const {t} = useI18n()
 
 
 const props = defineProps({
@@ -43,6 +47,10 @@ async function confirmUserEdit() {
     const index = users.value.findIndex(user => user.id === data.id)
     if(index !== -1)
       users.value[index] = { ...data }
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   editingUser.value = null
@@ -61,6 +69,10 @@ async function confirmUserDelete() {
     const index = users.value.findIndex(user => user.id === deletingUser.value.id)
     if(index !== -1)
       users.value.splice(index, 1)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
   deletingUser.value = null
 }
@@ -81,6 +93,10 @@ async function confirmUserCreate() {
     users.value.push(newUser)
 
     table.value.currentPage = data.redirectPage
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   creatingUser.value = null

@@ -15,6 +15,7 @@ import ProjectManager from "@/components/admin/projectManager.vue";
 import SceneManager from "@/components/admin/sceneManager.vue";
 import AssetManager from "@/components/admin/assetManager.vue";
 import LabelManager from "@/components/admin/labelManager.vue";
+import 'vue3-toastify/dist/index.css';
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()

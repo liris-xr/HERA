@@ -7,6 +7,7 @@ import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Notification from "@/components/notification/notification.vue";
+import {toast} from "vue3-toastify";
 
 
 const props = defineProps({
@@ -45,6 +46,10 @@ async function confirmLabelCreate() {
     const data = await res.json()
     labels.value.push(data)
     emit("newLabel", data)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   creatingLabel.value = null
@@ -65,6 +70,10 @@ async function confirmLabelDelete() {
     if(index !== -1)
       labels.value.splice(index, 1)
     emit("supprLabel", deletingLabel.value)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   deletingLabel.value = null
@@ -86,6 +95,10 @@ async function confirmLabelEdit() {
     const index = labels.value.findIndex(label => label.id === data.id)
     if(index !== -1)
       labels.value[index] = { ...editingLabel.value }
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   editingLabel.value = null

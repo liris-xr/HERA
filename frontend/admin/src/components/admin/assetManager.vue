@@ -7,6 +7,7 @@ import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Notification from "@/components/notification/notification.vue";
+import {toast} from "vue3-toastify";
 
 
 const props = defineProps({
@@ -52,6 +53,10 @@ async function confirmAssetCreate() {
     assets.value.push(data)
 
     emit("newAsset", data)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   creatingAsset.value = null
@@ -71,6 +76,10 @@ async function confirmAssetDelete() {
     if(index !== -1)
       assets.value.splice(index, 1)
     emit("supprAsset", deletingAsset.value)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   deletingAsset.value = null
@@ -92,6 +101,10 @@ async function confirmAssetEdit() {
     const index = assets.value.findIndex(asset => asset.id === data.id)
     if(index !== -1)
       assets.value[index] = { ...editingAsset.value }
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   editingAsset.value = null

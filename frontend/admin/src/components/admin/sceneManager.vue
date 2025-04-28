@@ -7,6 +7,7 @@ import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Notification from "@/components/notification/notification.vue";
+import {toast} from "vue3-toastify";
 
 
 const props = defineProps({
@@ -109,6 +110,10 @@ async function confirmSceneCreate() {
     scenes.value.push(data)
 
     emit("newScene", data)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   creatingScene.value = null
@@ -129,6 +134,10 @@ async function confirmSceneDelete() {
     if(index !== -1)
       scenes.value.splice(index, 1)
     emit("supprScene", deletingScene.value)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   deletingScene.value = null
@@ -151,6 +160,10 @@ async function confirmSceneEdit() {
     const index = scenes.value.findIndex(scene => scene.id === data.id)
     if(index !== -1)
       scenes.value[index] = { ...data }
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   editingScene.value = null

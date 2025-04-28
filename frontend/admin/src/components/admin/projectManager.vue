@@ -7,6 +7,7 @@ import GenericTable from "@/components/admin/generic/genericTable.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import Notification from "@/components/notification/notification.vue";
+import {toast} from "vue3-toastify";
 
 
 const props = defineProps({
@@ -74,6 +75,10 @@ async function editScene(sceneId) {
   if(res.ok) {
     const data = await res.json()
     emit("editScene", data)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
 }
@@ -92,6 +97,10 @@ async function confirmProjectCreate() {
     const data = await res.json()
     const newProject = data
     projects.value.push(newProject)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   creatingProject.value = null
@@ -116,6 +125,10 @@ async function confirmProjectEdit() {
     const index = projects.value.findIndex(project => project.id === data.id)
     if(index !== -1)
       projects.value[index] = { ...editingProject.value }
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   editingProject.value = null
@@ -134,6 +147,10 @@ async function confirmProjectDelete() {
     const index = projects.value.findIndex(project => project.id === deletingProject.value.id)
     if(index !== -1)
       projects.value.splice(index, 1)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
   }
 
   deletingProject.value = null

@@ -13,6 +13,7 @@ import FilledButtonView from "@/components/button/filledButtonView.vue";
 import {io} from "socket.io-client";
 import {SocketConnection} from "@/js/socket/socketConnection.js";
 import {useI18n} from "vue-i18n";
+import {QrcodeSvg} from "qrcode.vue";
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -26,6 +27,9 @@ const project = ref({});
 const loading = ref(true);
 const error = ref(false);
 
+const showQrcode = ref(false);
+const presentationId = ref(null)
+
 const socket = reactive(
     new SocketConnection(
         ENDPOINT.replace("/api/", ""),
@@ -38,6 +42,7 @@ const socket = reactive(
         }
     ))
 
+let wakeLock;
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -65,14 +70,31 @@ fetchProject(route.params.projectId).then((r)=>{
 
 
 onMounted(() => {
-  console.log(socket)
-
+  socket.send("presentation:create", {projectId: route.params.projectId}, (data) => {
+    console.log(data)
+    presentationId.value = data.id;
+  })
 })
+
+function showQr() {
+  showQrcode.value = true
+
+  // faire en sorte que l'écran ne s'éteigne pas
+  wakeLock = navigator.wakeLock.request("screen")
+}
 
 const connectedText = computed(() => {
   if(socket.state.connected)
     return t("presentation.controls.connected.true");
   return t("presentation.controls.connected.false");
+})
+
+const projectUrl = computed(() => {
+  const { href } = router.resolve({
+    name: "project",
+    params: { projectId: route.params.projectId },
+  })
+  return `${window.location.origin}${href}?presentation=${presentationId.value}`
 })
 
 </script>
@@ -107,6 +129,18 @@ const connectedText = computed(() => {
       <section>
         <h1>{{$t("presentation.controls.title")}}</h1>
 
+
+        <div class="qrButtonWrapper">
+          <filled-button-view
+              v-if="isAuthenticated"
+              :disabled="!project.published"
+
+              icon="/icons/qrcode.svg"
+              :text="$t('projectView.startPresentation')"
+              @click="showQrcode = true" />
+          <span v-if="!project.published" class="danger">{{ $t("presentation.unpublishedWarning") }}</span>
+        </div>
+
         <p v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">
           {{connectedText}}
         </p>
@@ -119,13 +153,43 @@ const connectedText = computed(() => {
       </section>
     </section>
   </main>
+
+  <div class="qrCode" v-if="showQrcode" @click="showQrcode = false">
+    <span>{{$t("presentation.brightnessTip")}}</span>
+    <qrcode-svg :value="projectUrl" />
+    <p>{{$t("presentation.quitQr")}}</p>
+  </div>
 </template>
 
 
 <style scoped>
 
-.center {
-  margin: auto;
+.qrCode {
+  position: absolute;
+  background-color: white;
+  inset: 0 0 0 0;
+
+  z-index: 256;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.qrCode svg {
+  height: 80%;
+  width: 80%;
+}
+
+.qrCode p {
+  font-size: 2em;
+}
+
+.qrButtonWrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .danger {

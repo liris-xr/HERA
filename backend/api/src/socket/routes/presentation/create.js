@@ -1,5 +1,22 @@
-export function createPresentation(io, socket, callback) {
-    console.log(socket?.auth)
+import {destroyPresentation, presentations} from "./index.js";
 
-    callback({success: false, message: "Not implemented yet"})
+export function createPresentation(socket, data, callback) {
+    const roomId = "presentation-" + socket.id
+
+    if(!socket.auth)
+        return callback({success: false, message: "Unauthorized"})
+
+    if(presentations[roomId])
+        destroyPresentation(roomId)
+
+    presentations[roomId] = {
+        host: socket.id,
+        viewers: [],
+        project: data.projectId
+    }
+    socket.join(roomId)
+
+    callback({success: true, message: "Created", id: roomId})
+
+    console.log(presentations[roomId])
 }

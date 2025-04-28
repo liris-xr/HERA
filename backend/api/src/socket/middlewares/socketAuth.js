@@ -1,4 +1,5 @@
 import {JWT_SECRET} from "../../consts/secret.js";
+import jwt from "jsonwebtoken";
 
 export default function socketAuthMiddleware(socket, next) {
     const token = socket?.handshake?.auth?.token

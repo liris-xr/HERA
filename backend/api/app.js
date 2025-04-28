@@ -61,7 +61,6 @@ async function main () {
         path: "/api/socket"
     })
     setupSocket(io)
-    console.log(io)
 
 
     httpsServer.listen(8080, () => {

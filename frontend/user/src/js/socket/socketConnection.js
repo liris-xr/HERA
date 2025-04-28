@@ -15,4 +15,8 @@ export class SocketConnection {
             this.state.connected = true
         })
     }
+
+    send(event, ...args) {
+        this.socket.emit(event, ...args)
+    }
 }

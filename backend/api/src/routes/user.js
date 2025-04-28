@@ -131,6 +131,7 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
 
 })
 
+// uniquement pour changer le mdp
 router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
     const authUser = req.user
     const userId = req.params.userId;
@@ -138,6 +139,10 @@ router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
     if(userId !== authUser.id && !authUser.admin) {
         res.status(401);
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    if(!req.body.password || req.body.password?.length < 8) {
+        return res.status(400).send({ error: 'Password\'s length must be >= 8'});
     }
 
     try {

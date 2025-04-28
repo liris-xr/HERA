@@ -7,6 +7,7 @@ import SceneView from "@/views/SceneView.vue";
 import RegisterView from "@/views/RegisterView.vue";
 import {BASE_URL} from "@/js/endpoints.js";
 import AdminView from "@/views/AdminView.vue";
+import AccountView from "@/views/AccountView.vue";
 
 const router = createRouter({
   history: createWebHistory(BASE_URL),
@@ -53,11 +54,18 @@ const router = createRouter({
       name: 'scene',
       component: SceneView
     },
+
     {
       path: '/admin',
       name: 'admin',
       component: AdminView
     },
+
+    {
+      path: '/account',
+      name: 'account',
+      component: AccountView
+    }
   ]
 })
 

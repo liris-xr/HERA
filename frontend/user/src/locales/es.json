@@ -65,6 +65,23 @@
       "at": "a"
     }
   },
+
+  "account": {
+    "confirm": "Confirmer",
+    "cancel":  "Annuler",
+    "required": "Ce champ est requis",
+    "password": {
+      "title": "Changement du mot de passe",
+      "warning": "Attention : Pensez à utiliser un mot de passe unique et sécurisé. Ne partagez jamais vos identifiants",
+      "button": "Modifier mon mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "lengthMessage": "Le mot de passe doit être de longueur >= 8",
+      "notMatching": "Les mots de passes ne correspondent pas",
+      "success": "Mot de passe modifié avec succès"
+    }
+  },
+
   "projectCard": {
     "scene": "escena | escenas",
     "pictureAlt": "Imagen del proyecto",

@@ -19,12 +19,14 @@ function logoutAndRedirect(){
     <nav>
       <RouterLink :to="{name:'projects'}">{{$t("header.home")}}</RouterLink>
 
-
-
       <div>
         <locale-changer></locale-changer>
         <RouterLink :to="{name:'admin'}" v-if="userData?.admin">{{$t("header.administration")}}</RouterLink>
-        <span v-if="isAuthenticated">{{userData.username}}</span>
+
+        <RouterLink :to="{name:'account'}" v-if="isAuthenticated">
+          <span>{{userData.username}}</span>
+        </RouterLink>
+
         <button-view :text="$t('header.logout')" @click="logoutAndRedirect()"/>
       </div>
     </nav>

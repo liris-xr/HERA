@@ -66,8 +66,21 @@
     }
   },
 
-
-
+  "account": {
+    "confirm": "Confirm",
+    "cancel":  "Cancel",
+    "required": "This field is required",
+    "password": {
+      "title": "Password change",
+      "warning": "Warning: Make sure to use a unique and secure password. Never share your credentials",
+      "button": "Change my password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm the new password",
+      "lengthMessage": "Your password's length must be >= 8",
+      "notMatching": "Passwords do not match",
+      "success": "Password successfully modified"
+    }
+  },
 
   "projectCard": {
     "scene": "scene | scenes",

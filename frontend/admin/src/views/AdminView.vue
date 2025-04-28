@@ -22,13 +22,6 @@ const { isAuthenticated, token ,userData} = useAuthStore()
 const router = useRouter()
 const {t} = useI18n()
 
-const accountManager = ref(null)
-const projectManager = ref(null)
-const sceneManager = ref(null)
-const assetManager = ref(null)
-const labelManager = ref(null)
-
-
 if (!isAuthenticated.value) {
   router.push({ name: "login" })
 }
@@ -38,6 +31,11 @@ if(!userData.value.admin) {
 }
 
 
+const accountManager = ref(null)
+const projectManager = ref(null)
+const sceneManager = ref(null)
+const assetManager = ref(null)
+const labelManager = ref(null)
 
 </script>
 

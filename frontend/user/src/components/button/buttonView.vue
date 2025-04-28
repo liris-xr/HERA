@@ -69,7 +69,7 @@ button{
   transition: ease-out .1s;
 }
 
-button>span{
+button>span:has(+div){
   margin-right: 4px;
   font-weight: 450;
 }

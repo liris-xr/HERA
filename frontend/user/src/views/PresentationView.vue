@@ -89,8 +89,8 @@ fetchProject(route.params.projectId).then((r)=>{
 });
 
 function initSocket() {
-  console.log(arView)
-  socket.socketActionManager = new SocketActionManager(arView.arSceneManager)
+  console.log(arView.value.arSessionManager)
+  socket.socketActionManager = new SocketActionManager(arView.value.arSessionManager)
 
   socket.send("presentation:create", {projectId: route.params.projectId}, (data) => {
     console.log(data)
@@ -103,12 +103,7 @@ function initSocket() {
 
 }
 
-watch(arView, (newVal) => {
-  console.log("a", newVal);
-})
-
 onMounted(() => {
-  initSocket()
 
   submitMessage.value.addEventListener("click",() => {
     console.log(activeScene.value.getAssets())
@@ -226,7 +221,7 @@ const projectUrl = computed(() => {
             v-if="!(loading || error)"
             ref="arView"
             :json="project"
-            @loaded="updateAssets"
+            @loaded="initSocket"
         />
 
       </section>

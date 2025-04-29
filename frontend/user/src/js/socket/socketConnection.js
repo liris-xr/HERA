@@ -13,7 +13,8 @@ export class SocketConnection {
     constructor(server, path, options, arSessionManager=null) {
         options.path = path
         this.socket = io(server, options)
-        this.socketActionManager = new SocketActionManager(arSessionManager)
+        if(arSessionManager)
+            this.socketActionManager = new SocketActionManager(arSessionManager)
 
         this.socket.on('connect', () => {
             this.state.connected = true

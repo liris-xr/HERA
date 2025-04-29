@@ -11,7 +11,7 @@ export class SocketActionManager {
     highlight(data) {
         console.log(data)
 
-        const asset = this.arSessionManager.sceneManager.active.value.findAssetById(data.assetId)
+        const asset = this.arSessionManager.sceneManager.active.findAssetById(data.assetId)
 
         if(asset.highlight !== undefined)
             asset.highlight = !asset.highlight

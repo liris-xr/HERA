@@ -4,6 +4,8 @@ import * as THREE from 'three';
 
 export class Asset extends SceneElementInterface{
 
+    id
+
     mesh
     sourceUrl
     position;
@@ -11,6 +13,7 @@ export class Asset extends SceneElementInterface{
     scale;
     name;
 
+    animations
     animationMixer
     activeAnimation
 
@@ -22,6 +25,7 @@ export class Asset extends SceneElementInterface{
     constructor(assetData) {
         super();
 
+        this.id = assetData.id;
         this.sourceUrl = assetData.url;
         this.name = assetData.name != null ? assetData.name : assetData.url;
         this.activeAnimation = assetData.activeAnimation || null;
@@ -67,13 +71,17 @@ export class Asset extends SceneElementInterface{
 
         if(this.mesh?.animations?.length > 0) {
             this.animationMixer = new THREE.AnimationMixer(this.mesh)
+            this.animations = []
             let baseAnimation
 
             for(const animation of this.mesh?.animations){
                 const action = this.animationMixer.clipAction(animation);
                 if (animation.name === this.activeAnimation)
                     baseAnimation = action
+                this.animations.push(animation.name)
             }
+
+            console.log(this)
 
             if(!baseAnimation) {
                 if(this.activeAnimation)

@@ -15,6 +15,8 @@ const props = defineProps({
   json: {type: Object, required: true}
 })
 
+const emit = defineEmits(["loaded"])
+
 const arSessionManager = new ArSessionManager(props.json);
 
 defineExpose({arSessionManager})
@@ -33,6 +35,7 @@ const loaded = ref(false);
 onMounted(async () => {
   await arSessionManager.init(container.value, arOverlay.value);
   loaded.value = true;
+  emit("loaded")
 })
 
 

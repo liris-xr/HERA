@@ -126,4 +126,11 @@ export class ArScene extends AbstractScene {
     getAssets() {
         return this.#assets
     }
+
+    findAssetById(id) {
+        for(const asset of this.#assets)
+            if(asset.id === id)
+                return asset
+        return null
+    }
 }

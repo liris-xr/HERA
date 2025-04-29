@@ -1,19 +1,18 @@
 <script setup>
 import ArView from "@/components/arView.vue";
-import ProjectDetail from "@/components/projectDetail.vue";
-import {computed, onMounted, reactive, ref} from "vue";
-import {onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter} from "vue-router";
+import {computed, onMounted, reactive, ref, watch} from "vue";
+import {useRoute} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
-import ProjectInfo from "@/components/projectInfo.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import router from "@/router/index.js";
 import {useAuthStore} from "@/store/auth.js";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
-import {io} from "socket.io-client";
 import {SocketConnection} from "@/js/socket/socketConnection.js";
 import {useI18n} from "vue-i18n";
 import {QrcodeSvg} from "qrcode.vue";
+import * as THREE from 'three';
+import {SocketActionManager} from "@/js/socket/socketActionManager.js";
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -41,7 +40,7 @@ const socket = reactive(
             token: `Bearer ${token.value}`,
           },
           transports: ['websocket']
-        }
+        },
     ))
 
 let wakeLock;
@@ -50,6 +49,20 @@ const messageInp = ref(null)
 const submitMessage = ref(null)
 
 const arView = ref(null)
+const activeScene = computed(() =>
+    arView.value?.arSessionManager?.sceneManager?.active?.value
+)
+
+const assets = ref([])
+
+// ne marche pas, les assets ne se mettent pas à jour au moment de leur chargement
+watch(activeScene, (newScene) => {
+  updateAssets()
+})
+
+function updateAssets() {
+  assets.value = activeScene.value?.getAssets()
+}
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -76,6 +89,8 @@ fetchProject(route.params.projectId).then((r)=>{
 });
 
 function initSocket() {
+  console.log(arView)
+  socket.socketActionManager = new SocketActionManager(arView.arSceneManager)
 
   socket.send("presentation:create", {projectId: route.params.projectId}, (data) => {
     console.log(data)
@@ -86,23 +101,19 @@ function initSocket() {
     viewerCount.value = count
   })
 
-
-
 }
 
 onMounted(() => {
   initSocket()
 
-
   submitMessage.value.addEventListener("click",() => {
-    console.log(arView.value.arSessionManager.sceneManager.active.value.getAssets())
+    console.log(activeScene.value.getAssets())
 
     socket.send("presentation:emit", { message: messageInp.value.value }, (res) => {
       console.log(res)
     })
     messageInp.value.value = "";
   })
-
 })
 
 async function showQr() {
@@ -116,6 +127,12 @@ function hideQr() {
   showQrcode.value = false
 
   wakeLock.release()
+}
+
+function highlight(asset) {
+
+  socket.send("presentation:action:highlight", { assetId: asset.id, value: !asset.highlight ?? true })
+
 }
 
 const connectedText = computed(() => {
@@ -187,11 +204,27 @@ const projectUrl = computed(() => {
           <button ref="submitMessage">Envoyer</button>
         </div>
 
+        <section>
+          <div v-for="asset in assets" class="asset">
+            <p>{{asset.name}}</p>
+
+            <p @click="highlight(asset)">
+              highlight
+            </p>
+          </div>
+        </section>
+
       </section>
       <span></span>
       <section>
         <h1>{{$t("presentation.sceneTitle")}}</h1>
-        <ar-view v-if="!(loading || error)" ref="arView" :json="project"></ar-view>
+        <ar-view
+            v-if="!(loading || error)"
+            ref="arView"
+            :json="project"
+            @loaded="updateAssets"
+        />
+
       </section>
     </section>
   </main>
@@ -240,6 +273,20 @@ const projectUrl = computed(() => {
 
 .success {
   color: var(--succesColor)
+}
+
+section:has(>.asset) {
+  margin: 15px
+}
+
+.asset {
+  background-color: var(--backgroundColor);
+  padding: 10px;
+  border-radius: 10px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 

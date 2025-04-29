@@ -19,6 +19,8 @@ const project = ref({});
 const loading = ref(true);
 const error = ref(false);
 
+const arView = ref(null)
+
 const socket = ref(null)
 
 async function fetchProject(projectId) {
@@ -68,7 +70,8 @@ function initSocket() {
       "/api/socket",
       {
         transports: ['websocket']
-      }
+      },
+      arView.value.arSessionManager
   )
 
   socket.value.send("presentation:join", route.query.presentation, (data) => {
@@ -129,7 +132,7 @@ onMounted(() => {
             class="center"
             :text="$t('projectView.startPresentation')"
             @click="router.push({ name: 'presentation' });" />
-        <ar-view v-if="!(loading || error)" :json="project"></ar-view>
+        <ar-view v-if="!(loading || error)" ref="arView" :json="project"></ar-view>
         <project-info v-if="!(loading || error)" :project-info="project"></project-info>
       </section>
     </section>

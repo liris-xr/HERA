@@ -89,7 +89,6 @@ fetchProject(route.params.projectId).then((r)=>{
 });
 
 function initSocket() {
-  console.log(arView.value.arSessionManager)
   socket.socketActionManager = new SocketActionManager(arView.value.arSessionManager)
 
   socket.send("presentation:create", {projectId: route.params.projectId}, (data) => {

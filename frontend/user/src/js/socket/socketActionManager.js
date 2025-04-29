@@ -13,15 +13,15 @@ export class SocketActionManager {
 
         const asset = this.arSessionManager.sceneManager.active.findAssetById(data.assetId)
 
-        if(asset.highlight !== undefined)
-            asset.highlight = !asset.highlight
-        else asset.highlight = true
+        asset.highlight = data.value
 
         asset.mesh.traverse((child) => {
 
             if(child.isMesh && child.material) {
-                if(asset.highlight) {
+                if(!child.oldMaterial)
                     child.oldMaterial = child.material
+
+                if(asset.highlight) {
                     child.material = new THREE.MeshStandardMaterial({ color: 0xff0000 })
                 } else
                     child.material = child.oldMaterial

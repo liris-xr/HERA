@@ -91,7 +91,8 @@
       "connected": {
         "true": "Connecté",
         "false": "Non connecté"
-      }
+      },
+      "showQrcode": "Afficher le QR code"
     },
     "quitQr": "Appuyez n'importe ou pour faire disparaitre le QR code",
     "unpublishedWarning": "Impossible d'afficher le QR code : votre projet est privé",

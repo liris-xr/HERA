@@ -103,6 +103,10 @@ function initSocket() {
 
 }
 
+watch(arView, (newVal) => {
+  console.log("a", newVal);
+})
+
 onMounted(() => {
   initSocket()
 
@@ -187,7 +191,7 @@ const projectUrl = computed(() => {
               :disabled="!project.published"
 
               icon="/icons/qrcode.svg"
-              :text="$t('projectView.startPresentation')"
+              :text="$t('presentation.controls.showQrcode')"
               @click="showQr" />
           <span v-if="!project.published" class="danger">{{ $t("presentation.unpublishedWarning") }}</span>
         </div>

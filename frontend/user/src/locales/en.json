@@ -90,7 +90,8 @@
       "connected": {
         "true": "Connected",
         "false": "Disconnected"
-      }
+      },
+      "showQrcode": "Show the QR code"
     },
     "quitQr": "Tap anywhere to make the QR code disappear",
     "unpublishedWarning": "Unable to display the QR code : your project is private",

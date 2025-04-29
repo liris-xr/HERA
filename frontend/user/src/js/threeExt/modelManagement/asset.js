@@ -81,8 +81,6 @@ export class Asset extends SceneElementInterface{
                 this.animations.push(animation.name)
             }
 
-            console.log(this)
-
             if(!baseAnimation) {
                 if(this.activeAnimation)
                     console.error("Animation " + this.activeAnimation + " not found for asset " + this.name)

@@ -17,15 +17,26 @@ export function destroyPresentation(id) {
     delete presentations[id]
 }
 
-export function leaveAllPresentations(socket) {
-    for(const room of socket.rooms) {
-        if(room !== socket.id) {
-            if(room in presentations) {
-                const index = presentations[room].viewers.findIndex((v) => v.id === socket.id)
-                presentations[room].viewers.splice(index, 1)
-            }
-            socket.leave(room)
-        }
+export function leavePresentation(socket) {
+    const room = presentations[socket.roomCode]
+
+    if(!room) return
+
+    const index = room.viewers.findIndex((v) => v.id === socket.id)
+    room.viewers.splice(index, 1)
+
+    sendUserCount(socket.roomCode)
+    socket.leave(room)
+
+    socket.roomCode = undefined
+}
+
+export function sendUserCount(presentationId) {
+    if(presentationId in presentations) {
+        const presentation = presentations[presentationId]
+
+        const socket = ioInstance.sockets.sockets.get(presentation.host)
+        socket?.emit("presentation:userCount", presentation.viewers.length)
     }
 }
 

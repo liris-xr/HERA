@@ -17,6 +17,8 @@ const props = defineProps({
 
 const arSessionManager = new ArSessionManager(props.json);
 
+defineExpose({arSessionManager})
+
 const container = ref(null);
 const arOverlay = ref(null);
 const labelContainer = ref(null);

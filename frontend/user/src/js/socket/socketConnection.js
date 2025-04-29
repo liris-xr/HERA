@@ -14,9 +14,16 @@ export class SocketConnection {
         this.socket.on('connect', () => {
             this.state.connected = true
         })
+        this.socket.on('disconnect', () => {
+            this.state.connected = false
+        })
     }
 
     send(event, ...args) {
         this.socket.emit(event, ...args)
+    }
+
+    addListener(event, handler) {
+        this.socket.on(event, handler)
     }
 }

@@ -65,17 +65,22 @@ export class Asset extends SceneElementInterface{
         this.mesh.receiveShadow = true;
 
 
-        if(this.activeAnimation && this.mesh?.animations?.length > 0) {
-
+        if(this.mesh?.animations?.length > 0) {
             this.animationMixer = new THREE.AnimationMixer(this.mesh)
-            this.animationMixer.clipAction(this.mesh?.animations[0])
-            let action = this.animationMixer.clipAction(THREE.AnimationClip.findByName(this.mesh?.animations, this.activeAnimation))
+            let baseAnimation
 
-            if(!action) {
-                console.error("Animation " + this.activeAnimation + " not found for asset " + this.name)
+            for(const animation of this.mesh?.animations){
+                const action = this.animationMixer.clipAction(animation);
+                if (animation.name === this.activeAnimation)
+                    baseAnimation = action
+            }
+
+            if(!baseAnimation) {
+                if(this.activeAnimation)
+                    console.error("Animation " + this.activeAnimation + " not found for asset " + this.name)
                 return
             }
-            action.play()
+            baseAnimation.play()
         }
     }
 

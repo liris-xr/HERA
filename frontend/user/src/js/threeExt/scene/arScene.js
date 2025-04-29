@@ -122,4 +122,8 @@ export class ArScene extends AbstractScene {
 
         this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition);
     }
+
+    getAssets() {
+        return this.#assets
+    }
 }

@@ -1,7 +1,9 @@
 import socketAuthMiddleware from "./middlewares/socketAuth.js";
 import safeHandler from "./utils/safeHandler.js"
 import {createPresentation} from "./routes/presentation/create.js";
-import {leaveAllPresentations} from "./routes/presentation/index.js";
+import {leavePresentation} from "./routes/presentation/index.js";
+import {joinPresentation} from "./routes/presentation/join.js";
+import {emitInPresentation} from "./routes/presentation/emit.js";
 
 export let ioInstance = null;
 
@@ -20,11 +22,14 @@ function initConnection(socket) {
     console.log("Client", socket.id, "connected");
 
     socket.on("disconnect", () => {
-        leaveAllPresentations(socket)
+        leavePresentation(socket)
+        console.log("Client", socket.id, "disconnected");
     })
 }
 
 function setupSocketEvents(socket) {
     socket.on("presentation:create", (data, callback) => safeHandler(createPresentation)(socket, data, callback))
-
+    socket.on("presentation:join", (data, callback) => safeHandler(joinPresentation)(socket, data, callback))
+    socket.on("presentation:emit", (data, callback) => safeHandler(emitInPresentation)(socket, data, callback))
 }
+

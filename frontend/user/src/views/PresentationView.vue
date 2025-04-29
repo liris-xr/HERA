@@ -30,6 +30,8 @@ const error = ref(false);
 const showQrcode = ref(false);
 const presentationId = ref(null)
 
+const viewerCount = ref(0)
+
 const socket = reactive(
     new SocketConnection(
         ENDPOINT.replace("/api/", ""),
@@ -43,6 +45,11 @@ const socket = reactive(
     ))
 
 let wakeLock;
+
+const messageInp = ref(null)
+const submitMessage = ref(null)
+
+const arView = ref(null)
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -68,19 +75,47 @@ fetchProject(route.params.projectId).then((r)=>{
   loading.value = false;
 });
 
+function initSocket() {
 
-onMounted(() => {
   socket.send("presentation:create", {projectId: route.params.projectId}, (data) => {
     console.log(data)
     presentationId.value = data.id;
   })
+
+  socket.addListener("presentation:userCount", (count) => {
+    viewerCount.value = count
+  })
+
+
+
+}
+
+onMounted(() => {
+  initSocket()
+
+
+  submitMessage.value.addEventListener("click",() => {
+    console.log(arView.value.arSessionManager.sceneManager.active.value.getAssets())
+
+    socket.send("presentation:emit", { message: messageInp.value.value }, (res) => {
+      console.log(res)
+    })
+    messageInp.value.value = "";
+  })
+
 })
 
-function showQr() {
+async function showQr() {
   showQrcode.value = true
 
   // faire en sorte que l'écran ne s'éteigne pas
-  wakeLock = navigator.wakeLock.request("screen")
+  wakeLock = await navigator.wakeLock.request("screen")
+}
+
+function hideQr() {
+  showQrcode.value = false
+
+  wakeLock.release()
 }
 
 const connectedText = computed(() => {
@@ -126,9 +161,8 @@ const projectUrl = computed(() => {
 
 
     <section class="flex">
-      <section>
+      <section class="controls">
         <h1>{{$t("presentation.controls.title")}}</h1>
-
 
         <div class="qrButtonWrapper">
           <filled-button-view
@@ -137,24 +171,32 @@ const projectUrl = computed(() => {
 
               icon="/icons/qrcode.svg"
               :text="$t('projectView.startPresentation')"
-              @click="showQrcode = true" />
+              @click="showQr" />
           <span v-if="!project.published" class="danger">{{ $t("presentation.unpublishedWarning") }}</span>
         </div>
 
         <p v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">
           {{connectedText}}
         </p>
+        <p>
+          {{viewerCount}} {{$t("presentation.viewers")}}
+        </p>
+
+        <div>
+          <input ref="messageInp" placeholder="message">
+          <button ref="submitMessage">Envoyer</button>
+        </div>
 
       </section>
       <span></span>
       <section>
         <h1>{{$t("presentation.sceneTitle")}}</h1>
-        <ar-view v-if="!(loading || error)" :json="project"></ar-view>
+        <ar-view v-if="!(loading || error)" ref="arView" :json="project"></ar-view>
       </section>
     </section>
   </main>
 
-  <div class="qrCode" v-if="showQrcode" @click="showQrcode = false">
+  <div class="qrCode" v-if="showQrcode" @click="hideQr">
     <span>{{$t("presentation.brightnessTip")}}</span>
     <qrcode-svg :value="projectUrl" />
     <p>{{$t("presentation.quitQr")}}</p>

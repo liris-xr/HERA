@@ -1,7 +1,7 @@
 <script setup>
 import ArView from "@/components/arView.vue";
 import ProjectDetail from "@/components/projectDetail.vue";
-import {ref} from "vue";
+import {onMounted, reactive, ref} from "vue";
 import {onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
@@ -10,6 +10,7 @@ import RedirectMessage from "@/components/notification/redirect-message.vue";
 import router from "@/router/index.js";
 import {useAuthStore} from "@/store/auth.js";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
+import {SocketConnection} from "@/js/socket/socketConnection.js";
 
 const { isAuthenticated, token } = useAuthStore()
 
@@ -17,6 +18,8 @@ const route = useRoute();
 const project = ref({});
 const loading = ref(true);
 const error = ref(false);
+
+const socket = ref(null)
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -57,6 +60,32 @@ onBeforeRouteLeave( (to, from, next)=>{
 
 onBeforeRouteUpdate((to, from, next)=>{
   beforeRedirect(to, from, next)
+})
+
+function initSocket() {
+  socket.value = new SocketConnection(
+      ENDPOINT.replace("/api/", ""),
+      "/api/socket",
+      {
+        transports: ['websocket']
+      }
+  )
+
+  socket.value.send("presentation:join", route.query.presentation, (data) => {
+    console.log(data)
+  })
+
+  socket.value.addListener("presentation:emit", (data) => {
+    console.log(eval(data.message))
+  })
+
+}
+
+onMounted(() => {
+
+  if(route.query.presentation)
+    initSocket()
+
 })
 
 

@@ -1,10 +1,13 @@
 import {destroyPresentation, presentations} from "./index.js";
 
 export function createPresentation(socket, data, callback) {
-    const roomId = "presentation-" + socket.id
 
     if(!socket.auth)
         return callback({success: false, message: "Unauthorized"})
+
+    console.log(socket.auth)
+
+    const roomId = "presentation-" + socket.auth.id
 
     if(presentations[roomId])
         destroyPresentation(roomId)
@@ -15,6 +18,7 @@ export function createPresentation(socket, data, callback) {
         project: data.projectId
     }
     socket.join(roomId)
+    socket.roomCode = roomId
 
     callback({success: true, message: "Created", id: roomId})
 

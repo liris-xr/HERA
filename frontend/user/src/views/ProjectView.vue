@@ -87,6 +87,7 @@ function initSocket() {
 
 function initSocketActionManager() {
   socket.value.socketActionManager = new SocketActionManager(arView.value.arSessionManager)
+  socket.value.send("presentation:load")
 }
 
 

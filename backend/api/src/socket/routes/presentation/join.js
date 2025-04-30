@@ -9,6 +9,9 @@ export function joinPresentation(socket, code, callback) {
         sendUserCount(code)
 
         callback({success: true, presentation: presentations[code] })
+
+        for(let action of presentations[code].actions)
+            socket.emit(action.event, ...action.args)
     } else
         callback({success: false, message: "Presentation not found"})
 }

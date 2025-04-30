@@ -212,8 +212,9 @@ const projectUrl = computed(() => {
         <section>
           <div
               v-if="arView?.arSessionManager?.sceneManager?.active"
-              v-for="asset in arView?.arSessionManager?.sceneManager?.active?.getAssets()"
+              v-for="asset in arView.arSessionManager.sceneManager.active?.getAssets()"
               class="asset">
+            {{asset.animations}}
             <p>{{asset.name}}</p>
 
             <div class="tools">

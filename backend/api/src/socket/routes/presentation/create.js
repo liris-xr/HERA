@@ -13,6 +13,7 @@ export function createPresentation(socket, data, callback) {
     presentations[roomId] = {
         host: socket.id,
         viewers: [],
+        actions: [],
         project: data.projectId
     }
     socket.join(roomId)

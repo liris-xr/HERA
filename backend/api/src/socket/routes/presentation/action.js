@@ -1,4 +1,5 @@
 import {ioInstance} from "../../index.js";
+import {presentations} from "./index.js";
 
 export function actionInPresentation(socket, event, ...args) {
 
@@ -11,6 +12,7 @@ export function actionInPresentation(socket, event, ...args) {
         return callback({success: false, message: "Unauthorized"})
 
     console.log(event, ...args)
+    presentations[socket.roomCode].actions.push({event, args})
 
     ioInstance.to(socket.roomCode).except(socket.id).emit(event, ...args)
 

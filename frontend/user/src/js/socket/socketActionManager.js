@@ -35,7 +35,7 @@ export class SocketActionManager {
         })
     }
 
-    toggle(data) {
+    toggleAsset(data) {
         const scene = this.arSessionManager.sceneManager.active
         const asset = scene.findAssetById(data.assetId)
 

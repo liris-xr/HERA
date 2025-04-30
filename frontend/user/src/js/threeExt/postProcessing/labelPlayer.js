@@ -83,4 +83,8 @@ export class LabelPlayer extends RenderLoopInterface{
 
         if(t>=this.#maxTimestamp) this.pause();
     }
+
+    getLabels(){
+        return this.#labels;
+    }
 }

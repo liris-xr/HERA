@@ -119,8 +119,12 @@ function highlight(asset) {
   socket.send("presentation:action:highlight", { assetId: asset.id, value: !asset.highlight ?? true })
 }
 
-function toggleVisibility(asset) {
-  socket.send("presentation:action:toggle", { assetId: asset.id, value: !asset.hidden ?? false })
+function toggleAssetVisibility(asset) {
+  socket.send("presentation:action:toggleAsset", { assetId: asset.id, value: !asset.hidden ?? false })
+}
+
+function toggleLabelVisibility(label) {
+  socket.send("presentation:action:toggleLabel", { assetId: asset.id, value: !asset.hidden ?? false })
 }
 
 function setScene(event) {
@@ -210,16 +214,31 @@ const projectUrl = computed(() => {
         </section>
 
         <section>
+          <h3>Assets</h3>
           <div
               v-if="arView?.arSessionManager?.sceneManager?.active"
               v-for="asset in arView.arSessionManager.sceneManager.active?.getAssets()"
-              class="asset">
+              class="item">
             {{asset.animations}}
             <p>{{asset.name}}</p>
 
             <div class="tools">
               <icon-svg url="/icons/lightbulb.svg" theme="text" class="iconAction" :hover-effect="true" @click="highlight(asset)"/>
-              <icon-svg :url="asset.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleVisibility(asset)"/>
+              <icon-svg :url="asset.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleAssetVisibility(asset)"/>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3>Labels</h3>
+          <div
+              v-if="arView?.arSessionManager?.sceneManager?.active"
+              v-for="label in arView.arSessionManager.sceneManager.active?.labelPlayer.getLabels()"
+              class="item">
+            <p>{{label.content}}</p>
+
+            <div class="tools">
+              <icon-svg :url="label.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleAssetVisibility(asset)"/>
             </div>
           </div>
         </section>
@@ -292,11 +311,11 @@ const projectUrl = computed(() => {
   color: var(--succesColor)
 }
 
-section:has(>.asset) {
+section:has(>.item) {
   margin: 15px
 }
 
-.asset {
+.item {
   background-color: var(--backgroundColor);
   padding: 10px;
   border-radius: 10px;
@@ -306,7 +325,7 @@ section:has(>.asset) {
   justify-content: space-between;
 }
 
-.asset + .asset {
+.item + .item {
   margin-top: 10px;
 }
 

@@ -40,7 +40,6 @@ export class SocketConnection {
     handleActionManager(event, ...args) {
         if(!this.socketActionManager) return
 
-
         if(event.startsWith("presentation:action:")) {
             const eventName = event.replace("presentation:action:", "")
             if(Object.getOwnPropertyNames(Object.getPrototypeOf(this.socketActionManager)).includes(eventName)

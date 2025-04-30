@@ -83,8 +83,12 @@ function initSocket() {
   socket.value.addListener("presentation:emit", (data) => {
     console.log(eval(data.message))
   })
-
 }
+
+function initSocketActionManager() {
+  socket.value.socketActionManager = new SocketActionManager(arView.value.arSessionManager)
+}
+
 
 onMounted(() => {
 
@@ -150,7 +154,7 @@ const connectedText = computed(() => {
 
             :json="project"
 
-            @loaded="socket && (socket.socketActionManager = new SocketActionManager(arView.arSessionManager))"/>
+            @loaded="socket && initSocketActionManager()"/>
         <project-info v-if="!(loading || error)" :project-info="project"></project-info>
       </section>
     </section>

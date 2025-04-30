@@ -9,9 +9,12 @@ export class SocketActionManager {
     }
 
     highlight(data) {
-        console.log(data)
 
-        const asset = this.arSessionManager.sceneManager.active.findAssetById(data.assetId)
+        const scene = unpack(this.arSessionManager.sceneManager.active)
+
+        const asset = scene.findAssetById(data.assetId)
+
+        if(!asset) return
 
         asset.highlight = data.value
 
@@ -30,5 +33,9 @@ export class SocketActionManager {
         })
     }
 
+}
 
+function unpack(variable) {
+    if(variable.value) return variable.value
+    return variable
 }

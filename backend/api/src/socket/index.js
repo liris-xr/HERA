@@ -32,6 +32,6 @@ function setupSocketEvents(socket) {
     socket.on("presentation:create", (data, callback) => safeHandler(createPresentation)(socket, data, callback))
     socket.on("presentation:join", (data, callback) => safeHandler(joinPresentation)(socket, data, callback))
     socket.on("presentation:emit", (data, callback) => safeHandler(emitInPresentation)(socket, data, callback))
-    socket.onAny((event, ...args) => safeHandler(actionInPresentation)(event, ...args))
+    socket.onAny((event, ...args) => safeHandler(actionInPresentation)(socket, event, ...args))
 }
 

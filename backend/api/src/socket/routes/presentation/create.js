@@ -5,8 +5,6 @@ export function createPresentation(socket, data, callback) {
     if(!socket.auth)
         return callback({success: false, message: "Unauthorized"})
 
-    console.log(socket.auth)
-
     const roomId = "presentation-" + socket.auth.id
 
     if(presentations[roomId])
@@ -21,6 +19,4 @@ export function createPresentation(socket, data, callback) {
     socket.roomCode = roomId
 
     callback({success: true, message: "Created", id: roomId})
-
-    console.log(presentations[roomId])
 }

@@ -173,7 +173,7 @@ const projectUrl = computed(() => {
       </ar-notification>
     </section>
 
-
+    <h1>{{project.title}}</h1>
 
     <section class="flex">
       <section class="controls">

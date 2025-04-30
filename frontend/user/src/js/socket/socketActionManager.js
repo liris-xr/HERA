@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import {OutlinePass} from "three/addons";
 
 export class SocketActionManager {
 
@@ -32,6 +33,21 @@ export class SocketActionManager {
 
         })
     }
+
+    toggle(data) {
+        console.log(data)
+
+        const scene = unpack(this.arSessionManager.sceneManager.active)
+        const asset = scene.findAssetById(data.assetId)
+
+        if(!asset) return
+
+        asset.hidden = data.value
+
+            asset.mesh.visible = !asset.hidden
+
+    }
+
 
 }
 

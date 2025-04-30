@@ -13,6 +13,7 @@ import {useI18n} from "vue-i18n";
 import {QrcodeSvg} from "qrcode.vue";
 import * as THREE from 'three';
 import {SocketActionManager} from "@/js/socket/socketActionManager.js";
+import IconSvg from "@/components/icons/IconSvg.vue";
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -128,9 +129,11 @@ function hideQr() {
 }
 
 function highlight(asset) {
-
   socket.send("presentation:action:highlight", { assetId: asset.id, value: !asset.highlight ?? true })
+}
 
+function toggleVisibility(asset) {
+  socket.send("presentation:action:toggle", { assetId: asset.id, value: !asset.hidden ?? false })
 }
 
 const connectedText = computed(() => {
@@ -206,9 +209,15 @@ const projectUrl = computed(() => {
           <div v-for="asset in assets" class="asset">
             <p>{{asset.name}}</p>
 
-            <p @click="highlight(asset)">
-              highlight
-            </p>
+            <div class="tools">
+              <p @click="highlight(asset)">
+                highlight
+              </p>
+              {{asset.hidden ? "caché":"visible"}}
+              <icon-svg :url="asset.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleVisibility(asset)"/>
+            </div>
+
+
           </div>
         </section>
 
@@ -265,6 +274,12 @@ const projectUrl = computed(() => {
   gap: 5px;
 }
 
+.tools {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 5px;
+}
+
 .danger {
   color: var(--dangerColor);
 }
@@ -285,6 +300,10 @@ section:has(>.asset) {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+}
+
+.asset + .asset {
+  margin-top: 10px;
 }
 
 

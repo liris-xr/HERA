@@ -64,7 +64,8 @@
       "sceneCount": "Scene count : ",
       "at": "at"
     },
-    "startPresentation": "Start a new presentation"
+    "startPresentation": "Start a new presentation",
+    "presentationState": "Presentation state"
   },
 
   "account": {

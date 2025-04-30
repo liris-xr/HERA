@@ -65,7 +65,8 @@
       "sceneCount": "Nombre de scènes : ",
       "at": "à"
     },
-    "startPresentation": "Démarrer une nouvelle présentation"
+    "startPresentation": "Démarrer une nouvelle présentation",
+    "presentationState": "Etat de la présentation"
   },
 
   "account": {

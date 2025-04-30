@@ -1,7 +1,7 @@
 <script setup>
 import ArView from "@/components/arView.vue";
 import ProjectDetail from "@/components/projectDetail.vue";
-import {onMounted, reactive, ref} from "vue";
+import {computed, onMounted, reactive, ref} from "vue";
 import {onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
@@ -12,7 +12,9 @@ import {useAuthStore} from "@/store/auth.js";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
 import {SocketConnection} from "@/js/socket/socketConnection.js";
 import {SocketActionManager} from "@/js/socket/socketActionManager.js";
+import {useI18n} from "vue-i18n";
 
+const {t} = useI18n()
 const { isAuthenticated, token } = useAuthStore()
 
 const route = useRoute();
@@ -92,6 +94,13 @@ onMounted(() => {
 })
 
 
+const connectedText = computed(() => {
+  if(socket.value?.state?.connected)
+    return t("presentation.controls.connected.true");
+  return t("presentation.controls.connected.false");
+})
+
+
 
 </script>
 <template>
@@ -121,6 +130,9 @@ onMounted(() => {
 
     <section class="flex">
       <section>
+        <div v-if="socket" class="presentationState">
+          {{$t("projectView.presentationState")}} : <span v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">{{connectedText}}</span>
+        </div>
         <project-detail v-if="!(loading || error)" :project-data="project"></project-detail>
       </section>
       <span></span>
@@ -148,8 +160,20 @@ onMounted(() => {
 
 <style scoped>
 
+.danger {
+  color: var(--dangerColor);
+}
+
+.success {
+  color: var(--succesColor)
+}
+
 .center {
   margin: auto;
+}
+
+.presentationState{
+  margin-bottom: 16px;
 }
 
 

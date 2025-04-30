@@ -50,20 +50,8 @@ const messageInp = ref(null)
 const submitMessage = ref(null)
 
 const arView = ref(null)
-const activeScene = computed(() =>
-    arView.value?.arSessionManager?.sceneManager?.active?.value
-)
 
-const assets = ref([])
 
-// ne marche pas, les assets ne se mettent pas à jour au moment de leur chargement
-watch(activeScene, (newScene) => {
-  updateAssets()
-})
-
-function updateAssets() {
-  assets.value = activeScene.value?.getAssets()
-}
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -106,7 +94,6 @@ function initSocket() {
 onMounted(() => {
 
   submitMessage.value.addEventListener("click",() => {
-    console.log(activeScene.value.getAssets())
 
     socket.send("presentation:emit", { message: messageInp.value.value }, (res) => {
       console.log(res)
@@ -210,7 +197,10 @@ const projectUrl = computed(() => {
         </div>
 
         <section>
-          <div v-for="asset in assets" class="asset">
+          <div
+              v-if="arView?.arSessionManager?.sceneManager?.active"
+              v-for="asset in arView?.arSessionManager?.sceneManager?.active?.getAssets()"
+              class="asset">
             <p>{{asset.name}}</p>
 
             <div class="tools">
@@ -224,7 +214,9 @@ const projectUrl = computed(() => {
         </section>
 
         <section>
-          <select @change="setScene">
+
+          <label for="sceneSelection">{{$t("presentation.currentScene")}}</label>
+          <select @change="setScene" id="sceneSelection" name="sceneSelection">
             <option
                 v-for="scene in arView?.arSessionManager.sceneManager.scenes"
                 :value="scene.sceneId"
@@ -319,6 +311,9 @@ section:has(>.asset) {
   margin-top: 10px;
 }
 
+label + select {
+  margin-left: 5px;
+}
 
 @media  screen and (min-width: 900px) {
   .flex{

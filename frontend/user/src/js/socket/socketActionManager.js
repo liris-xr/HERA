@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {OutlinePass} from "three/addons";
+import {isRef, unref} from "vue";
 
 export class SocketActionManager {
 
@@ -11,7 +12,7 @@ export class SocketActionManager {
 
     highlight(data) {
 
-        const scene = unpack(this.arSessionManager.sceneManager.active)
+        const scene = this.arSessionManager.sceneManager.active
 
         const asset = scene.findAssetById(data.assetId)
 
@@ -35,27 +36,22 @@ export class SocketActionManager {
     }
 
     toggle(data) {
-        const scene = unpack(this.arSessionManager.sceneManager.active)
+        const scene = this.arSessionManager.sceneManager.active
         const asset = scene.findAssetById(data.assetId)
 
         if(!asset) return
 
         asset.hidden = data.value
-
-            asset.mesh.visible = !asset.hidden
+        asset.mesh.visible = !asset.hidden
 
     }
 
     scene(data) {
 
-        this.arSessionManager.sceneManager.activeSceneId.value = data.sceneId
+        this.arSessionManager.sceneManager.activeSceneId = data.sceneId
 
     }
 
 
 }
 
-function unpack(variable) {
-    if(variable.value) return variable.value
-    return variable
-}

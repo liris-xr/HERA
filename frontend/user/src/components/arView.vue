@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {onMounted, reactive, ref} from "vue";
 import {ArSessionManager} from "@/js/threeExt/project/arSessionManager.js";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
@@ -18,8 +18,9 @@ const props = defineProps({
 const emit = defineEmits(["loaded"])
 
 const arSessionManager = new ArSessionManager(props.json);
+const reactiveArSessionManager = reactive(arSessionManager);
 
-defineExpose({arSessionManager})
+defineExpose({arSessionManager: reactiveArSessionManager})
 
 const container = ref(null);
 const arOverlay = ref(null);

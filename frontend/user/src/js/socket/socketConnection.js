@@ -29,7 +29,6 @@ export class SocketConnection {
     send(event, ...args) {
         this.socket.emit(event, ...args)
 
-
         this.handleActionManager(event, ...args)
     }
 

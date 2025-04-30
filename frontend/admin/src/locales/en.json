@@ -98,7 +98,7 @@
         "label": "Envmap:",
         "current": "Envmap actuelle:"
       },
-      "button": {
+      "buttons": {
         "duplicate": "Duplicate project",
         "delete": "Delete project"
       }
@@ -187,7 +187,7 @@
         "assetNotDisplayed": "This object will not be displayed in viewer",
         "assetLoadFailed": "Unable to load this 3D model"
       },
-      "button": {
+      "buttons": {
         "duplicate": "Duplicate scene",
         "delete": "Delete scene"
       }
@@ -345,7 +345,7 @@
       "part1": "You are about to leave this page.",
       "part2": "Unsaved data will be lost. Are you sure you want to continue?"
     },
-    "button": {
+    "buttons": {
       "cancel": "Cancel",
       "continueWithoutSaving": "Continue without saving",
       "saveAndContinue": "Save and continue",

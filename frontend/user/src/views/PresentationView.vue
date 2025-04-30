@@ -191,30 +191,13 @@ const projectUrl = computed(() => {
           {{viewerCount}} {{$t("presentation.viewers")}}
         </p>
 
+
         <div>
           <input ref="messageInp" placeholder="message">
           <button ref="submitMessage">Envoyer</button>
         </div>
 
-        <section>
-          <div
-              v-if="arView?.arSessionManager?.sceneManager?.active"
-              v-for="asset in arView?.arSessionManager?.sceneManager?.active?.getAssets()"
-              class="asset">
-            <p>{{asset.name}}</p>
-
-            <div class="tools">
-              <p @click="highlight(asset)">
-                highlight
-              </p>
-              {{asset.hidden ? "caché":"visible"}}
-              <icon-svg :url="asset.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleVisibility(asset)"/>
-            </div>
-          </div>
-        </section>
-
-        <section>
-
+        <section class="sceneSelection">
           <label for="sceneSelection">{{$t("presentation.currentScene")}}</label>
           <select @change="setScene" id="sceneSelection" name="sceneSelection">
             <option
@@ -225,6 +208,21 @@ const projectUrl = computed(() => {
             </option>
           </select>
         </section>
+
+        <section>
+          <div
+              v-if="arView?.arSessionManager?.sceneManager?.active"
+              v-for="asset in arView?.arSessionManager?.sceneManager?.active?.getAssets()"
+              class="asset">
+            <p>{{asset.name}}</p>
+
+            <div class="tools">
+              <icon-svg url="/icons/lightbulb.svg" theme="text" class="iconAction" :hover-effect="true" @click="highlight(asset)"/>
+              <icon-svg :url="asset.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleVisibility(asset)"/>
+            </div>
+          </div>
+        </section>
+
 
       </section>
       <span></span>
@@ -281,7 +279,7 @@ const projectUrl = computed(() => {
 
 .tools {
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: row;
   gap: 5px;
 }
 
@@ -313,6 +311,12 @@ section:has(>.asset) {
 
 label + select {
   margin-left: 5px;
+}
+
+.sceneSelection {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
 }
 
 @media  screen and (min-width: 900px) {

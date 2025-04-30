@@ -18,9 +18,8 @@ const props = defineProps({
 const emit = defineEmits(["loaded"])
 
 const arSessionManager = new ArSessionManager(props.json);
-const reactiveArSessionManager = reactive(arSessionManager);
 
-defineExpose({arSessionManager: reactiveArSessionManager})
+defineExpose({arSessionManager: reactive(arSessionManager)})
 
 const container = ref(null);
 const arOverlay = ref(null);

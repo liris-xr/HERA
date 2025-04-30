@@ -35,8 +35,6 @@ export class SocketActionManager {
     }
 
     toggle(data) {
-        console.log(data)
-
         const scene = unpack(this.arSessionManager.sceneManager.active)
         const asset = scene.findAssetById(data.assetId)
 
@@ -45,6 +43,12 @@ export class SocketActionManager {
         asset.hidden = data.value
 
             asset.mesh.visible = !asset.hidden
+
+    }
+
+    scene(data) {
+
+        this.arSessionManager.sceneManager.activeSceneId.value = data.sceneId
 
     }
 

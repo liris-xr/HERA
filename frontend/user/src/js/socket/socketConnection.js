@@ -42,9 +42,13 @@ export class SocketConnection {
 
         if(event.startsWith("presentation:action:")) {
             const eventName = event.replace("presentation:action:", "")
-            if(Object.getOwnPropertyNames(Object.getPrototypeOf(this.socketActionManager)).includes(eventName)
-               && typeof this.socketActionManager[eventName] === 'function')
+            if (
+                Object.getOwnPropertyNames(Object.getPrototypeOf(this.socketActionManager)).includes(eventName) &&
+                typeof this.socketActionManager[eventName] === 'function'
+            )
                 this.socketActionManager[eventName](...args)
+            else
+                console.error("SocketActionManager : event "+eventName+" not found")
         }
     }
 }

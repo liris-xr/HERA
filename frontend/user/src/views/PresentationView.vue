@@ -136,6 +136,10 @@ function toggleVisibility(asset) {
   socket.send("presentation:action:toggle", { assetId: asset.id, value: !asset.hidden ?? false })
 }
 
+function setScene(event) {
+  socket.send("presentation:action:scene", { sceneId: event.target.value })
+}
+
 const connectedText = computed(() => {
   if(socket.state.connected)
     return t("presentation.controls.connected.true");
@@ -216,9 +220,18 @@ const projectUrl = computed(() => {
               {{asset.hidden ? "caché":"visible"}}
               <icon-svg :url="asset.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleVisibility(asset)"/>
             </div>
-
-
           </div>
+        </section>
+
+        <section>
+          <select @change="setScene">
+            <option
+                v-for="scene in arView?.arSessionManager.sceneManager.scenes"
+                :value="scene.sceneId"
+            >
+              {{scene.title}}
+            </option>
+          </select>
         </section>
 
       </section>

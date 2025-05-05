@@ -11,7 +11,6 @@ export function actionInPresentation(socket, event, ...args) {
     if(!socket.auth)
         return callback({success: false, message: "Unauthorized"})
 
-    console.log(event, ...args)
     presentations[socket.roomCode].actions.push({event, args})
 
     ioInstance.to(socket.roomCode).except(socket.id).emit(event, ...args)

@@ -195,12 +195,12 @@ const projectUrl = computed(() => {
           <span v-if="!project.published" class="danger">{{ $t("presentation.unpublishedWarning") }}</span>
         </div>
 
-        <section>
-          <p v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">
-            {{connectedText}}
-          </p>
+        <section class="connectionInfos">
           <p>
-            {{viewerCount}} {{$t("presentation.viewers")}}
+            <span v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">
+              {{connectedText}}
+            </span>
+             - {{viewerCount}} {{$t("presentation.viewers")}}
           </p>
         </section>
 
@@ -276,6 +276,14 @@ const projectUrl = computed(() => {
 
 <style scoped>
 
+.connectionInfos {
+  margin: 5px;
+}
+
+section > h3 {
+  font-size: 1.2em;
+}
+
 .qrCode {
   position: fixed;
   background-color: white;
@@ -325,6 +333,30 @@ label + select {
   margin-top: 10px;
   display: flex;
   justify-content: center;
+}
+
+.sceneSelection label {
+  text-decoration: underline;
+  font-size: 1.2em;
+}
+
+@media only screen and (max-width: 600px) {
+
+  .qrButtonWrapper {
+    justify-content: center;
+  }
+
+  .qrButtonWrapper * {
+    font-size: 1.2em;
+    padding: 5px;
+  }
+
+  .connectionInfos * {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 2em;
+  }
+
 }
 
 @media  screen and (min-width: 900px) {

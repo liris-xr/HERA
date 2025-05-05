@@ -1,13 +1,13 @@
 <script setup>
 
 import IconSvg from "@/components/icons/IconSvg.vue";
-import {computed} from "vue";
+import {computed, onMounted, watch} from "vue";
 
 const props = defineProps({
   asset: {type: Object, required: true}
 })
 
-const emit = defineEmits(["highlight", "toggleDisplay"])
+const emit = defineEmits(["highlight", "toggleDisplay", "setActiveAnimation"])
 
 const highlightIcon = computed(() => {
   if(props.asset.highlight.value) return '/icons/lightbulb_on.svg'
@@ -18,13 +18,17 @@ const displayIcon = computed(() => {
   if(props.asset.hidden.value) return '/icons/display_off.svg'
   return '/icons/display_on.svg'
 })
-
 </script>
 
 <template>
   <div class="item">
     <p>{{asset.name}}</p>
     <div class="tools">
+      <select v-model="asset.activeAnimation" @change="emit('setActiveAnimation', asset.activeAnimation)">
+        <option :value="null">{{ $t("none") }}</option>
+        <option v-for="anim in asset.animations" :value="anim">{{anim}}</option>
+      </select>
+
       <icon-svg
           :url="highlightIcon"
           theme="text"
@@ -50,7 +54,12 @@ const displayIcon = computed(() => {
 
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   justify-content: space-between;
+}
+
+.item select {
+  max-width: 100px;
 }
 
 .item + .item {

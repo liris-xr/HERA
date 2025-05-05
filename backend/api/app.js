@@ -26,6 +26,7 @@ import * as fs from "node:fs";
 import * as https from "node:https";
 import {Server} from "socket.io";
 import setupSocket from "./src/socket/index.js";
+import {errorHandler} from "./src/utils/errorHandler.js";
 const options = {
     key: fs.readFileSync('privatekey.key'),
     cert: fs.readFileSync('certificate.crt')
@@ -35,6 +36,7 @@ const options = {
 const app = express()
 app.use(express.json())
 app.use(cors({}))
+app.use(errorHandler)
 
 async function main () {
     await initializeDatabase({force: false});

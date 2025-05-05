@@ -132,6 +132,11 @@ function setScene(event) {
   socket.send("presentation:action:scene", { sceneId: event.target.value })
 }
 
+function setActiveAnimation(asset, animation) {
+  socket.send("presentation:action:setActiveAnimation", { assetId: asset.id, value: animation })
+}
+
+
 const connectedText = computed(() => {
   if(socket.state.connected)
     return t("presentation.controls.connected.true");
@@ -223,6 +228,7 @@ const projectUrl = computed(() => {
 
               @highlight="highlight(asset)"
               @toggle-display="toggleAssetVisibility(asset)"
+              @set-active-animation="setActiveAnimation(asset, $event)"
           />
 
           <div v-else>{{$t("none")}}</div>
@@ -244,7 +250,6 @@ const projectUrl = computed(() => {
 
 
       </section>
-      <span></span>
       <section>
         <h1>{{$t("presentation.sceneTitle")}}</h1>
         <ar-view
@@ -269,9 +274,10 @@ const projectUrl = computed(() => {
 <style scoped>
 
 .qrCode {
-  position: absolute;
+  position: fixed;
   background-color: white;
   inset: 0 0 0 0;
+  padding: 15px;
 
   z-index: 256;
 

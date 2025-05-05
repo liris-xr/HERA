@@ -25,6 +25,7 @@ const error = ref(false);
 const arView = ref(null)
 
 const socket = ref(null)
+const connected = ref(false)
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -77,6 +78,8 @@ function initSocket() {
   )
 
   socket.value.send("presentation:join", route.query.presentation, (data) => {
+    if(data.success)
+      connected.value = true
     console.log(data)
   })
 
@@ -100,7 +103,7 @@ onMounted(() => {
 
 
 const connectedText = computed(() => {
-  if(socket.value?.state?.connected)
+  if(socket.value?.state?.connected && connected.value)
     return t("presentation.controls.connected.true");
   return t("presentation.controls.connected.false");
 })
@@ -136,7 +139,7 @@ const connectedText = computed(() => {
     <section class="flex">
       <section>
         <div v-if="socket" class="presentationState">
-          {{$t("projectView.presentationState")}} : <span v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">{{connectedText}}</span>
+          {{$t("projectView.presentationState")}} : <span v-bind:class="{ danger: !(socket.state.connected && connected), success: socket.state.connected && connected }">{{connectedText}}</span>
         </div>
         <project-detail v-if="!(loading || error)" :project-data="project"></project-detail>
       </section>

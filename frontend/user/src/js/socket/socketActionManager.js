@@ -53,6 +53,32 @@ export class SocketActionManager {
 
     }
 
+    setActiveAnimation(data) {
+        const scene = this.arSessionManager.sceneManager.active
+        const asset = scene.findAssetById(data.assetId)
+
+        if(!asset) return
+
+        if(asset.playingAction) {
+            asset.playingAction.stop()
+            asset.playingAction = null
+            asset.activeAnimation = ""
+        }
+
+        if(data.value) {
+            const anim = THREE.AnimationClip.findByName(asset.mesh.animations, data.value)
+
+            if(!anim) return
+
+            const action = asset.animationMixer.clipAction(anim)
+            action.play()
+            asset.activeAnimation = data.value
+
+            asset.playingAction = action
+
+        }
+    }
+
 
 }
 

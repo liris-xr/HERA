@@ -1,7 +1,7 @@
 import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import * as THREE from 'three';
-import {ref} from "vue";
+import {reactive, ref} from "vue";
 
 export class Asset extends SceneElementInterface{
 
@@ -35,6 +35,7 @@ export class Asset extends SceneElementInterface{
         this.activeAnimation = assetData.activeAnimation || null;
         this.highlight = ref(false)
         this.hidden = ref(false)
+        this.animations = reactive([])
 
         if(assetData.position)
             this.position = assetData.position;
@@ -77,15 +78,14 @@ export class Asset extends SceneElementInterface{
 
         if(this.mesh?.animations?.length > 0) {
             this.animationMixer = new THREE.AnimationMixer(this.mesh)
-            this.animations = []
             let baseAnimation
 
             for(const animation of this.mesh?.animations){
-                const action = this.animationMixer.clipAction(animation);
                 if (animation.name === this.activeAnimation)
-                    baseAnimation = action
+                    baseAnimation = this.animationMixer.clipAction(animation);
                 this.animations.push(animation.name)
             }
+
 
             if(!baseAnimation) {
                 if(this.activeAnimation)

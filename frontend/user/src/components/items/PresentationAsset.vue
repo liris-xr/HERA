@@ -9,6 +9,11 @@ const props = defineProps({
 
 const emit = defineEmits(["highlight", "toggleDisplay"])
 
+const highlightIcon = computed(() => {
+  if(props.asset.highlight.value) return '/icons/lightbulb_on.svg'
+  return '/icons/lightbulb.svg'
+})
+
 const displayIcon = computed(() => {
   if(props.asset.hidden.value) return '/icons/display_off.svg'
   return '/icons/display_on.svg'
@@ -21,7 +26,7 @@ const displayIcon = computed(() => {
     <p>{{asset.name}}</p>
     <div class="tools">
       <icon-svg
-          url="/icons/lightbulb.svg"
+          :url="highlightIcon"
           theme="text"
           class="iconAction"
           :hover-effect="true"

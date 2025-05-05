@@ -225,17 +225,6 @@ const projectUrl = computed(() => {
               @toggle-display="toggleAssetVisibility(asset)"
           />
 
-          <div
-              v-if="arView?.arSessionManager?.sceneManager?.active?.hasAssets()"
-              v-for="asset in arView.arSessionManager.sceneManager.active?.getAssets()"
-              class="item">
-            <p>{{asset.name}}</p>
-
-            <div class="tools">
-              <icon-svg url="/icons/lightbulb.svg" theme="text" class="iconAction" :hover-effect="true" @click="highlight(asset)"/>
-              <icon-svg :url="asset.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleAssetVisibility(asset)"/>
-            </div>
-          </div>
           <div v-else>{{$t("none")}}</div>
         </section>
 

@@ -14,6 +14,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
@@ -30,7 +31,7 @@ const creatingLabel = ref(null)
 
 const totalPages = ref(1)
 
-defineExpose({editingLabel, deletingLabel, creatingLabel})
+defineExpose({editingLabel, deletingLabel, creatingLabel, element})
 
 async function confirmLabelCreate() {
   const res = await fetch(`${ENDPOINT}admin/labels`,{
@@ -149,6 +150,8 @@ onMounted(async () => {
 
 <template>
 
+  <section ref="element">
+
     <generic-table
         ref="table"
         section-name="labels"
@@ -245,6 +248,8 @@ onMounted(async () => {
       @confirm="confirmLabelCreate"
       @cancel="creatingLabel = null"
   />
+
+  </section>
 
 </template>
 

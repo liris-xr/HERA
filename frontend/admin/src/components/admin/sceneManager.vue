@@ -14,6 +14,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
@@ -208,11 +209,13 @@ onMounted(async () => {
   await fetchScenes()
 })
 
-defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, newAsset, supprAsset})
+defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, newAsset, supprAsset, element})
 
 </script>
 
 <template>
+
+  <section ref="element">
 
     <generic-table
         ref="table"
@@ -348,6 +351,8 @@ defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, 
     </div>
 
   </generic-modal>
+
+  </section>
 
 </template>
 

@@ -14,6 +14,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
@@ -197,11 +198,13 @@ onMounted(async () => {
 })
 
 
-defineExpose({projects, newScene, supprScene})
+defineExpose({projects, newScene, supprScene, element})
 
 </script>
 
 <template>
+
+  <section ref="element">
 
     <generic-table
         ref="table"
@@ -345,8 +348,7 @@ defineExpose({projects, newScene, supprScene})
       @cancel="creatingProject = null"
   />
 
-
-
+  </section>
 
 </template>
 

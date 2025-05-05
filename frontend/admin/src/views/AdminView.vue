@@ -1,6 +1,6 @@
 <script setup>
 import ProjectCard from "@/components/projectCard.vue"
-import {onMounted, ref} from "vue"
+import {nextTick, onMounted, ref} from "vue"
 import {ENDPOINT} from "@/js/endpoints.js"
 import ButtonView from "@/components/button/buttonView.vue"
 import Notification from "@/components/notification/notification.vue"
@@ -16,6 +16,7 @@ import SceneManager from "@/components/admin/sceneManager.vue";
 import AssetManager from "@/components/admin/assetManager.vue";
 import LabelManager from "@/components/admin/labelManager.vue";
 import 'vue3-toastify/dist/index.css';
+import TableOfContent from "@/components/admin/TableOfContent.vue";
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()
@@ -37,65 +38,88 @@ const sceneManager = ref(null)
 const assetManager = ref(null)
 const labelManager = ref(null)
 
+const sections = ref(null)
+
+onMounted(async () => {
+  await nextTick()
+  sections.value = {
+    accounts: accountManager,
+    projects: projectManager,
+    scenes: sceneManager,
+    assets: assetManager,
+    labels: labelManager
+  }
+
+  console.log(sections.value)
+})
+
 </script>
 
 <template>
-  <main>
+  <section class="content">
 
-    <h1>{{$t("admin.title")}}</h1>
+    <main>
 
-    <account-manager
-        ref="accountManager"
+      <h1>{{$t("admin.title")}}</h1>
 
-        :token="token"
+      <account-manager
+          ref="accountManager"
+
+          :token="token"
+      />
+
+      <project-manager
+          ref="projectManager"
+
+          :token="token"
+          @edit-scene="sceneManager.editingScene = $event"
+          @delete-scene="sceneManager.deletingScene = $event"
+          @create-scene="sceneManager.creatingScene = { projectId: $event.id }"
+      />
+
+      <scene-manager
+          ref="sceneManager"
+
+          :token="token"
+
+          @edit-asset="assetManager.editingAsset = $event"
+          @delete-asset="assetManager.deletingAsset = $event"
+          @create-asset="assetManager.creatingAsset = { sceneId: $event.id }"
+
+          @edit-label="labelManager.editingLabel = $event"
+          @delete-label="labelManager.deletingLabel = $event"
+          @create-label="labelManager.creatingLabel = { sceneId: $event.id }"
+
+          @new-scene="projectManager.newScene($event)"
+          @suppr-scene="projectManager.supprScene($event)"
+      />
+
+      <asset-manager
+          ref="assetManager"
+
+          @new-asset="sceneManager.newAsset($event)"
+          @suppr-asset="sceneManager.supprAsset($event)"
+          :token="token"
+      />
+
+      <label-manager
+          ref="labelManager"
+
+          :token="token"
+
+          @new-label="sceneManager.newLabel($event)"
+          @suppr-label="sceneManager.supprLabel($event)"
+      />
+
+    </main>
+
+    <table-of-content
+        v-if="sections"
+
+        :sections="sections"
     />
 
-    <project-manager
-        ref="projectManager"
-
-        :token="token"
-        @edit-scene="sceneManager.editingScene = $event"
-        @delete-scene="sceneManager.deletingScene = $event"
-        @create-scene="sceneManager.creatingScene = { projectId: $event.id }"
-    />
-
-    <scene-manager
-        ref="sceneManager"
-
-        :token="token"
-
-        @edit-asset="assetManager.editingAsset = $event"
-        @delete-asset="assetManager.deletingAsset = $event"
-        @create-asset="assetManager.creatingAsset = { sceneId: $event.id }"
-
-        @edit-label="labelManager.editingLabel = $event"
-        @delete-label="labelManager.deletingLabel = $event"
-        @create-label="labelManager.creatingLabel = { sceneId: $event.id }"
-
-        @new-scene="projectManager.newScene($event)"
-        @suppr-scene="projectManager.supprScene($event)"
-    />
-
-    <asset-manager
-        ref="assetManager"
-
-        @new-asset="sceneManager.newAsset($event)"
-        @suppr-asset="sceneManager.supprAsset($event)"
-        :token="token"
-    />
-
-    <label-manager
-        ref="labelManager"
-
-        :token="token"
-
-        @new-label="sceneManager.newLabel($event)"
-        @suppr-label="sceneManager.supprLabel($event)"
-    />
-
-  </main>
-
-
+  </section>
 
 </template>
 
@@ -107,7 +131,7 @@ main > section + section {
 }
 
 table {
-  width: 80%;
+  width: 100%;
   background-color: white;
   border-collapse: collapse;
 }
@@ -219,6 +243,18 @@ table tr:hover {
 
 .item .actions {
   display: flex;
+}
+
+</style>
+
+<style scoped>
+
+.content {
+  display: flex;
+}
+
+main {
+  width: 80%;
 }
 
 </style>

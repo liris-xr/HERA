@@ -17,6 +17,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
@@ -142,10 +143,12 @@ onMounted(async () => {
   await fetchUsers()
 })
 
-
+defineExpose({element})
 </script>
 
 <template>
+
+  <section ref="element">
 
     <generic-table
         ref="table"
@@ -256,6 +259,8 @@ onMounted(async () => {
       @confirm="confirmUserCreate"
       @cancel="creatingUser = null"
   />
+
+  </section>
 
 </template>
 

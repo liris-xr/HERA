@@ -14,6 +14,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
@@ -30,7 +31,7 @@ const creatingAsset = ref(null)
 
 const totalPages = ref(1)
 
-defineExpose({editingAsset, deletingAsset, creatingAsset})
+defineExpose({editingAsset, deletingAsset, creatingAsset, element})
 
 
 async function confirmAssetCreate() {
@@ -155,6 +156,8 @@ onMounted(async () => {
 
 <template>
 
+  <section ref="element">
+
     <generic-table
         ref="table"
         section-name="assets"
@@ -251,6 +254,8 @@ onMounted(async () => {
       @confirm="confirmAssetCreate"
       @cancel="creatingAsset = null"
   />
+
+  </section>
 
 </template>
 

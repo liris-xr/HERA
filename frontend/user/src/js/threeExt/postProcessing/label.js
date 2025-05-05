@@ -1,8 +1,11 @@
 import {CSS2DObject} from "three/addons";
+import {ref} from "vue";
 
 export class Label{
+    id;
     content;
     position;
+    hidden
 
     label;
     timestampStart;
@@ -10,6 +13,7 @@ export class Label{
     #htmlContent
 
     constructor(labelData) {
+        this.id = labelData.id
         this.content = labelData.text;
         if(labelData.position)
             this.position = labelData.position;
@@ -18,6 +22,8 @@ export class Label{
 
         this.timestampStart = labelData.timestampStart;
         this.timestampEnd = labelData.timestampEnd;
+
+        this.hidden = ref(false)
         this.init();
     }
 
@@ -76,8 +82,17 @@ export class Label{
 
     setVisible(visible){
         this.label.visible = visible;
+        this.checkHidden()
     }
 
+    setHidden(hidden) {
+        this.hidden.value = hidden;
+        if(hidden) this.label.visible = false;
+    }
+
+    checkHidden() {
+        if(this.hidden.value) this.label.visible = false
+    }
 
     shouldBeVisible(time){
         if(this.timestampStart == null) return false;

@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import {SocketActionManager} from "@/js/socket/socketActionManager.js";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import PresentationAsset from "@/components/items/PresentationAsset.vue";
+import PresentationLabel from "@/components/items/PresentationLabel.vue";
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -125,7 +126,7 @@ function toggleAssetVisibility(asset) {
 }
 
 function toggleLabelVisibility(label) {
-  socket.send("presentation:action:toggleLabel", { assetId: label.id, value: !label.hidden.value ?? false })
+  socket.send("presentation:action:toggleLabel", { labelId: label.id, value: !label.label.visible })
 }
 
 function setScene(event) {
@@ -194,15 +195,17 @@ const projectUrl = computed(() => {
           <span v-if="!project.published" class="danger">{{ $t("presentation.unpublishedWarning") }}</span>
         </div>
 
-        <p v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">
-          {{connectedText}}
-        </p>
-        <p>
-          {{viewerCount}} {{$t("presentation.viewers")}}
-        </p>
+        <section>
+          <p v-bind:class="{ danger: !socket.state.connected, success: socket.state.connected }">
+            {{connectedText}}
+          </p>
+          <p>
+            {{viewerCount}} {{$t("presentation.viewers")}}
+          </p>
+        </section>
 
 
-        <div>
+        <div v-show="false">
           <input ref="messageInp" placeholder="message">
           <button ref="submitMessage">Envoyer</button>
         </div>
@@ -220,7 +223,7 @@ const projectUrl = computed(() => {
         </section>
 
         <section>
-          <h3>Assets</h3>
+          <h3>{{ $t("presentation.sections.assets.title") }}</h3>
           <presentation-asset
               v-if="arView?.arSessionManager?.sceneManager?.active?.hasAssets()"
               v-for="asset in arView.arSessionManager.sceneManager.active?.getAssets()"
@@ -235,17 +238,17 @@ const projectUrl = computed(() => {
         </section>
 
         <section>
-          <h3>Labels</h3>
-          <div
-              v-if="arView?.arSessionManager?.sceneManager?.active"
-              v-for="label in arView.arSessionManager.sceneManager.active?.labelPlayer.getLabels()"
-              class="item">
-            <p>{{label.content}}</p>
+          <h3>{{ $t("presentation.sections.labels.title") }}</h3>
 
-            <div class="tools">
-              <icon-svg :url="label.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleAssetVisibility(asset)"/>
-            </div>
-          </div>
+          <presentation-label
+              v-if="arView?.arSessionManager?.sceneManager?.active.labelPlayer.hasLabels"
+              v-for="label in arView.arSessionManager.sceneManager.active.labelPlayer.getLabels()"
+
+              :label="label"
+
+              @toggle-display="toggleLabelVisibility(label)" />
+
+          <div v-else>{{$t("none")}}</div>
         </section>
 
 
@@ -311,7 +314,7 @@ const projectUrl = computed(() => {
 }
 
 section:has(>.item) {
-  margin: 15px
+  margin: 15px 0 15px 0;
 }
 
 label + select {

@@ -44,7 +44,6 @@ export class SocketActionManager {
 
         asset.hidden.value = data.value
         asset.mesh.visible = !asset.hidden.value
-
     }
 
     scene(data) {
@@ -62,7 +61,7 @@ export class SocketActionManager {
         if(asset.playingAction) {
             asset.playingAction.stop()
             asset.playingAction = null
-            asset.activeAnimation = ""
+            asset.activeAnimation = null
         }
 
         if(data.value) {
@@ -77,6 +76,16 @@ export class SocketActionManager {
             asset.playingAction = action
 
         }
+    }
+
+    toggleLabel(data) {
+        const scene = this.arSessionManager.sceneManager.active
+        const label = scene.labelPlayer.findLabelById(data.labelId)
+
+        if(!label) return
+
+        label.setHidden(!data.value)
+
     }
 
 

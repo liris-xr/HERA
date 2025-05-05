@@ -87,4 +87,11 @@ export class LabelPlayer extends RenderLoopInterface{
     getLabels(){
         return this.#labels;
     }
+
+    findLabelById(id) {
+        for(const label of this.#labels)
+            if(label.id === id)
+                return label
+        return null
+    }
 }

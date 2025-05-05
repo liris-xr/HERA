@@ -96,6 +96,14 @@
       },
       "showQrcode": "Show the QR code"
     },
+    "sections": {
+      "assets": {
+        "title": "Assets"
+      },
+      "labels": {
+        "title": "Labels"
+      }
+    },
     "quitQr": "Tap anywhere to make the QR code disappear",
     "unpublishedWarning": "Unable to display the QR code : your project is private",
     "brightnessTip": "To make scanning the QR code easier, increase your screen brightness",

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
-import {computed} from "vue";
+import {computed, shallowReactive} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
@@ -123,8 +123,12 @@ export class ArScene extends AbstractScene {
         this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition);
     }
 
+    hasAssets() {
+        return !(this.#assets.length === 0 || this.#assets[0] instanceof EmptyAsset)
+    }
+
     getAssets() {
-        return this.#assets
+        return shallowReactive(this.#assets)
     }
 
     findAssetById(id) {

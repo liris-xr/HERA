@@ -8,6 +8,8 @@
     "allProjects": "Todos los proyectos"
   },
 
+  "none": "Ninguno",
+
   "login": {
     "emailLabel": "Correo electrónico",
     "emailPlaceholder": "Tu correo electrónico",

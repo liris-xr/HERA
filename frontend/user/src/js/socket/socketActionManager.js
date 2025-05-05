@@ -18,7 +18,8 @@ export class SocketActionManager {
 
         if(!asset) return
 
-        asset.highlight = data.value
+
+        asset.highlight.value = data.value
 
         asset.mesh.traverse((child) => {
 
@@ -26,7 +27,7 @@ export class SocketActionManager {
                 if(!child.oldMaterial)
                     child.oldMaterial = child.material
 
-                if(asset.highlight) {
+                if(asset.highlight.value) {
                     child.material = new THREE.MeshStandardMaterial({ color: 0xff0000 })
                 } else
                     child.material = child.oldMaterial
@@ -41,8 +42,8 @@ export class SocketActionManager {
 
         if(!asset) return
 
-        asset.hidden = data.value
-        asset.mesh.visible = !asset.hidden
+        asset.hidden.value = data.value
+        asset.mesh.visible = !asset.hidden.value
 
     }
 

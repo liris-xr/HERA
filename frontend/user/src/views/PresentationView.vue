@@ -14,6 +14,7 @@ import {QrcodeSvg} from "qrcode.vue";
 import * as THREE from 'three';
 import {SocketActionManager} from "@/js/socket/socketActionManager.js";
 import IconSvg from "@/components/icons/IconSvg.vue";
+import PresentationAsset from "@/components/items/PresentationAsset.vue";
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -116,15 +117,15 @@ function hideQr() {
 }
 
 function highlight(asset) {
-  socket.send("presentation:action:highlight", { assetId: asset.id, value: !asset.highlight ?? true })
+  socket.send("presentation:action:highlight", { assetId: asset.id, value: !asset.highlight.value ?? true })
 }
 
 function toggleAssetVisibility(asset) {
-  socket.send("presentation:action:toggleAsset", { assetId: asset.id, value: !asset.hidden ?? false })
+  socket.send("presentation:action:toggleAsset", { assetId: asset.id, value: !asset.hidden.value ?? false })
 }
 
 function toggleLabelVisibility(label) {
-  socket.send("presentation:action:toggleLabel", { assetId: asset.id, value: !asset.hidden ?? false })
+  socket.send("presentation:action:toggleLabel", { assetId: label.id, value: !label.hidden.value ?? false })
 }
 
 function setScene(event) {
@@ -215,11 +216,19 @@ const projectUrl = computed(() => {
 
         <section>
           <h3>Assets</h3>
+          <presentation-asset
+              v-if="arView?.arSessionManager?.sceneManager?.active?.hasAssets()"
+              v-for="asset in arView.arSessionManager.sceneManager.active?.getAssets()"
+              :asset="asset"
+
+              @highlight="highlight(asset)"
+              @toggle-display="toggleAssetVisibility(asset)"
+          />
+
           <div
-              v-if="arView?.arSessionManager?.sceneManager?.active"
+              v-if="arView?.arSessionManager?.sceneManager?.active?.hasAssets()"
               v-for="asset in arView.arSessionManager.sceneManager.active?.getAssets()"
               class="item">
-            {{asset.animations}}
             <p>{{asset.name}}</p>
 
             <div class="tools">
@@ -227,6 +236,7 @@ const projectUrl = computed(() => {
               <icon-svg :url="asset.hidden ? '/icons/display_off.svg' : '/icons/display_on.svg' " theme="text" class="iconAction" :hover-effect="true" @click="toggleAssetVisibility(asset)"/>
             </div>
           </div>
+          <div v-else>{{$t("none")}}</div>
         </section>
 
         <section>
@@ -297,12 +307,6 @@ const projectUrl = computed(() => {
   gap: 5px;
 }
 
-.tools {
-  display: flex;
-  flex-direction: row;
-  gap: 5px;
-}
-
 .danger {
   color: var(--dangerColor);
 }
@@ -313,20 +317,6 @@ const projectUrl = computed(() => {
 
 section:has(>.item) {
   margin: 15px
-}
-
-.item {
-  background-color: var(--backgroundColor);
-  padding: 10px;
-  border-radius: 10px;
-
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-}
-
-.item + .item {
-  margin-top: 10px;
 }
 
 label + select {

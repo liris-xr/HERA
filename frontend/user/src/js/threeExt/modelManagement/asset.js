@@ -1,6 +1,7 @@
 import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import * as THREE from 'three';
+import {ref} from "vue";
 
 export class Asset extends SceneElementInterface{
 
@@ -19,6 +20,9 @@ export class Asset extends SceneElementInterface{
 
     #error;
 
+    highlight;
+    hidden;
+
 
 
 
@@ -29,6 +33,8 @@ export class Asset extends SceneElementInterface{
         this.sourceUrl = assetData.url;
         this.name = assetData.name != null ? assetData.name : assetData.url;
         this.activeAnimation = assetData.activeAnimation || null;
+        this.highlight = ref(false)
+        this.hidden = ref(false)
 
         if(assetData.position)
             this.position = assetData.position;

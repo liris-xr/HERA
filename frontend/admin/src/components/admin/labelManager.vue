@@ -126,6 +126,9 @@ async function fetchLabels(data=null) {
       labels.value = data.labels
 
       totalPages.value = data.totalPages
+
+      if(table.value.currentPage > totalPages.value)
+        table.value.currentPage = totalPages.value
     } else
       error.value = true
 

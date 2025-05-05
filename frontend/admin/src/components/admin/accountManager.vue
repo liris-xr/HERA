@@ -123,6 +123,10 @@ async function fetchUsers(data=null) {
 
       users.value = data.users
       totalPages.value = data.totalPages
+
+      if(table.value.currentPage > totalPages.value)
+        table.value.currentPage = totalPages.value
+
     } else
       error.value = true
 

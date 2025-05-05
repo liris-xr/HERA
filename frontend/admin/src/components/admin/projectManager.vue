@@ -178,6 +178,9 @@ async function fetchProjects(data=null) {
 
       projects.value = data.projects
       totalPages.value = data.totalPages
+
+      if(table.value.currentPage > totalPages.value)
+        table.value.currentPage = totalPages.value
     } else
       error.value = true
 

@@ -17,6 +17,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
@@ -123,6 +124,10 @@ async function fetchUsers(data=null) {
 
       users.value = data.users
       totalPages.value = data.totalPages
+
+      if(table.value.currentPage > totalPages.value)
+        table.value.currentPage = totalPages.value
+
     } else
       error.value = true
 
@@ -138,10 +143,12 @@ onMounted(async () => {
   await fetchUsers()
 })
 
-
+defineExpose({element})
 </script>
 
 <template>
+
+  <section ref="element">
 
     <generic-table
         ref="table"
@@ -252,6 +259,8 @@ onMounted(async () => {
       @confirm="confirmUserCreate"
       @cancel="creatingUser = null"
   />
+
+  </section>
 
 </template>
 

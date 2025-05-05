@@ -8,7 +8,7 @@ const {t} = useI18n()
 const props = defineProps({
   title: {type: String, required: true},
   sectionName: {type: String, required: true},
-  fields: {type: Array},
+  fields: {type: Array, default: []},
   subject: {type: Object},
 })
 

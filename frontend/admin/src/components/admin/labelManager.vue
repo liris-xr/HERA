@@ -14,6 +14,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
@@ -30,7 +31,7 @@ const creatingLabel = ref(null)
 
 const totalPages = ref(1)
 
-defineExpose({editingLabel, deletingLabel, creatingLabel})
+defineExpose({editingLabel, deletingLabel, creatingLabel, element})
 
 async function confirmLabelCreate() {
   const res = await fetch(`${ENDPOINT}admin/labels`,{
@@ -126,6 +127,9 @@ async function fetchLabels(data=null) {
       labels.value = data.labels
 
       totalPages.value = data.totalPages
+
+      if(table.value.currentPage > totalPages.value)
+        table.value.currentPage = totalPages.value
     } else
       error.value = true
 
@@ -145,6 +149,8 @@ onMounted(async () => {
 </script>
 
 <template>
+
+  <section ref="element">
 
     <generic-table
         ref="table"
@@ -242,6 +248,8 @@ onMounted(async () => {
       @confirm="confirmLabelCreate"
       @cancel="creatingLabel = null"
   />
+
+  </section>
 
 </template>
 

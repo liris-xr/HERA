@@ -14,6 +14,7 @@ const props = defineProps({
   token: {type: String, required: true},
 })
 
+const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
@@ -190,6 +191,9 @@ async function fetchScenes(data=null) {
 
       scenes.value = data.scenes
       totalPages.value = data.totalPages
+
+      if(table.value.currentPage > totalPages.value)
+        table.value.currentPage = totalPages.value
     } else
       error.value = true
 
@@ -205,11 +209,13 @@ onMounted(async () => {
   await fetchScenes()
 })
 
-defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, newAsset, supprAsset})
+defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, newAsset, supprAsset, element})
 
 </script>
 
 <template>
+
+  <section ref="element">
 
     <generic-table
         ref="table"
@@ -345,6 +351,8 @@ defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, 
     </div>
 
   </generic-modal>
+
+  </section>
 
 </template>
 

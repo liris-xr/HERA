@@ -18,6 +18,18 @@ export class SocketActionManager {
 
         if(!asset) return
 
+        console.log(asset.mesh)
+
+        const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.mesh)
+
+        if(index !== -1)
+            this.arSessionManager.outlinePass.selectedObjects.splice(index, 1)
+        else
+            this.arSessionManager.outlinePass.selectedObjects = [asset.mesh];
+
+        console.log(index, this.arSessionManager.outlinePass.selectedObjects);
+        return;
+
 
         asset.highlight.value = data.value
 
@@ -85,7 +97,6 @@ export class SocketActionManager {
         if(!label) return
 
         label.setHidden(!data.value)
-
     }
 
 

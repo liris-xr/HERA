@@ -1,10 +1,11 @@
 import {ArSceneManager} from "../scene/arSceneManager";
 import {ArCamera} from "../lighting/arCamera";
 import {ArRenderer} from "../rendering/arRenderer";
-import {OrbitControls} from "three/addons";
+import {EffectComposer, GammaCorrectionShader, OrbitControls, OutlinePass, RenderPass, ShaderPass} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
 import Stats from 'three/addons/libs/stats.module.js';
+import {CustomBlending, Vector2} from "three";
 
 export class ArSessionManager {
     sceneManager;
@@ -15,12 +16,15 @@ export class ArSessionManager {
     shadowMapSize;
     controls;
 
-
     #isArRunning;
 
     domOverlay;
     domWidth;
     domHeight;
+
+    composer
+    renderPass
+    outlinePass
 
     constructor(json) {
         this.shadowMapSize = 4096
@@ -34,7 +38,15 @@ export class ArSessionManager {
         this.arRenderer = new ArRenderer(this.shadowMapSize,1);
         this.labelRenderer = new LabelRenderer();
 
-        this.sceneManager.onSceneChanged = function(){this.labelRenderer.clear()}.bind(this);
+        this.sceneManager.onSceneChanged = function(){
+            this.labelRenderer.clear()
+            if(this.renderPass)
+                this.renderPass.scene = this.sceneManager.active.value
+            if(this.outlinePass)
+                this.outlinePass.scene = this.sceneManager.active.value
+        }.bind(this);
+
+        this.composer = new EffectComposer(this.arRenderer)
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
     }
@@ -50,6 +62,13 @@ export class ArSessionManager {
 
         this.domOverlay = arOverlay;
         this.arRenderer.setAnimationLoop(this.onXrFrame.bind(this));
+
+        this.renderPass = new RenderPass(this.sceneManager.active.value, this.arCamera)
+        this.composer.addPass(this.renderPass);
+
+        this.outlinePass = new OutlinePass(new Vector2(this.domWidth, this.domHeight), this.sceneManager.active.value, this.arCamera)
+        this.outlinePass.overlayMaterial.blending = CustomBlending
+        this.composer.addPass(this.outlinePass);
     }
 
     #resetCameraPosition(){
@@ -87,6 +106,7 @@ export class ArSessionManager {
         this.arRenderer.setDomSize(width, height);
         this.labelRenderer.setDomSize(width, height);
         this.arCamera.setDomSize(width, height);
+        this.composer.setSize(width, height);
     }
 
 
@@ -152,6 +172,7 @@ export class ArSessionManager {
         this.controls.update();
 
         this.arRenderer.render(this.sceneManager.active.value, this.arCamera);
+        this.composer.render()
 
         if(this.sceneManager.active.value.hasLabels.value && this.labelRenderer.isEnabled.value) {
             this.labelRenderer.render(this.sceneManager.active.value, this.arCamera);

@@ -199,6 +199,10 @@ defineExpose({element})
             name: 'email',
             type: 'text',
             required: true,
+            validator: (value) => {
+              const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+              return EMAIL_REGEX.test(value)
+            }
           },
           {
             name: 'admin',
@@ -243,6 +247,10 @@ defineExpose({element})
             type: 'text',
             placeholder: 'Jean@gmail.com',
             required: true,
+            validator: (value) => {
+              const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+              return EMAIL_REGEX.test(value)
+            }
           },
           {
             name: 'password',

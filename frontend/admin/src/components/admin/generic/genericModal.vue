@@ -34,7 +34,7 @@ function validateFields() {
   for(const field of props.fields) {
     const elem = fieldRefs.value[field.name];
 
-    if(field.required && !elem.value) {
+    if(field.required && (!elem.value || elem.value?.trim?.()?.length === 0)) {
       ok = false;
       elem.classList.add("error")
       elem.setCustomValidity(t("admin.required"))

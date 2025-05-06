@@ -264,6 +264,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
             name: 'calibrationMessage',
             type: 'text',
             placeholder: 'Appuyer n\'importe où pour afficher le modèle',
+            required: true,
           },
           {
             name: 'unit',
@@ -339,6 +340,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
             name: 'calibrationMessage',
             type: 'text',
             placeholder: 'Appuyer n\'importe où pour afficher le modèle',
+            required: true,
           },
           {
             name: 'unit',

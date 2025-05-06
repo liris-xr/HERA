@@ -1,11 +1,12 @@
 #include "lightProbe.hpp"
 
-LightProbe::LightProbe(Vector pos) {
-    this->position = position;
+LightProbe::LightProbe(Point pos,unsigned int id) {
+    this->position = pos;
+    this->id = id;
 }
 
-float * LightProbe::getBasis(Vector direction) {
-    float shBasis[9];
+float * getBasis(Vector direction) {
+    float * shBasis = new float[9];
 
     // direction is assumed to be unit length
     float x = direction.x, y = direction.y, z = direction.z;
@@ -28,13 +29,13 @@ float * LightProbe::getBasis(Vector direction) {
     return shBasis;
 }
 
-void LightProbe::add(LightProbe lp) {
+void LightProbe::add(const LightProbe & lp) {
     for ( int i = 0; i < 9; i ++ ) {
         this->coefficients[ i ] = this->coefficients[ i ] + lp.coefficients[ i ];
     }
 }
 
-void LightProbe::addScaled(LightProbe lp, float s) {
+void LightProbe::addScaled(const LightProbe & lp,const float s) {
     for ( int i = 0; i < 9; i ++ ) {
         this->coefficients[ i ] = this->coefficients[ i ] + (lp.coefficients[ i ]*s);
     }

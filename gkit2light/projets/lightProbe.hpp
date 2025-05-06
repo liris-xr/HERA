@@ -3,20 +3,22 @@
 
 #include "vec.h"
 
+float * getBasis(Vector direction);
 
 // Source : https://github.com/mrdoob/three.js/blob/master/src/math/SphericalHarmonics3.js
 class LightProbe {
     public:
         Point position;
         Vector coefficients[9];
+        unsigned int id;
 
-        LightProbe(Vector pos);
+        
+        LightProbe(Point pos, unsigned int id);
 
-        float * getBasis(Vector direction);
 
-        void add(LightProbe lp);
+        void add(const LightProbe & lp);
 
-        void addScaled(LightProbe lp, float s);
+        void addScaled(const LightProbe & lp,const float s);
 };
 
 #endif

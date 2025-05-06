@@ -31,8 +31,6 @@ function handleFile(event, fieldName) {
 function validateFields() {
   let ok = true;
 
-  console.log(fieldRefs.value)
-
   for(const field of props.fields) {
     const elem = fieldRefs.value[field.name];
 

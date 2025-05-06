@@ -49,8 +49,6 @@ onMounted(async () => {
     assets: assetManager,
     labels: labelManager
   }
-
-  console.log(sections.value)
 })
 
 </script>
@@ -92,6 +90,7 @@ onMounted(async () => {
 
           @new-scene="projectManager.newScene($event)"
           @suppr-scene="projectManager.supprScene($event)"
+          @editScene="projectManager.editScene($event)"
       />
 
       <asset-manager

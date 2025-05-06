@@ -34,7 +34,6 @@ const totalPages = ref(1)
 
 
 function newScene(scene) {
-  console.log("new", scene)
   const index = projects.value.findIndex(project => project.id === scene.projectId)
 
   if(index !== -1)
@@ -42,10 +41,8 @@ function newScene(scene) {
 }
 
 function supprScene(scene) {
-  console.log("suppr", scene)
   const index = projects.value.findIndex(project => project.id === scene.projectId)
 
-  console.log("before", projects.value[index].scenes)
   if(index !== -1) {
     const project = projects.value[index]
     const index2 = project.scenes.findIndex(s => s.id === scene.id)
@@ -53,7 +50,17 @@ function supprScene(scene) {
     projects.value[index].scenes.splice(index2, 1)
   }
 
-  console.log("after", projects.value[index].scenes)
+}
+
+function editScene(scene) {
+  const index = projects.value.findIndex(project => project.id === scene.projectId)
+
+  if(index !== -1) {
+    const project = projects.value[index]
+    const index2 = project.scenes.findIndex(s => s.id === scene.id)
+
+    projects.value[index].scenes[index2] = { ...scene }
+  }
 }
 
 function createScene() {
@@ -64,7 +71,7 @@ function deleteScene(scene) {
   emit("deleteScene", scene)
 }
 
-async function editScene(sceneId) {
+async function askSceneEdit(sceneId) {
   const res = await fetch(`${ENDPOINT}scenes/${sceneId}`,{
     method: "GET",
     headers: {
@@ -198,7 +205,7 @@ onMounted(async () => {
 })
 
 
-defineExpose({projects, newScene, supprScene, element})
+defineExpose({projects, newScene, supprScene, editScene, element})
 
 </script>
 
@@ -283,7 +290,7 @@ defineExpose({projects, newScene, supprScene, element})
               {{scene.title}}
             </span>
           <div class="actions">
-            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editScene(scene.id)"/>
+            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="askSceneEdit(scene.id)"/>
             <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteScene(scene)"/>
           </div>
         </div>

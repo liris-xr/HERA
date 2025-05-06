@@ -8,8 +8,6 @@ import router from "@/router/index.js";
 
 const {isAuthenticated, userData, logout } = useAuthStore()
 
-console.log(isAuthenticated.value)
-
 function logoutAndRedirect(){
   logout()
   if(router.currentRoute.value.name === "home") {

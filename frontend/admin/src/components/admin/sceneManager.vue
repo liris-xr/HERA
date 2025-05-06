@@ -23,7 +23,7 @@ const error = ref(false)
 const emit = defineEmits([
   'createAsset', 'editAsset', 'deleteAsset',
   'createLabel', 'editLabel', 'deleteLabel',
-  'newScene', 'supprScene'])
+  'newScene', 'supprScene', 'editScene'])
 
 const table = ref(null)
 
@@ -161,6 +161,8 @@ async function confirmSceneEdit() {
     const index = scenes.value.findIndex(scene => scene.id === data.id)
     if(index !== -1)
       scenes.value[index] = { ...data }
+
+    emit("editScene", data)
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT

@@ -25,7 +25,7 @@ export class SocketActionManager {
         if(index !== -1)
             this.arSessionManager.outlinePass.selectedObjects.splice(index, 1)
         else
-            this.arSessionManager.outlinePass.selectedObjects = [asset.mesh];
+            this.arSessionManager.outlinePass.selectedObjects.push(asset.mesh);
 
         console.log(index, this.arSessionManager.outlinePass.selectedObjects);
         return;

@@ -270,6 +270,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
             name: 'unit',
             type: 'text',
             placeholder: 'Année',
+            required: true,
           },
           {
             name: 'published',
@@ -346,6 +347,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
             name: 'unit',
             type: 'text',
             placeholder: 'Année',
+            required: true,
           },
           {
             name: 'published',

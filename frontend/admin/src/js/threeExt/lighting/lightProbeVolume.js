@@ -114,6 +114,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
 
     shTextures;
     invalidityTexture; // Source : https://advances.realtimerendering.com/s2022/SIGGRAPH2022-Advances-Enemies-Ciardi%20et%20al.pdf
+    distanceFromGeometryTexture;
 
     scene;
 
@@ -137,6 +138,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         this.probes = [];
         this.shTextures = [];
         this.invalidityTexture = new Float32Array(width*depth*height*density*density*density)
+        this.distanceFromGeometryTexture = new Float32Array(width*depth*height*density*density*density)
 
         this.ls = new LightSources();
         this.ls.initLightSources(this.scene);
@@ -271,9 +273,13 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         }
     }
 
-    updateIndirectLighting(probeId,origin,coefficients,nbDirectSamples,nbIndirectSamples,directWeight,indirectWeight) {
+    updateIndirectLighting(probe,probeId,origin,coefficients,nbDirectIndirectSamples,nbIndirectSamples,directIndirectWeight,indirectWeight,shCoefficients,nbDirectSamples,directWeight) {
         // We shoot nbSamble ray in random directions
         let totalIntersection = 0;
+        let distanceFromGeometry = Infinity;
+        let directionOfGeometry = new THREE.Vector3();
+
+
         for(let i = 0;i<nbIndirectSamples;i++) {
             const dir = this.getRandomSphereDirection(origin);
     
@@ -282,6 +288,10 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
             const closestIntersect = this.getClosestIntersection();
             
             if(closestIntersect.distance < Infinity) {
+                if(closestIntersect.distance < distanceFromGeometry) {
+                    distanceFromGeometry = closestIntersect.distance;
+                    directionOfGeometry = dir;
+                }
                 totalIntersection++;
                 const positionBufferAttribute = closestIntersect.object.geometry.getAttribute("position").clone();
                 positionBufferAttribute.applyMatrix4(closestIntersect.object.matrix)
@@ -297,7 +307,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                     var lightReflectorColor = new THREE.Vector3()
                     const color = closestIntersect.object.material.color;
                     const lightReflectorOrigin = closestIntersect.point.clone().add(intersectionNormal.multiplyScalar(0.01))
-                    for(let n = 0;n<nbDirectSamples;n++) {
+                    for(let n = 0;n<nbDirectIndirectSamples;n++) {
                         const dirLightSource = this.getRandomDirectionTowardLightSource(lightReflectorOrigin);
                         this.raycaster.set(lightReflectorOrigin,dirLightSource); 
 
@@ -311,18 +321,18 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                                 )
                             ) {
                                 
-                                lightReflectorColor.x += color.r * directWeight; 
-                                lightReflectorColor.y += color.g * directWeight; 
-                                lightReflectorColor.z += color.b * directWeight; 
+                                lightReflectorColor.x += color.r * directIndirectWeight; 
+                                lightReflectorColor.y += color.g * directIndirectWeight; 
+                                lightReflectorColor.z += color.b * directIndirectWeight; 
                             }
                         }
                     }
                     
                     // We update our light probes coefficients depending on color, roughness and received light from the light source
                     for ( let j = 0; j < 9; j ++ ) {
-                        coefficients[ j ].x += (shBasis[j] * lightReflectorColor.x * closestIntersect.object.material.roughness) * indirectWeight * 20;
-                        coefficients[ j ].y += (shBasis[j] * lightReflectorColor.y * closestIntersect.object.material.roughness) * indirectWeight * 20;
-                        coefficients[ j ].z += (shBasis[j] * lightReflectorColor.z * closestIntersect.object.material.roughness) * indirectWeight * 20;
+                        coefficients[ j ].x += (shBasis[j] * lightReflectorColor.x * closestIntersect.object.material.roughness) * indirectWeight * 5;
+                        coefficients[ j ].y += (shBasis[j] * lightReflectorColor.y * closestIntersect.object.material.roughness) * indirectWeight * 5;
+                        coefficients[ j ].z += (shBasis[j] * lightReflectorColor.z * closestIntersect.object.material.roughness) * indirectWeight * 5;
                     }
 
                 }
@@ -330,11 +340,30 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         }
         if(totalIntersection) {
             this.invalidityTexture[probeId] /= totalIntersection;
+            if(this.invalidityTexture[probeId] > 0.5) {
+
+                probe.position.add(directionOfGeometry.negate().multiplyScalar(distanceFromGeometry*1.1));
+
+                for ( let j = 0; j < 9; j ++ ) {
+                    shCoefficients[ j ].x = 0;
+                    shCoefficients[ j ].y = 0;
+                    shCoefficients[ j ].z = 0;
+                    coefficients[ j ].x = 0;
+                    coefficients[ j ].y = 0;
+                    coefficients[ j ].z = 0;
+                }
+                for(let i = 0;i<nbDirectSamples;i++) {
+                    this.updateDirectLighting(probe.position,shCoefficients,directWeight);
+                }
+                this.invalidityTexture[probeId] = 0;
+                this.updateIndirectLighting(probe,probeId,probe.position,coefficients,nbDirectIndirectSamples,nbIndirectSamples,directIndirectWeight,indirectWeight,shCoefficients,nbDirectSamples,directWeight);
+            }
         }
+        this.distanceFromGeometryTexture[probeId] = distanceFromGeometry;
     }
 
     addNeighbour(probeId,neighbours) {
-        if(probeId >= 0 && probeId <= this.probes.length) {
+        if(probeId >= 0 && probeId < this.probes.length) {
             neighbours.push(this.probes[probeId])
         }
     }
@@ -413,7 +442,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                 }
                 newSphericalHarmonics.scale(1/shAmount)
 
-                probe.sh.lerp(newSphericalHarmonics,invalidity);
+                probe.sh = newSphericalHarmonics;
              }
         }
     }
@@ -448,10 +477,21 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                 this.updateDirectLighting(probe.position,shCoefficients,directWeight);
             }
             for(let j = 0;j<bounces;j++) {
-                this.updateIndirectLighting(probeId,probe.position,shCoefficientsIndirect,directIndirectSamples,indirectSamples,directIndirectWeight,indirectWeight)
+                this.updateIndirectLighting(probe,probeId,probe.position,shCoefficients,directIndirectSamples,indirectSamples,directIndirectWeight,indirectWeight,shCoefficients,directSamples,directWeight)
             }
 
             probe.sh = sh
+
+            // if(this.invalidityTexture[probeId] > 0.2)  {
+            //     probe.setColor(new THREE.Color(this.invalidityTexture[probeId],0,0));
+            //     probe.addSphereToScene(this.scene)
+            // }
+
+            // if(this.distanceFromGeometryTexture[probeId] < 0.1)  {
+            //     probe.setColor(new THREE.Color(this.invalidityTexture[probeId],0,0));
+            //     probe.addSphereToScene(this.scene)
+            // }
+
             // sh 0.0 ------- 1.0 shIndirect
             // probe.sh = sh.lerp(shIndirect,0.4);
         }
@@ -468,5 +508,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
             }
         }
         this.scene.shTextures = this.shTextures;
+        this.scene.invalidityTexture = this.invalidityTexture;
+        this.scene.distanceFromGeometryTexture = this.distanceFromGeometryTexture;
     }
 }

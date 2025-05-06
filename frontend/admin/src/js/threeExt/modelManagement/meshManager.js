@@ -6,6 +6,7 @@ const vertexShader = `
 #define STANDARD
 varying vec3 vViewPosition;
 out vec4 wPosition; 
+out vec3 wNormal;
 #ifdef USE_TRANSMISSION
 	varying vec3 vWorldPosition;
 #endif
@@ -43,6 +44,8 @@ void main() {
 	#include <logdepthbuf_vertex>
 	#include <clipping_planes_vertex>
 	vViewPosition = - mvPosition.xyz;
+	wNormal = objectNormal; 
+
 	#include <worldpos_vertex>
 	#include <shadowmap_vertex>
 	#include <fog_vertex>
@@ -75,12 +78,16 @@ uniform sampler3D sh6;
 uniform sampler3D sh7;
 uniform sampler3D sh8;
 
+uniform sampler3D invalidity;
+uniform sampler3D distanceFromGeometry;
+
 uniform vec3 lpvCenter;
 uniform float lpvWidth;
 uniform float lpvDepth;
 uniform float lpvHeight;
 
 in vec4 wPosition;
+in vec3 wNormal;
 #ifdef IOR
 	uniform float ior;
 #endif
@@ -206,11 +213,27 @@ void main() {
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
+
+	
 	vec3 texcoord = vec3(
-							(((wPosition.x-lpvCenter.x) / (lpvWidth/2.)) + 1.) / 2.,
-							(((wPosition.z-lpvCenter.z) / (lpvDepth/2.)) + 1.) / 2.,
-							(((wPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
-						);
+		(((wPosition.x-lpvCenter.x) / (lpvWidth/2.)) + 1.) / 2.,
+		(((wPosition.z-lpvCenter.z) / (lpvDepth/2.)) + 1.) / 2.,
+		(((wPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
+		);
+
+	// vec3 displacedWorldPosition = wPosition.xyz;
+	// vec3 n = vec3(wNormal.x,wNormal.z,-wNormal.y);
+	// if(texture(invalidity,texcoord).r > 0.0) {
+	// 	vec3 displacement = normalize(n)*texture(distanceFromGeometry,texcoord).r;
+	// 	displacedWorldPosition += displacement;
+	// }
+
+	// texcoord = vec3(
+	// 	(((displacedWorldPosition.x-lpvCenter.x) / (lpvWidth/2.)) + 1.) / 2.,
+	// 	(((displacedWorldPosition.z-lpvCenter.z) / (lpvDepth/2.)) + 1.) / 2.,
+	// 	(((displacedWorldPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
+	// 	);
+		
 	vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 		texture(sh1,texcoord).rgb,
 		texture(sh2,texcoord).rgb,
@@ -222,18 +245,10 @@ void main() {
 		texture(sh8,texcoord).rgb
 	);
 	
-	// vec3 probeIrradiance = vec3(0);
-	// float step = 0.0625;
-	// for(float i = 0.;i<1.;i += step) {
-	// 	for(float j = 0.;j<1.;j = j + step) {
-	// 		vec3 dir = getRandomHemisphereDirection(geometryNormal,i,j);
-	// 		probeIrradiance += getLightProbeIrradiance(interpolatedLightProbe,dir);
-	// 	}
-	// }
-	// probeIrradiance /= 256.;
 
 	// outgoingLight = material.diffuseColor * probeIrradiance;
 	outgoingLight = material.diffuseColor * getLightProbeIrradiance(interpolatedLightProbe,normal);
+	// outgoingLight = n;
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>
@@ -283,6 +298,27 @@ export class MeshManager {
 					
 					shader.uniforms["sh"+i] = {value: sh3DTexture};
 				}
+
+				const invalidityTexture = new THREE.Data3DTexture(scene.invalidityTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
+				invalidityTexture.format = THREE.RedFormat
+				invalidityTexture.magFilter = THREE.LinearFilter;
+				invalidityTexture.type = THREE.FloatType;
+				invalidityTexture.wrapS = THREE.ClampToEdgeWrapping
+				invalidityTexture.wrapT = THREE.ClampToEdgeWrapping
+				invalidityTexture.wrapR = THREE.ClampToEdgeWrapping
+				invalidityTexture.needsUpdate = true;
+				shader.uniforms["invalidity"] = {value:invalidityTexture}
+
+				const distanceFromGeometryTexture = new THREE.Data3DTexture(scene.distanceFromGeometryTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
+				distanceFromGeometryTexture.format = THREE.RedFormat
+				distanceFromGeometryTexture.magFilter = THREE.LinearFilter;
+				distanceFromGeometryTexture.type = THREE.FloatType;
+				distanceFromGeometryTexture.wrapS = THREE.ClampToEdgeWrapping
+				distanceFromGeometryTexture.wrapT = THREE.ClampToEdgeWrapping
+				distanceFromGeometryTexture.wrapR = THREE.ClampToEdgeWrapping
+				distanceFromGeometryTexture.needsUpdate = true;
+				shader.uniforms["distanceFromGeometry"] = {value:distanceFromGeometryTexture}
+
 				shader.uniforms.lpvCenter = {value : scene.shTexturesCenter};
 				shader.uniforms.lpvWidth = {value : scene.lpvWidth};
 				shader.uniforms.lpvDepth = {value : scene.lpvDepth};

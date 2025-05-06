@@ -16,25 +16,28 @@ function scrollTo(section) {
 
 }
 
+function handleScroll() {
+  for(const fieldName of Object.keys(props.sections)) {
+    const section = props.sections[fieldName];
+    const el = section.element
+
+    const top = el.offsetTop
+    const height = el.offsetHeight
+
+    if(window.scrollY + 125 >= top && window.scrollY + 125 <= top + height) {
+      activeSection.value = el.getAttribute("section")
+    }
+
+  }
+}
+
 onMounted(() => {
   for (const section of Object.keys(props.sections)) {
     props.sections[section].element.setAttribute("section", section)
   }
 
-  window.addEventListener("scroll", (event) => {
-    for(const fieldName of Object.keys(props.sections)) {
-      const section = props.sections[fieldName];
-      const el = section.element
-
-      const top = el.offsetTop
-      const height = el.offsetHeight
-
-      if(window.scrollY + 125 >= top && window.scrollY + 125 <= top + height) {
-        activeSection.value = el.getAttribute("section")
-      }
-
-    }
-  })
+  window.addEventListener("scroll", handleScroll)
+  handleScroll()
 
 })
 

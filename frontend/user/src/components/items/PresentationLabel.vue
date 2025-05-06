@@ -25,7 +25,7 @@ const displayIcon = computed(() => {
           theme="text"
           class="iconAction"
           :hover-effect="true"
-          @click="console.log(label.hidden.value); emit('toggleDisplay')"/>
+          @click="emit('toggleDisplay')"/>
     </div>
   </div>
 </template>

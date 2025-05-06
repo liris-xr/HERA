@@ -16,6 +16,7 @@ import {SocketActionManager} from "@/js/socket/socketActionManager.js";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import PresentationAsset from "@/components/items/PresentationAsset.vue";
 import PresentationLabel from "@/components/items/PresentationLabel.vue";
+import PresentationPreset from "@/components/items/PresentationPreset.vue";
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -122,7 +123,7 @@ function highlight(asset) {
 }
 
 function toggleAssetVisibility(asset) {
-  socket.send("presentation:action:toggleAsset", { assetId: asset.id, value: !asset.hidden.value ?? false })
+  socket.send("presentation:action:toggleAsset", { assetId: asset.id, value: asset.hidden.value ?? false })
 }
 
 function toggleLabelVisibility(label) {
@@ -137,6 +138,25 @@ function setActiveAnimation(asset, animation) {
   socket.send("presentation:action:setActiveAnimation", { assetId: asset.id, value: animation })
 }
 
+function resetScene() {
+  socket.send("presentation:action:reset", {})
+}
+
+function applyPreset(preset) {
+  //TODO
+  for(const action of preset.actions) {
+    console.log(action)
+    socket.send(action.event, ...action.args)
+  }
+}
+
+function showAll() {
+  socket.send("presentation:action:showAll", {})
+}
+
+function hideAll() {
+  socket.send("presentation:action:hideAll", {})
+}
 
 const connectedText = computed(() => {
   if(socket.state.connected)
@@ -151,6 +171,49 @@ const projectUrl = computed(() => {
   })
   return `${window.location.origin}${href}?presentation=${presentationId.value}`
 })
+
+const presetsExample = [
+  {
+    bigText: "1",
+    text: "Mise en place",
+    actions: [
+      {event: "presentation:action:reset", args: [{}]},
+    ]
+  },
+  {
+    bigText: "🛋",
+    text: "canapé",
+    actions: [
+      {event: "presentation:action:reset", args: [{}]},
+      {event: "presentation:action:hideAll", args: [{}]},
+      {event: "presentation:action:toggleAsset", args: [{assetId: "df389ba9-25d4-47c7-b754-6fb291ed722f", value: true}]}
+    ]
+  },
+  {
+    bigText: "⬛",
+    text: "cube",
+    actions: [
+      {event: "presentation:action:reset", args: [{}]},
+      {event: "presentation:action:hideAll", args: [{}]},
+      {event: "presentation:action:toggleAsset", args: [{assetId: "fc73c9cb-4d3b-4072-8502-07e8eb1e17a0", value: true}]},
+      {event: "presentation:action:highlight", args: [{assetId: "fc73c9cb-4d3b-4072-8502-07e8eb1e17a0", value: true}]}
+    ]
+  },
+  {
+    bigText: "ME",
+    text: "Mise en évidence",
+    actions: [
+      {event: "presentation:action:reset", args: [{}]}
+    ]
+  },
+  {
+    bigText: "IDFUSODFBGYUOUI",
+    text: "plein de texte pour observer le comportement de l'interface",
+    actions: [
+      {event: "presentation:action:reset", args: [{}]}
+    ]
+  }
+]
 
 </script>
 
@@ -211,16 +274,56 @@ const projectUrl = computed(() => {
           <button ref="submitMessage">Envoyer</button>
         </div>
 
-        <section class="sceneSelection">
-          <label for="sceneSelection">{{$t("presentation.currentScene")}}</label>
-          <select @change="setScene" id="sceneSelection" name="sceneSelection">
-            <option
-                v-for="scene in arView?.arSessionManager.sceneManager.scenes"
-                :value="scene.sceneId"
-            >
-              {{scene.title}}
-            </option>
-          </select>
+        <section class="scene">
+          <section class="sceneSelection">
+            <label for="sceneSelection">{{$t("presentation.currentScene")}}</label>
+            <select @change="setScene" id="sceneSelection" name="sceneSelection">
+              <option
+                  v-for="scene in arView?.arSessionManager.sceneManager.scenes"
+                  :value="scene.sceneId" >
+                {{scene.title}}
+              </option>
+            </select>
+          </section>
+
+          <filled-button-view
+              :disabled="!project.published"
+
+              icon="/icons/restart.svg"
+              :text="$t('presentation.controls.reset')"
+              @click="resetScene" />
+
+          <div class="inline-flex">
+            <filled-button-view
+                :disabled="!project.published"
+
+                theme="success"
+                icon="/icons/display_on.svg"
+                :text="$t('presentation.controls.showAll')"
+                @click="showAll" />
+
+
+            <filled-button-view
+                :disabled="!project.published"
+
+                theme="danger"
+                icon="/icons/display_off.svg"
+                :text="$t('presentation.controls.hideAll')"
+                @click="hideAll" />
+          </div>
+        </section>
+
+        <section>
+          <h3>{{ $t("presentation.sections.presets.title") }}</h3>
+          <div class="presets">
+
+            <presentation-preset
+                v-for="preset in presetsExample"
+                :preset="preset"
+
+                @triggered="applyPreset(preset)" />
+
+          </div>
         </section>
 
         <section>
@@ -277,6 +380,18 @@ const projectUrl = computed(() => {
 
 <style scoped>
 
+.inline-flex {
+  display: flex;
+  gap: 10px;
+}
+
+.presets {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .connectionInfos {
   margin: 5px;
 }
@@ -323,7 +438,7 @@ section > h3 {
 }
 
 section:has(>.item) {
-  margin: 15px 0 15px 0;
+  margin: 15px 15px 15px 0;
 }
 
 label + select {
@@ -339,6 +454,13 @@ label + select {
 .sceneSelection label {
   text-decoration: underline;
   font-size: 1.2em;
+}
+
+.scene {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
 }
 
 @media only screen and (max-width: 600px) {

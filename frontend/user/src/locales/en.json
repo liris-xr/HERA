@@ -94,9 +94,15 @@
         "true": "Connected",
         "false": "Disconnected"
       },
-      "showQrcode": "Show the QR code"
+      "showQrcode": "Show the QR code",
+      "reset": "Reset the scene",
+      "showAll": "Show all",
+      "hideAll": "Hide all"
     },
     "sections": {
+      "presets": {
+        "title": "Presets"
+      },
       "assets": {
         "title": "Assets"
       },

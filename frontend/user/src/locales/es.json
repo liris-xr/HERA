@@ -95,9 +95,15 @@
         "true": "Connecté",
         "false": "Non connecté"
       },
-      "showQrcode": "Afficher le QR code"
+      "showQrcode": "Afficher le QR code",
+      "reset": "Réinitialiser la scène",
+      "showAll": "Tout afficher",
+      "hideAll": "Tout masquer"
     },
     "sections": {
+      "presets": {
+        "title": "Presets"
+      },
       "assets": {
         "title": "Assets"
       },

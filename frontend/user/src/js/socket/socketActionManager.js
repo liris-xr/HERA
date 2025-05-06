@@ -19,15 +19,15 @@ export class SocketActionManager {
         if(!asset) return
 
 
-        const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.mesh)
-
-        if(index !== -1)
-            this.arSessionManager.outlinePass.selectedObjects.splice(index, 1)
-        else
-            this.arSessionManager.outlinePass.selectedObjects.push(asset.mesh);
-
-        console.log(this.arSessionManager.outlinePass)
-        return;
+        // const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.mesh)
+        //
+        // if(index !== -1)
+        //     this.arSessionManager.outlinePass.selectedObjects.splice(index, 1)
+        // else
+        //     this.arSessionManager.outlinePass.selectedObjects.push(asset.mesh);
+        //
+        // console.log(this.arSessionManager.outlinePass)
+        // return;
 
 
         asset.highlight.value = data.value
@@ -53,7 +53,7 @@ export class SocketActionManager {
 
         if(!asset) return
 
-        asset.hidden.value = data.value
+        asset.hidden.value = !data.value
         asset.mesh.visible = !asset.hidden.value
     }
 
@@ -96,6 +96,39 @@ export class SocketActionManager {
         if(!label) return
 
         label.setHidden(!data.value)
+    }
+
+    reset() {
+        const scene = this.arSessionManager.sceneManager.active
+
+        for(const asset of scene.getAssets()) {
+            this.highlight({assetId: asset.id, value: false})
+            this.toggleAsset({assetId: asset.id, value: true})
+        }
+
+        for(const label of scene.labelPlayer.getLabels()) {
+            this.toggleLabel({labelId: label.id, value: true})
+        }
+    }
+
+    hideAll() {
+        const scene = this.arSessionManager.sceneManager.active
+
+        for(const asset of scene.getAssets())
+            this.toggleAsset({assetId: asset.id, value: false})
+
+        for(const label of scene.labelPlayer.getLabels())
+            this.toggleLabel({labelId: label.id, value: false})
+    }
+
+    showAll() {
+        const scene = this.arSessionManager.sceneManager.active
+
+        for(const asset of scene.getAssets())
+            this.toggleAsset({assetId: asset.id, value: true})
+
+        for(const label of scene.labelPlayer.getLabels())
+            this.toggleLabel({labelId: label.id, value: true})
     }
 
 

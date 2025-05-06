@@ -19,15 +19,15 @@ export class SocketActionManager {
         if(!asset) return
 
 
-        // const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.mesh)
-        //
-        // if(index !== -1)
-        //     this.arSessionManager.outlinePass.selectedObjects.splice(index, 1)
-        // else
-        //     this.arSessionManager.outlinePass.selectedObjects.push(asset.mesh);
-        //
-        // console.log(this.arSessionManager.outlinePass)
-        // return;
+        const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.mesh)
+
+        if(index !== -1)
+            this.arSessionManager.outlinePass.selectedObjects.splice(index, 1)
+        else
+            this.arSessionManager.outlinePass.selectedObjects.push(asset.mesh);
+
+        console.log(this.arSessionManager.outlinePass)
+        return;
 
 
         asset.highlight.value = data.value

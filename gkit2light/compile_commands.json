@@ -1,0 +1,30 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-DDEBUG",
+      "-I.",
+      "-Isrc/gKit",
+      "-g",
+      "-std=c++11",
+      "-mtune=native",
+      "-march=native",
+      "-W",
+      "-Wall",
+      "-Wextra",
+      "-Wsign-compare",
+      "-Wno-unused-parameter",
+      "-Wno-unused-function",
+      "-Wno-unused-variable",
+      "-pipe",
+      "-g",
+      "-c",
+      "-o",
+      "obj/debug/base/wavefront.o",
+      "src/gKit/wavefront.cpp"
+    ],
+    "directory": "/home/amelia/HERA-Baking/gkit2light",
+    "file": "/home/amelia/HERA-Baking/gkit2light/src/gKit/wavefront.cpp",
+    "output": "/home/amelia/HERA-Baking/gkit2light/obj/debug/base/wavefront.o"
+  }
+]

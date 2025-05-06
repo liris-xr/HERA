@@ -1,0 +1,10 @@
+bin/*.dll
+bin/*.exe
+bin/*.pdb
+build
+*.make
+*.cbp
+
+*.workspace
+
+Makefile

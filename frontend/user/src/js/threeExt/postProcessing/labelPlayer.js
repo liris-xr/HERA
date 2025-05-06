@@ -85,7 +85,7 @@ export class LabelPlayer extends RenderLoopInterface{
     }
 
     getLabels(){
-        return this.#labels;
+        return shallowReactive(this.#labels);
     }
 
     findLabelById(id) {

@@ -18,7 +18,6 @@ export class SocketActionManager {
 
         if(!asset) return
 
-        console.log(asset.mesh)
 
         const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.mesh)
 
@@ -27,7 +26,7 @@ export class SocketActionManager {
         else
             this.arSessionManager.outlinePass.selectedObjects.push(asset.mesh);
 
-        console.log(index, this.arSessionManager.outlinePass.selectedObjects);
+        console.log(this.arSessionManager.outlinePass)
         return;
 
 

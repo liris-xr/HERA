@@ -25,7 +25,7 @@ const displayIcon = computed(() => {
           theme="text"
           class="iconAction"
           :hover-effect="true"
-          @click="emit('toggleDisplay')"/>
+          @click="console.log(label.hidden.value); emit('toggleDisplay')"/>
     </div>
   </div>
 </template>
@@ -44,6 +44,7 @@ const displayIcon = computed(() => {
 
 .item > p {
   max-width: 70%;
+  word-break: break-all;
 }
 
 .item select {

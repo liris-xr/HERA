@@ -126,7 +126,7 @@ function toggleAssetVisibility(asset) {
 }
 
 function toggleLabelVisibility(label) {
-  socket.send("presentation:action:toggleLabel", { labelId: label.id, value: !label.label.visible })
+  socket.send("presentation:action:toggleLabel", { labelId: label.id, value: label.hidden.value })
 }
 
 function setScene(event) {
@@ -153,6 +153,7 @@ const projectUrl = computed(() => {
 })
 
 </script>
+
 <template>
   <main>
     <section>

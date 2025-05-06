@@ -20,7 +20,7 @@ const loading = ref(false)
 const error = ref(false)
 
 
-const emit = defineEmits(["newAsset", "supprAsset"])
+const emit = defineEmits(["newAsset", "supprAsset", "editAsset"])
 
 const table = ref(null)
 
@@ -102,6 +102,8 @@ async function confirmAssetEdit() {
     const index = assets.value.findIndex(asset => asset.id === data.id)
     if(index !== -1)
       assets.value[index] = { ...editingAsset.value }
+
+    emit("editAsset", editingAsset.value)
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT

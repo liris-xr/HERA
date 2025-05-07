@@ -18,6 +18,7 @@ export class Asset extends SceneElementInterface{
     animations
     animationMixer
     activeAnimation
+    playingAction
 
     #error;
 
@@ -64,14 +65,12 @@ export class Asset extends SceneElementInterface{
         const manager = ObjectManager.getInstance();
         let object = await manager.load(this.sourceUrl);
         this.#error = object.hasError();
-        this.object = object.object.clone();
+        this.object = object.object;
         this.object.position.set(this.position.x, this.position.y, this.position.z);
         this.object.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
         this.object.scale.set(this.scale.x, this.scale.y, this.scale.z);
         this.object.castShadow = true;
         this.object.receiveShadow = true;
-
-        console.log(this.object)
 
         if(this.object?.animations?.length > 0) {
             this.animationMixer = new THREE.AnimationMixer(this.object)
@@ -89,8 +88,8 @@ export class Asset extends SceneElementInterface{
                     console.error("Animation " + this.activeAnimation + " not found for asset " + this.name)
                 return
             }
-            console.log(baseAnimation)
             baseAnimation.play()
+            this.playingAction = baseAnimation
         }
     }
 

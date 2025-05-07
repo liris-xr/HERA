@@ -184,8 +184,8 @@ export class ArSessionManager {
         this.sceneManager.onXrFrame(time, frame, this.referenceSpace, this.arCamera.position);
         this.controls.update();
 
-        // this.arRenderer.render(this.sceneManager.active.value, this.arCamera);
-        this.composer.render()
+        this.arRenderer.render(this.sceneManager.active.value, this.arCamera);
+        // this.composer.render()
 
         if(this.sceneManager.active.value.hasLabels.value && this.labelRenderer.isEnabled.value) {
             this.labelRenderer.render(this.sceneManager.active.value, this.arCamera);

@@ -48,7 +48,6 @@ const loginUser = async () => {
     isSubmitting.value = false;
   }
 };
-
 </script>
 
 <template>
@@ -100,8 +99,6 @@ const loginUser = async () => {
             type="submit"
         />
       </form>
-
-
 
       <span>
         {{$t("login.noAccount")}}<br>

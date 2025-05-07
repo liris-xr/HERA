@@ -2,7 +2,7 @@ import express from 'express'
 import {baseUrl} from "./baseUrl.js";
 import {ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
-import authMiddleware from "../middlewares/auth.js";
+import authMiddleware, {optionnalAuthMiddleware} from "../middlewares/auth.js";
 import {
     deleteFile,
     deleteFolder,
@@ -11,15 +11,31 @@ import {
     getUpdatedPath,
     uploadCover
 } from "../utils/fileUpload.js";
+import {Op} from "sequelize";
 
 
 const router = express.Router()
 
 const PAGE_LENGTH = 20;
 
-router.get(baseUrl+'projects/:page', async (req, res) => {
+router.get(baseUrl+'projects/:page', optionnalAuthMiddleware, async (req, res) => {
     const page = parseInt(req.params.page);
     try{
+
+        let where = {}
+        if(req.user)
+            where = {
+                [Op.or]: {
+                    published: true,
+                    userId: req.user.id,
+                }
+            }
+        else
+            where = {published:true}
+
+        console.log("user", req.user)
+
+
         let projects = (await ArProject.findAll({
             subQuery: false,
             attributes: [
@@ -41,7 +57,7 @@ router.get(baseUrl+'projects/:page', async (req, res) => {
                     attributes: ["username"],
                 }
             ],
-            where: {published:true},
+            where,
             group: ['ArProject.id'],
             limit: PAGE_LENGTH,
             offset: page * PAGE_LENGTH,
@@ -69,9 +85,21 @@ router.get(baseUrl+'projects/:page', async (req, res) => {
 
 
 
-router.get(baseUrl+'project/:projectId', async (req, res) => {
-    let project = (await ArProject.findOne({
-            where: { published: true, id: req.params.projectId },
+router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, res) => {
+    let where = {}
+    if(req.user)
+        where = {
+            id: req.params.projectId,
+            [Op.or]: {
+                published: true,
+                userId: req.user.id,
+            }
+        }
+    else
+        where = {published:true, id: req.params.projectId}
+
+    let project = await ArProject.findOne({
+            where,
             include:[
                 {
                     model: ArScene,
@@ -102,7 +130,7 @@ router.get(baseUrl+'project/:projectId', async (req, res) => {
 
             ],
         })
-    )
+
     res.set({
         'Content-Type': 'application/json'
     })
@@ -129,7 +157,6 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
 
     try {
 
-
         let project = await ArProject.findOne({
             where: {id: projectId},
         })
@@ -137,9 +164,8 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
         if (project == null)
             return res.status(404).send({error: 'Project not found'})
 
-        if (project.userId != token.id)
+        if (project.userId !== token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
-
 
 
         let updatedUrl = req.body.pictureUrl;
@@ -149,26 +175,26 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
         }
 
         await project.update({
-            published: req.body.published,
-            title: req.body.title,
-            description: req.body.description,
+            published: req.body?.published,
+            title: req.body?.title,
+            description: req.body?.description,
             pictureUrl: updatedUrl,
-            unit: req.body.unit,
-            calibrationMessage: req.body.calibrationMessage,
-            userId: token.id,
+            unit: req.body?.unit,
+            calibrationMessage: req.body?.calibrationMessage,
         }, {
             returning: true
         })
 
-
-        let currentIndex = 0;
-        for (let scene of JSON.parse(req.body.scenes)) {
-            await ArScene.update({
-                index:currentIndex,
-            },{
-                where: {id: scene.id},
-            });
-            currentIndex++;
+        if(req.body.scenes) {
+            let currentIndex = 0;
+            for (let scene of JSON.parse(req.body.scenes)) {
+                await ArScene.update({
+                    index:currentIndex,
+                },{
+                    where: {id: scene.id},
+                });
+                currentIndex++;
+            }
         }
 
 
@@ -195,6 +221,7 @@ router.post(baseUrl+'project', authMiddleware, async (req, res) => {
             unit: req.body.unit,
             calibrationMessage: req.body.calibrationMessage,
             userId: token.id,
+            published: req.body?.published,
         });
 
         res.set({
@@ -236,7 +263,7 @@ router.delete(baseUrl+'project/:projectId', authMiddleware, async (req, res) => 
             return res.status(404).send({error: 'Project not found'})
         }
 
-        if(project.owner.id != token.id)
+        if(project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: 'User not granted'})
 
 
@@ -297,7 +324,7 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        if(project.owner.id != token.id){
+        if(project.owner.id != token.id && !req.user.admin){
             return res.status(403).send({error: 'User not granted'});
         }
 
@@ -369,5 +396,92 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
         res.status(400).json({ error: 'Unable to duplicate project' });
     }
 })
+
+
+// routes pour le mode admin
+
+const PROJECTS_PAGE_LENGTH = 10;
+
+router.get(baseUrl+'admin/projects/:page?', async (req, res) => {
+    const page = parseInt(req.params.page) || 1;
+    try{
+        const where = {}
+
+        if(req.query?.title)
+            where.title = {
+                [Op.like]: `%${req.query?.title}%`
+            }
+
+        const rows = await ArProject.findAll({
+            subQuery: false,
+            attributes: [
+                "id",
+                "title",
+                "description",
+                "published",
+                "calibrationMessage",
+                "unit",
+                "pictureUrl",
+                "updatedAt",
+            ],
+            include: [
+                {
+                    model: ArScene,
+                    as: "scenes",
+                    separate: true
+                },
+                {
+                    model: ArUser,
+                    as: "owner",
+                    attributes: ["username"],
+                }
+            ],
+            where,
+            group: ['ArProject.id'],
+            limit: PROJECTS_PAGE_LENGTH,
+            offset: (page - 1) * PROJECTS_PAGE_LENGTH,
+            order: [['updatedAt', 'DESC']],
+        });
+
+        const count = await ArProject.count({
+            where
+        })
+
+        res.set({
+            'Content-Type': 'application/json'
+        });
+
+        if(rows == null){
+            res.status(404);
+            return res.send({ error: 'No project found'});
+        }else{
+            res.status(200);
+            return res.send({
+                projects: rows,
+                totalPages: Math.ceil(count / PROJECTS_PAGE_LENGTH),
+                currentPage: page,
+            });
+        }
+    }catch (e){
+        console.log(e);
+        res.status(400);
+        return res.send({error: 'Unable to fetch projects'});
+    }
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default router

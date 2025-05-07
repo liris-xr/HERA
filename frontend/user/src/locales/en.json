@@ -2,7 +2,21 @@
   "locale": "en-Us",
   "header": {
     "home": "Home",
+    "login": "Login",
+    "logout": "Logout",
     "allProjects": "All projects"
+  },
+
+  "login": {
+    "emailLabel": "Email",
+    "emailPlaceholder": "Your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Your password",
+    "login": "Login",
+    "loginIn": "Login in",
+    "noAccount": "Don't have an account?",
+    "register": "To sign up, please contact an administrator :",
+    "createAccount": "Create one"
   },
   "homeView": {
     "title": "Recent projects",
@@ -52,8 +66,21 @@
     }
   },
 
-
-
+  "account": {
+    "confirm": "Confirm",
+    "cancel":  "Cancel",
+    "required": "This field is required",
+    "password": {
+      "title": "Password change",
+      "warning": "Warning: Make sure to use a unique and secure password. Never share your credentials",
+      "button": "Change my password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm the new password",
+      "lengthMessage": "Your password's length must be >= 8",
+      "notMatching": "Passwords do not match",
+      "success": "Password successfully modified"
+    }
+  },
 
   "projectCard": {
     "scene": "scene | scenes",

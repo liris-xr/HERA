@@ -2,7 +2,8 @@
   "locale": "en-Us",
   "header": {
     "home": "My projects",
-    "logout": "Logout"
+    "logout": "Logout",
+    "administration": "Admin pannel"
   },
 
   "none": "None",
@@ -15,6 +16,7 @@
     "login": "Login",
     "loginIn": "Login in",
     "noAccount": "Don't have an account?",
+    "register": "To sign up, please contact an administrator :",
     "createAccount": "Create one"
   },
   "register":{
@@ -228,8 +230,100 @@
     }
   },
 
+  "admin": {
+    "title": "Admin pannel",
+    "loading": "Loading...",
+    "loadingError": "An error occured while loading the data",
+    "required": "This field is required",
+    "research": "Research",
+    "noResult": "No result",
+    "deleteConfirm": "Are you sure you want to delete",
+    "irreversibleAction": "This action can't be undone",
+    "sections": {
+      "accounts": {
+        "h1": "Accounts",
+        "edit": "Edit user",
+        "delete": "Delete user",
+        "create": "Create a new user",
+        "username": "Username",
+        "email": "Email address",
+        "password": "Password",
+        "admin": "Admin",
+        "actions": "Actions"
+      },
+      "projects": {
+        "h1": "Projects",
+        "cautionMessage": "Deleting a project will also delete all its scenes, assets and labels",
+        "edit": "Edit project",
+        "delete": "Delete project",
+        "create": "Create a new project",
+        "title": "Title",
+        "scenes": "Scenes",
+        "published": "Published",
+        "description": "Description",
+        "calibrationMessage": "Calibration message",
+        "unit": "Parameter name"
+      },
+      "scenes": {
+        "h1": "Scenes",
+        "cautionMessage": "Deleting a scene will also delete all its assets and labels",
+        "edit": "Edit scene",
+        "delete": "Delete scene",
+        "create": "Create a new scene",
+        "title": "Title",
+        "description": "Description",
+        "assets": "Assets",
+        "labels": "Labels",
+        "project": {
+          "title": "Project"
+        }
+      },
+      "assets": {
+        "h1": "Assets",
+        "edit": "Edit asset",
+        "delete": "Delete asset",
+        "create": "Create a new asset",
+        "name": "Name",
+        "asset": "File",
+        "hideInViewer": "Hidden",
+        "scene": {
+          "project": {
+            "title": "Project"
+          }
+        }
+      },
+      "labels": {
+        "h1": "Labels",
+        "edit": "Edit label",
+        "delete": "Delete label",
+        "create": "Create a new label",
+        "text": "Content",
+        "timestampStart": "Appearance timestamp",
+        "timestampEnd": "Disappearance timestamp",
+        "scene": {
+          "project": {
+            "title": "Project"
+          }
+        }
+      }
+    }
+  },
 
-
+  "account": {
+    "confirm": "Confirm",
+    "cancel":  "Cancel",
+    "required": "This field is required",
+    "password": {
+      "title": "Password change",
+      "warning": "Warning: Make sure to use a unique and secure password. Never share your credentials",
+      "button": "Change my password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm the new password",
+      "lengthMessage": "Your password's length must be >= 8",
+      "notMatching": "Passwords do not match",
+      "success": "Password successfully modified"
+    }
+  },
 
   "textInputModal":{
     "confirmButton": "Create",

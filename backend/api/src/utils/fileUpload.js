@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import arAsset from "../orm/models/arAsset.js";
 import {Op} from "sequelize";
+import {ArAsset, ArMesh, ArProject, ArScene} from "../orm/index.js";
 
 
 
@@ -108,7 +109,51 @@ export const uploadAsset = multer({ storage: multer.diskStorage({
 
             cb(null, filename);
         }
-})});
+    })});
+
+
+export const adminUploadAsset = multer({ storage: multer.diskStorage({
+        destination: async (req, file, cb) => {
+            const sceneId = req.body.sceneId
+
+            let scene = await ArScene.findOne({
+                include: [
+                    {
+                        model: ArProject,
+                        as: "project",
+                        attributes: ["id"],
+                    }
+                ],
+                where: {id: sceneId},
+            })
+
+            const projectId = scene.project.id;
+            req.projectId = projectId;
+            if(!projectId) throw new Error('Project Id is missing');
+
+            const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId))
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory, { recursive: true });
+            }
+
+            cb(null, uploadDirectory);
+        },
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname);
+
+            if(!req.currentAssetCount){
+                req.currentAssetCount = 0
+            }
+            const filename = "asset" + Date.now() + req.currentAssetCount + ext
+            req.currentAssetCount++;
+
+            if(!req.uploadedFilenames)
+                req.uploadedFilenames = [];
+            req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
+
+            cb(null, filename);
+        }
+    })});
 
 
 

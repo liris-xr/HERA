@@ -2,7 +2,7 @@
 import IconSvg from "@/components/icons/IconSvg.vue";
 
 const props = defineProps({
-  text: {type: String, required: false},
+  text: {type: String, required: true},
   theme: {type: String, default: "default"},
   icon:{type: String, default: ""},
   disabled: {type: Boolean, default: false},
@@ -11,18 +11,18 @@ const props = defineProps({
 const hasIcon = props.icon.trim().length > 0;
 
 const themeKeyword = "Button";
-let textTheme = props.theme
-
+let buttonTheme = props.theme
 </script>
 
 <template>
-    <button :class="{[`${textTheme}${themeKeyword}`]: true, 'disabled':disabled}" type="button" :disabled="disabled">
-    <span v-if="props.text" :class="textTheme+themeKeyword">{{text}}</span>
-    <IconSvg v-if="hasIcon" :url="icon" :theme="textTheme"></IconSvg>
+  <button :class="{[`${buttonTheme}${themeKeyword}`]: true, 'disabled':disabled}" type="button" :disabled="disabled">
+    <span>{{text}}</span>
+    <IconSvg v-if="hasIcon" :url="icon" theme="background"></IconSvg>
   </button>
 </template>
 
 <style scoped>
+
 
 .disabled{
   opacity: 0.64;
@@ -30,30 +30,31 @@ let textTheme = props.theme
   cursor: default;
 }
 
+
 .backgroundButton{
-  color: var(--backgroundColor);
+  background-color: var(--backgroundColor);
   border-color: var(--backgroundColor);
 }
 .textButton{
-  color: var(--textColor);
+  background-color: var(--textColor);
   border-color: var(--textColor);
 }
 
 .textImportantButton{
-  color: var(--textImportantColor);
+  background-color: var(--textImportantColor);
   border-color: var(--textImportantColor);
 }
 
 .defaultButton{
-  color: var(--accentColor);
+  background-color: var(--accentColor);
   border-color: var(--accentColor);
 }
 .dangerButton{
-  color: var(--dangerColor);
+  background-color: var(--dangerColor);
   border-color: var(--dangerColor);
 }
 .warningButton{
-  color: var(--warningColor);
+  background-color: var(--warningColor);
   border-color: var(--warningColor);
 }
 
@@ -65,12 +66,12 @@ button{
   border-width: 2px;
   border-style: solid;
   cursor: pointer;
-  background-color: var(--backgroundColor);
   transition: ease-out .1s;
 }
 
-button>span:has(+div){
+button>span{
   margin-right: 4px;
+  color: var(--backgroundColor);
   font-weight: 450;
 }
 

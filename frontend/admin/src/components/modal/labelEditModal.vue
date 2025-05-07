@@ -100,8 +100,8 @@ const getEditedLabel = computed(()=>{
 
     <template #footer>
       <div class="inlineFlex flexRight">
-        <button-view :text="$t('labelEditModal.buttons.cancel')" @click="$emit('close')"></button-view>
-        <filled-button-view :text="$t('labelEditModal.buttons.confirm')" @click="$emit('confirm', getEditedLabel)"></filled-button-view>
+        <button-view :text="$t('labelEditModal.button.cancel')" @click="$emit('close')"></button-view>
+        <filled-button-view :text="$t('labelEditModal.button.confirm')" @click="$emit('confirm', getEditedLabel)"></filled-button-view>
       </div>
     </template>
   </modal>

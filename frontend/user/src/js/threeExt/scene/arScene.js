@@ -107,8 +107,6 @@ export class ArScene extends AbstractScene {
         }
         if(assetData.object) {
             step(assetData.object,new THREE.Matrix4())
-        } else {
-            subMeshes.push(assetData.mesh)
         }
     }
 
@@ -125,11 +123,6 @@ export class ArScene extends AbstractScene {
             } else {
                 this.add(assetData.mesh);
             }
-
-            // this.getAssetSubMeshes(assetData).forEach( (subMesh) => {
-            //     const subMeshData = this.meshDataMap.get(subMesh.name)
-            //     // this.meshManager.addSubMesh(this,subMesh,subMeshData)
-            // })
         }
         this.computeBoundingSphere(true);
         this.#shadowPlane = new ShadowPlane(this.computeBoundingBox(false));

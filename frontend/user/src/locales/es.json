@@ -102,7 +102,9 @@
     },
     "sections": {
       "presets": {
-        "title": "Presets"
+        "title": "Presets",
+        "manageButton": "Gérer",
+        "managementTitle": "Gestion des presets"
       },
       "assets": {
         "title": "Assets"

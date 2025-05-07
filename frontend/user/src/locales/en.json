@@ -101,7 +101,9 @@
     },
     "sections": {
       "presets": {
-        "title": "Presets"
+        "title": "Presets",
+        "manageButton": "Manage",
+        "managementTitle": "Presets management"
       },
       "assets": {
         "title": "Assets"

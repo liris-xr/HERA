@@ -17,6 +17,8 @@ import IconSvg from "@/components/icons/IconSvg.vue";
 import PresentationAsset from "@/components/items/PresentationAsset.vue";
 import PresentationLabel from "@/components/items/PresentationLabel.vue";
 import PresentationPreset from "@/components/items/PresentationPreset.vue";
+import PresentationPresetItem from "@/components/items/PresentationPresetItem.vue";
+import ButtonView from "@/components/button/buttonView.vue";
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -54,6 +56,7 @@ const submitMessage = ref(null)
 
 const arView = ref(null)
 
+const showPresetManager = ref(false)
 
 
 async function fetchProject(projectId) {
@@ -156,6 +159,14 @@ function showAll() {
 
 function hideAll() {
   socket.send("presentation:action:hideAll", {})
+}
+
+function removePreset(preset) {
+  console.log('TODO: remove', preset)
+}
+
+function editPreset(preset) {
+  console.log('TODO: edit', preset)
 }
 
 const connectedText = computed(() => {
@@ -295,8 +306,6 @@ const presetsExample = [
 
           <div class="inline-flex">
             <filled-button-view
-                :disabled="!project.published"
-
                 theme="success"
                 icon="/icons/display_on.svg"
                 :text="$t('presentation.controls.showAll')"
@@ -304,8 +313,6 @@ const presetsExample = [
 
 
             <filled-button-view
-                :disabled="!project.published"
-
                 theme="danger"
                 icon="/icons/display_off.svg"
                 :text="$t('presentation.controls.hideAll')"
@@ -314,7 +321,14 @@ const presetsExample = [
         </section>
 
         <section>
-          <h3>{{ $t("presentation.sections.presets.title") }}</h3>
+          <div class="inline-flex">
+            <h3>{{ $t("presentation.sections.presets.title") }}</h3>
+
+            <filled-button-view
+                icon="/icons/edit.svg"
+                :text="$t('presentation.sections.presets.manageButton')"
+                @click="showPresetManager = true" />
+          </div>
           <div class="presets">
 
             <presentation-preset
@@ -329,7 +343,7 @@ const presetsExample = [
         <section>
           <h3>{{ $t("presentation.sections.assets.title") }}</h3>
           <presentation-asset
-              v-if="arView?.arSessionManager?.sceneManager?.active?.hasAssets()"
+              v-if="arView?.arSessionManager?.sceneManager?.active?.hasAssets?.()"
               v-for="asset in arView.arSessionManager.sceneManager.active?.getAssets()"
               :asset="asset"
 
@@ -345,7 +359,7 @@ const presetsExample = [
           <h3>{{ $t("presentation.sections.labels.title") }}</h3>
 
           <presentation-label
-              v-if="arView?.arSessionManager?.sceneManager?.active.labelPlayer.hasLabels"
+              v-if="arView?.arSessionManager?.sceneManager?.active?.labelPlayer?.hasLabels"
               v-for="label in arView.arSessionManager.sceneManager.active.labelPlayer.getLabels()"
 
               :label="label"
@@ -375,6 +389,25 @@ const presetsExample = [
     <qrcode-svg :value="projectUrl" />
     <p>{{$t("presentation.quitQr")}}</p>
   </div>
+
+  <div class="modal" v-if="showPresetManager">
+    <div>
+      <div class="inline-flex">
+        <h3>{{ $t("presentation.sections.presets.managementTitle") }}</h3>
+        <button-view icon="/icons/add.svg" @click="$emit('create')"></button-view>
+
+      </div>
+      <div>
+        <presentation-preset-item
+          v-for="preset in presetsExample"
+
+          :preset="preset"
+
+          @edit="editPreset(preset)"
+          @remove="removePreset(preset)" />
+      </div>
+    </div>
+  </div>
 </template>
 
 
@@ -383,6 +416,23 @@ const presetsExample = [
 .inline-flex {
   display: flex;
   gap: 10px;
+  align-items: center;
+  margin: 5px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0 0 0 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal > div {
+  background-color: var(--backgroundColor);
+  padding: 25px;
+  border-radius: 15px;
 }
 
 .presets {
@@ -398,6 +448,7 @@ const presetsExample = [
 
 section > h3 {
   font-size: 1.2em;
+  margin-bottom: 5px;
 }
 
 .qrCode {
@@ -461,6 +512,10 @@ label + select {
   flex-direction: column;
   gap: 5px;
   align-items: center;
+}
+
+.scene button {
+  font-size: 1.4em;
 }
 
 @media only screen and (max-width: 600px) {

@@ -3,25 +3,30 @@
 
 #include "mesh.h"
 #include "vec.h"
+#include <random>
 #include <vector>
 
 // Tableau des triangles émissifs de la scène
-// + Tableau de pondération en fonctiond de la taille des triangles
+// + Tableau de pondération en fonction de la taille des triangles
 class LightSources {  
     private:
     
         std::vector<unsigned int> triangleIds;
         std::vector<float> weights;
-        std::vector<TriangleData> triangles;
+        std::vector<Color> triangleColor;
         float area;
-        
-        unsigned int getRandomWeightedTriangleId();
-    
-    public:
-        LightSources(Mesh mesh);
-        ~LightSources();
 
-        Point getRandomPoint();
+        std::discrete_distribution<unsigned int> dd;
+
+        
+        
+    public:
+        LightSources(const Mesh & mesh);
+        ~LightSources();
+        
+        unsigned int getRandomWeightedLightSourceId();
+        unsigned int getTriangleId(unsigned int lightSourceId);
+        Color getTriangleColor(unsigned int lightSourceId);
 
 };
 

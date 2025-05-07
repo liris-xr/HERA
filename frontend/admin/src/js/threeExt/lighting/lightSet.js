@@ -21,8 +21,8 @@ export class LightSet extends classes(THREE.Group,SceneElementInterface) {
         this.add(ambientLight);
         this.add(this.#directionalLight);
 
-        const lightProbeVolume = new LightProbeVolume(new THREE.Vector3(0,1,0),8,2,2,2,scene);
-        lightProbeVolume.bake(1,16,32,16);
+        const lightProbeVolume = new LightProbeVolume(new THREE.Vector3(0,1,0),20,2,2,2,scene);
+        lightProbeVolume.bake(1,16,64,16);
     }
     
     pushToScene(scene){

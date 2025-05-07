@@ -1,58 +1,47 @@
-import {Mesh} from "@/js/threeExt/modelManagement/mesh.js";
+import {computed, shallowReactive} from "vue";
+import * as THREE from "three";
 
-class MeshManagerInstance {
-    #meshes;
+export class MeshManager {
+    #meshes
 
     constructor() {
-        this.#meshes = [];
+        this.#meshes = shallowReactive([]);
     }
 
+    getMeshes = computed(()=>{
+        return this.#meshes;
+    });
 
-    #indexOf(url){
-        let index = 0;
-        for (let mesh of this.#meshes) {
-            if(mesh.sourceUrl === url) return index;
-            index++;
+    addSubMesh(scene,mesh,meshData) {
+        if(meshData) {
+            mesh.position.x = meshData.position.x 
+            mesh.position.y = meshData.position.y 
+            mesh.position.z = meshData.position.z 
+            
+            mesh.rotation.x = meshData.rotation._x
+            mesh.rotation.y = meshData.rotation._y
+            mesh.rotation.z = meshData.rotation._z
+            mesh.scale.x = meshData.scale.x
+            mesh.scale.y = meshData.scale.y
+            mesh.scale.z = meshData.scale.z
+            
+            mesh.material.color = meshData.color
+            mesh.material.opacity = meshData.opacity
+            mesh.material.transparent = meshData.opacity < 1
+            mesh.material.emissive = meshData.emissive
+            mesh.material.emissiveIntensity = meshData.emissiveIntensity
+            mesh.material.roughness = meshData.roughness
+            mesh.material.metalness = meshData.metalness
         }
-        return -1;
+        
+        scene.add( mesh );
+        this.#meshes.push(mesh)
     }
 
-    isLoaded(url){
-       return this.#indexOf(url) !== -1;
-    }
-
-    getMesh(url){
-        return this.#meshes[this.#indexOf(url)];
-    }
-
-    async load(url){
-        // if(this.isLoaded(url)) {
-        //     console.warn("mesh already loaded");
-        //     return this.getMesh(url);
-        // }
-        // maintenant qu'on peut les dupliquer, plusieurs assets peuvent partager la meme url
-        const mesh = new Mesh(url);
-        await mesh.load();
-        this.#meshes.push(mesh);
-        return mesh;
+    clear(scene) {
+        this.#meshes.forEach( (mesh) => {
+            scene.remove(mesh)
+        })
+        this.#meshes = []
     }
 }
-
-
-
-export const MeshManager = (function () {
-    let instance;
-
-    function createInstance() {
-        return new MeshManagerInstance();
-    }
-
-    return {
-        getInstance: function () {
-            if (!instance) {
-                instance = createInstance();
-            }
-            return instance;
-        }
-    };
-})();

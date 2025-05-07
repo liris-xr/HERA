@@ -446,6 +446,7 @@ onBeforeRouteUpdate((to, from, next)=>{
             </label-edit-modal>
           </Teleport>
 
+
           <div class="multilineField">
             <div class="inlineFlex">
               <span>{{$t("sceneView.leftSection.sceneAssets.label")}}</span>
@@ -518,15 +519,15 @@ onBeforeRouteUpdate((to, from, next)=>{
               <button-tool :current-active="editor.scene.getTransformMode.value" name="translate" @click="editor.scene.setTransformMode('translate')"></button-tool>
               <button-tool :current-active="editor.scene.getTransformMode.value" name="rotate" @click="editor.scene.setTransformMode('rotate')"></button-tool>
               <button-tool :current-active="editor.scene.getTransformMode.value" name="scale" @click="editor.scene.setTransformMode('scale')"></button-tool>
-              <button-tool :current-active="showMaterialMenu ? '3d' : 'false' " name="3d" @click="showMaterialMenu = !showMaterialMenu"></button-tool>
+              <button-tool :current-active="showMaterialMenu ? '3d' : 'false' " name="3d" @click="() => { showMaterialMenu = !showMaterialMenu; editor.scene.setMaterialMenu(showMaterialMenu)}" ></button-tool>
 
               <div id="valuesGroup">
                 <label for="transformX">x:</label>
-                <input type="number" autocomplete="false" id="transformX" name="transformX" v-model="editor.scene.currentSelectedValues.value.x" step="any">
+                <input type="number" autocomplete="false" id="transformX" name="transformX" v-model="editor.scene.currentSelectedTransformValues.value.x" step="any">
                 <label for="transformY">y:</label>
-                <input type="number" autocomplete="false" id="transformX" name="transformY" v-model="editor.scene.currentSelectedValues.value.y" step="any">
+                <input type="number" autocomplete="false" id="transformY" name="transformY" v-model="editor.scene.currentSelectedTransformValues.value.y" step="any">
                 <label for="transformZ">z:</label>
-                <input type="number" autocomplete="false" id="transformZ" name="transformZ" v-model="editor.scene.currentSelectedValues.value.z" step="any">
+                <input type="number" autocomplete="false" id="transformZ" name="transformZ" v-model="editor.scene.currentSelectedTransformValues.value.z" step="any">
 
               </div>
             </div>
@@ -538,7 +539,7 @@ onBeforeRouteUpdate((to, from, next)=>{
         
         <section v-if=showMaterialMenu id="materials"> 
           <h2>{{$t("sceneView.materialSection.title")}}</h2> 
-          <material-view> </material-view>
+          <material-view :material-data="editor.scene.currentSelectedMaterialValues.value"> </material-view>
         </section>
 
       </section>

@@ -217,8 +217,11 @@
     "materialSection": {
       "title": "Material",
       "color": "Color",
-      "matallicness": "Metallicness",
-      "roughness": "Roughness"
+      "metalness": "Metalness",
+      "roughness": "Roughness",
+      "opacity": "Opacity",
+      "emissive": "Emissive color",
+      "emissiveIntensity": "Emissive intensity"
     },
     "bottomActionBar": {
       "backButton": "Back",

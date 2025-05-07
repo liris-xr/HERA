@@ -2,12 +2,13 @@ import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import * as THREE from 'three';
 import {reactive, ref} from "vue";
+import {ObjectManager} from "@/js/threeExt/modelManagement/objectManager.js";
 
 export class Asset extends SceneElementInterface{
 
+    object
     id
 
-    mesh
     sourceUrl
     position;
     rotation;
@@ -60,27 +61,23 @@ export class Asset extends SceneElementInterface{
     }
 
     async load(){
-        const manager = MeshManager.getInstance();
-        let mesh = await manager.load(this.sourceUrl);
-        this.#error = mesh.hasError();
+        const manager = ObjectManager.getInstance();
+        let object = await manager.load(this.sourceUrl);
+        this.#error = object.hasError();
+        this.object = object.object.clone();
+        this.object.position.set(this.position.x, this.position.y, this.position.z);
+        this.object.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
+        this.object.scale.set(this.scale.x, this.scale.y, this.scale.z);
+        this.object.castShadow = true;
+        this.object.receiveShadow = true;
 
-        this.mesh = mesh.mesh;
-        if(mesh?.animations?.length > 0) {
-            this.mesh.animations = mesh.animations
-        }
+        console.log(this.object)
 
-        this.mesh.position.set(this.position.x, this.position.y, this.position.z);
-        this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
-        this.mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
-        this.mesh.castShadow = true;
-        this.mesh.receiveShadow = true;
-
-
-        if(this.mesh?.animations?.length > 0) {
-            this.animationMixer = new THREE.AnimationMixer(this.mesh)
+        if(this.object?.animations?.length > 0) {
+            this.animationMixer = new THREE.AnimationMixer(this.object)
             let baseAnimation
 
-            for(const animation of this.mesh?.animations){
+            for(const animation of this.object?.animations){
                 if (animation.name === this.activeAnimation)
                     baseAnimation = this.animationMixer.clipAction(animation);
                 this.animations.push(animation.name)
@@ -92,13 +89,14 @@ export class Asset extends SceneElementInterface{
                     console.error("Animation " + this.activeAnimation + " not found for asset " + this.name)
                 return
             }
+            console.log(baseAnimation)
             baseAnimation.play()
         }
     }
 
     pushToScene(scene){
-        if(!this.mesh) return false;
-        scene.add(this.mesh);
+        if(!this.object) return false;
+        scene.add(this.object);
         return true;
     }
 }

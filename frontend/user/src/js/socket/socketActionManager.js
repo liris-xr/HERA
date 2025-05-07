@@ -18,17 +18,6 @@ export class SocketActionManager {
 
         if(!asset) return
 
-        // const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.object)
-        //
-        // if(index !== -1)
-        //     this.arSessionManager.outlinePass.selectedObjects.splice(index, 1)
-        // else
-        //     this.arSessionManager.outlinePass.selectedObjects.push(asset.object);
-        //
-        // console.log(this.arSessionManager.outlinePass)
-        // return;
-
-
         asset.highlight.value = data.value
 
         asset.object.traverse((child) => {

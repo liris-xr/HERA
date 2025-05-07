@@ -36,10 +36,6 @@ export class ArSessionManager {
 
         this.sceneManager.onSceneChanged = function(){
             this.labelRenderer.clear()
-            if(this.renderPass)
-                this.renderPass.scene = this.sceneManager.active.value
-            if(this.outlinePass)
-                this.outlinePass.scene = this.sceneManager.active.value
         }.bind(this);
 
         window.addEventListener("resize", this.onWindowResize.bind(this));

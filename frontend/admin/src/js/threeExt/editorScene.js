@@ -190,6 +190,8 @@ export class EditorScene extends THREE.Scene {
 
     }
     setSelected(object, selected = true){
+        console.log(object)
+
         this.deselectAll();
         this.selected = object;
         if(object==null || selected === false){

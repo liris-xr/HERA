@@ -4,9 +4,9 @@
 #include <cfloat>
 #include <random>
 #include <vector>
+#include "gltf.h"
 #include "lightProbe.hpp"
 #include "lightSources.hpp"
-#include "gltf.h"
 #include "mesh.h"
 #include "vec.h"
 

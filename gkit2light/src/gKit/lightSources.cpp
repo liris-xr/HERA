@@ -2,12 +2,12 @@
 #include <random>
 
 
-LightSources::LightSources(const Mesh & mesh) {
+LightSources::LightSources(const Mesh & mesh,const std::vector<GLTFMaterial> & materials) {
     this->area = 0;
 
     for(int i= 0; i < mesh.triangle_count(); i++) {
-        std::cout<<mesh.triangle_material(i).emission.max()<<std::endl;
-        if(mesh.triangle_material(i).emission.max() > 0) {
+        Color color = materials[mesh.triangle_material_index(i)].emission;
+        if(color.max() > 0) {
             TriangleData t = mesh.triangle(i);
             this->triangleIds.push_back(i);
 
@@ -15,14 +15,13 @@ LightSources::LightSources(const Mesh & mesh) {
 
             this->area += a;
             this->weights.push_back(a);
-            this->triangleColor.push_back(mesh.triangle_material(i).emission);
+            this->triangleColor.push_back(color);
         }
     }
 
     for(unsigned int i = 0;i<this->weights.size();i++) {
         this->weights[i] /= this->area;
     }
-
     this->dd = std::discrete_distribution<unsigned int>(this->weights.begin(),this->weights.end());
 }
 

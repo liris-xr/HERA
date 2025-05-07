@@ -5,7 +5,7 @@
 #include <cfloat>
 #include <chrono>
 
-#include "projets/lightProbeVolume.hpp"
+#include "lightProbeVolume.hpp"
 #include "vec.h"
 #include "orbiter.h"
 #include "mesh.h"
@@ -17,9 +17,9 @@ const int N = 256;
 
 int main( const int argc, const char **argv )
 {
-    const char *mesh_filename= "data/cornell_box-_original.glb";
+    const char *scene_filename= "data/cornell_box-_original.glb";
     if(argc > 1)
-        mesh_filename= argv[1];
+        scene_filename= argv[1];
         
     const char *orbiter_filename= "data/cornell_orbiter.txt";
     if(argc > 2)
@@ -29,13 +29,20 @@ int main( const int argc, const char **argv )
     if(camera.read_orbiter(orbiter_filename) < 0)
         return 1;
 
-    Mesh mesh= read_gltf_mesh(mesh_filename);
+    Mesh mesh= read_gltf_mesh(scene_filename);
+    std::vector<GLTFMaterial> materials = read_gltf_materials(scene_filename);
+
+    // for(int i = 0;i<mesh.triangle_count();i++)
+    //     std::cout<<materials[mesh.triangle_material_index(i)].emission.max()<<std::endl;
     
     auto start= std::chrono::high_resolution_clock::now();
     
-    LightProbeVolume lpv(mesh,Point(0,1,0),8,2,2,2,16,32,16);
+    LightProbeVolume lpv(mesh,materials,
+            Point(0,1,0),
+            8,2,2,2,
+            16,32,16);
 
-    lpv.bake();
+    // lpv.bake();
 
     auto stop= std::chrono::high_resolution_clock::now();
     int cpu= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();

@@ -1,4 +1,5 @@
 #include "lightProbeVolume.hpp"
+#include "gltf.h"
 #include "lightProbe.hpp"
 #include "lightSources.hpp"
 #include "vec.h"
@@ -19,6 +20,7 @@ Vector normal( const Mesh& mesh, const Hit& hit )
 }
 
 LightProbeVolume::LightProbeVolume(const Mesh & mesh,
+                                   const std::vector<GLTFMaterial> & materials, 
                                    const Point & center,
                                    const float density,
                                    const float width,
@@ -28,7 +30,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
                                    const unsigned int nbIndirectSamples,
                                    const unsigned int nbDirectIndirectSamples) {
     this->mesh = mesh;
-    this->lightSources = new LightSources(mesh);
+    this->lightSources = new LightSources(mesh,materials);
 
     this->nbDirectSamples = nbDirectSamples;
     this->nbIndirectSamples = nbIndirectSamples;

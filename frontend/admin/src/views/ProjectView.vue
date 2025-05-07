@@ -376,8 +376,8 @@ onBeforeRouteUpdate((to, from, next)=>{
 
 
           <div class="inlineFlex">
-            <button-view :text="$t('projectView.leftSection.button.duplicate')" icon="/icons/duplicate.svg" @click="showDuplicateProjectModal = true"></button-view>
-            <filled-button-view :text="$t('projectView.leftSection.button.delete')" theme="danger" icon="/icons/delete.svg" @click="showDeleteProjectModal = true"></filled-button-view>
+            <button-view :text="$t('projectView.leftSection.buttons.duplicate')" icon="/icons/duplicate.svg" @click="showDuplicateProjectModal = true"></button-view>
+            <filled-button-view :text="$t('projectView.leftSection.buttons.delete')" theme="danger" icon="/icons/delete.svg" @click="showDeleteProjectModal = true"></filled-button-view>
           </div>
 
           <Teleport to="body">

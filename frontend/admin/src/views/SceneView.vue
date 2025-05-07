@@ -479,8 +479,8 @@ onBeforeRouteUpdate((to, from, next)=>{
 
 
           <div class="inlineFlex">
-            <button-view :text="$t('sceneView.leftSection.button.duplicate')" icon="/icons/duplicate.svg" @click="showSceneDuplicateModal = true"></button-view>
-            <filled-button-view :text="$t('sceneView.leftSection.button.delete')" theme="danger" icon="/icons/delete.svg" @click="showSceneDeleteModal = true"></filled-button-view>
+            <button-view :text="$t('sceneView.leftSection.buttons.duplicate')" icon="/icons/duplicate.svg" @click="showSceneDuplicateModal = true"></button-view>
+            <filled-button-view :text="$t('sceneView.leftSection.buttons.delete')" theme="danger" icon="/icons/delete.svg" @click="showSceneDeleteModal = true"></filled-button-view>
           </div>
 
           <Teleport to="body">

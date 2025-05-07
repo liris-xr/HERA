@@ -18,13 +18,12 @@ export class SocketActionManager {
 
         if(!asset) return
 
-
-        // const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.mesh)
+        // const index = this.arSessionManager.outlinePass.selectedObjects.indexOf(asset.object)
         //
         // if(index !== -1)
         //     this.arSessionManager.outlinePass.selectedObjects.splice(index, 1)
         // else
-        //     this.arSessionManager.outlinePass.selectedObjects.push(asset.mesh);
+        //     this.arSessionManager.outlinePass.selectedObjects.push(asset.object);
         //
         // console.log(this.arSessionManager.outlinePass)
         // return;
@@ -32,14 +31,14 @@ export class SocketActionManager {
 
         asset.highlight.value = data.value
 
-        asset.mesh.traverse((child) => {
+        asset.object.traverse((child) => {
 
             if(child.isMesh && child.material) {
                 if(!child.oldMaterial)
                     child.oldMaterial = child.material
 
                 if(asset.highlight.value) {
-                    child.material = new THREE.MeshStandardMaterial({ color: 0xff0000 })
+                    child.material = new THREE.objectStandardMaterial({ color: 0xff0000 })
                 } else
                     child.material = child.oldMaterial
             }
@@ -54,7 +53,7 @@ export class SocketActionManager {
         if(!asset) return
 
         asset.hidden.value = !data.value
-        asset.mesh.visible = !asset.hidden.value
+        asset.object.visible = !asset.hidden.value
     }
 
     scene(data) {
@@ -76,7 +75,7 @@ export class SocketActionManager {
         }
 
         if(data.value) {
-            const anim = THREE.AnimationClip.findByName(asset.mesh.animations, data.value)
+            const anim = THREE.AnimationClip.findByName(asset.object.animations, data.value)
 
             if(!anim) return
 

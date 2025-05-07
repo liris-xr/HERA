@@ -38,6 +38,7 @@ export class Object3D {
 
             this.animations = mesh.animations
             this.object = mesh.scene;
+            this.object.animations = this.animations
 
         }catch(error){
             console.error(error);

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
-import {computed} from "vue";
+import {computed, shallowReactive} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";

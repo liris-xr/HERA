@@ -79,6 +79,7 @@ export class AssetManager {
                 }
                 
                 this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
+                asset.addSubMesh(subMesh);
             })
             
             this.setMeshMapWithData(this.getResultMeshes())

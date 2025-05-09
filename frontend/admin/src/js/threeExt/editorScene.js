@@ -190,8 +190,6 @@ export class EditorScene extends THREE.Scene {
 
     }
     setSelected(object, selected = true){
-        console.log(object)
-
         this.deselectAll();
         this.selected = object;
         if(object==null || selected === false){
@@ -206,6 +204,8 @@ export class EditorScene extends THREE.Scene {
                 }
             } else if(object.label) {
                 this.#transformControls.attach(object.getObject());
+            } else if(object.subMeshes) { // Object is an asset
+                this.attachMeshes(object.subMeshes[0])
             }
 
         }
@@ -221,10 +221,15 @@ export class EditorScene extends THREE.Scene {
         this.currentMeshes = this.assetManager.meshManagerMap.get(currentMeshData.assetId).getMeshes.value
         
         // We need to group up our meshes so we can move all of them
+        let meanPos = new THREE.Vector3(0,0,0);
+        
+        const weight = 1/this.currentMeshes.length
         this.currentMeshGroup = new THREE.Group()
         for (let mesh of this.currentMeshes) {
             this.currentMeshGroup.add(mesh)
+            meanPos.addScaledVector(mesh.position,weight);
         }
+        this.#transformControls.position.copy(meanPos)
         
         this.add(this.currentMeshGroup)
         

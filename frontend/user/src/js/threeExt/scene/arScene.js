@@ -155,12 +155,12 @@ export class ArScene extends AbstractScene {
     computeBoundingBox(forceCompute = false){
         if(forceCompute || this.#boundingBox==null){
             const group = new THREE.Group();
-            for (let mesh of this.meshManager.getMeshes.value) {
-                group.add(mesh.clone());
+            for (let asset of this.#assets) {
+                group.add(asset.object.clone());
             }
             this.#boundingBox = new THREE.Box3().setFromObject(group);
         }
-        return this.#boundingBox
+        return this.#boundingBox;
     }
 
     computeBoundingSphere(forceCompute = false) {

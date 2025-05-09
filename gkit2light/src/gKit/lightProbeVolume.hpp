@@ -136,6 +136,7 @@ class LightProbeVolume {
         ~LightProbeVolume();
 
         void bake();
+        void toFile();
         
         
 };

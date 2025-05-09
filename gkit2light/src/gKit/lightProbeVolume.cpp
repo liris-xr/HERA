@@ -6,6 +6,10 @@
 #include "mesh.h"
 #include <random>
 #include <math.h>
+#include <fstream>
+#include <iterator>
+#include <vector>
+
 
 // renvoie la normale au point d'intersection
 Vector normal( const Mesh& mesh, const Hit& hit )
@@ -39,6 +43,13 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->directWeight = 1.0/float(nbDirectSamples);
     this->indirectWeight = 1.0/float(nbIndirectSamples);
     this->directIndrectWeight = 1.0/float(nbDirectIndirectSamples);
+
+    for(int i = 0;i<9;i++) {
+        this->shTextures[i].resize(width*depth*height*density*density*density*4);
+        std::cout<<shTextures[i].size()<<std::endl;
+
+        this->invalidityTexture.reserve(width*depth*height*density*density*density);
+    }
     
     int n= mesh.triangle_count();
     std::cout<<"nb triangles : "<<n<<std::endl;
@@ -135,8 +146,8 @@ void LightProbeVolume::updateDirectLighting(LightProbe & probe) {
 }
 
 void LightProbeVolume::bake() {
-    #pragma omp parallel for
-    for(LightProbe probe : this->probes) {
+    // #pragma omp parallel for
+    for(LightProbe & probe : this->probes) {
         updateDirectLighting(probe);
 
         for(unsigned int coef = 0;coef<9;coef++) {
@@ -146,4 +157,18 @@ void LightProbeVolume::bake() {
             }
         }
     }
+}
+
+void LightProbeVolume::toFile() {
+    
+    for(int coef=0;coef<9;coef++) {
+        std::fstream file;
+        file.open("../frontend/admin/public/textures/sh"+std::to_string(coef)+".csv",std::ios_base::out);
+        for(int i=0;i<shTextures[coef].size();i++) {
+            file<<shTextures[coef][i]<<',';
+        }
+        file.close();
+    } 
+ 
+
 }

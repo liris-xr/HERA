@@ -598,7 +598,6 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
 
         // créer les enregistrements dans la BD
         const projectFilePath = path.join(dataFolder, "project.json")
-        console.log(projectFilePath)
         const data = fs.readFileSync(projectFilePath)
 
         const projectObj = JSON.parse(data)

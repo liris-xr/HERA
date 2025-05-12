@@ -10,6 +10,7 @@ const props = defineProps({
   data:  {type: Array, required: true},
   totalPages: {type: Number, required: true},
   create: {type: Boolean, default: true},
+  itemButtons: {type: Array, default: []},
 })
 
 const emit = defineEmits(["edit", "delete", "create", "fetch", "page"])
@@ -96,6 +97,12 @@ function getProperty(obj, prop) {
 
           <td>
             <div class="inline-flex">
+
+              <button-view v-for="button in itemButtons"
+                           :icon="button.icon"
+                           :theme="button.theme || 'default'"
+                           @click="button.func(element)" />
+
               <button-view icon="/icons/edit.svg" @click="$emit('edit', {...element})"></button-view>
               <button-view icon="/icons/delete.svg" theme="danger" @click="$emit('delete', element)"></button-view>
             </div>

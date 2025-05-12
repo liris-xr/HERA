@@ -12,6 +12,7 @@ import {
     uploadCover
 } from "../utils/fileUpload.js";
 import {Op} from "sequelize";
+import * as path from "node:path";
 
 
 const router = express.Router()
@@ -495,10 +496,65 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
     try {
 
-        const project = ArProject.findOne({
+        const project = await ArProject.findOne({
             where: {id: projectId},
-            include:
+            include:[
+                {
+                    model: ArScene,
+                    as: "scenes",
+                    separate: true,
+                    order: [['index', 'ASC']],
+                    attributes: {exclude: ['id']},
+                    include:[
+                        {
+                            model:ArMesh,
+                            as:"meshes",
+                            attributes: {exclude: ['id']}
+                        },
+                        {
+                            model: ArAsset,
+                            as: "assets",
+                            where:{
+                                hideInViewer: false
+                            },
+                            required:false,
+                            attributes: {exclude: ['id']}
+                        },
+                        {
+                            model: ArLabel,
+                            as: "labels",
+                            attributes: {exclude: ['id']}
+                        },
+                    ],
+                },
+
+                {
+                    model: ArUser,
+                    as: "owner",
+                    attributes: ["username"],
+                }
+
+            ],
         })
+        
+        if (project)
+            return res.status(200).zip({
+                files: [
+
+                    { content: 'this is a string',      //options can refer to [http://archiverjs.com/zip-stream/ZipStream.html#entry](http://archiverjs.com/zip-stream/ZipStream.html#entry)
+                        name: 'file-name',
+                        type: 'file' },
+
+                    // {
+                    //     path: getProjectDirectory(projectId),
+                    //     name: "files"
+                    // }
+
+                ],
+                filename: "test.zip"
+            })
+        else
+            return res.status(404).send({error: 'Project not found'})
 
     }catch (e){
         console.log(e);

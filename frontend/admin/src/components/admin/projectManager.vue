@@ -200,6 +200,23 @@ async function fetchProjects(data=null) {
   }
 }
 
+async function exportProject(project) {
+  console.log(project)
+
+  const res = await fetch(`${ENDPOINT}project/${project.id}/export`,
+      {
+        headers: {
+          'Authorization': `Bearer ${props.token}`,
+        }
+      })
+      .then(resp => resp.blob())
+      .then(blob => window.location.assign(window.URL.createObjectURL(blob)))
+
+
+  console.log(res)
+
+}
+
 onMounted(async () => {
   await fetchProjects()
 })
@@ -219,6 +236,13 @@ defineExpose({projects, newScene, supprScene, editScene, element})
         :fields="['title']"
         :data="projects"
         :total-pages="totalPages"
+
+        :item-buttons="[
+          {
+            icon: '/icons/download.svg',
+            func: exportProject,
+          }
+        ]"
 
         @create="creatingProject = {}"
         @edit="editingProject = $event"

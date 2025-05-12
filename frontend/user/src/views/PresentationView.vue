@@ -146,9 +146,7 @@ function resetScene() {
 }
 
 function applyPreset(preset) {
-  //TODO
   for(const action of preset.actions) {
-    console.log(action)
     socket.send(action.event, ...action.args)
   }
 }
@@ -167,6 +165,10 @@ function removePreset(preset) {
 
 function editPreset(preset) {
   console.log('TODO: edit', preset)
+}
+
+function createPreset() {
+  console.log('TODO: create preset')
 }
 
 const connectedText = computed(() => {
@@ -288,7 +290,7 @@ const presetsExample = [
         <section class="scene">
           <section class="sceneSelection">
             <label for="sceneSelection">{{$t("presentation.currentScene")}}</label>
-            <select @change="setScene" id="sceneSelection" name="sceneSelection">
+            <select @change="setScene" id="sceneSelection" name="sceneSelection" v-if="arView" v-model="arView.arSessionManager.sceneManager.activeSceneId">
               <option
                   v-for="scene in arView?.arSessionManager.sceneManager.scenes"
                   :value="scene.sceneId" >
@@ -332,7 +334,7 @@ const presetsExample = [
           <div class="presets">
 
             <presentation-preset
-                v-for="preset in presetsExample"
+                v-for="preset in project.presets"
                 :preset="preset"
 
                 @triggered="applyPreset(preset)" />
@@ -394,7 +396,7 @@ const presetsExample = [
     <div>
       <div class="inline-flex">
         <h3>{{ $t("presentation.sections.presets.managementTitle") }}</h3>
-        <button-view icon="/icons/add.svg" @click="$emit('create')"></button-view>
+        <button-view icon="/icons/add.svg" @click="createPreset()"></button-view>
 
       </div>
       <div>

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import {OutlinePass} from "three/addons";
-import {isRef, unref} from "vue";
+import {isRef, toRaw, unref} from "vue";
 
 export class SocketActionManager {
 
@@ -12,7 +12,7 @@ export class SocketActionManager {
 
     highlight(data) {
 
-        const scene = this.arSessionManager.sceneManager.active
+        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
 
         const asset = scene.findAssetById(data.assetId)
 
@@ -36,7 +36,7 @@ export class SocketActionManager {
     }
 
     toggleAsset(data) {
-        const scene = this.arSessionManager.sceneManager.active
+        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
         const asset = scene.findAssetById(data.assetId)
 
         if(!asset) return
@@ -52,7 +52,7 @@ export class SocketActionManager {
     }
 
     setActiveAnimation(data) {
-        const scene = this.arSessionManager.sceneManager.active
+        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
         const asset = scene.findAssetById(data.assetId)
 
         if(!asset) return
@@ -78,7 +78,7 @@ export class SocketActionManager {
     }
 
     toggleLabel(data) {
-        const scene = this.arSessionManager.sceneManager.active
+        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
         const label = scene.labelPlayer.findLabelById(data.labelId)
 
         if(!label) return
@@ -87,20 +87,23 @@ export class SocketActionManager {
     }
 
     reset() {
-        const scene = this.arSessionManager.sceneManager.active
+        for(let sceneProxy of this.arSessionManager.sceneManager.getScenes()) {
+            const scene = toRaw(sceneProxy)
+            for(const asset of scene.getAssets()) {
+                this.highlight({sceneId: scene.id, assetId: asset.id, value: false})
+                this.toggleAsset({sceneId: scene.id, assetId: asset.id, value: true})
+                this.setActiveAnimation({sceneId: scene.id, assetId: asset.id, value: null})
+            }
 
-        for(const asset of scene.getAssets()) {
-            this.highlight({assetId: asset.id, value: false})
-            this.toggleAsset({assetId: asset.id, value: true})
+            for(const label of scene.labelPlayer.getLabels()) {
+                this.toggleLabel({sceneId: scene.id, labelId: label.id, value: true})
+            }
         }
-
-        for(const label of scene.labelPlayer.getLabels()) {
-            this.toggleLabel({labelId: label.id, value: true})
-        }
+        this.arSessionManager.sceneManager.activeSceneId = this.arSessionManager.sceneManager.scenes[0].sceneId
     }
 
     hideAll() {
-        const scene = this.arSessionManager.sceneManager.active
+        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
 
         for(const asset of scene.getAssets())
             this.toggleAsset({assetId: asset.id, value: false})
@@ -110,7 +113,7 @@ export class SocketActionManager {
     }
 
     showAll() {
-        const scene = this.arSessionManager.sceneManager.active
+        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
 
         for(const asset of scene.getAssets())
             this.toggleAsset({assetId: asset.id, value: true})

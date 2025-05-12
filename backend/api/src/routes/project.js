@@ -98,8 +98,13 @@ router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, re
     else
         where = {published:true, id: req.params.projectId}
 
+    let attributes = {}
+    if(!req.user)
+        attributes.exclude = ['presets']
+
     let project = await ArProject.findOne({
             where,
+            attributes,
             include:[
                 {
                     model: ArScene,

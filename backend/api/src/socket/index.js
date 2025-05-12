@@ -21,11 +21,11 @@ export default function setupSocket(io) {
 }
 
 function initConnection(socket) {
-    console.log("Client", socket.id, "connected");
+    // console.log("Client", socket.id, "connected");
 
     socket.on("disconnect", () => {
         leavePresentation(socket)
-        console.log("Client", socket.id, "disconnected");
+        // console.log("Client", socket.id, "disconnected");
     })
 }
 

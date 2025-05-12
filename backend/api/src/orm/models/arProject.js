@@ -10,6 +10,7 @@ import { sequelize } from '../database.js'
  * @property {string} pictureUrl
  * @property {string} unit
  * @property {string} calibrationMessage
+ * @property {string} presets
  * @property {string} userId
  */
 
@@ -58,6 +59,11 @@ export default sequelize.define('ArProject', {
         validate:{
             notEmpty: true
         }
+    },
+    presets:{
+        type: DataTypes.JSON,
+        allowNull: false,
+        defaultValue: []
     },
     userId:{
         type: DataTypes.UUID,

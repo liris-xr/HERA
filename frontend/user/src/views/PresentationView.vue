@@ -166,7 +166,7 @@ function hideAll() {
 
 function removePreset() {
 
-  const index = editingPresets.value.indexOf(removingPreset.value)
+  const index = editingPresets.value.findIndex(el => el.id === removingPreset.value.id)
 
   if(index !== -1)
     editingPresets.value.splice(index, 1)
@@ -174,8 +174,13 @@ function removePreset() {
   removingPreset.value = null
 }
 
-function editPreset(preset) {
-  console.log('TODO: edit', preset)
+function editPreset() {
+  const index = editingPresets.value.findIndex(el => el.id === editingPreset.value.id)
+
+  if(index !== -1)
+    editingPresets.value[index] = editingPreset.value
+
+  editingPreset.value = null
 }
 
 function createPreset() {
@@ -378,6 +383,7 @@ const presetsExample = [
 
                 @triggered="applyPreset(preset)" />
 
+
           </div>
         </section>
 
@@ -440,12 +446,18 @@ const presetsExample = [
       </div>
       <div>
         <presentation-preset-item
+          v-if="editingPresets?.length > 0"
           v-for="preset in editingPresets"
 
           :preset="preset"
 
-          @edit="editPreset(preset)"
+          @edit="editingPreset = { ...preset }"
           @remove="removingPreset = preset" />
+
+
+        <div v-else class="center">
+          {{ $t("none") }}
+        </div>
       </div>
       <div class="buttons">
         <filled-button-view :text="$t('presentation.sections.presets.save')" @click="savePresets()" />
@@ -467,6 +479,30 @@ const presetsExample = [
     </div>
   </div>
 
+  <div class="modal" v-if="editingPreset">
+    <div>
+      <div class="center">
+        <h3>{{ $t("presentation.sections.presets.editTitle") }}</h3>
+      </div>
+      <div class="center">
+        <label for="bigText">{{ $t("presentation.sections.presets.icon") }}</label>
+        <input type="text" v-model="editingPreset.bigText" name="bigText" id="bigText">
+      </div>
+      <div class="center">
+        <label for="text">{{ $t("presentation.sections.presets.text") }}</label>
+        <input type="text" v-model="editingPreset.text" name="text" id="text">
+      </div>
+      <div class="flex-center inline-flex" style="margin-top: 15px">
+        <p>{{ $t("presentation.sections.presets.redefineLabel") }}</p>
+        <button-view :text="$t('presentation.sections.presets.redefine')" @click="" />
+      </div>
+      <div class="buttons">
+        <filled-button-view :text="$t('presentation.sections.presets.confirm')" @click="editPreset()" />
+        <button-view :text="$t('presentation.sections.presets.cancel')" @click="editingPreset = null" />
+      </div>
+    </div>
+  </div>
+
 
 
 
@@ -477,7 +513,21 @@ const presetsExample = [
 
 <style scoped>
 
-.center * {
+.center + .center {
+  margin-top: 10px;
+}
+
+.modal label + input {
+  margin-left: 5px;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.center, .center * {
   text-align: center;
 }
 

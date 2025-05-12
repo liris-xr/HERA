@@ -128,7 +128,6 @@ export class ArScene extends AbstractScene {
         this.#shadowPlane = new ShadowPlane(this.computeBoundingBox(false));
         this.#shadowPlane.pushToScene(this);
 
-
     }
 
     getErrors = computed(()=>{

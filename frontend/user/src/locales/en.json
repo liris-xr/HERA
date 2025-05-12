@@ -108,7 +108,12 @@
         "cancel": "Cancel",
         "confirm": "Confirm",
         "removeTitle": "Remove the preset",
-        "removeWarning": "Do you really want to remove this preset ? This action can't be undone"
+        "removeWarning": "Do you really want to remove this preset ? This action can't be undone",
+        "editTitle": "Edit the preset",
+        "icon": "Icon",
+        "text": "Text",
+        "redefineLabel": "Redefine the actions",
+        "redefine": "Redefine"
       },
       "assets": {
         "title": "Assets"

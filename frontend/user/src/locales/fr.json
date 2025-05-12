@@ -109,7 +109,12 @@
         "cancel": "Annuler",
         "confirm": "Confirmer",
         "removeTitle": "Supprimer le preset",
-        "removeWarning": "Voulez vous vraiment supprimer ce preset ? Cette action est irréversible"
+        "removeWarning": "Voulez vous vraiment supprimer ce preset ? Cette action est irréversible",
+        "editTitle": "Modifier le preset",
+        "icon": "Icone",
+        "text": "Texte",
+        "redefineLabel": "Redéfinir les actions",
+        "redefine": "Redéfinir"
       },
       "assets": {
         "title": "Assets"

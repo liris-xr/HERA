@@ -20,7 +20,7 @@ const loading = ref(false)
 const error = ref(false)
 
 
-const emit = defineEmits(["newLabel", "supprLabel"])
+const emit = defineEmits(["newLabel", "supprLabel", "editLabel"])
 
 const table = ref(null)
 
@@ -96,6 +96,8 @@ async function confirmLabelEdit() {
     const index = labels.value.findIndex(label => label.id === data.id)
     if(index !== -1)
       labels.value[index] = { ...editingLabel.value }
+
+    emit("editLabel", editingLabel.value)
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT

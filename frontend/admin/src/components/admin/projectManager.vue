@@ -32,9 +32,12 @@ const creatingProject = ref(null)
 
 const totalPages = ref(1)
 
+const uploadingProject = ref(null)
+
+const showSpinner = ref(false)
+
 
 function newScene(scene) {
-  console.log("new", scene)
   const index = projects.value.findIndex(project => project.id === scene.projectId)
 
   if(index !== -1)
@@ -42,10 +45,8 @@ function newScene(scene) {
 }
 
 function supprScene(scene) {
-  console.log("suppr", scene)
   const index = projects.value.findIndex(project => project.id === scene.projectId)
 
-  console.log("before", projects.value[index].scenes)
   if(index !== -1) {
     const project = projects.value[index]
     const index2 = project.scenes.findIndex(s => s.id === scene.id)
@@ -53,7 +54,17 @@ function supprScene(scene) {
     projects.value[index].scenes.splice(index2, 1)
   }
 
-  console.log("after", projects.value[index].scenes)
+}
+
+function editScene(scene) {
+  const index = projects.value.findIndex(project => project.id === scene.projectId)
+
+  if(index !== -1) {
+    const project = projects.value[index]
+    const index2 = project.scenes.findIndex(s => s.id === scene.id)
+
+    projects.value[index].scenes[index2] = { ...scene }
+  }
 }
 
 function createScene() {
@@ -64,7 +75,7 @@ function deleteScene(scene) {
   emit("deleteScene", scene)
 }
 
-async function editScene(sceneId) {
+async function askSceneEdit(sceneId) {
   const res = await fetch(`${ENDPOINT}scenes/${sceneId}`,{
     method: "GET",
     headers: {
@@ -193,16 +204,82 @@ async function fetchProjects(data=null) {
   }
 }
 
+async function exportProject(project) {
+
+  showSpinner.value = true
+
+  try {
+    await fetch(`${ENDPOINT}project/${project.id}/export`,
+        {
+          headers: {
+            'Authorization': `Bearer ${props.token}`,
+          }
+        })
+        .then(resp => resp.blob())
+        .then(blob => window.location.assign(window.URL.createObjectURL(blob)))
+  } catch(e) {} finally {
+    showSpinner.value = false
+  }
+
+
+}
+
+function importProject() {
+  uploadingProject.value = {}
+}
+
+async function confirmProjectImport() {
+  const formData = new FormData()
+
+  for(const key in uploadingProject.value)
+    if(uploadingProject.value.hasOwnProperty(key))
+      formData.append(key, uploadingProject.value[key]);
+
+  showSpinner.value = true
+
+  try {
+    const res = await fetch(`${ENDPOINT}project/import`,{
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${props.token}`,
+      },
+      body: formData
+    })
+
+    if(res.ok) {
+      const data = await res.json()
+
+      projects.value.push(data)
+    } else {
+      toast.error(res.status + " : " + res.statusText, {
+        position: toast.POSITION.BOTTOM_RIGHT
+      })
+    }
+  } catch(e) {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
+  } finally {
+    showSpinner.value = false
+  }
+
+  uploadingProject.value = null
+}
+
 onMounted(async () => {
   await fetchProjects()
 })
 
 
-defineExpose({projects, newScene, supprScene, element})
+defineExpose({projects, newScene, supprScene, editScene, element})
 
 </script>
 
 <template>
+
+  <div class="spinner-wrapper" v-if="showSpinner">
+    <icon-svg url="/icons/spinner.svg" theme="default" />
+  </div>
 
   <section ref="element">
 
@@ -212,6 +289,20 @@ defineExpose({projects, newScene, supprScene, element})
         :fields="['title']"
         :data="projects"
         :total-pages="totalPages"
+
+        :title-buttons="[
+            {
+              icon: '/icons/upload.svg',
+              func: importProject
+            }
+        ]"
+
+        :item-buttons="[
+          {
+            icon: '/icons/download.svg',
+            func: exportProject,
+          }
+        ]"
 
         @create="creatingProject = {}"
         @edit="editingProject = $event"
@@ -257,11 +348,13 @@ defineExpose({projects, newScene, supprScene, element})
             name: 'calibrationMessage',
             type: 'text',
             placeholder: 'Appuyer n\'importe où pour afficher le modèle',
+            required: true,
           },
           {
             name: 'unit',
             type: 'text',
             placeholder: 'Année',
+            required: true,
           },
           {
             name: 'published',
@@ -283,7 +376,7 @@ defineExpose({projects, newScene, supprScene, element})
               {{scene.title}}
             </span>
           <div class="actions">
-            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editScene(scene.id)"/>
+            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="askSceneEdit(scene.id)"/>
             <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteScene(scene)"/>
           </div>
         </div>
@@ -332,11 +425,13 @@ defineExpose({projects, newScene, supprScene, element})
             name: 'calibrationMessage',
             type: 'text',
             placeholder: 'Appuyer n\'importe où pour afficher le modèle',
+            required: true,
           },
           {
             name: 'unit',
             type: 'text',
             placeholder: 'Année',
+            required: true,
           },
           {
             name: 'published',
@@ -348,10 +443,39 @@ defineExpose({projects, newScene, supprScene, element})
       @cancel="creatingProject = null"
   />
 
+    <generic-modal
+        title="import"
+        section-name="projects"
+
+        :subject="uploadingProject"
+        :fields="[
+            {
+              name: 'zip',
+              type: 'file',
+              accept: '.zip',
+              required: true,
+            }
+        ]"
+
+        @confirm="confirmProjectImport"
+        @cancel="uploadingProject = null"
+    />
+
   </section>
 
 </template>
 
 <style scoped>
+
+.spinner-wrapper {
+  position: fixed;
+  inset: 0 0 0 0;
+
+  z-index: 1023;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 </style>

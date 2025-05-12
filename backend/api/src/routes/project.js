@@ -7,11 +7,16 @@ import {
     deleteFile,
     deleteFolder,
     duplicateFolder,
-    getProjectDirectory,
+    getProjectDirectory, getTempDirectory,
     getUpdatedPath,
-    uploadCover
+    uploadCover, uploadProject
 } from "../utils/fileUpload.js";
 import {Op} from "sequelize";
+import * as path from "node:path";
+import * as fs from "node:fs";
+import {DIRNAME} from "../../app.js";
+import decompress from "decompress"
+import {updateUrl} from "../utils/updateUrl.js";
 
 
 const router = express.Router()
@@ -489,7 +494,177 @@ router.get(baseUrl+'admin/projects/:page?', async (req, res) => {
 
 })
 
+router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res) => {
+    const token = req.user
+    const projectId = req.params.projectId
 
+    if(!token.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    try {
+
+        const project = await ArProject.findOne({
+            where: {id: projectId},
+            include:[
+                {
+                    model: ArScene,
+                    as: "scenes",
+                    separate: true,
+                    order: [['index', 'ASC']],
+                    attributes: {exclude: ['id']},
+                    include:[
+                        {
+                            model:ArMesh,
+                            as:"meshes",
+                            attributes: {exclude: ['id']}
+                        },
+                        {
+                            model: ArAsset,
+                            as: "assets",
+                            required:false,
+                            attributes: {exclude: ['id']}
+                        },
+                        {
+                            model: ArLabel,
+                            as: "labels",
+                            attributes: {exclude: ['id']}
+                        },
+                    ],
+                },
+
+                {
+                    model: ArUser,
+                    as: "owner",
+                    attributes: ["username"],
+                }
+
+            ],
+        })
+
+        if (project) {
+
+            const jsonFilePath = path.join(getTempDirectory(), projectId + "-" + Date.now() + '.json')
+
+            if (!fs.existsSync(getTempDirectory()))
+                fs.mkdirSync(getTempDirectory(), { recursive: true })
+
+            const projectObj = project.toJSON()
+            delete projectObj.id
+
+            await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
+
+
+            res.status(200).zip({
+                files: [
+
+                    {
+                        path: path.join(DIRNAME, jsonFilePath),
+                        name: 'project.json'
+                    },
+
+                    {
+                        path: getProjectDirectory(projectId),
+                        name: "files"
+                    }
+
+                ],
+                filename: `project-${projectId}.zip`
+            })
+
+        } else
+            return res.status(404).send({error: 'Project not found'})
+
+    }catch (e){
+        console.log(e);
+        res.status(400);
+        return res.send({error: 'Unable to fetch project'});
+    }
+
+})
+
+
+
+router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"), async (req, res) => {
+    const token = req.user
+
+    if(!token.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    console.log(req.uploadedFilePath)
+
+    try {
+        const dataFolder = req.uploadedFilePath + "-data"
+        // dézipper le fichier
+        await decompress(req.uploadedFilePath, dataFolder)
+
+        // créer les enregistrements dans la BD
+        const projectFilePath = path.join(dataFolder, "project.json")
+        const data = fs.readFileSync(projectFilePath)
+
+        const projectObj = JSON.parse(data)
+
+        const project = await ArProject.create(projectObj, {
+            include: [
+                {
+                    model: ArScene,
+                    as: "scenes",
+                    include:[
+                        {
+                            model:ArMesh,
+                            as:"meshes",
+                        },
+                        {
+                            model: ArAsset,
+                            as: "assets",
+                        },
+                        {
+                            model: ArLabel,
+                            as: "labels",
+                        },
+                    ],
+                },
+
+            ]
+        })
+
+        // modifier l'url des fichiers (assets, cover...)
+
+        project.pictureUrl = updateUrl(project.pictureUrl, project.id)
+        await project.save()
+
+        for(let scene of project.scenes) {
+            scene.envmapUrl = updateUrl(scene.envmapUrl, project.id)
+
+            for(let asset of scene.assets) {
+                asset.url = updateUrl(asset.url, project.id)
+                await asset.save()
+            }
+
+            await scene.save()
+        }
+
+
+        const projectDir = getProjectDirectory(project.id)
+
+        await fs.renameSync(dataFolder+"/files", projectDir)
+
+        // supprimer les fichiers temporaires
+        fs.rmSync(dataFolder, {recursive: true})
+        fs.rmSync(req.uploadedFilePath)
+
+        return res.status(200).send(project)
+
+    } catch(e) {
+        console.log(e);
+        res.status(400);
+        return res.send({error: 'Unable to fetch project'});
+    }
+
+})
 
 
 

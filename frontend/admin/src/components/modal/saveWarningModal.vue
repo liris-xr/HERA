@@ -24,7 +24,7 @@ const props = defineProps({
         <button-view :disabled="saving" :text="$t('saveWarningModal.buttons.cancel')" @click="$emit('close')"></button-view>
         <button-view :disabled="saving" :text="$t('saveWarningModal.buttons.continueWithoutSaving')" @click="$emit('dontSave')" theme="danger"></button-view>
 
-        <filled-button-view :disabled="saving" :text="saving ? $t('saveWarningModal.button.saving') : $t('saveWarningModal.buttons.saveAndContinue')" @click="$emit('save')"></filled-button-view>
+        <filled-button-view :disabled="saving" :text="saving ? $t('saveWarningModal.buttons.saving') : $t('saveWarningModal.buttons.saveAndContinue')" @click="$emit('save')"></filled-button-view>
 
       </div>
     </template>

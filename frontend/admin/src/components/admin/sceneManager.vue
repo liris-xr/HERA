@@ -23,7 +23,7 @@ const error = ref(false)
 const emit = defineEmits([
   'createAsset', 'editAsset', 'deleteAsset',
   'createLabel', 'editLabel', 'deleteLabel',
-  'newScene', 'supprScene'])
+  'newScene', 'supprScene', 'editScene'])
 
 const table = ref(null)
 
@@ -38,7 +38,7 @@ function deleteLabel(label) {
   emit("deleteLabel", label)
 }
 
-function editLabel(label) {
+function askLabelEdit(label) {
   emit("editLabel", label)
 }
 
@@ -50,12 +50,23 @@ function deleteAsset(asset) {
   emit("deleteAsset", asset)
 }
 
-function editAsset(asset) {
+function askAssetEdit(asset) {
   emit("editAsset", asset)
 }
 
 function createAsset() {
   emit("createAsset", editingScene.value)
+}
+
+function editAsset(asset) {
+  const index = scenes.value.findIndex(scene => scene.id === asset.scene.id)
+
+  if(index !== -1) {
+    const scene = scenes.value[index]
+    const index2 = scene.assets.findIndex(a => a.id === asset.id)
+
+    scenes.value[index].assets[index2] = { ...asset }
+  }
 }
 
 async function newLabel(label) {
@@ -66,6 +77,17 @@ async function newLabel(label) {
 
   if(editingScene.value?.id === label.sceneId) {
     editingScene.value.labels.push(label)
+  }
+}
+
+function editLabel(label) {
+  const index = scenes.value.findIndex(scene => scene.id === label.scene.id)
+
+  if(index !== -1) {
+    const scene = scenes.value[index]
+    const index2 = scene.labels.findIndex(l => l.id === label.id)
+
+    scenes.value[index].labels[index2] = { ...label }
   }
 }
 
@@ -179,6 +201,8 @@ async function confirmSceneEdit() {
     const index = scenes.value.findIndex(scene => scene.id === data.id)
     if(index !== -1)
       scenes.value[index] = { ...data }
+
+    emit("editScene", data)
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
@@ -227,7 +251,7 @@ onMounted(async () => {
   await fetchScenes()
 })
 
-defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, newAsset, supprAsset, element})
+defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, editLabel, newAsset, supprAsset, editAsset, element})
 
 </script>
 
@@ -320,7 +344,7 @@ defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, 
               {{asset.name}}
             </span>
           <div class="actions">
-            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editAsset(asset)"/>
+            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="askAssetEdit(asset)"/>
             <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteAsset(asset)"/>
           </div>
         </div>
@@ -341,7 +365,7 @@ defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, 
               {{label.text}}
             </span>
           <div class="actions">
-            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="editLabel(label)"/>
+            <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="askLabelEdit(label)"/>
             <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="deleteLabel(label)"/>
           </div>
         </div>

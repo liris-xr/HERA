@@ -260,6 +260,8 @@
         "edit": "Edit project",
         "delete": "Delete project",
         "create": "Create a new project",
+        "import": "Importer un projet",
+        "zip": "ZIP file",
         "title": "Title",
         "scenes": "Scenes",
         "published": "Published",

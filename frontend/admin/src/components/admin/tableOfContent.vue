@@ -9,7 +9,6 @@ const props = defineProps({
 const activeSection = ref(null)
 
 function scrollTo(section) {
-  console.log(section)
 
   const el = props.sections[section].element
   window.scrollTo({top: el.offsetTop - 65, behavior: "smooth"})

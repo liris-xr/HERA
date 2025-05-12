@@ -28,19 +28,24 @@ function handleFile(event, fieldName) {
     props.subject[fieldName] = file
 }
 
+function putError(element, error) {
+  element.classList.add("error")
+  element.setCustomValidity(t("admin.required"))
+  element.reportValidity()
+}
+
 function validateFields() {
   let ok = true;
-
-  console.log(fieldRefs.value)
 
   for(const field of props.fields) {
     const elem = fieldRefs.value[field.name];
 
-    if(field.required && !elem.value) {
+    if(
+        (field.required && (!elem.value || elem.value?.trim?.()?.length === 0))
+        || (field.validator && !field.validator?.(elem.value))
+    ) {
       ok = false;
-      elem.classList.add("error")
-      elem.setCustomValidity(t("admin.required"))
-      elem.reportValidity()
+      putError(elem, t("admin.required"))
     } else {
       elem.classList.remove("error")
     }

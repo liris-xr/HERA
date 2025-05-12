@@ -249,11 +249,13 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
             await updateListById(knonwMeshesIds, typeof req.body.meshes === "object" ? req.body.meshes : JSON.parse(req.body.meshes),
                 async (mesh) => {
                     await ArMesh.update({
+                        id:mesh.id,
                         position:mesh.position,
                         rotation:mesh.rotation,
                         scale: mesh.scale,
+                        color:mesh.color,
                         emissiveIntensity: mesh.emissiveIntensity,
-                        emissiveColor: mesh.emissiveColor,
+                        emissive: mesh.emissive,
                         roughenss: mesh.roughness,
                         metalness: mesh.metalness,
                         opacity: mesh.opacity
@@ -266,14 +268,16 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
                 async (mesh)=>{
                     await ArMesh.create({
+                        id:mesh.id,
                         position:mesh.position,
                         rotation:mesh.rotation,
                         scale: mesh.scale,
                         sceneId:scene.id,
                         assetId:mesh.assetId,
+                        color:mesh.color,
                         name: mesh.name,
                         emissiveIntensity: mesh.emissiveIntensity,
-                        emissiveColor: mesh.emissiveColor,
+                        emissive: mesh.emissive,
                         roughenss: mesh.roughness,
                         metalness: mesh.metalness,
                         opacity: mesh.opacity
@@ -444,6 +448,10 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             where: { id: sceneId },
             include: [
                 {
+                    model:ArMesh,
+                    as:'meshes'
+                },
+                {
                     model: ArAsset,
                     as: 'assets'
                 },
@@ -488,6 +496,17 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             },{
                 transaction: t
             });
+
+            //copy all meshes related to scene
+            const newMeshes = await Promise.all(scene.meshes.map(async mesh => {
+                return ArMesh.create({
+                    ...mesh.get({ plain: true }),
+                    id: "project-"+newScene.projectId+"-scene-"+req.body.newTitle+"-mesh-"+mesh.name, // générer un nouvel id
+                    sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
+                },{
+                    transaction:t
+                });
+            }));
 
             //copy all assets related to scene
             const newAssets = await Promise.all(scene.assets.map(async asset => {

@@ -19,6 +19,7 @@
     "mariadb": "^3.3.0",
     "multer": "^1.4.5-lts.1",
     "sequelize": "^6.37.3",
+    "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7"
   }
 }

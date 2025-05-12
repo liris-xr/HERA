@@ -5,6 +5,7 @@ import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
 import Stats from 'three/addons/libs/stats.module.js';
+import {CustomBlending, Vector2} from "three";
 
 export class ArSessionManager {
     sceneManager;
@@ -14,7 +15,6 @@ export class ArSessionManager {
 
     shadowMapSize;
     controls;
-
 
     #isArRunning;
 
@@ -27,14 +27,16 @@ export class ArSessionManager {
         this.domWidth = 380;
         this.domHeight = 280;
         this.#isArRunning = ref(false);
-
+        
         this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
         this.arCamera = new ArCamera();
 
         this.arRenderer = new ArRenderer(this.shadowMapSize,1);
         this.labelRenderer = new LabelRenderer();
 
-        this.sceneManager.onSceneChanged = function(){this.labelRenderer.clear()}.bind(this);
+        this.sceneManager.onSceneChanged = function(){
+            this.labelRenderer.clear()
+        }.bind(this);
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
     }

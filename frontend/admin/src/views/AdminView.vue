@@ -238,7 +238,6 @@ table tr:hover {
 }
 
 .item span {
-  max-width: 80%;
   word-break: keep-all;
   overflow: hidden;
 }

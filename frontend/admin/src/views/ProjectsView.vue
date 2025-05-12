@@ -79,7 +79,6 @@ async function createProject(title) {
     calibrationMessage: t("defaultProjectSettings.calibrationMessage"),
   }
 
-
   try {
     const res = await fetch(`${ENDPOINT}project`,
         {

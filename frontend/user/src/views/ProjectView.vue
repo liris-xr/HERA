@@ -1,7 +1,7 @@
 <script setup>
 import ArView from "@/components/arView.vue";
 import ProjectDetail from "@/components/projectDetail.vue";
-import {ref} from "vue";
+import {computed, onMounted, reactive, ref} from "vue";
 import {onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
@@ -9,13 +9,23 @@ import ProjectInfo from "@/components/projectInfo.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import router from "@/router/index.js";
 import {useAuthStore} from "@/store/auth.js";
+import FilledButtonView from "@/components/button/filledButtonView.vue";
+import {SocketConnection} from "@/js/socket/socketConnection.js";
+import {SocketActionManager} from "@/js/socket/socketActionManager.js";
+import {useI18n} from "vue-i18n";
 
+const {t} = useI18n()
 const { isAuthenticated, token } = useAuthStore()
 
 const route = useRoute();
 const project = ref({});
 const loading = ref(true);
 const error = ref(false);
+
+const arView = ref(null)
+
+const socket = ref(null)
+const connected = ref(false)
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -58,6 +68,46 @@ onBeforeRouteUpdate((to, from, next)=>{
   beforeRedirect(to, from, next)
 })
 
+function initSocket() {
+  socket.value = new SocketConnection(
+      ENDPOINT.replace("/api/", ""),
+      "/api/socket",
+      {
+        transports: ['websocket']
+      }
+  )
+
+  socket.value.send("presentation:join", route.query.presentation, (data) => {
+    if(data.success)
+      connected.value = true
+    console.log(data)
+  })
+
+  socket.value.addListener("presentation:emit", (data) => {
+    console.log(eval(data.message))
+  })
+}
+
+function initSocketActionManager() {
+  socket.value.socketActionManager = new SocketActionManager(arView.value.arSessionManager)
+  socket.value.send("presentation:load")
+}
+
+
+onMounted(() => {
+
+  if(route.query.presentation)
+    initSocket()
+
+})
+
+
+const connectedText = computed(() => {
+  if(socket.value?.state?.connected && connected.value)
+    return t("presentation.controls.connected.true");
+  return t("presentation.controls.connected.false");
+})
+
 
 
 </script>
@@ -88,11 +138,27 @@ onBeforeRouteUpdate((to, from, next)=>{
 
     <section class="flex">
       <section>
+        <div v-if="socket" class="presentationState">
+          {{$t("projectView.presentationState")}} : <span v-bind:class="{ danger: !(socket.state.connected && connected), success: socket.state.connected && connected }">{{connectedText}}</span>
+        </div>
         <project-detail v-if="!(loading || error)" :project-data="project"></project-detail>
       </section>
       <span></span>
       <section>
-        <ar-view v-if="!(loading || error)" :json="project"></ar-view>
+        <filled-button-view
+            v-if="isAuthenticated"
+
+            icon="/icons/play.svg"
+            class="center"
+            :text="$t('projectView.startPresentation')"
+            @click="router.push({ name: 'presentation' });"/>
+        <ar-view
+            v-if="!(loading || error)"
+            ref="arView"
+
+            :json="project"
+
+            @loaded="socket && initSocketActionManager()"/>
         <project-info v-if="!(loading || error)" :project-info="project"></project-info>
       </section>
     </section>
@@ -102,6 +168,21 @@ onBeforeRouteUpdate((to, from, next)=>{
 
 <style scoped>
 
+.danger {
+  color: var(--dangerColor);
+}
+
+.success {
+  color: var(--succesColor)
+}
+
+.center {
+  margin: auto;
+}
+
+.presentationState{
+  margin-bottom: 16px;
+}
 
 
 @media  screen and (min-width: 900px) {

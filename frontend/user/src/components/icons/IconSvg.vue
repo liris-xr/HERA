@@ -2,20 +2,24 @@
 import {computed} from "vue";
 import {BASE_URL} from "@/js/endpoints.js";
 
-
 const props = defineProps({
   url: {type: String, required: true},
-  theme: {type: String, default:"default"},
+  theme: {type: String, default: "default"},
   size: {type: Number, default: 24},
+  hoverEffect: {type: Boolean, default: false},
 })
+const svgMask = computed(() => `url(${BASE_URL + props.url}) no-repeat center`)
+const size = computed(() => props.size + "px")
 
-const svgMask = computed(()=>`url(${BASE_URL+props.url}) no-repeat center`)
-const size = computed(()=>props.size+"px")
-
+const getClass = computed(() => {
+  let string = props.theme + 'Icon'
+  string += props.hoverEffect ? ' hoverEffect' : ''
+  return string
+})
 </script>
 
 <template>
-    <div class="logo" :class="props.theme+'Icon'"></div>
+  <div class="logo" :class="getClass"></div>
 </template>
 
 <style scoped>
@@ -29,31 +33,43 @@ const size = computed(()=>props.size+"px")
 }
 
 
-.backgroundIcon{
+.hoverEffect {
+  cursor: pointer;
+}
+
+.hoverEffect:hover {
+  filter: brightness(124%);
+}
+
+
+.backgroundIcon {
   background-color: var(--backgroundColor);
 }
-.textIcon{
+
+.textIcon {
   background-color: var(--textColor);
 }
 
-.textImportantIcon{
+.textImportantIcon {
   background-color: var(--textImportantColor);
 }
 
-.defaultIcon{
+.defaultIcon {
   background-color: var(--accentColor);
 }
-.dangerIcon{
+
+.dangerIcon {
   background-color: var(--dangerColor);
   width: v-bind(size);
 }
-.warningIcon{
+
+.warningIcon {
   background-color: var(--warningColor);
 }
 
-
-
-
+.successIcon {
+  background-color: var(--successColor);
+}
 
 
 </style>

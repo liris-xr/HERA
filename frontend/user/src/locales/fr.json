@@ -7,6 +7,8 @@
     "allProjects": "Tous les projets"
   },
 
+  "none": "Aucun",
+
   "login": {
     "emailLabel": "Adresse e-mail",
     "emailPlaceholder": "Votre adresse e-mail",
@@ -64,7 +66,9 @@
       "updatedOn": "Mis à jour le : ",
       "sceneCount": "Nombre de scènes : ",
       "at": "à"
-    }
+    },
+    "startPresentation": "Démarrer une nouvelle présentation",
+    "presentationState": "Etat de la présentation"
   },
 
   "account": {
@@ -81,6 +85,39 @@
       "notMatching": "Les mots de passes ne correspondent pas",
       "success": "Mot de passe modifié avec succès"
     }
+  },
+
+  "presentation": {
+    "sceneTitle": "Scène",
+    "controls": {
+      "title": "Contrôles",
+      "connected": {
+        "true": "Connecté",
+        "false": "Non connecté"
+      },
+      "showQrcode": "Afficher le QR code",
+      "reset": "Réinitialiser la scène",
+      "showAll": "Tout afficher",
+      "hideAll": "Tout masquer"
+    },
+    "sections": {
+      "presets": {
+        "title": "Presets",
+        "manageButton": "Gérer",
+        "managementTitle": "Gestion des presets"
+      },
+      "assets": {
+        "title": "Assets"
+      },
+      "labels": {
+        "title": "Labels"
+      }
+    },
+    "quitQr": "Appuyez n'importe ou pour faire disparaitre le QR code",
+    "unpublishedWarning": "Impossible d'afficher le QR code : votre projet est privé",
+    "brightnessTip": "Pour faciliter le scan du QR code, augmentez la luminosité de votre écran",
+    "viewers": "spectateurs",
+    "currentScene": "Scène actuelle"
   },
 
   "projectCard": {

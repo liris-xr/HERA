@@ -83,4 +83,15 @@ export class LabelPlayer extends RenderLoopInterface{
 
         if(t>=this.#maxTimestamp) this.pause();
     }
+
+    getLabels(){
+        return shallowReactive(this.#labels);
+    }
+
+    findLabelById(id) {
+        for(const label of this.#labels)
+            if(label.id === id)
+                return label
+        return null
+    }
 }

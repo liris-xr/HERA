@@ -103,7 +103,12 @@
       "presets": {
         "title": "Presets",
         "manageButton": "Manage",
-        "managementTitle": "Presets management"
+        "managementTitle": "Presets management",
+        "save": "Save",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "removeTitle": "Remove the preset",
+        "removeWarning": "Do you really want to remove this preset ? This action can't be undone"
       },
       "assets": {
         "title": "Assets"

@@ -19,6 +19,7 @@ import PresentationLabel from "@/components/items/PresentationLabel.vue";
 import PresentationPreset from "@/components/items/PresentationPreset.vue";
 import PresentationPresetItem from "@/components/items/PresentationPresetItem.vue";
 import ButtonView from "@/components/button/buttonView.vue";
+import {toast} from "vue3-toastify";
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -28,7 +29,7 @@ if (!isAuthenticated.value) {
 }
 
 const route = useRoute();
-const project = ref({});
+const project = reactive({});
 const loading = ref(true);
 const error = ref(false);
 
@@ -56,7 +57,11 @@ const submitMessage = ref(null)
 
 const arView = ref(null)
 
-const showPresetManager = ref(false)
+const editingPresets = ref(null)
+
+const removingPreset = ref(null)
+const editingPreset = ref(null)
+const creatingPreset = ref(null)
 
 
 async function fetchProject(projectId) {
@@ -79,7 +84,7 @@ async function fetchProject(projectId) {
 }
 
 fetchProject(route.params.projectId).then((r)=>{
-  project.value=r
+  Object.assign(project, r)
   loading.value = false;
 });
 
@@ -159,8 +164,14 @@ function hideAll() {
   socket.send("presentation:action:hideAll", {})
 }
 
-function removePreset(preset) {
-  console.log('TODO: remove', preset)
+function removePreset() {
+
+  const index = editingPresets.value.indexOf(removingPreset.value)
+
+  if(index !== -1)
+    editingPresets.value.splice(index, 1)
+
+  removingPreset.value = null
 }
 
 function editPreset(preset) {
@@ -169,6 +180,27 @@ function editPreset(preset) {
 
 function createPreset() {
   console.log('TODO: create preset')
+}
+
+async function savePresets() {
+  const res = await fetch(`${ENDPOINT}project/${project.id}/presets`,{
+    method: "PUT",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token.value}`,
+    },
+    body: JSON.stringify({presets: editingPresets.value}),
+  })
+
+  if(res.ok) {
+    project.presets = editingPresets.value
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
+  }
+
+  editingPresets.value = null
 }
 
 const connectedText = computed(() => {
@@ -290,7 +322,14 @@ const presetsExample = [
         <section class="scene">
           <section class="sceneSelection">
             <label for="sceneSelection">{{$t("presentation.currentScene")}}</label>
-            <select @change="setScene" id="sceneSelection" name="sceneSelection" v-if="arView" v-model="arView.arSessionManager.sceneManager.activeSceneId">
+            <select
+                v-if="arView?.arSessionManager?.sceneManager"
+                v-model="arView.arSessionManager.sceneManager.activeSceneId"
+
+                id="sceneSelection"
+                name="sceneSelection"
+
+                @change="setScene">
               <option
                   v-for="scene in arView?.arSessionManager.sceneManager.scenes"
                   :value="scene.sceneId" >
@@ -329,7 +368,7 @@ const presetsExample = [
             <filled-button-view
                 icon="/icons/edit.svg"
                 :text="$t('presentation.sections.presets.manageButton')"
-                @click="showPresetManager = true" />
+                @click="editingPresets = JSON.parse(JSON.stringify(project.presets))" />
           </div>
           <div class="presets">
 
@@ -392,7 +431,7 @@ const presetsExample = [
     <p>{{$t("presentation.quitQr")}}</p>
   </div>
 
-  <div class="modal" v-if="showPresetManager">
+  <div class="modal" v-if="editingPresets">
     <div>
       <div class="inline-flex">
         <h3>{{ $t("presentation.sections.presets.managementTitle") }}</h3>
@@ -401,19 +440,46 @@ const presetsExample = [
       </div>
       <div>
         <presentation-preset-item
-          v-for="preset in presetsExample"
+          v-for="preset in editingPresets"
 
           :preset="preset"
 
           @edit="editPreset(preset)"
-          @remove="removePreset(preset)" />
+          @remove="removingPreset = preset" />
+      </div>
+      <div class="buttons">
+        <filled-button-view :text="$t('presentation.sections.presets.save')" @click="savePresets()" />
+        <button-view :text="$t('presentation.sections.presets.cancel')" @click="editingPresets = null" />
       </div>
     </div>
   </div>
+
+  <div class="modal" v-if="removingPreset">
+    <div>
+      <div class="center">
+        <h3>{{ $t("presentation.sections.presets.removeTitle") }}</h3>
+        <p class="danger">{{ $t("presentation.sections.presets.removeWarning") }}</p>
+      </div>
+      <div class="buttons">
+        <filled-button-view :text="$t('presentation.sections.presets.confirm')" @click="removePreset()" />
+        <button-view :text="$t('presentation.sections.presets.cancel')" @click="removingPreset = null" />
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+
 </template>
 
 
 <style scoped>
+
+.center * {
+  text-align: center;
+}
 
 .inline-flex {
   display: flex;
@@ -435,6 +501,18 @@ const presetsExample = [
   background-color: var(--backgroundColor);
   padding: 25px;
   border-radius: 15px;
+
+  width: 65%;
+}
+
+.modal .buttons {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+
+  margin-top: 15px;
 }
 
 .presets {

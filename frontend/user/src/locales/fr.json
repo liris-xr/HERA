@@ -104,7 +104,12 @@
       "presets": {
         "title": "Presets",
         "manageButton": "Gérer",
-        "managementTitle": "Gestion des presets"
+        "managementTitle": "Gestion des presets",
+        "save": "Sauvegarder",
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "removeTitle": "Supprimer le preset",
+        "removeWarning": "Voulez vous vraiment supprimer ce preset ? Cette action est irréversible"
       },
       "assets": {
         "title": "Assets"

@@ -102,8 +102,8 @@ export class SocketActionManager {
         this.arSessionManager.sceneManager.activeSceneId = this.arSessionManager.sceneManager.scenes[0].sceneId
     }
 
-    hideAll() {
-        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
+    hideAll(data) {
+        const scene = data?.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
 
         for(const asset of scene.getAssets())
             this.toggleAsset({assetId: asset.id, value: false})
@@ -112,8 +112,8 @@ export class SocketActionManager {
             this.toggleLabel({labelId: label.id, value: false})
     }
 
-    showAll() {
-        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
+    showAll(data) {
+        const scene = data?.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
 
         for(const asset of scene.getAssets())
             this.toggleAsset({assetId: asset.id, value: true})

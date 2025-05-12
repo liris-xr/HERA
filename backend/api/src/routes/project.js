@@ -421,6 +421,36 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
     }
 })
 
+router.put(baseUrl+'project/:projectId/presets', authMiddleware, async (req, res) => {
+    const token = req.user
+    const projectId = req.params.projectId
+
+    const project = await ArProject.findOne({
+        where: { id: projectId },
+    })
+
+    if(!project)
+        return res.status(404).send({ error: 'No project found'});
+
+    try {
+
+        await project.update({
+            presets: req.body.presets
+        }, {
+            returning: true
+        })
+
+        return res.status(200).send(project)
+
+    } catch(e) {
+        console.log(e);
+        res.status(400);
+        return res.send({error: 'Unable to fetch project'});
+    }
+
+
+})
+
 
 // routes pour le mode admin
 

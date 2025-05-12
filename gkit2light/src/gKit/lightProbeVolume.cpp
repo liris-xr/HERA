@@ -9,6 +9,8 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
+#include <omp.h>
+
 
 
 // renvoie la normale au point d'intersection
@@ -39,6 +41,8 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->nbDirectSamples = nbDirectSamples;
     this->nbIndirectSamples = nbIndirectSamples;
     this->nbDirectIndirectSamples = nbDirectIndirectSamples;
+
+    this->writeParameters(density,width,depth,height,center);
 
     this->directWeight = 1.0/float(nbDirectSamples);
     this->indirectWeight = 1.0/float(nbIndirectSamples);
@@ -146,7 +150,7 @@ void LightProbeVolume::updateDirectLighting(LightProbe & probe) {
 }
 
 void LightProbeVolume::bake() {
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for(LightProbe & probe : this->probes) {
         updateDirectLighting(probe);
 
@@ -159,16 +163,24 @@ void LightProbeVolume::bake() {
     }
 }
 
-void LightProbeVolume::toFile() {
+void LightProbeVolume::writeLPV() {
     
+    // Write spherical harmonics textures
     for(int coef=0;coef<9;coef++) {
         std::fstream file;
         file.open("../frontend/admin/public/textures/sh"+std::to_string(coef)+".csv",std::ios_base::out);
-        for(int i=0;i<shTextures[coef].size();i++) {
+        for(int i=0;i<this->shTextures[coef].size();i++) {
             file<<shTextures[coef][i]<<',';
         }
         file.close();
     } 
- 
+}
 
+void LightProbeVolume::writeParameters(float density,float width,float depth,float height,const Point & center) {
+     // Write light probe volume parameters in a json file
+     std::fstream file;
+     std::string json = "{\n\"density\":"+std::to_string(density)+",\n\"width\":"+std::to_string(width)+",\n\"depth\":"+std::to_string(depth)+",\n\"height\":"+std::to_string(height)+",\n\"center\":{\"x\":"+std::to_string(center.x)+",\"y\":"+std::to_string(center.y)+",\"z\":"+std::to_string(center.z)+"}\n}";
+     file.open("../frontend/admin/public/textures/lpvParamaters.json",std::ios_base::out);
+     file<<json;
+     file.close();
 }

@@ -260,15 +260,12 @@ void main() {
 export class MeshManager {
     #meshes
 	textureLoader
-	lightTex
 	shTextures;
+	lpvParamaters;
 
     constructor() {
         this.#meshes = shallowReactive([]);
 		this.textureLoader = new THREE.TextureLoader();
-		
-		this.lightTex = this.textureLoader.load( BASE_URL+'textures/lightMap.png' );
-		
 
 		this.shTextures = [];
 		for(let i = 0;i<9;i++) {
@@ -276,13 +273,18 @@ export class MeshManager {
 			.then((res) => res.text())
 			.then((text) => {
 				const values = text.split(',').map(Number);
-				console.log(values);
 				this.shTextures.push(new Float32Array(values));
 			})
 			.catch((e) => console.error(e));
 		}
-		this.lightTex.magFilter = THREE.NearestFilter;
 
+		fetch(BASE_URL+"textures/lpvParameters.json")
+			.then((res) => {res.json(); console.log(res);
+			})
+			.then((json) => {
+				this.lpvParamaters = json;
+			})
+			.catch((e) => console.error(e));
     }
 
     getMeshes = computed(()=>{
@@ -302,7 +304,10 @@ export class MeshManager {
 				shader.fragmentShader = fragShader
 
 				for(let i = 0;i<9;i++) {
-					const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i],16,16,16);
+					const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
+																this.lpvParamaters.width*this.lpvParamaters.density,
+																this.lpvParamaters.depth*this.lpvParamaters.density,
+																this.lpvParamaters.height*this.lpvParamaters.density);
 					sh3DTexture.magFilter = THREE.LinearFilter;
 					sh3DTexture.type = THREE.FloatType;
 					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
@@ -333,10 +338,10 @@ export class MeshManager {
 				// distanceFromGeometryTexture.needsUpdate = true;
 				// shader.uniforms["distanceFromGeometry"] = {value:distanceFromGeometryTexture}
 
-				shader.uniforms.lpvCenter = {value : new THREE.Vector3(0,1,0)};
-				shader.uniforms.lpvWidth = {value : 2};
-				shader.uniforms.lpvDepth = {value : 2};
-				shader.uniforms.lpvHeight = {value : 2};
+				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParamaters.center.x,this.lpvParamaters.center.y,this.lpvParamaters.center.z)};
+				shader.uniforms.lpvWidth = {value : this.lpvParamaters.width};
+				shader.uniforms.lpvDepth = {value : this.lpvParamaters.depth};
+				shader.uniforms.lpvHeight = {value : this.lpvParamaters.height};
 			}
 			
         }

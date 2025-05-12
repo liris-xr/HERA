@@ -40,7 +40,7 @@ int main( const int argc, const char **argv )
             16,32,16);
 
     lpv.bake();
-    lpv.toFile();
+    lpv.writeLPV();
 
     auto stop= std::chrono::high_resolution_clock::now();
     int cpu= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();

@@ -2,9 +2,10 @@
 #define _LIGHT_SOURCES_H
 
 #include "mesh.h"
-#include "gltf.h"
+#include "vec.h"
 #include <random>
 #include <vector>
+#include "gltf.h"
 
 // Tableau des triangles émissifs de la scène
 // + Tableau de pondération en fonction de la taille des triangles

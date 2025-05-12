@@ -301,7 +301,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                 }
 
                 const shBasis = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
-                THREE.SphericalHarmonics3.getBasisAt( dir, shBasis );
+                THREE.SphericalHarmonics3.getBasisAt( dir.clone().negate(), shBasis );
                 if(closestIntersect.object.material.roughness > 0) { // Light reflector touched
                     const intersectionNormal = new THREE.Vector3(closestIntersect.normal.x,closestIntersect.normal.z,-closestIntersect.normal.y)
                     var lightReflectorColor = new THREE.Vector3()
@@ -482,10 +482,10 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
 
             probe.sh = sh
 
-            // if(this.invalidityTexture[probeId] > 0.2)  {
-            //     probe.setColor(new THREE.Color(this.invalidityTexture[probeId],0,0));
-            //     probe.addSphereToScene(this.scene)
-            // }
+            if(this.invalidityTexture[probeId] > 0.2)  {
+                probe.setColor(new THREE.Color(this.invalidityTexture[probeId],0,0));
+                probe.addSphereToScene(this.scene)
+            }
 
             // if(this.distanceFromGeometryTexture[probeId] < 0.1)  {
             //     probe.setColor(new THREE.Color(this.invalidityTexture[probeId],0,0));

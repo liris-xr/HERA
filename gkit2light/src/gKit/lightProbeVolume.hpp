@@ -136,6 +136,12 @@ class LightProbeVolume {
         ~LightProbeVolume();
 
         void bake();
+        void writeLPV();
+        void writeParameters(const float density,
+                             const float width,
+                             const float depth,
+                             const float height,
+                             const Point & center );
         
         
 };

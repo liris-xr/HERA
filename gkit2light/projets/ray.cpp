@@ -32,9 +32,6 @@ int main( const int argc, const char **argv )
     Mesh mesh= read_gltf_mesh(scene_filename);
     std::vector<GLTFMaterial> materials = read_gltf_materials(scene_filename);
 
-    // for(int i = 0;i<mesh.triangle_count();i++)
-    //     std::cout<<materials[mesh.triangle_material_index(i)].emission.max()<<std::endl;
-    
     auto start= std::chrono::high_resolution_clock::now();
     
     LightProbeVolume lpv(mesh,materials,
@@ -42,7 +39,8 @@ int main( const int argc, const char **argv )
             8,2,2,2,
             16,32,16);
 
-    // lpv.bake();
+    lpv.bake();
+    lpv.writeLPV();
 
     auto stop= std::chrono::high_resolution_clock::now();
     int cpu= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();

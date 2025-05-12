@@ -10,6 +10,7 @@
     "adb": "adb reverse tcp:8080 tcp:8080 & adb reverse tcp:3000 tcp:3000"
   },
   "dependencies": {
+    "csv-parser": "^3.2.0",
     "fs": "^0.0.1-security",
     "jwt-decode": "^4.0.0",
     "three": "^0.163.0",

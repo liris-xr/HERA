@@ -260,15 +260,31 @@ void main() {
 export class MeshManager {
     #meshes
 	textureLoader
-	lightTex
+	shTextures;
+	lpvParamaters;
 
     constructor() {
         this.#meshes = shallowReactive([]);
 		this.textureLoader = new THREE.TextureLoader();
-		
-		this.lightTex = this.textureLoader.load( BASE_URL+'textures/lightMap.png' );
-		this.lightTex.magFilter = THREE.NearestFilter;
 
+		this.shTextures = [];
+		for(let i = 0;i<9;i++) {
+			fetch(BASE_URL+'textures/sh'+i+'.csv')
+			.then((res) => res.text())
+			.then((text) => {
+				const values = text.split(',').map(Number);
+				this.shTextures.push(new Float32Array(values));
+			})
+			.catch((e) => console.error(e));
+		}
+
+		fetch(BASE_URL+"textures/lpvParameters.json")
+			.then((res) => {res.json(); console.log(res);
+			})
+			.then((json) => {
+				this.lpvParamaters = json;
+			})
+			.catch((e) => console.error(e));
     }
 
     getMeshes = computed(()=>{
@@ -283,12 +299,15 @@ export class MeshManager {
 		}
         
         mesh.material.onBeforeCompile = (shader) => {
-			if(scene.shTextures) {
+			if(this.shTextures) {
 				shader.vertexShader = vertexShader;
 				shader.fragmentShader = fragShader
 
 				for(let i = 0;i<9;i++) {
-					const sh3DTexture = new THREE.Data3DTexture(scene.shTextures[i],scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
+					const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
+																this.lpvParamaters.width*this.lpvParamaters.density,
+																this.lpvParamaters.depth*this.lpvParamaters.density,
+																this.lpvParamaters.height*this.lpvParamaters.density);
 					sh3DTexture.magFilter = THREE.LinearFilter;
 					sh3DTexture.type = THREE.FloatType;
 					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
@@ -299,30 +318,30 @@ export class MeshManager {
 					shader.uniforms["sh"+i] = {value: sh3DTexture};
 				}
 
-				const invalidityTexture = new THREE.Data3DTexture(scene.invalidityTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
-				invalidityTexture.format = THREE.RedFormat
-				invalidityTexture.magFilter = THREE.LinearFilter;
-				invalidityTexture.type = THREE.FloatType;
-				invalidityTexture.wrapS = THREE.ClampToEdgeWrapping
-				invalidityTexture.wrapT = THREE.ClampToEdgeWrapping
-				invalidityTexture.wrapR = THREE.ClampToEdgeWrapping
-				invalidityTexture.needsUpdate = true;
-				shader.uniforms["invalidity"] = {value:invalidityTexture}
+				// const invalidityTexture = new THREE.Data3DTexture(scene.invalidityTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
+				// invalidityTexture.format = THREE.RedFormat
+				// invalidityTexture.magFilter = THREE.LinearFilter;
+				// invalidityTexture.type = THREE.FloatType;
+				// invalidityTexture.wrapS = THREE.ClampToEdgeWrapping
+				// invalidityTexture.wrapT = THREE.ClampToEdgeWrapping
+				// invalidityTexture.wrapR = THREE.ClampToEdgeWrapping
+				// invalidityTexture.needsUpdate = true;
+				// shader.uniforms["invalidity"] = {value:invalidityTexture}
 
-				const distanceFromGeometryTexture = new THREE.Data3DTexture(scene.distanceFromGeometryTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
-				distanceFromGeometryTexture.format = THREE.RedFormat
-				distanceFromGeometryTexture.magFilter = THREE.LinearFilter;
-				distanceFromGeometryTexture.type = THREE.FloatType;
-				distanceFromGeometryTexture.wrapS = THREE.ClampToEdgeWrapping
-				distanceFromGeometryTexture.wrapT = THREE.ClampToEdgeWrapping
-				distanceFromGeometryTexture.wrapR = THREE.ClampToEdgeWrapping
-				distanceFromGeometryTexture.needsUpdate = true;
-				shader.uniforms["distanceFromGeometry"] = {value:distanceFromGeometryTexture}
+				// const distanceFromGeometryTexture = new THREE.Data3DTexture(scene.distanceFromGeometryTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
+				// distanceFromGeometryTexture.format = THREE.RedFormat
+				// distanceFromGeometryTexture.magFilter = THREE.LinearFilter;
+				// distanceFromGeometryTexture.type = THREE.FloatType;
+				// distanceFromGeometryTexture.wrapS = THREE.ClampToEdgeWrapping
+				// distanceFromGeometryTexture.wrapT = THREE.ClampToEdgeWrapping
+				// distanceFromGeometryTexture.wrapR = THREE.ClampToEdgeWrapping
+				// distanceFromGeometryTexture.needsUpdate = true;
+				// shader.uniforms["distanceFromGeometry"] = {value:distanceFromGeometryTexture}
 
-				shader.uniforms.lpvCenter = {value : scene.shTexturesCenter};
-				shader.uniforms.lpvWidth = {value : scene.lpvWidth};
-				shader.uniforms.lpvDepth = {value : scene.lpvDepth};
-				shader.uniforms.lpvHeight = {value : scene.lpvHeight};
+				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParamaters.center.x,this.lpvParamaters.center.y,this.lpvParamaters.center.z)};
+				shader.uniforms.lpvWidth = {value : this.lpvParamaters.width};
+				shader.uniforms.lpvDepth = {value : this.lpvParamaters.depth};
+				shader.uniforms.lpvHeight = {value : this.lpvParamaters.height};
 			}
 			
         }

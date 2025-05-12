@@ -45,7 +45,7 @@ struct Triangle
 {
     Point p;            // sommet a du triangle
     Vector e1, e2;      // aretes ab, ac du triangle
-    Vector n;
+    Vector n;           // Normale du triangle
     int id;             // indice du triangle
     
     Triangle( const TriangleData& data, const int _id ) : p(data.a), e1(Vector(data.a, data.b)), e2(Vector(data.a, data.c)), n(normalize(cross(e1,e2))), id(_id) {}
@@ -91,6 +91,10 @@ struct Triangle
             + ( e1 * r1 )
             + ( e2 * r2 )) + Vector(n) *0.001;
     }
+
+    // bool isBackFaceTouched(const Vector & direction) const {
+    //     return dot(n,-direction) < 0;
+    // }
 };
 
 class LightProbeVolume {
@@ -104,6 +108,7 @@ class LightProbeVolume {
 
         LightSources * lightSources;
         Mesh mesh;
+        std::vector<GLTFMaterial> materials;
         std::vector<Triangle> meshTriangles;
 
         unsigned int nbDirectSamples;
@@ -117,10 +122,11 @@ class LightProbeVolume {
         Vector getRandomSphereDirection(const Point & origin);
 
         bool isDirectionObstructed(const Point & origin,const Vector & direction,const float intersectionDistance);
-        Hit getClosestDirectIntersection(const Point & origin,const Vector & direction,const float intersectionDistance);
+        Hit getClosestIntersection(const Point & origin,const Vector & direction);
         bool isBackFaceTouched(const unsigned int triangleId, const Vector & direction);
 
         void updateDirectLighting(LightProbe & probe);
+        void updateIndirectLighting(LightProbe & probe);
         
     public:
         LightProbeVolume(   const Mesh & mesh,

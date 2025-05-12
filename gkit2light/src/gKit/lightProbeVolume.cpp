@@ -7,7 +7,6 @@
 #include <random>
 #include <math.h>
 #include <fstream>
-#include <iterator>
 #include <vector>
 #include <omp.h>
 
@@ -36,6 +35,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
                                    const unsigned int nbIndirectSamples,
                                    const unsigned int nbDirectIndirectSamples) {
     this->mesh = mesh;
+    this->materials = materials;
     this->lightSources = new LightSources(mesh,materials);
 
     this->nbDirectSamples = nbDirectSamples;
@@ -50,13 +50,11 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
 
     for(int i = 0;i<9;i++) {
         this->shTextures[i].resize(width*depth*height*density*density*density*4);
-        std::cout<<shTextures[i].size()<<std::endl;
 
-        this->invalidityTexture.reserve(width*depth*height*density*density*density);
+        this->invalidityTexture = std::vector<float>(width*depth*height*density*density*density,0);
     }
     
     int n= mesh.triangle_count();
-    std::cout<<"nb triangles : "<<n<<std::endl;
     for(int i= 0; i < n; i++) {
         TriangleData td = mesh.triangle(i);
 
@@ -121,12 +119,33 @@ bool LightProbeVolume::isDirectionObstructed(const Point & origin,const Vector &
     return false;
 }
 
+Hit LightProbeVolume::getClosestIntersection(const Point & origin,const Vector & direction) {
+    Ray ray(origin,direction);
+
+    float intersectionDistance = std::numeric_limits<float>::max();
+    
+    
+    Hit hit;
+    for(int j= 0; j < int(meshTriangles.size()); j++)
+    { 
+        hit = this->meshTriangles[j].intersect(ray, ray.tmax);
+        if(hit)
+        {
+            if(intersectionDistance > hit.t) { // Si on a trouvé une intersection plus proche
+                intersectionDistance = hit.t;
+            }
+        }
+    }
+    return hit;
+}
+
 bool LightProbeVolume::isBackFaceTouched(const unsigned int triangleId, const Vector & direction) {
     const Triangle t = this->meshTriangles[triangleId];
     return dot(t.n,-direction) < 0.0;
 }
 
 void LightProbeVolume::updateDirectLighting(LightProbe & probe) {
+    // #pragma omp parallel for
     for(unsigned int i = 0;i<this->nbDirectSamples;i++) {
         unsigned int lightSourceId = this->lightSources->getRandomWeightedLightSourceId();
         unsigned int triangleId = this->lightSources->getTriangleId(lightSourceId);
@@ -149,10 +168,86 @@ void LightProbeVolume::updateDirectLighting(LightProbe & probe) {
     }
 }
 
+void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
+    unsigned int nbIntersection = 0;
+    float distanceFromGeometry = std::numeric_limits<float>::max();
+    Vector directionOfGeometry;
+
+    for(unsigned int i = 0;i<this->nbIndirectSamples;i++) {
+        Vector sphereDirection = this->getRandomSphereDirection(probe.position);
+
+        Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
+
+        if(hit) {
+            if(hit.t < distanceFromGeometry) {
+                distanceFromGeometry = hit.t;
+                directionOfGeometry = sphereDirection;
+            }
+            nbIntersection++;
+            if(isBackFaceTouched(hit.triangle_id, sphereDirection)) {
+                this->invalidityTexture[probe.id]++;
+
+            } else {
+                const GLTFMaterial material = this->materials[mesh.triangle_material_index(hit.triangle_id)];
+                float roughness = material.roughness;
+                if(roughness > 0.0) { // Light reflector touched
+                    Color lightReflectorColor = Color(0);
+                    const Color color = material.color; 
+                    Vector lightReflectorNormal = this->meshTriangles[hit.triangle_id].n;
+
+                    Point lightReflectorOrigin = (probe.position + sphereDirection*hit.t) + (lightReflectorNormal * 0.01);
+
+                    for(unsigned int j = 0;j<this->nbDirectIndirectSamples;j++) {
+                        unsigned int lightSourceId = this->lightSources->getRandomWeightedLightSourceId();
+                        unsigned int triangleId = this->lightSources->getTriangleId(lightSourceId);
+                        Triangle t = this->meshTriangles[triangleId];
+                        Point pointOnLightSource = t.getRandomPointOnTriangle();
+                        
+                        float intersectionDistance = length(pointOnLightSource-probe.position);
+                        Vector dir = normalize(pointOnLightSource-probe.position);
+
+                        if(!this->isDirectionObstructed(probe.position, dir, intersectionDistance)) {
+                            Color color = this->lightSources->getTriangleColor(lightSourceId);
+                            lightReflectorColor = lightReflectorColor + (color * directIndrectWeight);
+                        }
+
+                    }
+                    if(lightReflectorColor.max() > 0.0) {
+                        float * shBasis = getBasis(-sphereDirection);
+                        for (unsigned int j = 0;j<9;j++) {
+                            probe.coefficients[j].x += (shBasis[j] * lightReflectorColor.r * roughness) * this->indirectWeight;
+                            probe.coefficients[j].y += (shBasis[j] * lightReflectorColor.g * roughness) * this->indirectWeight;
+                            probe.coefficients[j].z += (shBasis[j] * lightReflectorColor.b * roughness) * this->indirectWeight;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if(nbIntersection) {
+        this->invalidityTexture[probe.id] /= nbIntersection;
+        if(this->invalidityTexture[probe.id] > 0.) {
+            probe.position = probe.position - directionOfGeometry*distanceFromGeometry*1.1;
+
+            for (unsigned int j = 0;j<9;j++) {
+                probe.coefficients[j].x = 0;
+                probe.coefficients[j].y = 0;
+                probe.coefficients[j].z = 0;
+            }
+
+            this->updateDirectLighting(probe);
+            this->invalidityTexture[probe.id] = 0;
+            this->updateIndirectLighting(probe);
+        }
+    }
+}
+
 void LightProbeVolume::bake() {
     #pragma omp parallel for
     for(LightProbe & probe : this->probes) {
         updateDirectLighting(probe);
+        updateIndirectLighting(probe);
 
         for(unsigned int coef = 0;coef<9;coef++) {
             for(unsigned int color = 0;color<4;color++) {
@@ -166,12 +261,15 @@ void LightProbeVolume::bake() {
 void LightProbeVolume::writeLPV() {
     
     // Write spherical harmonics textures
+    #pragma omp parallel for
     for(int coef=0;coef<9;coef++) {
         std::fstream file;
         file.open("../frontend/admin/public/textures/sh"+std::to_string(coef)+".csv",std::ios_base::out);
-        for(int i=0;i<this->shTextures[coef].size();i++) {
+        
+        for(unsigned int i=0;i<this->shTextures[coef].size();i++) {
             file<<shTextures[coef][i]<<',';
         }
+
         file.close();
     } 
 }
@@ -180,7 +278,7 @@ void LightProbeVolume::writeParameters(float density,float width,float depth,flo
      // Write light probe volume parameters in a json file
      std::fstream file;
      std::string json = "{\n\"density\":"+std::to_string(density)+",\n\"width\":"+std::to_string(width)+",\n\"depth\":"+std::to_string(depth)+",\n\"height\":"+std::to_string(height)+",\n\"center\":{\"x\":"+std::to_string(center.x)+",\"y\":"+std::to_string(center.y)+",\"z\":"+std::to_string(center.z)+"}\n}";
-     file.open("../frontend/admin/public/textures/lpvParamaters.json",std::ios_base::out);
+     file.open("../frontend/admin/public/textures/lpvParameters.json",std::ios_base::out);
      file<<json;
      file.close();
 }

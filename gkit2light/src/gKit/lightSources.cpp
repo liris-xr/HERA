@@ -18,7 +18,6 @@ LightSources::LightSources(const Mesh & mesh,const std::vector<GLTFMaterial> & m
             this->triangleColor.push_back(color);
         }
     }
-
     for(unsigned int i = 0;i<this->weights.size();i++) {
         this->weights[i] /= this->area;
     }

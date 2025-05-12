@@ -452,9 +452,6 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
 
     // Fill the 9 "textures" of shTextures, each texture containing 1 float of the 9 coefficients of a spherical harmonics
     bake(bounces,directSamples,indirectSamples,directIndirectSamples) {
-        console.log(this.probes.length);
-        
-
         const directWeight = 1 / directSamples;
         const indirectWeight = 1 / indirectSamples;
 
@@ -469,10 +466,6 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
             const shIndirect = new THREE.SphericalHarmonics3();
             const shCoefficientsIndirect = shIndirect.coefficients;
     
-            if(probeId % 100 === 0) {
-                console.log(probeId);
-            }
-            
             for(let i = 0;i<directSamples;i++) {
                 this.updateDirectLighting(probe.position,shCoefficients,directWeight);
             }

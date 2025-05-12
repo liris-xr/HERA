@@ -222,7 +222,7 @@ void main() {
 		);
 
 	// vec3 displacedWorldPosition = wPosition.xyz;
-	// vec3 n = vec3(wNormal.x,wNormal.z,-wNormal.y);
+	vec3 n = vec3(wNormal.x,wNormal.z,-wNormal.y);
 	// if(texture(invalidity,texcoord).r > 0.0) {
 	// 	vec3 displacement = normalize(n)*texture(distanceFromGeometry,texcoord).r;
 	// 	displacedWorldPosition += displacement;
@@ -261,7 +261,7 @@ export class MeshManager {
     #meshes
 	textureLoader
 	shTextures;
-	lpvParamaters;
+	lpvParameters;
 
     constructor() {
         this.#meshes = shallowReactive([]);
@@ -279,10 +279,9 @@ export class MeshManager {
 		}
 
 		fetch(BASE_URL+"textures/lpvParameters.json")
-			.then((res) => {res.json(); console.log(res);
-			})
+			.then((res) => res.json())
 			.then((json) => {
-				this.lpvParamaters = json;
+				this.lpvParameters = json;
 			})
 			.catch((e) => console.error(e));
     }
@@ -295,19 +294,20 @@ export class MeshManager {
 		
 		mesh.material.customProgramCacheKey = () => {
 			mesh.material.needsUpdate = true;
-			return scene.shTextures ? '1' : '0';
+			return this.lpvParameters ? '1' : '0';
 		}
         
         mesh.material.onBeforeCompile = (shader) => {
-			if(this.shTextures) {
+			
+			if(this.lpvParameters) {
 				shader.vertexShader = vertexShader;
-				shader.fragmentShader = fragShader
+				shader.fragmentShader = fragShader;
 
 				for(let i = 0;i<9;i++) {
 					const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
-																this.lpvParamaters.width*this.lpvParamaters.density,
-																this.lpvParamaters.depth*this.lpvParamaters.density,
-																this.lpvParamaters.height*this.lpvParamaters.density);
+																this.lpvParameters.width*this.lpvParameters.density,
+																this.lpvParameters.depth*this.lpvParameters.density,
+																this.lpvParameters.height*this.lpvParameters.density);
 					sh3DTexture.magFilter = THREE.LinearFilter;
 					sh3DTexture.type = THREE.FloatType;
 					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
@@ -338,10 +338,10 @@ export class MeshManager {
 				// distanceFromGeometryTexture.needsUpdate = true;
 				// shader.uniforms["distanceFromGeometry"] = {value:distanceFromGeometryTexture}
 
-				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParamaters.center.x,this.lpvParamaters.center.y,this.lpvParamaters.center.z)};
-				shader.uniforms.lpvWidth = {value : this.lpvParamaters.width};
-				shader.uniforms.lpvDepth = {value : this.lpvParamaters.depth};
-				shader.uniforms.lpvHeight = {value : this.lpvParamaters.height};
+				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParameters.center.x,this.lpvParameters.center.y,this.lpvParameters.center.z)};
+				shader.uniforms.lpvWidth = {value : this.lpvParameters.width};
+				shader.uniforms.lpvDepth = {value : this.lpvParameters.depth};
+				shader.uniforms.lpvHeight = {value : this.lpvParameters.height};
 			}
 			
         }

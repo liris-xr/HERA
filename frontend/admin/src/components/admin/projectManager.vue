@@ -32,6 +32,8 @@ const creatingProject = ref(null)
 
 const totalPages = ref(1)
 
+const uploadingProject = ref(null)
+
 
 function newScene(scene) {
   const index = projects.value.findIndex(project => project.id === scene.projectId)
@@ -213,8 +215,36 @@ async function exportProject(project) {
 
 }
 
-async function importProject() {
-  console.log("TODO: import project")
+function importProject() {
+  uploadingProject.value = {}
+}
+
+async function confirmProjectImport() {
+  const formData = new FormData()
+
+  for(const key in uploadingProject.value)
+    if(uploadingProject.value.hasOwnProperty(key))
+      formData.append(key, uploadingProject.value[key]);
+
+  const res = await fetch(`${ENDPOINT}project/import`,{
+    method: "POST",
+    headers: {
+      'Authorization': `Bearer ${props.token}`,
+    },
+    body: formData
+  })
+
+  if(res.ok) {
+    const data = await res.json()
+
+    projects.value.push(data)
+  } else {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
+  }
+
+  uploadingProject.value = null
 }
 
 onMounted(async () => {
@@ -389,6 +419,24 @@ defineExpose({projects, newScene, supprScene, editScene, element})
       @confirm="confirmProjectCreate"
       @cancel="creatingProject = null"
   />
+
+    <generic-modal
+        title="import"
+        section-name="projects"
+
+        :subject="uploadingProject"
+        :fields="[
+            {
+              name: 'zip',
+              type: 'file',
+              accept: '.zip',
+              required: true,
+            }
+        ]"
+
+        @confirm="confirmProjectImport"
+        @cancel="uploadingProject = null"
+    />
 
   </section>
 

@@ -13,6 +13,7 @@ import { sequelize } from '../database.js'
 export default sequelize.define('ArMesh', {
     id: {
         type: DataTypes.STRING,
+        defaultValue: DataTypes.UUIDV4,
         allowNull: false,
         primaryKey: true
     },

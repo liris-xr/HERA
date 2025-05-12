@@ -7,13 +7,15 @@ import {
     deleteFile,
     deleteFolder,
     duplicateFolder,
-    getProjectDirectory,
+    getProjectDirectory, getTempDirectory,
     getUpdatedPath,
-    uploadCover
+    uploadCover, uploadProject
 } from "../utils/fileUpload.js";
 import {Op} from "sequelize";
 import * as path from "node:path";
 import * as fs from "node:fs";
+import {DIRNAME} from "../../app.js";
+import decompress from "decompress"
 
 
 const router = express.Router()
@@ -515,9 +517,6 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
                         {
                             model: ArAsset,
                             as: "assets",
-                            where:{
-                                hideInViewer: false
-                            },
                             required:false,
                             attributes: {exclude: ['id']}
                         },
@@ -537,15 +536,25 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
             ],
         })
-        
-        if (project) {
-            await fs.writeFile(path.join(getProjectDirectory(projectId), 'project.json'), JSON.stringify(project), (err) => {})
 
-            return res.status(200).zip({
+        if (project) {
+
+            const jsonFilePath = path.join(getTempDirectory(), projectId + "-" + Date.now() + '.json')
+
+            if (!fs.existsSync(getTempDirectory()))
+                fs.mkdirSync(getTempDirectory(), { recursive: true })
+
+            const projectObj = project.toJSON()
+            delete projectObj.id
+
+            await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
+
+
+            res.status(200).zip({
                 files: [
 
                     {
-                        path: path.join(getProjectDirectory(projectId), 'project.json'),
+                        path: path.join(DIRNAME, jsonFilePath),
                         name: 'project.json'
                     },
 
@@ -557,6 +566,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
                 ],
                 filename: `project-${projectId}.zip`
             })
+
         } else
             return res.status(404).send({error: 'Project not found'})
 
@@ -570,11 +580,71 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
 
 
-router.get(baseUrl+'project/import', authMiddleware, async (req, res) => {
+router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"), async (req, res) => {
     const token = req.user
-    const projectId = req.params.projectId
 
+    if(!token.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
 
+    console.log(req.uploadedFilePath)
+
+    try {
+        const dataFolder = req.uploadedFilePath + "-data"
+        // dézipper le fichier
+        await decompress(req.uploadedFilePath, dataFolder)
+
+        // créer les enregistrements dans la BD
+        const projectFilePath = path.join(dataFolder, "project.json")
+        console.log(projectFilePath)
+        const data = fs.readFileSync(projectFilePath)
+
+        const projectObj = JSON.parse(data)
+
+        const project = await ArProject.create(projectObj, {
+            include: [
+                {
+                    model: ArScene,
+                    as: "scenes",
+                    include:[
+                        {
+                            model:ArMesh,
+                            as:"meshes",
+                        },
+                        {
+                            model: ArAsset,
+                            as: "assets",
+                        },
+                        {
+                            model: ArLabel,
+                            as: "labels",
+                        },
+                    ],
+                },
+
+            ]
+        })
+
+        // TODO: modifier l'url des fichiers (assets, cover...)
+
+        console.log(project)
+
+        const projectDir = getProjectDirectory(project.id)
+
+        console.log(projectDir)
+
+        await fs.renameSync(dataFolder+"/files", projectDir)
+
+        // TODO: supprimer les fichiers
+
+        return res.status(200).send(project)
+
+    } catch(e) {
+        console.log(e);
+        res.status(400);
+        return res.send({error: 'Unable to fetch project'});
+    }
 
 })
 

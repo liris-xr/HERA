@@ -156,6 +156,7 @@ export class ArScene extends AbstractScene {
         if(forceCompute || this.#boundingBox==null){
             const group = new THREE.Group();
             for (let asset of this.#assets) {
+                console.log(asset)
                 group.add(asset.object.clone());
             }
             this.#boundingBox = new THREE.Box3().setFromObject(group);

@@ -9,7 +9,7 @@ export class EmptyAsset extends Asset{
             name:"empty"
 
         });
-        this.mesh = new THREE.Mesh()
+        this.object = new THREE.Mesh()
     }
 
 

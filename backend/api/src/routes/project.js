@@ -470,7 +470,29 @@ router.get(baseUrl+'admin/projects/:page?', async (req, res) => {
 
 })
 
+router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res) => {
+    const token = req.user
+    const projectId = req.params.projectId
 
+    if(!token.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    try {
+
+        const project = ArProject.findOne({
+            where: {id: projectId},
+            include:
+        })
+
+    }catch (e){
+        console.log(e);
+        res.status(400);
+        return res.send({error: 'Unable to fetch project'});
+    }
+
+})
 
 
 

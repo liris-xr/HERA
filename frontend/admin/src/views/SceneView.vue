@@ -472,7 +472,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                             @select="editor.scene.setSelected(asset)"
                             @delete="editor.scene.removeAsset(asset)"
                             @duplicate="editor.scene.duplicateAsset(asset)"
-                            @animationChanged="(val)=>{asset.activeAnimation = val}"
+                            @animationChanged="(val)=>{asset.activeAnimation = val; saved = false}"
                             @hide-in-viewer="()=>{asset.switchViewerDisplayStatus(); saved = false}"/>
                 <div v-if="scene.assets.length===0">{{$t("sceneView.leftSection.sceneAssets.noAssetsInfo")}}</div>
               </div>

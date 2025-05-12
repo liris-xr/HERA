@@ -201,9 +201,8 @@ async function fetchProjects(data=null) {
 }
 
 async function exportProject(project) {
-  console.log(project)
 
-  const res = await fetch(`${ENDPOINT}project/${project.id}/export`,
+  await fetch(`${ENDPOINT}project/${project.id}/export`,
       {
         headers: {
           'Authorization': `Bearer ${props.token}`,
@@ -212,9 +211,10 @@ async function exportProject(project) {
       .then(resp => resp.blob())
       .then(blob => window.location.assign(window.URL.createObjectURL(blob)))
 
+}
 
-  console.log(res)
-
+async function importProject() {
+  console.log("TODO: import project")
 }
 
 onMounted(async () => {
@@ -236,6 +236,13 @@ defineExpose({projects, newScene, supprScene, editScene, element})
         :fields="['title']"
         :data="projects"
         :total-pages="totalPages"
+
+        :title-buttons="[
+            {
+              icon: '/icons/upload.svg',
+              func: importProject
+            }
+        ]"
 
         :item-buttons="[
           {

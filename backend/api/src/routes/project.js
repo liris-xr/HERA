@@ -13,6 +13,7 @@ import {
 } from "../utils/fileUpload.js";
 import {Op} from "sequelize";
 import * as path from "node:path";
+import * as fs from "node:fs";
 
 
 const router = express.Router()
@@ -537,23 +538,26 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
             ],
         })
         
-        if (project)
+        if (project) {
+            await fs.writeFile(path.join(getProjectDirectory(projectId), 'project.json'), JSON.stringify(project), (err) => {})
+
             return res.status(200).zip({
                 files: [
 
-                    { content: 'this is a string',      //options can refer to [http://archiverjs.com/zip-stream/ZipStream.html#entry](http://archiverjs.com/zip-stream/ZipStream.html#entry)
-                        name: 'file-name',
-                        type: 'file' },
+                    {
+                        path: path.join(getProjectDirectory(projectId), 'project.json'),
+                        name: 'project.json'
+                    },
 
-                    // {
-                    //     path: getProjectDirectory(projectId),
-                    //     name: "files"
-                    // }
+                    {
+                        path: getProjectDirectory(projectId),
+                        name: "files"
+                    }
 
                 ],
-                filename: "test.zip"
+                filename: `project-${projectId}.zip`
             })
-        else
+        } else
             return res.status(404).send({error: 'Project not found'})
 
     }catch (e){
@@ -561,6 +565,16 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
         res.status(400);
         return res.send({error: 'Unable to fetch project'});
     }
+
+})
+
+
+
+router.get(baseUrl+'project/import', authMiddleware, async (req, res) => {
+    const token = req.user
+    const projectId = req.params.projectId
+
+
 
 })
 

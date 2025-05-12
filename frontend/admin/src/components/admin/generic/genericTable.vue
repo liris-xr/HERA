@@ -10,6 +10,7 @@ const props = defineProps({
   data:  {type: Array, required: true},
   totalPages: {type: Number, required: true},
   create: {type: Boolean, default: true},
+  titleButtons: {type: Array, default: []},
   itemButtons: {type: Array, default: []},
 })
 
@@ -70,7 +71,15 @@ function getProperty(obj, prop) {
 
     <div class="title">
       <h2>{{$t(`admin.sections.${props.sectionName}.h1`)}}</h2>
-      <button-view v-if="create" icon="/icons/add.svg" @click="$emit('create')"></button-view>
+
+      <button-view v-if="titleButtons"
+                   v-for="button in titleButtons"
+                   :icon="button.icon"
+                   @click="$emit('create')" />
+
+      <button-view v-if="create"
+                   icon="/icons/add.svg"
+                   @click="$emit('create')" />
     </div>
 
     <slot></slot>

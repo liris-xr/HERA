@@ -16,6 +16,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import {DIRNAME} from "../../app.js";
 import decompress from "decompress"
+import {updateUrl} from "../utils/updateUrl.js";
 
 
 const router = express.Router()
@@ -626,17 +627,30 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
             ]
         })
 
-        // TODO: modifier l'url des fichiers (assets, cover...)
+        // modifier l'url des fichiers (assets, cover...)
 
-        console.log(project)
+        project.pictureUrl = updateUrl(project.pictureUrl, project.id)
+        await project.save()
+
+        for(let scene of project.scenes) {
+            scene.envmapUrl = updateUrl(scene.envmapUrl, project.id)
+
+            for(let asset of scene.assets) {
+                asset.url = updateUrl(asset.url, project.id)
+                await asset.save()
+            }
+
+            await scene.save()
+        }
+
 
         const projectDir = getProjectDirectory(project.id)
 
-        console.log(projectDir)
-
         await fs.renameSync(dataFolder+"/files", projectDir)
 
-        // TODO: supprimer les fichiers
+        // supprimer les fichiers temporaires
+        fs.rmSync(dataFolder, {recursive: true})
+        fs.rmSync(req.uploadedFilePath)
 
         return res.status(200).send(project)
 

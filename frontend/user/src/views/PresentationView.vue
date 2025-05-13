@@ -54,9 +54,6 @@ const socket = reactive(
 
 let wakeLock;
 
-const messageInp = ref(null)
-const submitMessage = ref(null)
-
 const arView = ref(null)
 
 const editingPresets = ref(null)
@@ -66,6 +63,9 @@ const editingPreset = ref(null)
 const creatingPreset = ref(null)
 
 const recordTarget = null
+
+const showTerminate = ref(false)
+const terminated = ref(false)
 
 
 async function fetchProject(projectId) {
@@ -106,17 +106,6 @@ function initSocket() {
 
 }
 
-onMounted(() => {
-
-  submitMessage.value.addEventListener("click",() => {
-
-    socket.send("presentation:emit", { message: messageInp.value.value }, (res) => {
-      console.log(res)
-    })
-    messageInp.value.value = "";
-  })
-})
-
 async function showQr() {
   showQrcode.value = true
 
@@ -128,6 +117,14 @@ function hideQr() {
   showQrcode.value = false
 
   wakeLock.release()
+}
+
+async function endPresentation() {
+  socket.send("presentation:terminate", (data) => {
+    if (data.success)
+      terminated.value = true
+    console.log(data)
+  })
 }
 
 function highlight(asset) {
@@ -230,49 +227,6 @@ const projectUrl = computed(() => {
   return `${window.location.origin}${href}?presentation=${presentationId.value}`
 })
 
-const presetsExample = [
-  {
-    bigText: "1",
-    text: "Mise en place",
-    actions: [
-      {event: "presentation:action:reset", args: [{}]},
-    ]
-  },
-  {
-    bigText: "🛋",
-    text: "canapé",
-    actions: [
-      {event: "presentation:action:reset", args: [{}]},
-      {event: "presentation:action:hideAll", args: [{}]},
-      {event: "presentation:action:toggleAsset", args: [{assetId: "df389ba9-25d4-47c7-b754-6fb291ed722f", value: true}]}
-    ]
-  },
-  {
-    bigText: "⬛",
-    text: "cube",
-    actions: [
-      {event: "presentation:action:reset", args: [{}]},
-      {event: "presentation:action:hideAll", args: [{}]},
-      {event: "presentation:action:toggleAsset", args: [{assetId: "fc73c9cb-4d3b-4072-8502-07e8eb1e17a0", value: true}]},
-      {event: "presentation:action:highlight", args: [{assetId: "fc73c9cb-4d3b-4072-8502-07e8eb1e17a0", value: true}]}
-    ]
-  },
-  {
-    bigText: "ME",
-    text: "Mise en évidence",
-    actions: [
-      {event: "presentation:action:reset", args: [{}]}
-    ]
-  },
-  {
-    bigText: "IDFUSODFBGYUOUI",
-    text: "plein de texte pour observer le comportement de l'interface",
-    actions: [
-      {event: "presentation:action:reset", args: [{}]}
-    ]
-  }
-]
-
 </script>
 
 <template>
@@ -288,8 +242,7 @@ const presetsExample = [
       <ar-notification
           theme="danger"
           icon="/icons/info.svg"
-          v-if="error"
-      >
+          v-if="error">
         <template #content>
           <redirect-message>
             <template #content>
@@ -306,15 +259,25 @@ const presetsExample = [
       <section class="controls">
         <h1>{{$t("presentation.controls.title")}}</h1>
 
-        <div class="qrButtonWrapper">
+        <div class="topButtons">
+          <div class="qrButtonWrapper">
+            <filled-button-view
+                v-if="isAuthenticated"
+                :disabled="!project.published"
+
+                icon="/icons/qrcode.svg"
+                :text="$t('presentation.controls.showQrcode')"
+                @click="showQr" />
+            <span v-if="!project.published" class="danger">{{ $t("presentation.unpublishedWarning") }}</span>
+          </div>
+
           <filled-button-view
               v-if="isAuthenticated"
-              :disabled="!project.published"
 
-              icon="/icons/qrcode.svg"
-              :text="$t('presentation.controls.showQrcode')"
-              @click="showQr" />
-          <span v-if="!project.published" class="danger">{{ $t("presentation.unpublishedWarning") }}</span>
+              icon="/icons/close.svg"
+              :text="$t('presentation.controls.terminate')"
+              theme="danger"
+              @click="showTerminate = true" />
         </div>
 
         <section class="connectionInfos">
@@ -326,11 +289,26 @@ const presetsExample = [
           </p>
         </section>
 
+        <section class="presets-section">
+          <div class="inline-flex">
+            <h3>{{ $t("presentation.sections.presets.title") }}</h3>
 
-        <div v-show="false">
-          <input ref="messageInp" placeholder="message">
-          <button ref="submitMessage">Envoyer</button>
-        </div>
+            <filled-button-view
+                icon="/icons/edit.svg"
+                :text="$t('presentation.sections.presets.manageButton')"
+                @click="editingPresets = JSON.parse(JSON.stringify(project.presets))" />
+          </div>
+          <div class="presets">
+
+            <presentation-preset
+                v-for="preset in project.presets"
+                :preset="preset"
+
+                @triggered="applyPreset(preset)" />
+
+
+          </div>
+        </section>
 
         <section class="scene">
           <section class="sceneSelection">
@@ -371,27 +349,6 @@ const presetsExample = [
                 icon="/icons/display_off.svg"
                 :text="$t('presentation.controls.hideAll')"
                 @click="hideAll" />
-          </div>
-        </section>
-
-        <section>
-          <div class="inline-flex">
-            <h3>{{ $t("presentation.sections.presets.title") }}</h3>
-
-            <filled-button-view
-                icon="/icons/edit.svg"
-                :text="$t('presentation.sections.presets.manageButton')"
-                @click="editingPresets = JSON.parse(JSON.stringify(project.presets))" />
-          </div>
-          <div class="presets">
-
-            <presentation-preset
-                v-for="preset in project.presets"
-                :preset="preset"
-
-                @triggered="applyPreset(preset)" />
-
-
           </div>
         </section>
 
@@ -554,7 +511,28 @@ const presetsExample = [
   </div>
 
 
+  <div v-if="terminated" class="terminated">
+    <h1>{{$t('presentation.terminated')}}</h1>
+    <a href="" @click="router.go()">
+      {{$t('presentation.restart')}}
+    </a>
+    <RouterLink :to="{ name: 'project', params: route.params}">
+      {{$t('presentation.seeProject')}}
+    </RouterLink>
+  </div>
 
+  <div class="modal" v-if="showTerminate">
+    <div>
+      <div class="center">
+        <h3>{{ $t("presentation.controls.terminate") }}</h3>
+        <p class="danger">{{ $t("presentation.validateTerminate") }}</p>
+      </div>
+      <div class="buttons">
+        <filled-button-view :text="$t('presentation.sections.presets.confirm')" @click="endPresentation()" />
+        <button-view :text="$t('presentation.sections.presets.cancel')" @click="showTerminate = false" />
+      </div>
+    </div>
+  </div>
 
 
 
@@ -562,6 +540,32 @@ const presetsExample = [
 
 
 <style scoped>
+
+.terminated {
+  position: fixed;
+  inset: 0;
+  background-color: var(--backgroundColor);
+  z-index: 1023;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10%;
+  flex-direction: column;
+}
+
+.terminated * {
+  text-align: center;
+  margin: 5px;
+}
+
+.terminated h1 {
+  font-size: 3em;
+}
+
+.terminated p, .terminated a {
+  font-size: 1.3em;
+}
 
 .bottomActionBar{
   position: fixed;
@@ -624,7 +628,7 @@ const presetsExample = [
   padding: 25px;
   border-radius: 15px;
 
-  width: 700px;
+  width: min(700px, 80%);
 }
 
 .modal .buttons {
@@ -676,9 +680,10 @@ section > h3 {
   font-size: 2em;
 }
 
-.qrButtonWrapper {
+.topButtons {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 5px;
 }
 
@@ -691,7 +696,7 @@ section > h3 {
 }
 
 section:has(>.item) {
-  margin: 15px 15px 15px 0;
+  margin: 0 15px 15px 0;
 }
 
 label + select {
@@ -710,6 +715,7 @@ label + select {
 }
 
 .scene {
+  margin-top: 15px;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -720,13 +726,13 @@ label + select {
   font-size: 1.4em;
 }
 
-@media only screen and (max-width: 600px) {
+@media only screen and (max-width: 600px) { /* téléphone */
 
-  .qrButtonWrapper {
-    justify-content: center;
+  .topButtons {
+    align-items: center;
   }
 
-  .qrButtonWrapper * {
+  .topButtons * {
     font-size: 1.2em;
     padding: 5px;
   }
@@ -735,6 +741,14 @@ label + select {
     text-align: center;
     font-size: 1.2em;
     margin-bottom: 2em;
+  }
+
+  .presets-section > div:first-child {
+    justify-content: center;
+  }
+
+  .modal button {
+    font-size: 1.2em;
   }
 
 }

@@ -68,7 +68,9 @@
       "at": "a"
     },
     "startPresentation": "Démarrer une nouvelle présentation",
-    "presentationState": "Etat de la présentation"
+    "presentationState": "Etat de la présentation",
+    "terminated": "La présentation est maintenant terminée, merci pour votre attention",
+    "seeProject": "Voir le projet"
   },
 
   "account": {
@@ -98,7 +100,8 @@
       "showQrcode": "Afficher le QR code",
       "reset": "Réinitialiser la scène",
       "showAll": "Tout afficher",
-      "hideAll": "Tout masquer"
+      "hideAll": "Tout masquer",
+      "terminate": "Achever la présentation"
     },
     "sections": {
       "presets": {
@@ -131,7 +134,11 @@
     "unpublishedWarning": "Impossible d'afficher le QR code : votre projet est privé",
     "brightnessTip": "Pour faciliter le scan du QR code, augmentez la luminosité de votre écran",
     "viewers": "spectateurs",
-    "currentScene": "Scène actuelle"
+    "currentScene": "Scène actuelle",
+    "terminated": "Presentation terminée",
+    "restart": "Redémarrer une présentation",
+    "seeProject": "Voir le projet",
+    "validateTerminate": "Voulez-vous vraiment achever cette présentation ?"
   },
 
   "projectCard": {

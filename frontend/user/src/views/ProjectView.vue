@@ -27,6 +27,8 @@ const arView = ref(null)
 const socket = ref(null)
 const connected = ref(false)
 
+const terminated = ref(false)
+
 async function fetchProject(projectId) {
   loading.value = true;
   error.value = false;
@@ -78,13 +80,18 @@ function initSocket() {
   )
 
   socket.value.send("presentation:join", route.query.presentation, (data) => {
-    if(data.success)
+    if(data.success) {
       connected.value = true
+      console.log(arView)
+      arView.value.overlayBottom = false
+    }
     console.log(data)
   })
 
-  socket.value.addListener("presentation:emit", (data) => {
-    console.log(eval(data.message))
+  socket.value.addListener("presentation:terminated", (data) => {
+    console.log(data)
+    connected.value = false
+    terminated.value = true
   })
 }
 
@@ -163,10 +170,45 @@ const connectedText = computed(() => {
       </section>
     </section>
   </main>
+
+  <div v-if="terminated" class="terminated">
+    <h1>👏</h1>
+    <p>{{$t('projectView.terminated')}}</p>
+    <RouterLink :to="{ name: router.notify, params: route.params}">
+      {{$t('projectView.seeProject')}}
+    </RouterLink>
+  </div>
+
 </template>
 
 
 <style scoped>
+
+.terminated {
+  position: fixed;
+  inset: 0;
+  background-color: var(--backgroundColor);
+  z-index: 1023;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10%;
+  flex-direction: column;
+}
+
+.terminated * {
+  text-align: center;
+  margin: 5px;
+}
+
+.terminated h1 {
+  font-size: 3em;
+}
+
+.terminated p {
+  font-size: 1.3em;
+}
 
 .danger {
   color: var(--dangerColor);

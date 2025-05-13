@@ -5,13 +5,17 @@ export const presentations = {}
 export function destroyPresentation(id) {
     if(!(id in presentations)) return
 
-    for (const viewer in presentations) {
+    const presentation = presentations[id];
+
+    console.log(presentation)
+
+    for (const viewer of presentation.viewers) {
         const socket = ioInstance.sockets.sockets.get(viewer)
-        socket?.emit("terminated", {message: "presentation " + id + " has been ended"})
+        socket?.emit("presentation:terminated", {message: "presentation " + id + " has ended"})
         socket?.leave(id)
     }
 
-    const socket = ioInstance.sockets.sockets.get(presentations[id].host);
+    const socket = ioInstance.sockets.sockets.get(presentation.host);
     socket?.leave(id)
 
     delete presentations[id]

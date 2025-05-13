@@ -20,6 +20,8 @@ import PresentationPreset from "@/components/items/PresentationPreset.vue";
 import PresentationPresetItem from "@/components/items/PresentationPresetItem.vue";
 import ButtonView from "@/components/button/buttonView.vue";
 import {toast} from "vue3-toastify";
+import {generateUUID} from "three/src/math/MathUtils.js";
+
 
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
@@ -62,6 +64,8 @@ const editingPresets = ref(null)
 const removingPreset = ref(null)
 const editingPreset = ref(null)
 const creatingPreset = ref(null)
+
+const recordTarget = null
 
 
 async function fetchProject(projectId) {
@@ -184,7 +188,11 @@ function editPreset() {
 }
 
 function createPreset() {
-  console.log('TODO: create preset')
+
+  editingPresets.value.push(creatingPreset.value)
+
+  creatingPreset.value = null
+
 }
 
 async function savePresets() {
@@ -429,7 +437,25 @@ const presetsExample = [
 
       </section>
     </section>
+
+    <section v-if="socket.recording" class="bottomActionBar">
+      <p>{{$t("presentation.sections.presets.recording")}}</p>
+      <div>
+        <button-view
+            :text="$t('presentation.sections.presets.cancel')"
+            icon="/icons/back.svg"
+            @click="socket.stopRecording()" />
+
+        <filled-button-view
+            :text="$t('presentation.sections.presets.confirm')"
+            icon="/icons/save.svg"
+            @click="recordTarget.actions = socket.stopRecording();" />
+      </div>
+    </section>
+
   </main>
+
+  <!-- Interfaces modales -->
 
   <div class="qrCode" v-if="showQrcode" @click="hideQr">
     <span>{{$t("presentation.brightnessTip")}}</span>
@@ -437,11 +463,11 @@ const presetsExample = [
     <p>{{$t("presentation.quitQr")}}</p>
   </div>
 
-  <div class="modal" v-if="editingPresets">
+  <div class="modal" v-if="editingPresets && !socket.recording">
     <div>
       <div class="inline-flex">
         <h3>{{ $t("presentation.sections.presets.managementTitle") }}</h3>
-        <button-view icon="/icons/add.svg" @click="createPreset()"></button-view>
+        <button-view icon="/icons/add.svg" @click="creatingPreset = { id: generateUUID() }"></button-view>
 
       </div>
       <div>
@@ -466,7 +492,7 @@ const presetsExample = [
     </div>
   </div>
 
-  <div class="modal" v-if="removingPreset">
+  <div class="modal" v-if="removingPreset && !socket.recording">
     <div>
       <div class="center">
         <h3>{{ $t("presentation.sections.presets.removeTitle") }}</h3>
@@ -479,7 +505,7 @@ const presetsExample = [
     </div>
   </div>
 
-  <div class="modal" v-if="editingPreset">
+  <div class="modal" v-if="editingPreset && !socket.recording">
     <div>
       <div class="center">
         <h3>{{ $t("presentation.sections.presets.editTitle") }}</h3>
@@ -494,11 +520,35 @@ const presetsExample = [
       </div>
       <div class="flex-center inline-flex" style="margin-top: 15px">
         <p>{{ $t("presentation.sections.presets.redefineLabel") }}</p>
-        <button-view :text="$t('presentation.sections.presets.redefine')" @click="" />
+        <button-view :text="$t('presentation.sections.presets.redefine')" @click="socket.startRecording(); recordTarget = editingPreset" />
       </div>
       <div class="buttons">
         <filled-button-view :text="$t('presentation.sections.presets.confirm')" @click="editPreset()" />
         <button-view :text="$t('presentation.sections.presets.cancel')" @click="editingPreset = null" />
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" v-if="creatingPreset && !socket.recording">
+    <div>
+      <div class="center">
+        <h3>{{ $t("presentation.sections.presets.createTitle") }}</h3>
+      </div>
+      <div class="center">
+        <label for="bigText">{{ $t("presentation.sections.presets.icon") }}</label>
+        <input type="text" v-model="creatingPreset.bigText" name="bigText" id="bigText">
+      </div>
+      <div class="center">
+        <label for="text">{{ $t("presentation.sections.presets.text") }}</label>
+        <input type="text" v-model="creatingPreset.text" name="text" id="text">
+      </div>
+      <div class="flex-center inline-flex" style="margin-top: 15px">
+        <p>{{ $t("presentation.sections.presets.defineLabel") }}</p>
+        <button-view :text="$t('presentation.sections.presets.define')" @click="socket.startRecording(); recordTarget = creatingPreset" />
+      </div>
+      <div class="buttons">
+        <filled-button-view :text="$t('presentation.sections.presets.confirm')" @click="createPreset()" />
+        <button-view :text="$t('presentation.sections.presets.cancel')" @click="creatingPreset = null" />
       </div>
     </div>
   </div>
@@ -512,6 +562,28 @@ const presetsExample = [
 
 
 <style scoped>
+
+.bottomActionBar{
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--backgroundColor);
+  padding: 16px;
+  box-shadow: var(--defaultUniformShadow);
+}
+
+.bottomActionBar div {
+  display: flex;
+
+}
+
+.bottomActionBar>div>*{
+  margin-left: 8px;
+}
 
 .center + .center {
   margin-top: 10px;
@@ -552,7 +624,7 @@ const presetsExample = [
   padding: 25px;
   border-radius: 15px;
 
-  width: 65%;
+  width: 700px;
 }
 
 .modal .buttons {

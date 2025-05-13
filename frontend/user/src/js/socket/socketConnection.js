@@ -1,5 +1,5 @@
 import {io} from "socket.io-client";
-import {reactive} from "vue";
+import {reactive, ref} from "vue";
 import {SocketActionManager} from "@/js/socket/socketActionManager.js";
 
 export class SocketConnection {
@@ -7,6 +7,9 @@ export class SocketConnection {
     state = reactive({
         connected: false
     })
+
+    recording
+    actionsRecord
 
     socketActionManager
 
@@ -23,11 +26,18 @@ export class SocketConnection {
             this.state.connected = false
         })
 
+        this.recording = ref(false)
+        this.actionsRecord = []
+
         this.socket.onAny((event, ...args) => this.handleActionManager(event, ...args))
     }
 
     send(event, ...args) {
-        this.socket.emit(event, ...args)
+        if(this.recording) {
+            this.actionsRecord.push({event, args})
+        } else {
+            this.socket.emit(event, ...args)
+        }
 
         this.handleActionManager(event, ...args)
     }
@@ -49,5 +59,19 @@ export class SocketConnection {
             else
                 console.error("SocketActionManager : event "+eventName+" not found")
         }
+    }
+
+    startRecording() {
+        this.actionsRecord = []
+        this.recording = true
+
+        this.send("presentation:action:reset")
+    }
+
+    stopRecording() {
+        const res = [...this.actionsRecord]
+        this.recording = false
+        this.send("presentation:action:reset")
+        return res
     }
 }

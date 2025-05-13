@@ -114,7 +114,11 @@
         "icon": "Icone",
         "text": "Texte",
         "redefineLabel": "Redéfinir les actions",
-        "redefine": "Redéfinir"
+        "redefine": "Redéfinir",
+        "createTitle": "Créer un preset",
+        "define": "Définir",
+        "defineLabel": "Définir les actions",
+        "recording": "Enregistrement des actions..."
       },
       "assets": {
         "title": "Assets"

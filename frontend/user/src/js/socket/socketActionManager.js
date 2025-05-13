@@ -26,8 +26,12 @@ export class SocketActionManager {
                 if(!child.oldMaterial)
                     child.oldMaterial = child.material
 
+
                 if(asset.highlight.value) {
-                    child.material = new THREE.MeshStandardMaterial({ color: 0xff0000 })
+                    const material = child.material.clone()
+                    material.roughness = 1
+                    material.emissive.set(0.3, 0.3, 0.2)
+                    child.material = material // new THREE.MeshStandardMaterial({ color: 0xff0000 })
                 } else
                     child.material = child.oldMaterial
             }

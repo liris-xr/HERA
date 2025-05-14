@@ -315,8 +315,9 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
 
     if(this->invalidityTexture[probe.id]) {
         this->invalidityTexture[probe.id] /= float(nbIntersection);
-        if(this->invalidityTexture[probe.id] > 0.5) {
-            probe.position = probe.position + directionOfGeometry*distanceFromGeometry*2;
+        if(this->invalidityTexture[probe.id] > 0.5 && probe.nbDisplacement < 3) {
+            probe.position = probe.position + directionOfGeometry*distanceFromGeometry*1.1;
+            probe.nbDisplacement++;
 
             for (unsigned int j = 0;j<9;j++) {
                 probe.coefficients[j].x = 0;
@@ -337,12 +338,12 @@ void LightProbeVolume::bake() {
         updateIndirectLighting(probe);
         updateDirectLighting(probe);
 
-        if(probe.id % 100 == 0) {
+        if(probe.id % 10000 == 0) {
             std::cout<<probe.id<<std::endl;
         }
     }
 
-    // this->updateBasedOnInvalidity();
+    this->updateBasedOnInvalidity();
 
     for(LightProbe & probe : this->probes) {
 

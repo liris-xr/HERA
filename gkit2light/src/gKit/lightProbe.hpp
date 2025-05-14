@@ -11,6 +11,8 @@ class LightProbe {
         Point position;
         Vector coefficients[9];
         unsigned int id;
+        
+        unsigned int nbDisplacement;
 
         
         LightProbe(Point pos, unsigned int id);

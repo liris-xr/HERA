@@ -3,6 +3,7 @@
 LightProbe::LightProbe(Point pos,unsigned int id) {
     this->position = pos;
     this->id = id;
+    this->nbDisplacement = 0;
 }
 
 float * getBasis(const Vector direction) {

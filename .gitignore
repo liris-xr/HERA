@@ -133,8 +133,8 @@ dist
 issues.txt
 
 # gkit2light
-gkit2light/bin/
-gkit2light/obj/
+gkit2light/bin
+gkit2light/obj
 gkit2light/.cache
 gkit2light/.vscode
 gkit2light/compile_commands.json

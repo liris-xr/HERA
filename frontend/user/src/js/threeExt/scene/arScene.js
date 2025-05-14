@@ -95,7 +95,7 @@ export class ArScene extends AbstractScene {
         const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
-                    // children.applyMatrix4(transform)
+                    children.applyMatrix4(transform)
                     const subMeshData = this.meshDataMap.get(children.name)
                     this.meshManager.updateSubMesh(children,subMeshData)
                     children.updateMatrixWorld()

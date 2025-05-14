@@ -52,24 +52,19 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->indirectWeight = 1.0/float(nbIndirectSamples);
     this->directIndrectWeight = 1.0/float(nbDirectIndirectSamples);
 
-    for(int i = 0;i<9;i++) {
-        this->shTextures[i].resize(width*depth*height*density*density*density*4);
-
-        this->invalidityTexture = std::vector<float>(width*depth*height*density*density*density,0);
-    }
     
     int n= mesh.triangle_count();
     for(int i= 0; i < n; i++) {
         TriangleData td = mesh.triangle(i);
-
+        
         this->meshTriangles.emplace_back(td,i);
     }
-
+    
     float freq = 1.0/density;
     unsigned int nbProbe = 0;
-    for(float y = -height/2;y<height/2;y = y + freq) {
-        for(float z = -depth/2;z<depth/2;z = z + freq) {
-            for(float x = -width/2;x<width/2;x = x + freq) {
+    for(float y = -height/float(2);y<height/float(2);y = y + freq) {
+        for(float z = -depth/float(2);z<depth/float(2);z = z + freq) {
+            for(float x = -width/float(2);x<width/float(2);x = x + freq) {
                 Point pos(x,y,z);
                 pos = pos + center;
                 
@@ -78,10 +73,15 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
             }
         }
     }
+    for(int i = 0;i<9;i++) {
+        this->shTextures[i].resize(nbProbe*4);
+    
+        this->invalidityTexture = std::vector<float>(nbProbe,0);
+    }
 }
 
 LightProbeVolume::~LightProbeVolume() {
-    delete this->lightSources;
+
 }
 
 
@@ -338,7 +338,7 @@ void LightProbeVolume::bake() {
         updateIndirectLighting(probe);
         updateDirectLighting(probe);
 
-        if(probe.id % 10000 == 0) {
+        if(probe.id % 100 == 0) {
             std::cout<<probe.id<<std::endl;
         }
     }

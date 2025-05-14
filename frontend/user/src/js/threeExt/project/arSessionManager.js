@@ -102,7 +102,7 @@ export class ArSessionManager {
 
 
     async start() {
-        this.reset();
+        // this.reset();
         this.#isArRunning.value = true;
 
 

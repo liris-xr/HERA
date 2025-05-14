@@ -293,7 +293,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
             );
 
             let updatedUrl = req.uploadedUrl;
-            if(uploadedUrl && scene.envmapUrl !== ""){
+            if(uploadedUrl && scene.envmapUrl !== "" && scene.envmapUrl != null){
                 deleteFile(scene.envmapUrl);
                 updatedUrl = uploadedUrl
             }

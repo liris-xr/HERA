@@ -1,5 +1,5 @@
-// const HOST = 'https://192.168.83.116';
-const HOST = 'https://localhost';
+const HOST = 'https://192.168.83.116';
+// const HOST = 'https://localhost';
 //const HOST = 'https://172.22.69.22';
 
 export const ENDPOINT = `${HOST}:8080/api/`;

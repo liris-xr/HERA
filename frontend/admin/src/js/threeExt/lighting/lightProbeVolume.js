@@ -410,7 +410,7 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
         let minDist = Infinity
         for(let neighbour of neighbours) {
             let dist = neighbour.position.distanceTo(position)
-            if(neighbour.position < minDist) {
+            if(dist < minDist) {
                 minDist = dist;
             }
         }

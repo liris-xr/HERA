@@ -5,7 +5,7 @@ LightProbe::LightProbe(Point pos,unsigned int id) {
     this->id = id;
 }
 
-float * getBasis(Vector direction) {
+float * getBasis(const Vector direction) {
     float * shBasis = new float[9];
 
     // direction is assumed to be unit length
@@ -38,5 +38,11 @@ void LightProbe::add(const LightProbe & lp) {
 void LightProbe::addScaled(const LightProbe & lp,const float s) {
     for ( int i = 0; i < 9; i ++ ) {
         this->coefficients[ i ] = this->coefficients[ i ] + (lp.coefficients[ i ]*s);
+    }
+}
+
+void LightProbe::scale(const float s) {
+    for ( int i = 0; i < 9; i ++ ) {
+        this->coefficients[ i ] = this->coefficients[ i ] * s;
     }
 }

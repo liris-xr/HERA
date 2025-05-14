@@ -19,6 +19,8 @@ class LightProbe {
         void add(const LightProbe & lp);
 
         void addScaled(const LightProbe & lp,const float s);
+
+        void scale(const float s);
 };
 
 #endif

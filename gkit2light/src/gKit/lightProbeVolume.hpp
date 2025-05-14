@@ -111,6 +111,8 @@ class LightProbeVolume {
         std::vector<GLTFMaterial> materials;
         std::vector<Triangle> meshTriangles;
 
+        float texturesWidth,texturesDepth,texturesHeight;
+
         unsigned int nbDirectSamples;
         unsigned int nbIndirectSamples;
         unsigned int nbDirectIndirectSamples;
@@ -120,6 +122,14 @@ class LightProbeVolume {
         float directIndrectWeight; 
 
         Vector getRandomSphereDirection(const Point & origin);
+
+        void addNeighbour(const unsigned int probeId,std::vector<LightProbe> & neighbours);
+
+        void add3DNeighbours(const unsigned int probeId,std::vector<LightProbe> & neighbours);
+
+        float getClosestNeighbourDistance(const Point & position,std::vector<LightProbe> & neighbours);
+
+        void updateBasedOnInvalidity();
 
         bool isDirectionObstructed(const Point & origin,const Vector & direction,const float intersectionDistance);
         Hit getClosestIntersection(const Point & origin,const Vector & direction);

@@ -222,7 +222,7 @@ void main() {
 		);
 
 	// vec3 displacedWorldPosition = wPosition.xyz;
-	vec3 n = vec3(wNormal.x,wNormal.z,-wNormal.y);
+	// vec3 n = vec3(wNormal.x,wNormal.z,-wNormal.y);
 	// if(texture(invalidity,texcoord).r > 0.0) {
 	// 	vec3 displacement = normalize(n)*texture(distanceFromGeometry,texcoord).r;
 	// 	displacedWorldPosition += displacement;

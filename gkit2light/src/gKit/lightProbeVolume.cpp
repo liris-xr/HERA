@@ -38,6 +38,10 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->materials = materials;
     this->lightSources = new LightSources(mesh,materials);
 
+    this->texturesWidth = width*density; 
+    this->texturesDepth = depth*density; 
+    this->texturesHeight = height*density; 
+
     this->nbDirectSamples = nbDirectSamples;
     this->nbIndirectSamples = nbIndirectSamples;
     this->nbDirectIndirectSamples = nbDirectIndirectSamples;
@@ -86,8 +90,8 @@ Vector LightProbeVolume::getRandomSphereDirection(const Point & origin) {
     std::default_random_engine rng(hwseed());
     std::uniform_real_distribution<float> uniform(0, 1);
 
-    float r1 = uniform(rng)/2;
-    float r2 = uniform(rng)/2;
+    float r1 = uniform(rng);
+    float r2 = uniform(rng);
     
     float phi = 2*M_PI*r1;
     float theta = acos(1-(2*r2)); 
@@ -96,11 +100,95 @@ Vector LightProbeVolume::getRandomSphereDirection(const Point & origin) {
     float y = origin.y + (2 * sin(phi)) * sqrt(r2*(1-r2)); 
     float z = origin.z + (1-(2*r2));
 
+    
     Point pointOnSphere(x,y,z);
     Vector direction = pointOnSphere - origin;
 
     return normalize(direction);
 }
+
+void LightProbeVolume::addNeighbour(const unsigned int probeId,std::vector<LightProbe> & neighbours) {
+    if(probeId >= 0 && probeId < this->probes.size()) {
+        neighbours.push_back(this->probes[probeId]);
+    }
+}
+
+void LightProbeVolume::add3DNeighbours(const unsigned int probeId,std::vector<LightProbe> & neighbours) {
+    this->addNeighbour(probeId-1,neighbours);
+    this->addNeighbour(probeId+1,neighbours);
+
+    this->addNeighbour((probeId-1)-this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId)-this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId+1)-this->texturesWidth*this->texturesDepth,neighbours);
+
+    this->addNeighbour((probeId-1)+this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId)+this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId+1)+this->texturesWidth*this->texturesDepth,neighbours);
+
+    this->addNeighbour((probeId)-this->texturesWidth,neighbours);
+    this->addNeighbour((probeId-1)-this->texturesWidth,neighbours);
+    this->addNeighbour((probeId+1)-this->texturesWidth,neighbours);
+
+    this->addNeighbour((probeId)+this->texturesWidth,neighbours);
+    this->addNeighbour((probeId-1)+this->texturesWidth,neighbours);
+    this->addNeighbour((probeId+1)+this->texturesWidth,neighbours);
+
+    this->addNeighbour((probeId-1)-this->texturesWidth+this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId)-this->texturesWidth+this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId+1)-this->texturesWidth+this->texturesWidth*this->texturesDepth,neighbours);
+
+    this->addNeighbour((probeId-1)+this->texturesWidth+this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId)+this->texturesWidth+this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId+1)+this->texturesWidth+this->texturesWidth*this->texturesDepth,neighbours);
+
+    this->addNeighbour((probeId-1)+this->texturesWidth-this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId)+this->texturesWidth-this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId+1)+this->texturesWidth-this->texturesWidth*this->texturesDepth,neighbours);
+
+    this->addNeighbour((probeId-1)-this->texturesWidth-this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId)-this->texturesWidth-this->texturesWidth*this->texturesDepth,neighbours);
+    this->addNeighbour((probeId+1)-this->texturesWidth-this->texturesWidth*this->texturesDepth,neighbours);
+}
+
+float LightProbeVolume::getClosestNeighbourDistance(const Point & position,std::vector<LightProbe> & neighbours) {
+    float minDist = std::numeric_limits<float>::max();
+    for(LightProbe neighbour : neighbours) {
+        float dist = length(neighbour.position - position);
+        if(dist < minDist) {
+            minDist = dist;
+        }
+    }
+    return minDist;
+}
+
+void LightProbeVolume::updateBasedOnInvalidity() {
+    for(LightProbe & probe : this->probes) {
+        // Based on the probe's invalidity score
+        // We create a meaned spherical harmonics of the surrounding probes (weighted with their own score)
+        // Then we lerp between both, based on the probe's invalidity score
+        if(this->invalidityTexture[probe.id] > 0) {
+            LightProbe newLightProbe(probe.position,probe.id);
+            std::vector<LightProbe> neighbours;
+            this->add3DNeighbours(probe.id,neighbours);
+            float maxDist = this->getClosestNeighbourDistance(probe.position,neighbours);
+
+            // Quantity of sh added to newSphericalHarmonics
+            float shAmount = 0;
+            for(LightProbe neighbour : neighbours) {
+                if(length(neighbour.position - probe.position) < maxDist*2) {
+                    float amount = 1 - this->invalidityTexture[neighbour.id];
+                    newLightProbe.addScaled(neighbour,amount);
+                    shAmount += amount;
+                }
+            }
+            newLightProbe.scale(float(1)/shAmount);
+
+            probe = newLightProbe;
+        }
+    }
+}
+
+
 
 bool LightProbeVolume::isDirectionObstructed(const Point & origin,const Vector & direction,const float intersectionDistance) {
     Ray ray(origin,direction);
@@ -125,18 +213,19 @@ Hit LightProbeVolume::getClosestIntersection(const Point & origin,const Vector &
     float intersectionDistance = std::numeric_limits<float>::max();
     
     
-    Hit hit;
+    Hit closestHit;
     for(int j= 0; j < int(meshTriangles.size()); j++)
     { 
-        hit = this->meshTriangles[j].intersect(ray, ray.tmax);
-        if(hit)
+        
+        if(Hit hit = this->meshTriangles[j].intersect(ray, ray.tmax))
         {
             if(intersectionDistance > hit.t) { // Si on a trouvé une intersection plus proche
+                closestHit = hit;
                 intersectionDistance = hit.t;
             }
         }
     }
-    return hit;
+    return closestHit;
 }
 
 bool LightProbeVolume::isBackFaceTouched(const unsigned int triangleId, const Vector & direction) {
@@ -192,7 +281,6 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
                 float roughness = material.roughness;
                 if(roughness > 0.0) { // Light reflector touched
                     Color lightReflectorColor = Color(0);
-                    const Color color = material.color; 
                     Vector lightReflectorNormal = this->meshTriangles[hit.triangle_id].n;
 
                     Point lightReflectorOrigin = (probe.position + sphereDirection*hit.t) + (lightReflectorNormal * 0.01);
@@ -203,17 +291,17 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
                         Triangle t = this->meshTriangles[triangleId];
                         Point pointOnLightSource = t.getRandomPointOnTriangle();
                         
-                        float intersectionDistance = length(pointOnLightSource-probe.position);
-                        Vector dir = normalize(pointOnLightSource-probe.position);
+                        float intersectionDistance = length(pointOnLightSource-lightReflectorOrigin);
+                        Vector dir = normalize(pointOnLightSource-lightReflectorOrigin);
 
-                        if(!this->isDirectionObstructed(probe.position, dir, intersectionDistance)) {
-                            Color color = this->lightSources->getTriangleColor(lightSourceId);
-                            lightReflectorColor = lightReflectorColor + (color * directIndrectWeight);
+                        if(!this->isDirectionObstructed(lightReflectorOrigin, dir, intersectionDistance)) {
+                            Color lightSourceColor = this->lightSources->getTriangleColor(lightSourceId);
+                            lightReflectorColor = lightReflectorColor + (material.color * directIndrectWeight);
                         }
 
                     }
                     if(lightReflectorColor.max() > 0.0) {
-                        float * shBasis = getBasis(-sphereDirection);
+                        float * shBasis = getBasis(sphereDirection);
                         for (unsigned int j = 0;j<9;j++) {
                             probe.coefficients[j].x += (shBasis[j] * lightReflectorColor.r * roughness) * this->indirectWeight;
                             probe.coefficients[j].y += (shBasis[j] * lightReflectorColor.g * roughness) * this->indirectWeight;
@@ -225,10 +313,10 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
         }
     }
 
-    if(nbIntersection) {
-        this->invalidityTexture[probe.id] /= nbIntersection;
-        if(this->invalidityTexture[probe.id] > 0.) {
-            probe.position = probe.position - directionOfGeometry*distanceFromGeometry*1.1;
+    if(this->invalidityTexture[probe.id]) {
+        this->invalidityTexture[probe.id] /= float(nbIntersection);
+        if(this->invalidityTexture[probe.id] > 0.5) {
+            probe.position = probe.position + directionOfGeometry*distanceFromGeometry*2;
 
             for (unsigned int j = 0;j<9;j++) {
                 probe.coefficients[j].x = 0;
@@ -236,9 +324,9 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
                 probe.coefficients[j].z = 0;
             }
 
-            this->updateDirectLighting(probe);
             this->invalidityTexture[probe.id] = 0;
             this->updateIndirectLighting(probe);
+            // this->updateDirectLighting(probe);
         }
     }
 }
@@ -246,8 +334,17 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
 void LightProbeVolume::bake() {
     #pragma omp parallel for
     for(LightProbe & probe : this->probes) {
-        updateDirectLighting(probe);
         updateIndirectLighting(probe);
+        updateDirectLighting(probe);
+
+        if(probe.id % 100 == 0) {
+            std::cout<<probe.id<<std::endl;
+        }
+    }
+
+    // this->updateBasedOnInvalidity();
+
+    for(LightProbe & probe : this->probes) {
 
         for(unsigned int coef = 0;coef<9;coef++) {
             for(unsigned int color = 0;color<4;color++) {

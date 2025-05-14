@@ -27,6 +27,8 @@ import {bytesToMBytes} from "@/js/projectPicture.js";
 import EnvmapItem from "@/components/listItem/envmapItem.vue";
 import {useI18n} from "vue-i18n";
 import {EXRLoader} from "three/addons";
+import * as THREE from "three"
+
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
@@ -255,8 +257,16 @@ async function updateEnvmap(event){
 
       // vérifier que l'exr uploadé est valide
       try {
-        const buffer = await file.arrayBuffer()
-        new EXRLoader().parse(buffer)
+        console.log(event)
+
+        const url = URL.createObjectURL(file)
+
+        editor.scene.environment = await (new EXRLoader()).load(url, (texture) => {
+          texture.mapping = THREE.EquirectangularReflectionMapping
+
+          // this.background = texture
+        })
+
       } catch(error) {
         alert(t('projectView.selectedFile.notAnExrError'))
         uploadedEnvmap.value.rawData = null;
@@ -331,6 +341,9 @@ function beforeRedirect(to, from, next){
 
 function removeEnvmap() {
   scene.value.envmapUrl = "";
+
+  if (uploadedEnvmap.value.rawData === null)
+    editor.scene.environment = null
 }
 
 onBeforeRouteLeave( (to, from, next)=>{

@@ -9,6 +9,8 @@ import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
+import {EXRLoader} from "three/addons";
+import {getResource} from "@/js/endpoints.js";
 
 const transformModeKeys = {
     "translate":"position",
@@ -119,6 +121,14 @@ export class EditorScene extends THREE.Scene {
         this.#gridPlane = new GridPlane();
         this.#gridPlane.pushToScene(this);
         this.assetManager.onMoved = ()=>{this.updatePlaygroundSize()};
+
+        if(sceneData.envmapUrl)
+            this.environment = new EXRLoader()
+                .load(getResource(sceneData.envmapUrl), (texture) => {
+                    texture.mapping = THREE.EquirectangularReflectionMapping
+
+                    // this.background = texture
+                })
     }
 
     setupControls(controls){

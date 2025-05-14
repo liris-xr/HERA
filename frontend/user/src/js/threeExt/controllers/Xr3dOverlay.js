@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import {FontLoader, TextGeometry} from "three/addons";
 
-export class VrController {
+export class Xr3dOverlay {
     vrSession
     referenceSpace
     sceneManager
@@ -37,8 +37,8 @@ export class VrController {
 
         this.vrSession.addEventListener("inputsourceschange", (event) => {
             let controllers = event.added
-            console.log(controllers)
         })
+
     }
 
     handleSelect(event) {

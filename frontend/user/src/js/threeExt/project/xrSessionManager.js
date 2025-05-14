@@ -4,7 +4,7 @@ import {ArRenderer} from "../rendering/arRenderer";
 import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
-import {VrController} from "@/js/threeExt/controllers/VrController.js";
+import {Xr3dOverlay} from "@/js/threeExt/controllers/Xr3dOverlay.js";
 
 export class XrSessionManager {
     sceneManager;
@@ -22,7 +22,7 @@ export class XrSessionManager {
     domWidth;
     domHeight;
 
-    vrController;
+    xr3dOverlay;
 
     constructor(json) {
         this.shadowMapSize = 4096
@@ -40,7 +40,7 @@ export class XrSessionManager {
         this.sceneManager.onSceneChanged = function(){
             this.labelRenderer.clear()
             this.sceneManager.active.value.add(this.arCamera)
-            if(this.vrController) this.vrController.onSceneChanged();
+            if(this.xr3dOverlay) this.xr3dOverlay.onSceneChanged();
         }.bind(this);
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
@@ -98,7 +98,7 @@ export class XrSessionManager {
 
 
     async isXrCompatible(displayMode="ar") {
-        return navigator.xr && await navigator.xr.isSessionSupported("immersive-"+displayMode);
+        return navigator.xr && await navigator.xr.isSessionSupported("immersive-"+displayMode, );
     }
 
     isArRunning = computed(() => {
@@ -110,16 +110,22 @@ export class XrSessionManager {
         this.reset();
         this.#isXrRunning.value = true;
 
-
-        this.xrSession = await navigator.xr.requestSession(
-            "immersive-"+displayMode,
-            displayMode === "ar" ? {
-                requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
-                domOverlay: {
-                    root: this.domOverlay
+        try {
+            this.xrSession = await navigator.xr.requestSession(
+                "immersive-"+displayMode,
+                displayMode === "ar" ? {
+                    requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
+                    domOverlay: {
+                        root: this.domOverlay
+                    }
+                } : {
+                    requiredFeatures: ['local-floor']
                 }
-            } : {}
-        );
+            );
+        } catch(e) {
+            // le dom-overlay n'est pas supporté
+            //TODO: faire ce qu'il y a à faire
+        }
 
         this.xrMode = displayMode;
         await this.onSessionStarted();
@@ -127,15 +133,17 @@ export class XrSessionManager {
 
     async onSessionStarted() {
         this.xrSession.addEventListener( 'end', this.onSessionEnded.bind(this) );
-        this.arRenderer.xr.setReferenceSpaceType( 'local' );
+        this.arRenderer.xr.setReferenceSpaceType( this.xrMode === "vr" ? 'local-floor' : 'local' );
         await this.arRenderer.xr.setSession( this.xrSession );
         this.referenceSpace = await this.arRenderer.xr.getReferenceSpace();
         this.viewerSpace = await this.xrSession.requestReferenceSpace('viewer');
 
         if(this.xrMode === "vr") {
-            this.vrController = new VrController(this.xrSession, this.referenceSpace, this.sceneManager, this.arCamera, this.arRenderer)
-            this.vrController.init()
-            this.vrController.showUI()
+
+            this.xr3dOverlay = new Xr3dOverlay(this.xrSession, this.referenceSpace, this.sceneManager, this.arCamera, this.arRenderer)
+            await this.xr3dOverlay.init()
+            this.xr3dOverlay.showUI()
+
         } else if (this.xrMode === "ar") {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.xrSession.requestHitTestSource({space: this.viewerSpace});
             this.sceneManager.isArRunning.value = true;
@@ -157,8 +165,8 @@ export class XrSessionManager {
         this.sceneManager.isArRunning.value = false;
         this.#resetCameraPosition()
 
-        if(this.vrController)
-            this.vrController.hideUI()
+        if(this.xr3dOverlay)
+            this.xr3dOverlay.hideUI()
     }
 
     reset() {

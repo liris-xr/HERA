@@ -502,6 +502,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
         const project = await ArProject.findOne({
             where: {id: projectId},
+            attributes: {exclude: ['userId']},
             include:[
                 {
                     model: ArScene,
@@ -601,6 +602,7 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         const data = fs.readFileSync(projectFilePath)
 
         const projectObj = JSON.parse(data)
+        projectObj.userId = token.id
 
         const project = await ArProject.create(projectObj, {
             include: [

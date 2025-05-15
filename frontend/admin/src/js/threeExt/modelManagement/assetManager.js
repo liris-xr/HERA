@@ -73,6 +73,7 @@ export class AssetManager {
         const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
+                    console.log(transform)
                     children.applyMatrix4(transform)
                     const subMeshData = this.meshDataMap.get(assetData.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+children.name]
                     // meshManager.updateSubMesh(children,subMeshData)
@@ -81,7 +82,7 @@ export class AssetManager {
 
                 } else {
                     let newTransform = new THREE.Matrix4()
-                    step(children,newTransform.multiplyMatrices(transform,children.matrix))
+                    step(children,transform/*newTransform.multiplyMatrices(transform,children.matrix)*/)
                 }
 
             }
@@ -105,7 +106,7 @@ export class AssetManager {
 
             scene.add(mesh)
 
-            this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
+            // this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
 
                 // const subMeshData = this.meshDataMap.get(asset.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name]
                 //
@@ -115,7 +116,7 @@ export class AssetManager {
                 //
                 // this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
                 // asset.addSubMesh(subMesh);
-            })
+            // })
 
             this.setMeshMapWithData(this.getResultMeshes())
             

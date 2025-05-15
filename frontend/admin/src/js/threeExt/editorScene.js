@@ -213,10 +213,7 @@ export class EditorScene extends THREE.Scene {
                 
             }
 
-
         }
-
-        console.log(this.assetManager.meshManagerMap, this.assetManager.meshDataMap)
 
         this.setSelected(object);
 

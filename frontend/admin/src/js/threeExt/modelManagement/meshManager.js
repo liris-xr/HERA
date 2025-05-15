@@ -17,6 +17,7 @@ export class MeshManager {
 
         // scene.add( mesh );
         this.#meshes.push(mesh)
+        console.log(mesh.scale)
     }
 
     updateSubMesh(mesh,meshData) {

@@ -295,7 +295,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 },
                 
                 async (knownId)=>{
-                    await ArMesh.destroy({where: {id: knownId},transaction:t});
+                    await ArMesh.destroy({where: knownId,transaction:t});
                 }
         
             );

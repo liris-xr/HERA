@@ -107,6 +107,7 @@ export class AssetManager {
 
     removeFromScene(scene, asset){
         let self = this;
+        console.log(asset)
         this.#assets.forEach(function(currentAsset, index, object) {
             if (asset.id === currentAsset.id) {
                 object.splice(index, 1);

@@ -190,17 +190,31 @@ export class EditorScene extends THREE.Scene {
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
+            if(this.#meshSelectionMode.value) {
 
-            this.assetManager.meshManagerMap.forEach( (meshManager) => {
-                for (let mesh of meshManager.getMeshes.value) {
-                    const intersects = raycaster.intersectObject(mesh, true);
+                this.assetManager.meshManagerMap.forEach( (meshManager) => {
+                    for (let mesh of meshManager.getMeshes.value) {
+                        const intersects = raycaster.intersectObject(mesh, true);
+                        if (intersects.length > 0) {
+                            object = mesh;
+                        }
+                    }
+                })
+
+            } else {
+
+                for (let asset of this.assetManager.getAssets.value) {
+                    const intersects = raycaster.intersectObject(asset.getObject(), true);
                     if (intersects.length > 0) {
-                        object = mesh;
+                        object = asset;
                     }
                 }
-            })
+                
+            }
+
+
         }
-        
+
         this.setSelected(object);
 
     }
@@ -210,17 +224,22 @@ export class EditorScene extends THREE.Scene {
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
-            
-            if(object.isMesh) {
-                if(!this.#meshSelectionMode.value) {
-                    this.attachMeshes(object)
-                } else {
-                    this.#transformControls.attach(object)
+
+            if(this.#meshSelectionMode.value) {
+                if(object.isMesh) {
+                    if(!this.#meshSelectionMode.value) {
+                        this.attachMeshes(object)
+                    } else {
+                        this.#transformControls.attach(object)
+                    }
+                } else if(object.label) {
+                    this.#transformControls.attach(object.getObject());
+                } else if(object.subMeshes) { // Object is an asset
+                    this.attachMeshes(object.subMeshes[0])
                 }
-            } else if(object.label) {
-                this.#transformControls.attach(object.getObject());
-            } else if(object.subMeshes) { // Object is an asset
-                this.attachMeshes(object.subMeshes[0])
+            } else {
+                this.#transformControls.attach(object.getObject())
+                object.setSelected(selected)
             }
 
         }
@@ -359,8 +378,6 @@ export class EditorScene extends THREE.Scene {
         this.remove(this.#gridPlane);
         this.#gridPlane = new GridPlane(double);
         this.#gridPlane.pushToScene(this);
-
-
 
         this.#lightSet.setLightPosition(double, double, double);
     }

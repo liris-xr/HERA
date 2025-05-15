@@ -204,6 +204,7 @@ export class EditorScene extends THREE.Scene {
             } else {
 
                 for (let asset of this.assetManager.getAssets.value) {
+
                     const intersects = raycaster.intersectObject(asset.getObject(), true);
                     if (intersects.length > 0) {
                         object = asset;
@@ -214,6 +215,8 @@ export class EditorScene extends THREE.Scene {
 
 
         }
+
+        console.log(this.assetManager.meshManagerMap, this.assetManager.meshDataMap)
 
         this.setSelected(object);
 
@@ -249,6 +252,9 @@ export class EditorScene extends THREE.Scene {
 
     // Attach every mesh related to the object to a group
     attachMeshes(object) {
+        this.#transformControls.attach(object)
+        return
+
         const selectedMeshKey = "project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+object.name
 
         const currentMeshData = this.meshMap.get(selectedMeshKey)
@@ -389,6 +395,8 @@ export class EditorScene extends THREE.Scene {
     }
 
     setMaterialMenu(value) {
+        this.setSelected(null)
+
         this.#meshSelectionMode.value = value
         this.#updateSelectedMaterialValues()
     }

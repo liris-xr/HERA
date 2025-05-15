@@ -248,8 +248,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
             await updateListByCompositeId(knownMeshesIds, ['id', 'assetId'], typeof req.body.meshes === "object" ? req.body.meshes : JSON.parse(req.body.meshes),
                 async (mesh) => {
-                    console.log(mesh.id, mesh.position)
-
                     await ArMesh.update({
                         id:mesh.id,
                         position:mesh.position,
@@ -297,7 +295,8 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 },
                 
                 async (knownId)=>{
-                    await ArMesh.destroy({where: knownId,transaction:t});
+                    console.log(knownId)
+                    await ArMesh.destroy({where: {id: knownId.id, assetId: knownId.assetId},transaction:t});
                 }
         
             );

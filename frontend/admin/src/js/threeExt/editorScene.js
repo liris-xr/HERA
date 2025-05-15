@@ -141,18 +141,6 @@ export class EditorScene extends THREE.Scene {
         this.add(this.#transformControls);
         this.setTransformMode("translate");
 
-        this.#transformControls.addEventListener("mouseUp", () => {
-            if(!this.#meshSelectionMode.value) { 
-                for (let mesh of this.currentMeshes) {
-                    this.add(mesh)
-                }
-                this.#transformControls.detach()
-                this.remove(this.currentMeshGroup)
-                for (let mesh of this.currentMeshes) {
-                    mesh.applyMatrix4(this.currentMeshGroup.matrix)
-                }
-            }
-        })
             
         this.#transformControls.addEventListener('objectChange', () => {
             this.#updateSelectedTransformValues();

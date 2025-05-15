@@ -73,7 +73,6 @@ export class AssetManager {
         const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
-                    console.log(transform)
                     children.applyMatrix4(transform)
                     const subMeshData = this.meshDataMap.get(assetData.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+children.name]
                     // meshManager.updateSubMesh(children,subMeshData)
@@ -87,6 +86,7 @@ export class AssetManager {
 
             }
         }
+
         if(assetData.mesh) {
             step(assetData.mesh,new THREE.Matrix4())
         }

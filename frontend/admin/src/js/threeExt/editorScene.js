@@ -91,7 +91,12 @@ export class EditorScene extends THREE.Scene {
 
     setMeshMap(meshes) {
         meshes.forEach( (mesh) => {
-            this.meshMap.set(mesh.id,mesh)
+            // this.meshMap.set(mesh.id, mesh)
+
+            if(this.meshMap.get(mesh.assetId))
+                this.meshMap.get(mesh.assetId)[mesh.id] = mesh
+            else
+                this.meshMap.set(mesh.assetId, { [mesh.id]: mesh })
         })
     }
 

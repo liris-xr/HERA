@@ -35,7 +35,12 @@ export class AssetManager {
 
     setMeshMapWithData(meshData) {
         meshData.forEach( (mesh) => {
-            this.meshDataMap.set(mesh.id,mesh)
+            // this.meshDataMap.set(mesh.id,mesh)
+
+            if(this.meshDataMap.get(mesh.assetId))
+                this.meshDataMap.get(mesh.assetId)[mesh.id] = mesh
+            else
+                this.meshDataMap.set(mesh.assetId, { [mesh.id]: mesh })
         })
     }
 
@@ -70,10 +75,13 @@ export class AssetManager {
         }
         
         this.meshManagerMap.set(asset.id,new MeshManager())
-        
+
+
         asset.load().then((mesh)=>{
             this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                const subMeshData = this.meshDataMap.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
+
+                const subMeshData = this.meshDataMap.get(asset.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name]
+
                 if(subMeshData) {
                     subMeshData.assetId = asset.id
                 }
@@ -93,6 +101,7 @@ export class AssetManager {
         
         this.#assets.push(asset);
         this.runOnChanged();
+
         return asset;
     }
 
@@ -156,13 +165,13 @@ export class AssetManager {
                         b:mesh.material.emissive.b,
                     },
                     emissiveIntensity: mesh.material.emissiveIntensity,
-                    roughenss: mesh.material.roughness,
+                    roughness: mesh.material.roughness,
                     metalness: mesh.material.metalness,
                     opacity: mesh.material.opacity
                 })
             }
         })
-        
+
         return result;
     }
 
@@ -183,6 +192,14 @@ export class AssetManager {
                     asset.id = id.newId
                 }
             }
+            this.meshManagerMap.forEach((meshManager,assetId) => {
+                for(let mesh of meshManager.getMeshes.value) {
+                    console.log(mesh)
+                    if(mesh.assetId === id.tempId){
+                        mesh.assetId = id.newId
+                    }
+                }
+            })
         }
 
         for (let i = 0; i < assets.length; i++) {

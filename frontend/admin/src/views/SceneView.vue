@@ -257,8 +257,6 @@ async function updateEnvmap(event){
 
       // vérifier que l'exr uploadé est valide
       try {
-        console.log(event)
-
         const url = URL.createObjectURL(file)
 
         editor.scene.environment = await (new EXRLoader()).load(url, (texture) => {

@@ -338,7 +338,7 @@ void LightProbeVolume::bake() {
         updateIndirectLighting(probe);
         updateDirectLighting(probe);
 
-        if(probe.id % 100 == 0) {
+        if(probe.id % 100000 == 0) {
             std::cout<<probe.id<<std::endl;
         }
     }

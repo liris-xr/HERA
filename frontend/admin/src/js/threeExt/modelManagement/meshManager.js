@@ -221,19 +221,6 @@ void main() {
 		(((wPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
 		);
 
-	// vec3 displacedWorldPosition = wPosition.xyz;
-	// vec3 n = vec3(wNormal.x,wNormal.z,-wNormal.y);
-	// if(texture(invalidity,texcoord).r > 0.0) {
-	// 	vec3 displacement = normalize(n)*texture(distanceFromGeometry,texcoord).r;
-	// 	displacedWorldPosition += displacement;
-	// }
-
-	// texcoord = vec3(
-	// 	(((displacedWorldPosition.x-lpvCenter.x) / (lpvWidth/2.)) + 1.) / 2.,
-	// 	(((displacedWorldPosition.z-lpvCenter.z) / (lpvDepth/2.)) + 1.) / 2.,
-	// 	(((displacedWorldPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
-	// 	);
-		
 	vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 		texture(sh1,texcoord).rgb,
 		texture(sh2,texcoord).rgb,
@@ -245,10 +232,8 @@ void main() {
 		texture(sh8,texcoord).rgb
 	);
 	
+	outgoingLight = (material.diffuseColor * getLightProbeIrradiance(interpolatedLightProbe,normal))+totalEmissiveRadiance;
 
-	// outgoingLight = material.diffuseColor * probeIrradiance;
-	outgoingLight = material.diffuseColor * getLightProbeIrradiance(interpolatedLightProbe,normal);
-	// outgoingLight = n;
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>

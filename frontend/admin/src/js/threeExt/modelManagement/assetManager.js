@@ -195,19 +195,11 @@ export class AssetManager {
                 }
             }
             this.meshManagerMap.forEach((meshManager,assetId) => {
-                console.log(this.meshManagerMap, assetId)
                 for(let mesh of meshManager.getMeshes.value) {
                     if(mesh.assetId === id.tempId){
                         mesh.assetId = id.newId
                     }
-
                 }
-
-                // console.log("before", JSON.stringify(this.meshManagerMap))
-                // this.meshManagerMap.set(id.newId, this.meshManagerMap.get(id.tempId))
-                // this.meshManagerMap.delete(id.tempId)
-                // console.log("after", JSON.stringify(this.meshManagerMap))
-
             })
 
             for(let k of this.meshManagerMap.keys())

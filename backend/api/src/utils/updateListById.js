@@ -45,11 +45,6 @@ export async function updateListByCompositeId(knownIds, fields, list, onUpdate, 
 
         }
 
-        // const index = knownIds.indexOf(key);
-
-        console.log(key, knownIds, index)
-
-
         if (index > -1) { //if the id is known : update
             await onUpdate(element);
             knownIds.splice(index, 1); //the id was used, so we remove it from the array

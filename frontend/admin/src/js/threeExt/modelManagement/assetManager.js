@@ -107,11 +107,12 @@ export class AssetManager {
 
     removeFromScene(scene, asset){
         let self = this;
-        console.log(asset)
         this.#assets.forEach(function(currentAsset, index, object) {
             if (asset.id === currentAsset.id) {
                 object.splice(index, 1);
                 self.runOnChanged();
+
+                console.log(asset, self.meshManagerMap)
                 
                 self.meshManagerMap.get(asset.id).clear(scene)
                 self.meshManagerMap.delete(asset.id)
@@ -194,13 +195,27 @@ export class AssetManager {
                 }
             }
             this.meshManagerMap.forEach((meshManager,assetId) => {
+                console.log(this.meshManagerMap, assetId)
                 for(let mesh of meshManager.getMeshes.value) {
-                    console.log(mesh)
                     if(mesh.assetId === id.tempId){
                         mesh.assetId = id.newId
                     }
+
                 }
+
+                // console.log("before", JSON.stringify(this.meshManagerMap))
+                // this.meshManagerMap.set(id.newId, this.meshManagerMap.get(id.tempId))
+                // this.meshManagerMap.delete(id.tempId)
+                // console.log("after", JSON.stringify(this.meshManagerMap))
+
             })
+
+            for(let k of this.meshManagerMap.keys())
+                if(k === id.tempId) {
+                    this.meshManagerMap.set(id.newId, this.meshManagerMap.get(id.tempId));
+                    this.meshManagerMap.delete(id.tempId);
+                }
+
         }
 
         for (let i = 0; i < assets.length; i++) {

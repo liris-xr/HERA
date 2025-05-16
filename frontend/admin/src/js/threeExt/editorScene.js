@@ -157,7 +157,7 @@ export class EditorScene extends THREE.Scene {
         this.setTransformMode("translate");
 
             
-        this.#transformControls.addEventListener('objectChange', () => {
+        this.#transformControls.addEventListener('mouseUp', (event) => {
             this.#updateSelectedTransformValues();
         });
     }
@@ -224,20 +224,20 @@ export class EditorScene extends THREE.Scene {
     setSelected(object, selected = true){
         this.deselectAll();
         this.selected.value = object;
-        console.log(object)
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
 
             if(this.#meshSelectionMode.value) {
                 if(object.isMesh) {
-                    this.attachMeshes(object)
+                    this.#transformControls.attach(object)
                 } else if(object.label) {
                     this.#transformControls.attach(object.getObject());
                 } else if(object.subMeshes) { // Object is an asset
-                    this.attachMeshes(object.subMeshes[0])
+                    this.#transformControls.attach(object.subMeshes[0])
                 }
             } else {
+                console.log(this.children, object.getObject())
                 this.#transformControls.attach(object.getObject())
                 object.setSelected(selected)
             }
@@ -245,32 +245,6 @@ export class EditorScene extends THREE.Scene {
         }
         this.#updateSelectedTransformValues();
         this.#updateSelectedMaterialValues();
-    }
-
-    // Attach every mesh related to the object to a group
-    attachMeshes(object) {
-        this.#transformControls.attach(object)
-        return
-
-        const selectedMeshKey = "project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+object.name
-
-        const currentMeshData = this.meshMap.get(selectedMeshKey)
-        this.currentMeshes = this.assetManager.meshManagerMap.get(currentMeshData.assetId).getMeshes.value
-        
-        // We need to group up our meshes so we can move all of them
-        let meanPos = new THREE.Vector3(0,0,0);
-        
-        const weight = 1/this.currentMeshes.length
-        this.currentMeshGroup = new THREE.Group()
-        for (let mesh of this.currentMeshes) {
-            this.currentMeshGroup.add(mesh)
-            meanPos.addScaledVector(mesh.position,weight);
-        }
-        this.#transformControls.position.copy(meanPos)
-        
-        this.add(this.currentMeshGroup)
-        
-        this.#transformControls.attach(this.currentMeshGroup)
     }
 
     getSelected() {
@@ -434,6 +408,7 @@ export class EditorScene extends THREE.Scene {
     }
     
     #updateSelectedMaterialValues() {
+
         if(this.selected.value?.isObject3D) {
             this.currentSelectedMaterialValues.value = {
                 metalness:this.selected.value.material.metalness,

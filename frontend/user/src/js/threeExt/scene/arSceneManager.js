@@ -2,6 +2,7 @@ import {ArScene} from "@/js/threeExt/scene/arScene.js";
 import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.js";
 import {computed, ref, watch} from "vue";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
+import scene from "three/addons/offscreen/scene.js";
 
 export class ArSceneManager{
     scenes;
@@ -132,6 +133,44 @@ export class ArSceneManager{
 
     onSceneClick(event){
         if(this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value)
+            console.log("affiche monde")
+            console.log(this.scenePlacementManager.pointerObject.position)
             this.scenePlacementManager.disable();
     }
+
+    setScene(scene){
+        if (scene !== null){
+            if (this.activeSceneId.value === scene.sceneId) { return }
+
+            this.activeSceneId.value = scene.sceneId;
+            return 0;
+        }
+        else{
+            console.error("Impossible to change the scene for : " +  sceneTitle);
+            return 1;
+        }
+    }
+
+    getScene(sceneTitle){
+        for (let scene of this.scenes) {
+            if (scene.title === sceneTitle){
+                return scene;
+            }
+        }
+
+        console.error("No scene found with that title! " +  sceneTitle);
+        return null;
+    }
+
+
+    getSceneActive(){
+        for (scene of this.scenes) {
+            if (scene.sceneId === this.activeSceneId.value){
+                return scene;
+            }
+        }
+    }
+
+
+
 }

@@ -5,6 +5,11 @@ import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
 import Stats from 'three/addons/libs/stats.module.js';
+import {QrCodeManager} from "@/js/qrCode/qrCodeManager.js";
+import * as THREE from "three";
+
+
+
 
 export class ArSessionManager {
     sceneManager;
@@ -22,6 +27,13 @@ export class ArSessionManager {
     domWidth;
     domHeight;
 
+    binding
+    webGlContext
+    lastScanTime = 0;
+    scanInterval = 5000; // MicroSeconde
+
+    qrManager
+
     constructor(json) {
         this.shadowMapSize = 4096
         this.domWidth = 380;
@@ -35,6 +47,8 @@ export class ArSessionManager {
         this.labelRenderer = new LabelRenderer();
 
         this.sceneManager.onSceneChanged = function(){this.labelRenderer.clear()}.bind(this);
+
+        this.qrManager = new QrCodeManager()
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
     }
@@ -107,12 +121,20 @@ export class ArSessionManager {
         this.arSession = await navigator.xr.requestSession(
             'immersive-ar',
             {
-                requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
+                requiredFeatures: ['camera-access','hit-test', 'dom-overlay',/*'light-estimation'*/],
                 domOverlay: {
                     root: this.domOverlay
                 }
+
+
             }
         );
+
+        this.webGlContext = document.querySelector('canvas').getContext('webgl2');
+        await this.webGlContext.makeXRCompatible();
+        this.binding = new XRWebGLBinding(this.arSession, this.webGlContext);
+
+
         await this.onSessionStarted();
     }
 
@@ -122,7 +144,7 @@ export class ArSessionManager {
         await this.arRenderer.xr.setSession( this.arSession );
         this.referenceSpace = await this.arRenderer.xr.getReferenceSpace();
         this.viewerSpace = await this.arSession.requestReferenceSpace('viewer');
-        this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
+        this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace, entityTypes: ['plane']});
 
         this.sceneManager.isArRunning.value = true;
     }
@@ -153,6 +175,40 @@ export class ArSessionManager {
 
         this.arRenderer.render(this.sceneManager.active.value, this.arCamera);
 
+        const viewerPose = frame.getViewerPose(this.referenceSpace);
+        if (!viewerPose) {
+            return;
+        }
+
+        // const timeNow = Date.now();
+        // const shouldScanThisFrame = timeNow - this.lastScanTime > this.scanInterval;
+        //
+        // if ( && shouldScanThisFrame ) {
+        //     const camera = viewerPose.views[0].camera;
+        //     if (camera) {
+        //         this.lastScanTime = timeNow;
+        //
+        //         const cameraTexture = this.binding.getCameraImage(camera);
+        //
+        //         const imageToScan = this.#getImageData(cameraTexture, camera);
+        //
+        //         this.qrManager.scanImageData(imageToScan).then(resultQrCodeScanner => {
+        //             if (resultQrCodeScanner) {
+        //                 console.log(resultQrCodeScanner);
+        //                 this.#changeScene(resultQrCodeScanner);
+        //
+        //                 this.sceneManager.scenePlacementManager.reset();
+        //
+        //                 this.sceneManager.scenePlacementManager.placementScene(
+        //                     this.qrManager.transformationMatrix,
+        //                     this.qrManager.centerQrCode,
+        //                     this.sceneManager.getSceneActive()
+        //                 );
+        //             }
+        //         });
+        //     }
+        // }
+
         if(this.sceneManager.active.value.hasLabels.value && this.labelRenderer.isEnabled.value) {
             this.labelRenderer.render(this.sceneManager.active.value, this.arCamera);
         }else{
@@ -160,8 +216,40 @@ export class ArSessionManager {
         }
     }
 
+    #changeScene(name){
+        const scene = this.sceneManager.getScene(name)
+        this.sceneManager.setScene(scene);
+    }
 
+    #getImageData(cameraTexture, camera) {
+        const width = camera.width;
+         const height = camera.height;
 
+         const framebuffer = this.webGlContext.createFramebuffer();
+         this.webGlContext.bindFramebuffer(this.webGlContext.FRAMEBUFFER, framebuffer);
+         this.webGlContext.framebufferTexture2D(this.webGlContext.FRAMEBUFFER,
+             this.webGlContext.COLOR_ATTACHMENT0,
+             this.webGlContext.TEXTURE_2D,
+             cameraTexture,
+             0);
 
+         const pixels = new Uint8Array(width * height * 4);
+         this.webGlContext.readPixels(0, 0, width, height,
+             this.webGlContext.RGBA,
+             this.webGlContext.UNSIGNED_BYTE,
+             pixels);
 
+         const flipped = new Uint8ClampedArray(pixels.length);
+         const rowSize = width * 4;
+         for (let y = 0; y < height; y++) {
+             const src = y * rowSize;
+             const dst = (height - y - 1) * rowSize;
+             flipped.set(pixels.subarray(src, src + rowSize), dst);
+         }
+
+         this.webGlContext.bindFramebuffer(this.webGlContext.FRAMEBUFFER, null);
+         this.webGlContext.deleteFramebuffer(framebuffer);
+
+         return new ImageData(flipped, width, height)
+     }
 }

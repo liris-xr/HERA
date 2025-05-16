@@ -6,6 +6,7 @@ import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {ToggleableInterface} from "@/js/threeExt/interfaces/ToggleableInterface.js";
 import {classes} from "@/js/utils/extender.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
+import {transformedNormalView} from "three/nodes";
 
 
 export class ScenePlacementManager extends classes(AbstractScene, ToggleableInterface){
@@ -30,6 +31,7 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
     }
 
     async init() {
+
         const manager = MeshManager.getInstance();
         const mesh = await manager.load(this.#pointerUrl);
         if(mesh.hasError())
@@ -79,6 +81,10 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
         return this.#isEnabled.value;
     })
 
+    getIsEnabled (){
+        return this.#isEnabled.value;
+    }
+
 
     getWorldTransformMatrix(){
         return this.pointerObject.matrix;
@@ -94,19 +100,24 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
     }
     isStabilized = computed(() => this.#foundPlane.value);
 
+
+
     onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix){
         if(!this.isEnabled.value) return;
         const hitTestResults = frame.getHitTestResults(this.hitTestSource);
-        if (hitTestResults.length > 0) {
-            this.pointerObject.visible = true;
-            const hitPose = hitTestResults[0].getPose(localReferenceSpace);
-            this.pointerObject.matrix.fromArray( hitPose.transform.matrix );
-            this.pointerObject.updateWorldMatrix(true);
 
+        if (hitTestResults.length > 0) {
+            const hitPose = hitTestResults[0].getPose(localReferenceSpace);
+
+            console.log(hitPose.transform.position);
+
+            this.pointerObject.visible = true;
+            this.pointerObject.matrix.fromArray(hitPose.transform.matrix);
+            this.pointerObject.updateWorldMatrix(true);
 
             this.#shadowPlane.visible = true
             this.#shadowPlane.matrixAutoUpdate = false;
-            this.#shadowPlane.matrix.fromArray( hitPose.transform.matrix );
+            this.#shadowPlane.matrix.fromArray(hitPose.transform.matrix);
             this.#shadowPlane.updateWorldMatrix(true);
 
             this.#foundPlane.value = true;
@@ -117,5 +128,39 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
 
         }
     }
+
+
+    placementScene(transformationMatrix, centerPoint, scene){
+        if(!this.isEnabled.value) return;
+
+        const transfo = transformationMatrix.data32F;
+
+        console.log(transfo);
+
+        const mat = []
+        for (let i = 0; i < transfo.length; i++) {
+            mat.push(transfo[i]);
+        }
+        console.log(mat);
+        console.log(this.pointerObject.position);
+        this.pointerObject.position.set(centerPoint[0], centerPoint[1], centerPoint[2]);
+        console.log(this.pointerObject.position);
+        this.pointerObject.visible = true;
+        this.pointerObject.matrix.fromArray(mat);
+        this.pointerObject.updateWorldMatrix(true);
+        console.log(this.pointerObject.position);
+
+
+        this.#shadowPlane.visible = true
+        this.#shadowPlane.matrixAutoUpdate = false;
+
+        this.#shadowPlane.matrix.fromArray(mat);
+        this.#shadowPlane.updateWorldMatrix(true);
+
+        this.#foundPlane.value = true;
+
+        this.pushToScene(scene)
+    }
+
 
 }

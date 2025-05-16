@@ -26,16 +26,22 @@ const props = defineProps({
     <span>
       <label for="Color"> {{ $t("sceneView.materialSection.color") }} </label>
       <br/>
+      <label for="Red">r: </label>
       <input type="number" autocomplete="false" id="Red" name="Red" v-model="materialData.color.r" step="any">
+      <label for="Green">g: </label>
       <input type="number" autocomplete="false" id="Green" name="Green" v-model="materialData.color.g" step="any">
+      <label for="Blue">b: </label>
       <input type="number" autocomplete="false" id="Blue" name="Blue" v-model="materialData.color.b" step="any">
       
     </span>
     <span>
       <label for="Emissive"> {{ $t("sceneView.materialSection.emissive") }} </label>
       <br/>
+      <label for="EmissiveRed">r: </label>
       <input type="number" autocomplete="false" id="EmissiveRed" name="EmissiveRed" v-model="materialData.emissive.r" step="any">
+      <label for="EmissiveGreen">g: </label>
       <input type="number" autocomplete="false" id="EmissiveGreen" name="EmissiveGreen" v-model="materialData.emissive.g" step="any">
+      <label for="EmissiveBlue">b: </label>
       <input type="number" autocomplete="false" id="EmissiveBlue" name="EmissiveBlue" v-model="materialData.emissive.b" step="any">
     </span>
     <span>
@@ -59,5 +65,15 @@ div{
 
 span{
   display:block;
+}
+
+span + span {
+  margin-top: 5px;
+}
+
+input {
+  width: 96px;
+  margin-right: 2px;
+  margin-bottom: 2px;
 }
 </style>

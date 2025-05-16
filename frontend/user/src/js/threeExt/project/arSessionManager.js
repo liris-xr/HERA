@@ -4,9 +4,9 @@ import {ArRenderer} from "../rendering/arRenderer";
 import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
-import Stats from 'three/addons/libs/stats.module.js';
+
 import {QrCodeManager} from "@/js/qrCode/qrCodeManager.js";
-import * as THREE from "three";
+
 
 
 
@@ -180,38 +180,38 @@ export class ArSessionManager {
             return;
         }
 
-        // const timeNow = Date.now();
-        // const shouldScanThisFrame = timeNow - this.lastScanTime > this.scanInterval;
-        //
-        // if ( && shouldScanThisFrame ) {
-        //     const camera = viewerPose.views[0].camera;
-        //     if (camera) {
-        //         this.lastScanTime = timeNow;
-        //
-        //         const cameraTexture = this.binding.getCameraImage(camera);
-        //
-        //         const imageToScan = this.#getImageData(cameraTexture, camera);
-        //
-        //         this.qrManager.scanImageData(imageToScan).then(resultQrCodeScanner => {
-        //             if (resultQrCodeScanner) {
-        //                 console.log(resultQrCodeScanner);
-        //                 this.#changeScene(resultQrCodeScanner);
-        //
-        //                 this.sceneManager.scenePlacementManager.reset();
-        //
-        //                 this.sceneManager.scenePlacementManager.placementScene(
-        //                     this.qrManager.transformationMatrix,
-        //                     this.qrManager.centerQrCode,
-        //                     this.sceneManager.getSceneActive()
-        //                 );
-        //             }
-        //         });
-        //     }
-        // }
+        const timeNow = Date.now();
+        const shouldScanThisFrame = timeNow - this.lastScanTime > this.scanInterval;
+
+        if (shouldScanThisFrame) {
+            const camera = viewerPose.views[0].camera;
+            if (camera) {
+                this.lastScanTime = timeNow;
+
+                const cameraTexture = this.binding.getCameraImage(camera);
+
+                const imageToScan = this.#getImageData(cameraTexture, camera);
+
+                this.qrManager.scanImageData(imageToScan).then(resultQrCodeScanner => {
+                    if (resultQrCodeScanner) {
+                        this.#changeScene(resultQrCodeScanner);
+
+                        this.sceneManager.scenePlacementManager.reset();
+
+                        this.sceneManager.scenePlacementManager.placementScene(
+                            this.qrManager.transformationMatrix,
+                            this.qrManager.centerQrCode,
+                            this.sceneManager.getSceneActive()
+                        );
+                    }
+                });
+            }
+        }
 
         if(this.sceneManager.active.value.hasLabels.value && this.labelRenderer.isEnabled.value) {
             this.labelRenderer.render(this.sceneManager.active.value, this.arCamera);
-        }else{
+        }
+        else{
             this.labelRenderer.clear();
         }
     }

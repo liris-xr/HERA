@@ -6,7 +6,6 @@ import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {ToggleableInterface} from "@/js/threeExt/interfaces/ToggleableInterface.js";
 import {classes} from "@/js/utils/extender.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
-import {transformedNormalView} from "three/nodes";
 
 
 export class ScenePlacementManager extends classes(AbstractScene, ToggleableInterface){
@@ -100,16 +99,12 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
     }
     isStabilized = computed(() => this.#foundPlane.value);
 
-
-
     onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix){
         if(!this.isEnabled.value) return;
         const hitTestResults = frame.getHitTestResults(this.hitTestSource);
 
         if (hitTestResults.length > 0) {
             const hitPose = hitTestResults[0].getPose(localReferenceSpace);
-
-            console.log(hitPose.transform.position);
 
             this.pointerObject.visible = true;
             this.pointerObject.matrix.fromArray(hitPose.transform.matrix);

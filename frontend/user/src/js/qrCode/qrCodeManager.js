@@ -1,16 +1,9 @@
-import { BrowserQRCodeReader} from '@zxing/browser';
-// Finally, load the open.js as before. The function `onRuntimeInitialized` contains our program.
-
-
 export class QrCodeManager  {
-    resultPoints = null
-
     cv = null
     cornersMatrix = null;
     transformationMatrix = null;
     transformationMatrixInverse = null;
 
-    // Camera Parameters instrinsic
     cameraMatrix;
     distCoeffs;
 
@@ -18,7 +11,6 @@ export class QrCodeManager  {
 
     constructor() {
         this.#loadOpenCV()
-
     }
 
     #loadOpenCV() {
@@ -27,16 +19,12 @@ export class QrCodeManager  {
         script.onload = () => {
             this.cv = window.cv;
             if (this.cv) {
-                this.#onOpenCvReady();
+                console.log('OpenCV is ready!');
             } else {
                 console.error("OpenCV failed to load!");
             }
         };
         document.body.appendChild(script);
-    }
-
-    #onOpenCvReady() {
-        console.log('OpenCV is ready!');
     }
 
     async scanImageData(imageData) {
@@ -58,29 +46,16 @@ export class QrCodeManager  {
             this.cornersMatrix = this.cv.matFromArray(4, 1, this.cv.CV_32SC2, corners);
             this.cornersMatrix = this.cornersMatrix.data32S
 
-            this.#getmatrixTransformation(imageData);
+            this.#getmatrixTransformation();
 
             return decodedInfo.get(0);
         } else {
             console.log('No QR code detected');
-                mat.delete();
             return null;
         }
     }
 
-
-    #imageDataToCanvas(imageData) {
-        const canvas = document.createElement('canvas');
-        canvas.width = imageData.width;
-        canvas.height = imageData.height;
-
-        const ctx = canvas.getContext('2d');
-        ctx.putImageData(imageData, 0, 0);
-
-        return canvas;
-    }
-
-    #getmatrixTransformation(imageData) {
+    #getmatrixTransformation() {
         this.cameraMatrix = this.cv.matFromArray(3, 3, this.cv.CV_64F, [
             910.1155107777962, 0.0, 360.3277519024787,  // fx, 0, cx
             0.0, 910.2233367566544, 372.6634999577232,  // 0, fy, cy
@@ -93,7 +68,6 @@ export class QrCodeManager  {
             0.0005749116561059772, // p2
             -3.217248182814475     // k3
         ]);
-
 
         const qrEdges = [
             [-0.5, -0.5, 0],
@@ -145,9 +119,8 @@ export class QrCodeManager  {
         this.transformationMatrix = this.cv.matFromArray(4, 4, this.cv.CV_32F, matrix);
 
         this.transformationMatrixInverse = new cv.Mat();
-        const result = cv.invert(this.transformationMatrix, this.transformationMatrixInverse, cv.DECOMP_LU);
+        cv.invert(this.transformationMatrix, this.transformationMatrixInverse, cv.DECOMP_LU);
 
-        console.log("RESULTATAT: " + result);
 
         this.#calculateCoordinateCenterQrCode(centerQrCode, matrix)
 

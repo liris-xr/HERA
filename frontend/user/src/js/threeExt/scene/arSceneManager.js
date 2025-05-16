@@ -133,8 +133,6 @@ export class ArSceneManager{
 
     onSceneClick(event){
         if(this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value)
-            console.log("affiche monde")
-            console.log(this.scenePlacementManager.pointerObject.position)
             this.scenePlacementManager.disable();
     }
 
@@ -170,7 +168,4 @@ export class ArSceneManager{
             }
         }
     }
-
-
-
 }

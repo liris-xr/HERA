@@ -6,7 +6,7 @@ import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
 import Stats from 'three/addons/libs/stats.module.js';
 import {CustomBlending, Vector2} from "three";
-import {Xr3dOverlay} from "@/js/threeExt/controllers/Xr3dOverlay.js";
+import {Xr3dOverlay} from "@/js/threeExt/ui/Xr3dOverlay.js";
 
 export class XrSessionManager {
     sceneManager;
@@ -24,6 +24,7 @@ export class XrSessionManager {
     domWidth;
     domHeight;
 
+    enable3dUI
     xr3dOverlay;
 
     constructor(json) {
@@ -31,6 +32,7 @@ export class XrSessionManager {
         this.domWidth = 380;
         this.domHeight = 280;
         this.#isXrRunning = ref(false);
+        this.enable3dUI = false
 
         this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
         this.arCamera = new ArCamera();
@@ -125,8 +127,15 @@ export class XrSessionManager {
                 }
             );
         } catch(e) {
-            // le dom-overlay n'est pas supporté
-            //TODO: faire ce qu'il y a à faire
+            console.log(e)
+            if(e.name === "NotSupportedError") {
+                // le dom-overlay n'est pas supporté
+                this.enable3dUI = true
+
+                this.xrSession = await navigator.xr.requestSession(
+                    "immersive-" + displayMode
+                )
+            }
         }
 
         this.xrMode = displayMode;
@@ -135,18 +144,20 @@ export class XrSessionManager {
 
     async onSessionStarted() {
         this.xrSession.addEventListener( 'end', this.onSessionEnded.bind(this) );
-        this.arRenderer.xr.setReferenceSpaceType( this.xrMode === "vr" ? 'local-floor' : 'local' );
+        this.arRenderer.xr.setReferenceSpaceType( 'local' );
         await this.arRenderer.xr.setSession( this.xrSession );
         this.referenceSpace = await this.arRenderer.xr.getReferenceSpace();
         this.viewerSpace = await this.xrSession.requestReferenceSpace('viewer');
 
-        if(this.xrMode === "vr") {
+        if(this.enable3dUI) {
 
             this.xr3dOverlay = new Xr3dOverlay(this.xrSession, this.referenceSpace, this.sceneManager, this.arCamera, this.arRenderer)
             await this.xr3dOverlay.init()
             this.xr3dOverlay.showUI()
 
-        } else if (this.xrMode === "ar") {
+        }
+
+        if (this.xrMode === "ar") {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.xrSession.requestHitTestSource({space: this.viewerSpace});
             this.sceneManager.isArRunning.value = true;
         }

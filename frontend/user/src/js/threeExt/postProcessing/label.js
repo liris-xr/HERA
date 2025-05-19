@@ -1,6 +1,7 @@
 import {CSS2DObject} from "three/addons";
 import * as THREE from "three";
 import {ref} from "vue";
+import html2canvas from "html2canvas";
 
 export class Label{
     id;
@@ -25,15 +26,14 @@ export class Label{
         this.timestampEnd = labelData.timestampEnd;
 
         this.hidden = ref(false)
-        this.init();
     }
 
-    init(){
+    async init(){
         const htmlLabel = this.#createHtmlLabel();
         this.setContent(this.content);
 
         // this.label = new CSS2DObject(htmlLabel);
-        this.label = this.#createXRLabel()
+        this.label = await this.#createXRLabel()
 
         this.label.position.set(this.position.x, this.position.y, this.position.z);
         // this.label.center.set( 0.5, 1);
@@ -79,7 +79,20 @@ export class Label{
         return boundingBox;
     }
 
-    #createXRLabel(options={}) { // nouvelle méthode, nécessaire pour la compatibilité VR
+    async #createXRLabel() {
+        const html = this.#createHtmlLabel()
+        const canvas = await html2canvas(html)
+
+        const texture = new THREE.CanvasTexture(canvas)
+        const material = new THREE.MeshBasicMaterial({ map: texture })
+
+        const geometry = new THREE.PlaneGeometry(canvas.width/100, canvas.height/100)
+
+        const mesh = new THREE.Mesh(geometry, material)
+        return mesh
+    }
+
+    #createXRLabel2(options={}) { // nouvelle méthode, nécessaire pour la compatibilité VR
         const {
             font = '48px sans-serif',
             padding = 20,

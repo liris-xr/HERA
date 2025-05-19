@@ -24,8 +24,9 @@ export class LabelPlayer extends RenderLoopInterface{
     init(){}
 
 
-    addToScene(scene,labelData){
+    async addToScene(scene,labelData){
         const newLabel = new Label(labelData);
+        await newLabel.init()
         if(newLabel.timestampStart > this.#maxTimestamp) this.#maxTimestamp = newLabel.timestampStart;
         if(newLabel.timestampEnd > this.#maxTimestamp) this.#maxTimestamp = newLabel.timestampEnd;
         this.#labels.push(newLabel);

@@ -67,7 +67,9 @@ export class EditorScene extends THREE.Scene {
         watch(() =>this.currentSelectedTransformValues, (value) => {
             if(this.selected.value == null) return;
 
-            if(this.selected instanceof Asset) {
+            console.log(this.selected.value)
+
+            if(this.selected.value instanceof Asset) {
 
                 if(this.getTransformMode.value === "translate"){
                     this.selected.value.getObject().position.set(value.value.x, value.value.y, value.value.z);
@@ -79,6 +81,7 @@ export class EditorScene extends THREE.Scene {
 
             } else {
 
+                console.log("t")
                 this.selected.value[transformModeKeys[this.getTransformMode.value]].x = value.value.x
                 this.selected.value[transformModeKeys[this.getTransformMode.value]].y = value.value.y
                 this.selected.value[transformModeKeys[this.getTransformMode.value]].z = value.value.z

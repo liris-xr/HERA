@@ -1,6 +1,8 @@
 <script setup>
 import {computed, onMounted, ref} from "vue";
 import {XrSessionManager} from "@/js/threeExt/project/xrSessionManager.js";
+import {onMounted, reactive, ref} from "vue";
+import {ArSessionManager} from "@/js/threeExt/project/arSessionManager.js";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
 import ArNotification from "@/components/notification/arNotification.vue";
@@ -17,7 +19,19 @@ const props = defineProps({
   json: {type: Object, required: true}
 })
 
-const xrSessionManager = new XrSessionManager(props.json);
+const emit = defineEmits(["loaded"])
+
+const xrSessionManager = new ArSessionManager(props.json);
+const overlayBottom = ref(true)
+
+defineExpose({
+  arSessionManager: reactive(xrSessionManager), // on expose une version reactive pour uniformiser l'acces aux champs
+                                                // dans les pages presentation et project, car sur la 1ere, on utilise
+                                                // une ref pour le socket (car il peut ne pas etre utilisé), alors que
+                                                // sur l'autre, c'est un reactive car toujours utilisé, donc pas besoin
+                                                // de le reaffecter
+  overlayBottom
+})
 
 const container = ref(null);
 const arOverlay = ref(null);
@@ -33,6 +47,7 @@ const loaded = ref(false);
 onMounted(async () => {
   await xrSessionManager.init(container.value, arOverlay.value);
   loaded.value = true;
+  emit("loaded")
 })
 
 
@@ -116,7 +131,7 @@ const buttonText = computed(() => {
         </div>
       </div>
 
-      <div id="overlayBottom" class="overlayBlur">
+      <div id="overlayBottom" class="overlayBlur" v-if="overlayBottom">
         <button class="arrowButton"
                 id="arrowButtonPrevious"
                 :class="{buttonDisabled:!xrSessionManager.sceneManager.hasPrevious.value}"

@@ -4,6 +4,8 @@ import { JWT_SECRET } from '../consts/secret.js'
 import express from 'express'
 import { getDetails } from '../validators/index.js'
 import {baseUrl} from "./baseUrl.js";
+import authMiddleware from "../middlewares/auth.js";
+import {passwordHash, passwordVerify} from "../utils/passwordHash.js";
 
 const router = express.Router()
 
@@ -14,10 +16,19 @@ const router = express.Router()
  * @property {string} password
  */
 
-router.post(baseUrl+'auth/register', async (req, res) => {
+router.post(baseUrl+'auth/register', authMiddleware, async (req, res) => {
     try {
+        const user = req.user
+
+        if(!user.admin) {
+            res.status(401);
+            return res.send({ error: 'Unauthorized', details: 'User not granted' })
+        }
+
         const reqBody = req.body
-        const { username, email, password } = reqBody
+        const { username, email, unhashedPassword } = reqBody
+
+        const password = passwordHash(unhashedPassword)
 
         // Vérifier si l'utilisateur existe déjà
         const userWithSameEmail = await ArUser.findOne({ where: { email }})
@@ -74,7 +85,7 @@ router.post(baseUrl+'auth/login', async (req, res) => {
 
 
         // Vérifier le mot de passe de l'utilisateur
-        if (user.password !== password) {
+        if (!passwordVerify(password, user.password)) {
             return res.status(401).json({ error: 'Invalid credentials.' })
         }
 

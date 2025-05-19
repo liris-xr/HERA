@@ -3,8 +3,8 @@ import IconSvg from "@/components/icons/IconSvg.vue";
 import {computed, onMounted, reactive, ref} from "vue";
 
 const props = defineProps({
-  text: {type: String, required: true},
-  downloadUrl: {type: String, required: true},
+  text: {type: String},
+  downloadUrl: {type: String},
   hideInViewer: {type: Boolean, required: true, default: false},
   active: {type: Boolean, default: false},
   error: {type: Boolean, default: false},

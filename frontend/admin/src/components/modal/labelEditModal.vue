@@ -8,7 +8,7 @@ import {Label} from "@/js/threeExt/postprocessing/label.js";
 import IconSvg from "@/components/icons/IconSvg.vue";
 const props = defineProps({
   show: {type: Boolean, default: false},
-  label: {type: Label, required: true},
+  label: {type: Label},
 })
 
 const text = ref("");

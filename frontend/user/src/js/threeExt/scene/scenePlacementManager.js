@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
+import {ObjectManager} from "@/js/threeExt/modelManagement/objectManager.js";
 import {computed, ref} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
@@ -30,11 +30,11 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
     }
 
     async init() {
-        const manager = MeshManager.getInstance();
-        const mesh = await manager.load(this.#pointerUrl);
-        if(mesh.hasError())
+        const manager = ObjectManager.getInstance();
+        const object = await manager.load(this.#pointerUrl);
+        if(object.hasError())
             this.#errors.push(new ArMeshLoadError(this.#pointerUrl));
-        this.pointerObject = mesh.mesh;
+        this.pointerObject = object.object;
         this.pointerObject.castShadow = true;
         this.pointerObject.visible = false;
         this.pointerObject.matrixAutoUpdate = false;

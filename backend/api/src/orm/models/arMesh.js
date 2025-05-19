@@ -12,7 +12,7 @@ import { sequelize } from '../database.js'
 
 export default sequelize.define('ArMesh', {
     id: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false,
         primaryKey: true
@@ -47,17 +47,17 @@ export default sequelize.define('ArMesh', {
     color:{
         type:DataTypes.JSON,
         allowNull: false,
-        defaultValue: {x:1, y:1, z:1},
+        defaultValue: {r:1, g:1, b:1},
     },
     emissiveIntensity:{
         type:DataTypes.FLOAT,
         allowNull:false,
         defaultValue:1
     },
-    emissiveColor:{
+    emissive:{
         type:DataTypes.JSON,
         allowNull: false,
-        defaultValue: {x:1, y:1, z:1},
+        defaultValue: {r:1, g:1, b:1},
     },
     roughness:{
         type:DataTypes.FLOAT,
@@ -81,5 +81,6 @@ export default sequelize.define('ArMesh', {
     assetId:{
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true,
     }
 })

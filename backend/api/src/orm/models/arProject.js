@@ -11,6 +11,7 @@ import { sequelize } from '../database.js'
  * @property {string} unit
  * @property {string} calibrationMessage
  * @property { "ar" | "vr" } displayMode
+ * @property {string} presets
  * @property {string} userId
  */
 
@@ -64,6 +65,11 @@ export default sequelize.define('ArProject', {
         type: DataTypes.ENUM("ar", "vr"),
         allowNull: false,
         defaultValue: "ar"
+    },
+    presets:{
+        type: DataTypes.JSON,
+        allowNull: false,
+        defaultValue: []
     },
     userId:{
         type: DataTypes.UUID,

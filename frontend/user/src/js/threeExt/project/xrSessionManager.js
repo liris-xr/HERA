@@ -4,6 +4,8 @@ import {ArRenderer} from "../rendering/arRenderer";
 import {OrbitControls} from "three/addons";
 import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
+import Stats from 'three/addons/libs/stats.module.js';
+import {CustomBlending, Vector2} from "three";
 import {Xr3dOverlay} from "@/js/threeExt/controllers/Xr3dOverlay.js";
 
 export class XrSessionManager {
@@ -107,7 +109,7 @@ export class XrSessionManager {
 
 
     async start(displayMode='ar') {
-        this.reset();
+        //this.reset();
         this.#isXrRunning.value = true;
 
         try {

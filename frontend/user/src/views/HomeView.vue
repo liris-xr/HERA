@@ -5,7 +5,9 @@ import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
 import ButtonView from "@/components/utils/buttonView.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
+import {useAuthStore} from "@/store/auth.js";
 
+const { isAuthenticated, token } = useAuthStore()
 
 const projects = ref([]);
 const loading = ref(false);
@@ -17,7 +19,11 @@ async function fetchRecentProjects() {
   error.value = false;
 
   try {
-    const res = await fetch(`${ENDPOINT}projects/0`);
+    const headers = {}
+    if(isAuthenticated.value)
+      headers["Authorization"] = `Bearer ${token.value}`
+
+    const res = await fetch(`${ENDPOINT}projects/0`, { headers });
     if(res.ok){
       return await res.json();
     }

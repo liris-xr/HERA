@@ -135,4 +135,8 @@ export class ArSceneManager{
             this.scenePlacementManager.disable();
     }
 
+    getScenes() {
+        return this.scenes
+    }
+
 }

@@ -81,5 +81,6 @@ export default sequelize.define('ArMesh', {
     assetId:{
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true,
     }
 })

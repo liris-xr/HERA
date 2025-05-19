@@ -4,7 +4,7 @@ import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Op, Sequelize} from "sequelize";
-import {updateListById} from "../utils/updateListById.js";
+import {updateListByCompositeId, updateListById} from "../utils/updateListById.js";
 import {deleteAsset, deleteFile, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
 
 const router = express.Router()
@@ -154,7 +154,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
         const knownLabelsIds = scene.labels.map( (label) => label.id )
         const knownAssetsIds = scene.assets.map( (asset) => asset.id )
-        const knonwMeshesIds = scene.meshes.map( (mesh) => mesh.id )
+        const knownMeshesIds = scene.meshes.map( (mesh) => { return {id: mesh.id, assetId: mesh.assetId} } )
 
         let assetsIdMatching = []
 
@@ -246,7 +246,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 }
             );
 
-            await updateListById(knonwMeshesIds, typeof req.body.meshes === "object" ? req.body.meshes : JSON.parse(req.body.meshes),
+            await updateListByCompositeId(knownMeshesIds, ['id', 'assetId'], typeof req.body.meshes === "object" ? req.body.meshes : JSON.parse(req.body.meshes),
                 async (mesh) => {
                     await ArMesh.update({
                         id:mesh.id,
@@ -256,29 +256,37 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                         color:mesh.color,
                         emissiveIntensity: mesh.emissiveIntensity,
                         emissive: mesh.emissive,
-                        roughenss: mesh.roughness,
+                        roughness: mesh.roughness,
                         metalness: mesh.metalness,
                         opacity: mesh.opacity
                     }, {
-                        where: {id: mesh.id},
+                        where: {id: mesh.id, assetId: mesh.assetId},
                         returning: true,
                         transaction:t
                     })
                 },
 
                 async (mesh)=>{
+                    let assetId = null
+                    for(let ids of assetsIdMatching) {
+                        if(ids.tempId === mesh.assetId) {
+                            assetId = ids.newId
+                            break
+                        }
+                    }
+
                     await ArMesh.create({
                         id:mesh.id,
                         position:mesh.position,
                         rotation:mesh.rotation,
                         scale: mesh.scale,
                         sceneId:scene.id,
-                        assetId:mesh.assetId,
+                        assetId:assetId ?? mesh.assetId,
                         color:mesh.color,
                         name: mesh.name,
                         emissiveIntensity: mesh.emissiveIntensity,
                         emissive: mesh.emissive,
-                        roughenss: mesh.roughness,
+                        roughness: mesh.roughness,
                         metalness: mesh.metalness,
                         opacity: mesh.opacity
                     },{
@@ -287,7 +295,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 },
                 
                 async (knownId)=>{
-                    await ArMesh.destroy({where: {id: knownId},transaction:t});
+                    await ArMesh.destroy({where: {id: knownId.id, assetId: knownId.assetId},transaction:t});
                 }
         
             );

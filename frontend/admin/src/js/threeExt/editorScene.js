@@ -51,6 +51,7 @@ export class EditorScene extends THREE.Scene {
         this.#transformControls = null;
         this.#currentTransformMode = ref(null);
         this.#meshSelectionMode = ref(false)
+        this.selected = ref(null);
         this.currentSelectedTransformValues = ref({x:"",y:"", z:""});
         this.currentSelectedMaterialValues = ref({
             metalness:"",
@@ -64,25 +65,33 @@ export class EditorScene extends THREE.Scene {
         this.transformBeforeChange = null
 
         watch(() =>this.currentSelectedTransformValues, (value) => {
-            if(this.selected == null) return;
-            
-            this.selected[transformModeKeys[this.getTransformMode.value]].x = value.value.x
-            this.selected[transformModeKeys[this.getTransformMode.value]].y = value.value.y
-            this.selected[transformModeKeys[this.getTransformMode.value]].z = value.value.z
+            if(this.selected.value == null) return;
+
+            if(this.selected.value instanceof Asset) {
+
+                this.selected.value.getObject()[transformModeKeys[this.getTransformMode.value]].set(value.value.x, value.value.y, value.value.z)
+
+            } else {
+
+                this.selected.value[transformModeKeys[this.getTransformMode.value]].x = value.value.x
+                this.selected.value[transformModeKeys[this.getTransformMode.value]].y = value.value.y
+                this.selected.value[transformModeKeys[this.getTransformMode.value]].z = value.value.z
+
+            }
 
             this.updatePlaygroundSize();
             this.runOnChanged();
         },{deep:true});
 
         watch(() =>this.currentSelectedMaterialValues, (value) => {
-            if(this.selected == null) return;
-            
+            if(this.selected.value == null) return;
+
             if(this.#meshSelectionMode.value && !this.selected.label){
-                this.selected.material.roughness = value.value.roughness;
-                this.selected.material.metalness = value.value.metalness;
-                this.selected.material.opacity = value.value.opacity;
-                this.selected.material.transparent = value.value.opacity < 1
-                this.selected.material.emissiveIntensity = value.value.emissiveIntensity;
+                this.selected.value.material.roughness = value.value.roughness;
+                this.selected.value.material.metalness = value.value.metalness;
+                this.selected.value.material.opacity = value.value.opacity;
+                this.selected.value.material.transparent = value.value.opacity < 1
+                this.selected.value.material.emissiveIntensity = value.value.emissiveIntensity;
             }
         },{deep:true});
 
@@ -91,7 +100,12 @@ export class EditorScene extends THREE.Scene {
 
     setMeshMap(meshes) {
         meshes.forEach( (mesh) => {
-            this.meshMap.set(mesh.id,mesh)
+            // this.meshMap.set(mesh.id, mesh)
+
+            if(this.meshMap.get(mesh.assetId))
+                this.meshMap.get(mesh.assetId)[mesh.id] = mesh
+            else
+                this.meshMap.set(mesh.assetId, { [mesh.id]: mesh })
         })
     }
 
@@ -136,20 +150,8 @@ export class EditorScene extends THREE.Scene {
         this.add(this.#transformControls);
         this.setTransformMode("translate");
 
-        this.#transformControls.addEventListener("mouseUp", () => {
-            if(!this.#meshSelectionMode.value) { 
-                for (let mesh of this.currentMeshes) {
-                    this.add(mesh)
-                }
-                this.#transformControls.detach()
-                this.remove(this.currentMeshGroup)
-                for (let mesh of this.currentMeshes) {
-                    mesh.applyMatrix4(this.currentMeshGroup.matrix)
-                }
-            }
-        })
             
-        this.#transformControls.addEventListener('objectChange', () => {
+        this.#transformControls.addEventListener('mouseUp', (event) => {
             this.#updateSelectedTransformValues();
         });
     }
@@ -185,65 +187,57 @@ export class EditorScene extends THREE.Scene {
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
+            if(this.#meshSelectionMode.value) {
 
-            this.assetManager.meshManagerMap.forEach( (meshManager) => {
-                for (let mesh of meshManager.getMeshes.value) {
-                    const intersects = raycaster.intersectObject(mesh, true);
+                this.assetManager.meshManagerMap.forEach( (meshManager) => {
+                    for (let mesh of meshManager.getMeshes.value) {
+                        const intersects = raycaster.intersectObject(mesh, true);
+                        if (intersects.length > 0) {
+                            object = mesh;
+                        }
+                    }
+                })
+
+            } else {
+
+                for (let asset of this.assetManager.getAssets.value) {
+
+                    const intersects = raycaster.intersectObject(asset.getObject(), true);
                     if (intersects.length > 0) {
-                        object = mesh;
+                        object = asset;
                     }
                 }
-            })
+                
+            }
+
         }
-        
+
         this.setSelected(object);
 
     }
     setSelected(object, selected = true){
         this.deselectAll();
-        this.selected = object;
+        this.selected.value = object;
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
-            
-            if(object.isMesh) {
-                if(!this.#meshSelectionMode.value) {
-                    this.attachMeshes(object)
-                } else {
+
+            if(this.#meshSelectionMode.value) {
+                if(object.isMesh) {
                     this.#transformControls.attach(object)
+                } else if(object.label) {
+                    this.#transformControls.attach(object.getObject());
+                } else if(object.subMeshes) { // Object is an asset
+                    this.#transformControls.attach(object.subMeshes[0])
                 }
-            } else if(object.label) {
-                this.#transformControls.attach(object.getObject());
-            } else if(object.subMeshes) { // Object is an asset
-                this.attachMeshes(object.subMeshes[0])
+            } else {
+                this.#transformControls.attach(object.getObject())
+                object.setSelected(selected)
             }
 
         }
         this.#updateSelectedTransformValues();
         this.#updateSelectedMaterialValues();
-    }
-
-    // Attach every mesh related to the object to a group
-    attachMeshes(object) {
-        const selectedMeshKey = "project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+object.name
-
-        const currentMeshData = this.meshMap.get(selectedMeshKey)
-        this.currentMeshes = this.assetManager.meshManagerMap.get(currentMeshData.assetId).getMeshes.value
-        
-        // We need to group up our meshes so we can move all of them
-        let meanPos = new THREE.Vector3(0,0,0);
-        
-        const weight = 1/this.currentMeshes.length
-        this.currentMeshGroup = new THREE.Group()
-        for (let mesh of this.currentMeshes) {
-            this.currentMeshGroup.add(mesh)
-            meanPos.addScaledVector(mesh.position,weight);
-        }
-        this.#transformControls.position.copy(meanPos)
-        
-        this.add(this.currentMeshGroup)
-        
-        this.#transformControls.attach(this.currentMeshGroup)
     }
 
     getSelected() {
@@ -355,8 +349,6 @@ export class EditorScene extends THREE.Scene {
         this.#gridPlane = new GridPlane(double);
         this.#gridPlane.pushToScene(this);
 
-
-
         this.#lightSet.setLightPosition(double, double, double);
     }
 
@@ -367,6 +359,8 @@ export class EditorScene extends THREE.Scene {
     }
 
     setMaterialMenu(value) {
+        this.setSelected(null)
+
         this.#meshSelectionMode.value = value
         this.#updateSelectedMaterialValues()
     }
@@ -379,27 +373,43 @@ export class EditorScene extends THREE.Scene {
     }
 
     #updateSelectedTransformValues(){
-        
-        if(!this.selected)
-            this.currentSelectedTransformValues.value = {x:"",y:"", z:""};
-        else if(this.getTransformMode.value === "translate"){
-            this.currentSelectedTransformValues.value = this.selected.position;
-        }else if(this.getTransformMode.value === "rotate"){
-            this.currentSelectedTransformValues.value = this.selected.rotation;
-        }else if(this.getTransformMode.value === "scale"){
-            this.currentSelectedTransformValues.value = this.selected.scale;
+
+        if(this.selected.value instanceof Asset) {
+
+            if(this.getTransformMode.value === "translate"){
+                this.currentSelectedTransformValues.value = this.selected.value.getResultPosition();
+            }else if(this.getTransformMode.value === "rotate"){
+                this.currentSelectedTransformValues.value = this.selected.value.getResultRotation();
+            }else if(this.getTransformMode.value === "scale"){
+                this.currentSelectedTransformValues.value = this.selected.value.getResultScale();
+            }
+
+        } else {
+
+            if(!this.selected.value)
+                this.currentSelectedTransformValues.value = {x:"",y:"", z:""};
+            else if(this.getTransformMode.value === "translate"){
+                this.currentSelectedTransformValues.value = {...this.selected.value.position};
+            }else if(this.getTransformMode.value === "rotate"){
+                this.currentSelectedTransformValues.value = {...this.selected.value.rotation};
+            }else if(this.getTransformMode.value === "scale"){
+                this.currentSelectedTransformValues.value = {...this.selected.value.scale};
+            }
+
         }
+
     }
     
     #updateSelectedMaterialValues() {
-        if(this.selected?.isObject3D) {
+
+        if(this.selected.value?.isObject3D) {
             this.currentSelectedMaterialValues.value = {
-                metalness:this.selected.material.metalness,
-                roughness:this.selected.material.roughness,
-                opacity:this.selected.material.opacity,
-                emissiveIntensity:this.selected.material.emissiveIntensity,
-                color:this.selected.material.color,
-                emissive:this.selected.material.emissive
+                metalness:this.selected.value.material.metalness,
+                roughness:this.selected.value.material.roughness,
+                opacity:this.selected.value.material.opacity,
+                emissiveIntensity:this.selected.value.material.emissiveIntensity,
+                color:this.selected.value.material.color,
+                emissive:this.selected.value.material.emissive
             }
         } else {
             this.currentSelectedMaterialValues.value = {

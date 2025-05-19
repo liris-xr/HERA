@@ -98,11 +98,12 @@ export class ArScene extends AbstractScene {
                     children.applyMatrix4(transform)
                     const subMeshData = this.meshDataMap.get(children.name)
                     this.meshManager.updateSubMesh(children,subMeshData)
+                    children.updateMatrixWorld()
+                    children.geometry.computeVertexNormals()
                 } else {
                     let newTransform = new THREE.Matrix4()
                     step(children,newTransform.multiplyMatrices(transform,children.matrix))
                 }
-
             }
         }
         if(assetData.object) {

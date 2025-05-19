@@ -35,7 +35,12 @@ export class AssetManager {
 
     setMeshMapWithData(meshData) {
         meshData.forEach( (mesh) => {
-            this.meshDataMap.set(mesh.id,mesh)
+            // this.meshDataMap.set(mesh.id,mesh)
+
+            if(this.meshDataMap.get(mesh.assetId))
+                this.meshDataMap.get(mesh.assetId)[mesh.id] = mesh
+            else
+                this.meshDataMap.set(mesh.assetId, { [mesh.id]: mesh })
         })
     }
 
@@ -64,35 +69,68 @@ export class AssetManager {
         return subMeshes
     }
 
+    updateAssetSubMeshes(assetData, meshManager, scene) {
+        const step = (child,transform) => {
+            for(let children of child.children) {
+                if ("material" in children) {
+                    children.applyMatrix4(transform)
+                    const subMeshData = this.meshDataMap.get(assetData.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+children.name]
+                    // meshManager.updateSubMesh(children,subMeshData)
+
+                    this.meshManagerMap.get(assetData.id).addSubMesh(scene,children,subMeshData)
+
+                } else {
+                    let newTransform = new THREE.Matrix4()
+                    step(children,transform/*newTransform.multiplyMatrices(transform,children.matrix)*/)
+                }
+
+            }
+        }
+
+        if(assetData.mesh) {
+            step(assetData.mesh,new THREE.Matrix4())
+        }
+    }
+
     addToScene(scene,asset,onAdd){
         if(asset.id == null){
             asset.id = 'new-asset'+currentAssetId++;
         }
         
         this.meshManagerMap.set(asset.id,new MeshManager())
-        
+
+
         asset.load().then((mesh)=>{
-            this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-                const subMeshData = this.meshDataMap.get("project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name)
-                if(subMeshData) {
-                    subMeshData.assetId = asset.id
-                }
-                
-                this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
-                asset.addSubMesh(subMesh);
-            })
-            
+            const meshManager = this.meshManagerMap.get(asset.id)
+            this.updateAssetSubMeshes(asset, meshManager, scene);
+
+            scene.add(mesh)
+
+            // this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
+
+                // const subMeshData = this.meshDataMap.get(asset.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name]
+                //
+                // if(subMeshData) {
+                //     subMeshData.assetId = asset.id
+                // }
+                //
+                // this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
+                // asset.addSubMesh(subMesh);
+            // })
+
             this.setMeshMapWithData(this.getResultMeshes())
             
             if(onAdd)
                 onAdd(asset)
-        }).catch(()=>{
+        }).catch((e)=>{
+            console.log(e)
             scene.appendError(new MeshLoadError(asset.sourceUrl))
             }
         );
         
         this.#assets.push(asset);
         this.runOnChanged();
+
         return asset;
     }
 
@@ -102,8 +140,9 @@ export class AssetManager {
             if (asset.id === currentAsset.id) {
                 object.splice(index, 1);
                 self.runOnChanged();
-                
-                self.meshManagerMap.get(asset.id).clear(scene)
+
+                scene.remove(currentAsset.mesh)
+                // self.meshManagerMap.get(asset.id).clear(scene)
                 self.meshManagerMap.delete(asset.id)
                 return true
             }
@@ -146,23 +185,23 @@ export class AssetManager {
                     assetId:assetId,
                     name: mesh.name,
                     color:{
-                        r:mesh.material.color.r,
-                        g:mesh.material.color.g,
-                        b:mesh.material.color.b,
+                        r:mesh?.material?.color?.r,
+                        g:mesh?.material?.color?.g,
+                        b:mesh?.material?.color?.b,
                     },
                     emissive:{
-                        r:mesh.material.emissive.r,
-                        g:mesh.material.emissive.g,
-                        b:mesh.material.emissive.b,
+                        r:mesh?.material?.emissive?.r,
+                        g:mesh?.material?.emissive?.g,
+                        b:mesh?.material?.emissive?.b,
                     },
                     emissiveIntensity: mesh.material.emissiveIntensity,
-                    roughenss: mesh.material.roughness,
+                    roughness: mesh.material.roughness,
                     metalness: mesh.material.metalness,
                     opacity: mesh.material.opacity
                 })
             }
         })
-        
+
         return result;
     }
 
@@ -183,6 +222,20 @@ export class AssetManager {
                     asset.id = id.newId
                 }
             }
+            this.meshManagerMap.forEach((meshManager,assetId) => {
+                for(let mesh of meshManager.getMeshes.value) {
+                    if(mesh.assetId === id.tempId){
+                        mesh.assetId = id.newId
+                    }
+                }
+            })
+
+            for(let k of this.meshManagerMap.keys())
+                if(k === id.tempId) {
+                    this.meshManagerMap.set(id.newId, this.meshManagerMap.get(id.tempId));
+                    this.meshManagerMap.delete(id.tempId);
+                }
+
         }
 
         for (let i = 0; i < assets.length; i++) {

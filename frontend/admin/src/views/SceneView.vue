@@ -432,7 +432,17 @@ onBeforeRouteUpdate((to, from, next)=>{
             </div>
           </div>
 
+          <div class="multilineField">
+            <div class="inlineFlex">
+              <label>{{$t("sceneView.leftSection.sceneTriggers.label")}}</label>
+              <button-view :text="$t('sceneView.leftSection.sceneTriggers.addLabelButton')" icon="/icons/add.svg" @click="">BUTTON ADD</button-view>
+            </div>
 
+            <div id="triggerList">
+                <div> COMPONENT TRIGGER</div>
+                <div> IL Y A PAS DE TRIGGER DANS CETTE SCENE </div>
+            </div>
+          </div>
 
           <Teleport to="body">
             <label-edit-modal

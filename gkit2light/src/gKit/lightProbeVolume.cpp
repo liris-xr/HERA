@@ -10,6 +10,9 @@
 #include <vector>
 #include <omp.h>
 
+std::random_device hwseed;
+std::default_random_engine rng(hwseed());
+std::uniform_real_distribution<float> uniform(0, 1);
 
 
 // renvoie la normale au point d'intersection
@@ -86,10 +89,6 @@ LightProbeVolume::~LightProbeVolume() {
 
 
 Vector LightProbeVolume::getRandomSphereDirection(const Point & origin) {
-    std::random_device hwseed;
-    std::default_random_engine rng(hwseed());
-    std::uniform_real_distribution<float> uniform(0, 1);
-
     float r1 = uniform(rng);
     float r2 = uniform(rng);
     
@@ -105,6 +104,20 @@ Vector LightProbeVolume::getRandomSphereDirection(const Point & origin) {
     Vector direction = pointOnSphere - origin;
 
     return normalize(direction);
+}
+
+float fract( const float v )  { return v - std::floor(v); }
+
+Vector LightProbeVolume::getRandomSphereDirectionFibo(const int i, const int N, const float offset) {
+    const float ratio= (std::sqrt(5) + 1) / 2.0;
+    
+    const float movedI = i + offset; 
+
+    float phi= float(2 * M_PI) * fract(movedI / ratio);
+    float cos_theta= 1 - float(2*movedI +1) / float(N);
+    float sin_theta= std::sqrt(1 - cos_theta*cos_theta);
+    
+    return normalize(Vector(std::cos(phi) * sin_theta, std::sin(phi) * sin_theta, cos_theta));
 }
 
 void LightProbeVolume::addNeighbour(const unsigned int probeId,std::vector<LightProbe> & neighbours) {
@@ -249,9 +262,10 @@ void LightProbeVolume::updateDirectLighting(LightProbe & probe) {
             Color color = this->lightSources->getTriangleColor(lightSourceId);
             
             for (unsigned int j = 0;j<9;j++) {
-                probe.coefficients[j].x += shBasis[j] * color.r * this->directWeight;
-                probe.coefficients[j].y += shBasis[j] * color.g * this->directWeight;
-                probe.coefficients[j].z += shBasis[j] * color.b * this->directWeight;
+                float contribution = shBasis[j] * this->directWeight;
+                probe.coefficients[j].x += color.r * contribution;
+                probe.coefficients[j].y += color.g * contribution;
+                probe.coefficients[j].z += color.b * contribution;
             }
         }
     }
@@ -262,8 +276,10 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
     float distanceFromGeometry = std::numeric_limits<float>::max();
     Vector directionOfGeometry;
 
+    float sampleOffset = uniform(rng);
     for(unsigned int i = 0;i<this->nbIndirectSamples;i++) {
-        Vector sphereDirection = this->getRandomSphereDirection(probe.position);
+        Vector sphereDirection = this->getRandomSphereDirectionFibo(i,this->nbIndirectSamples,sampleOffset);
+        // Vector sphereDirection = this->getRandomSphereDirection(probe.position);
 
         Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
 
@@ -303,9 +319,10 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
                     if(lightReflectorColor.max() > 0.0) {
                         float * shBasis = getBasis(sphereDirection);
                         for (unsigned int j = 0;j<9;j++) {
-                            probe.coefficients[j].x += (shBasis[j] * lightReflectorColor.r * roughness) * this->indirectWeight;
-                            probe.coefficients[j].y += (shBasis[j] * lightReflectorColor.g * roughness) * this->indirectWeight;
-                            probe.coefficients[j].z += (shBasis[j] * lightReflectorColor.b * roughness) * this->indirectWeight;
+                            float contribution = shBasis[j] * roughness * this->indirectWeight;
+                            probe.coefficients[j].x += lightReflectorColor.r * contribution;
+                            probe.coefficients[j].y += lightReflectorColor.g * contribution;
+                            probe.coefficients[j].z += lightReflectorColor.b * contribution;
                         }
                     }
                 }
@@ -338,9 +355,9 @@ void LightProbeVolume::bake() {
         updateIndirectLighting(probe);
         updateDirectLighting(probe);
 
-        if(probe.id % 100000 == 0) {
-            std::cout<<probe.id<<std::endl;
-        }
+        // if(probe.id % 100 == 0) {
+        //     std::cout<<probe.id<<std::endl;
+        // }
     }
 
     this->updateBasedOnInvalidity();

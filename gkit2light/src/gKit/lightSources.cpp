@@ -1,6 +1,8 @@
 #include "lightSources.hpp"
 #include <random>
 
+std::random_device seed;
+std::default_random_engine LSrng(seed());
 
 LightSources::LightSources(const Mesh & mesh,const std::vector<GLTFMaterial> & materials) {
     this->area = 0;
@@ -29,10 +31,7 @@ LightSources::~LightSources() {
 }
 
 unsigned int LightSources::getRandomWeightedLightSourceId() {
-    std::random_device hwseed;
-    std::default_random_engine rng(hwseed());
-
-    return this->dd(rng);
+    return this->dd(LSrng);
 }
 
 unsigned int LightSources::getTriangleId(unsigned int lightSourceId) {

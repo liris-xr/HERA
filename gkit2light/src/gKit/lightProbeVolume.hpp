@@ -124,6 +124,9 @@ class LightProbeVolume {
 
         Vector getRandomSphereDirection(const Point & origin);
 
+        // Source : https://perso.univ-lyon1.fr/jean-claude.iehl/Public/educ/M1IMAGE/html/group__eqrendu.html
+        Vector getRandomSphereDirectionFibo(const int i, const int N,const float offset);
+
         void addNeighbour(const unsigned int probeId,std::vector<LightProbe> & neighbours);
 
         void add3DNeighbours(const unsigned int probeId,std::vector<LightProbe> & neighbours);

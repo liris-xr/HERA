@@ -67,21 +67,12 @@ export class EditorScene extends THREE.Scene {
         watch(() =>this.currentSelectedTransformValues, (value) => {
             if(this.selected.value == null) return;
 
-            console.log(this.selected.value)
-
             if(this.selected.value instanceof Asset) {
 
-                if(this.getTransformMode.value === "translate"){
-                    this.selected.value.getObject().position.set(value.value.x, value.value.y, value.value.z);
-                }else if(this.getTransformMode.value === "rotate"){
-                    this.selected.value.getObject().rotation.set(value.value.x, value.value.y, value.value.z);
-                }else if(this.getTransformMode.value === "scale"){
-                    this.selected.value.getObject().scale.set(value.value.x, value.value.y, value.value.z);
-                }
+                this.selected.value.getObject()[transformModeKeys[this.getTransformMode.value]].set(value.value.x, value.value.y, value.value.z)
 
             } else {
 
-                console.log("t")
                 this.selected.value[transformModeKeys[this.getTransformMode.value]].x = value.value.x
                 this.selected.value[transformModeKeys[this.getTransformMode.value]].y = value.value.y
                 this.selected.value[transformModeKeys[this.getTransformMode.value]].z = value.value.z
@@ -240,7 +231,6 @@ export class EditorScene extends THREE.Scene {
                     this.#transformControls.attach(object.subMeshes[0])
                 }
             } else {
-                console.log(this.children, object.getObject())
                 this.#transformControls.attach(object.getObject())
                 object.setSelected(selected)
             }

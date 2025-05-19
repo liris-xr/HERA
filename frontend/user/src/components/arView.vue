@@ -1,8 +1,6 @@
 <script setup>
-import {computed, onMounted, ref} from "vue";
 import {XrSessionManager} from "@/js/threeExt/project/xrSessionManager.js";
-import {onMounted, reactive, ref} from "vue";
-import {ArSessionManager} from "@/js/threeExt/project/arSessionManager.js";
+import {onMounted, reactive, ref, computed} from "vue";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
 import ArNotification from "@/components/notification/arNotification.vue";
@@ -21,7 +19,7 @@ const props = defineProps({
 
 const emit = defineEmits(["loaded"])
 
-const xrSessionManager = new ArSessionManager(props.json);
+const xrSessionManager = new XrSessionManager(props.json);
 const overlayBottom = ref(true)
 
 defineExpose({

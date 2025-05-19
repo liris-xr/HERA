@@ -193,6 +193,7 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             description: req.body?.description,
             pictureUrl: updatedUrl,
             unit: req.body?.unit,
+            displayMode: req.body.displayMode,
             calibrationMessage: req.body?.calibrationMessage,
         }, {
             returning: true

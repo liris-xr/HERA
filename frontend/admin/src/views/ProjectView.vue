@@ -352,6 +352,14 @@ onBeforeRouteUpdate((to, from, next)=>{
           </div>
 
           <div class="inlineFlex">
+            <label for="displayMode">{{$t("projectView.leftSection.mode.label")}}</label>
+            <select v-model="project.displayMode" name="displayMode" id="displayMode">
+              <option value="ar">AR</option>
+              <option value="vr">VR</option>
+            </select>
+          </div>
+
+          <div class="inlineFlex">
             <label>{{$t("projectView.leftSection.projectTitle.label")}}</label>
             <inline-text-edit v-model="project.title" :placeholder="$t('projectView.leftSection.projectTitle.placeholder')" :max-length="255"></inline-text-edit>
           </div>

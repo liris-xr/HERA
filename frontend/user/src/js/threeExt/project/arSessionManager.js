@@ -18,6 +18,9 @@ export class ArSessionManager {
 
     #isArRunning;
 
+    xrMode
+    enable3dUI;
+
     domOverlay;
     domWidth;
     domHeight;
@@ -27,6 +30,7 @@ export class ArSessionManager {
         this.domWidth = 380;
         this.domHeight = 280;
         this.#isArRunning = ref(false);
+        this.enable3dUI = false
         
         this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
         this.arCamera = new ArCamera();
@@ -92,8 +96,8 @@ export class ArSessionManager {
     }
 
 
-    async isArCompatible() {
-        return navigator.xr && await navigator.xr.isSessionSupported("immersive-ar");
+    async isXrCompatible(mode="ar") {
+        return navigator.xr && await navigator.xr.isSessionSupported("immersive-"+mode);
     }
 
     isArRunning = computed(() => {
@@ -101,21 +105,34 @@ export class ArSessionManager {
     })
 
 
-    async start() {
+    async start(mode="ar") {
         // this.reset();
-        this.#isArRunning.value = true;
+        this.#isArRunning.value = true
 
-
-        this.arSession = await navigator.xr.requestSession(
-            'immersive-ar',
-            {
-                requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
-                domOverlay: {
-                    root: this.domOverlay
-                }
+        const options = mode === "ar" ? {
+            requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
+            domOverlay: {
+                root: this.domOverlay
             }
-        );
-        await this.onSessionStarted();
+        } : {}
+
+        try {
+            this.arSession = await navigator.xr.requestSession(
+                'immersive-' + mode,
+                options
+            )
+        } catch(e) {
+            if(e.name === "NotSupportedError") {
+                // le dom-overlay n'est pas supporté
+                this.enable3dUI = true
+                this.arSession = await navigator.xr.requestSession(
+                    'immersive-' + mode
+                )
+            }
+        }
+
+        this.xrMode = mode
+        await this.onSessionStarted()
     }
 
     async onSessionStarted() {
@@ -124,7 +141,13 @@ export class ArSessionManager {
         await this.arRenderer.xr.setSession( this.arSession );
         this.referenceSpace = await this.arRenderer.xr.getReferenceSpace();
         this.viewerSpace = await this.arSession.requestReferenceSpace('viewer');
-        this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
+
+
+        if(this.xrMode === "ar") {
+            this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
+        } else {
+            this.sceneManager.scenePlacementManager.disable()
+        }
 
         this.sceneManager.isArRunning.value = true;
     }

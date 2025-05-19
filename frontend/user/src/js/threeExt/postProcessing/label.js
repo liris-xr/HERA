@@ -1,5 +1,7 @@
 import {CSS2DObject} from "three/addons";
 import {ref} from "vue";
+import * as THREE from "three";
+import html2canvas from "html2canvas";
 
 export class Label{
     id;
@@ -24,16 +26,33 @@ export class Label{
         this.timestampEnd = labelData.timestampEnd;
 
         this.hidden = ref(false)
-        this.init();
     }
 
-    init(){
+    async init(){
         const htmlLabel = this.#createHtmlLabel();
         this.setContent(this.content);
 
-        this.label = new CSS2DObject(htmlLabel);
+        document.body.appendChild(htmlLabel)
+        const canvas = await html2canvas(htmlLabel, {backgroundColor: null, allowTaint: true, useCORS: true})
+        htmlLabel.remove()
+
+        document.body.appendChild(canvas)
+        const texture = new THREE.CanvasTexture(canvas)
+        const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true })
+        console.log(canvas.width, canvas.height)
+
+        const geometry = new THREE.PlaneGeometry(canvas.width/300, canvas.height/300)
+
+        const mesh = new THREE.Mesh(geometry, material)
+        this.label = mesh
+
+
+        // this.label = new CSS2DObject(htmlLabel);
+
+        console.log(this.label)
+
         this.label.position.set(this.position.x, this.position.y, this.position.z);
-        this.label.center.set( 0.5, 1);
+        // this.label.center.set( 0.5, 1);
     }
 
     #createHtmlLabel(){
@@ -52,12 +71,15 @@ export class Label{
         this.#htmlContent.style.borderRadius = "4px";
         this.#htmlContent.style.textAlign = "justify";
         this.#htmlContent.style.pointerEvents = 'auto';
+        this.#htmlContent.style.border = "solid 1px #00000088"
+
 
         let connector = document.createElement("div");
         connector.style.width = "4px"
         connector.style.height = "32px"
         connector.style.background = "#ffffff";
         connector.style.margin = 'auto'
+        connector.style.border = "solid 1px #00000088"
 
         let pointer = document.createElement("div");
         pointer.style.width = "8px";
@@ -68,6 +90,7 @@ export class Label{
         pointer.style.bottom = "0";
         pointer.style.left = "50%";
         pointer.style.transform = "translate(-50%, 50%)";
+        pointer.style.border = "solid 1px #00000088"
 
         boundingBox.appendChild(this.#htmlContent);
         boundingBox.appendChild(connector);

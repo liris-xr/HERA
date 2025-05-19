@@ -84,6 +84,9 @@
         "label": "Título:",
         "placeholder": "El título de tu proyecto"
       },
+      "mode": {
+        "label": "Display mode"
+      },
       "projectDescription": {
         "label": "Descripción:",
         "placeholder": "La descripción de tu proyecto"

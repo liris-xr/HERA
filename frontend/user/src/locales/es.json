@@ -46,6 +46,9 @@
         "loading": "Cargando",
         "incompatibleDevice": "¡Dispositivo incompatible!"
       },
+      "startVr": {
+        "button": "Voir en VR"
+      },
       "arOverlay": {
         "contextMenu": {
           "reset": "Reiniciar",

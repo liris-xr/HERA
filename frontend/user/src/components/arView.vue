@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, reactive, ref} from "vue";
+import {computed, onMounted, reactive, ref} from "vue";
 import {ArSessionManager} from "@/js/threeExt/project/arSessionManager.js";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
@@ -9,7 +9,9 @@ import ToggleableContextMenuItem from "@/components/utils/ToggleableContextMenuI
 import IconContextMenuItem from "@/components/utils/IconContextMenuItem.vue";
 import ActionBubble from "@/components/utils/actionBubble.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
+import {useI18n} from "vue-i18n";
 
+const {t} = useI18n()
 
 const props = defineProps({
   json: {type: Object, required: true}
@@ -35,8 +37,8 @@ const labelContainer = ref(null);
 
 const contextMenu = ref(null);
 
-const arCompatible = ref(false);
-arCompatible.value = await arSessionManager.isArCompatible();
+const xrCompatible = ref(false);
+xrCompatible.value = await arSessionManager.isXrCompatible(props.json.displayMode);
 const loaded = ref(false);
 
 
@@ -51,16 +53,22 @@ function toggleContextMenuStatus(){
   contextMenu.value.toggleStatus()
 }
 
+const buttonText = computed(() => {
+  if(props.json.displayMode === "ar")
+    return t('projectView.arView.startAr.button')
+  return t('projectView.arView.startVr.button')
+})
+
 </script>
 
 <template>
   <div id="startButton">
-    <button-view icon="/icons/ar.svg" :text="$t('projectView.arView.startAr.button')" @click="arSessionManager.start()" :disabled="!loaded || !arCompatible" :class="{buttonDisabled:!loaded || !arCompatible }" v-if="loaded"></button-view>
+    <button-view icon="/icons/ar.svg" :text="buttonText" @click="arSessionManager.start(json.displayMode)" :disabled="!loaded || !xrCompatible" :class="{buttonDisabled:!loaded || !xrCompatible }" v-if="loaded"></button-view>
     <span v-if="!loaded">
       {{$t("projectView.arView.startAr.loading")}}
       <icon-svg url="/icons/spinner.svg"></icon-svg>
     </span>
-    <span v-if="loaded && !arCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
+    <span v-if="loaded && !xrCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
 
   </div>
 

@@ -200,28 +200,15 @@ void main() {
 	#include <lights_fragment_maps>
 	#include <lights_fragment_end>
 	#include <aomap_fragment>
-	vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
-	vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
-	#include <transmission_fragment>
-	vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;
-	#ifdef USE_SHEEN
-		float sheenEnergyComp = 1.0 - 0.157 * max3( material.sheenColor );
-		outgoingLight = outgoingLight * sheenEnergyComp + sheenSpecularDirect + sheenSpecularIndirect;
-	#endif
-	#ifdef USE_CLEARCOAT
-		float dotNVcc = saturate( dot( geometryClearcoatNormal, geometryViewDir ) );
-		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
-		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
-	#endif
-
+	
 	
 	vec3 texcoord = vec3(
 		(((wPosition.x-lpvCenter.x) / (lpvWidth/2.)) + 1.) / 2.,
 		(((wPosition.z-lpvCenter.z) / (lpvDepth/2.)) + 1.) / 2.,
 		(((wPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
 		);
-
-	vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
+		
+		vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 		texture(sh1,texcoord).rgb,
 		texture(sh2,texcoord).rgb,
 		texture(sh3,texcoord).rgb,
@@ -230,9 +217,26 @@ void main() {
 		texture(sh6,texcoord).rgb,
 		texture(sh7,texcoord).rgb,
 		texture(sh8,texcoord).rgb
-	);
-	
-	outgoingLight = (material.diffuseColor * getLightProbeIrradiance(interpolatedLightProbe,normal))+totalEmissiveRadiance;
+		);
+		vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
+		IncidentLight il = IncidentLight(color,normal,true);
+		
+		RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+		
+		vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
+		vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
+		#include <transmission_fragment>
+		vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;
+		#ifdef USE_SHEEN
+			float sheenEnergyComp = 1.0 - 0.157 * max3( material.sheenColor );
+			outgoingLight = outgoingLight * sheenEnergyComp + sheenSpecularDirect + sheenSpecularIndirect;
+		#endif
+		#ifdef USE_CLEARCOAT
+			float dotNVcc = saturate( dot( geometryClearcoatNormal, geometryViewDir ) );
+			vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
+			outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
+		#endif
+	// outgoingLight = (material.diffuseColor * getLightProbeIrradiance(interpolatedLightProbe,normal))+totalEmissiveRadiance;
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
@@ -291,31 +295,19 @@ export class MeshManager {
 				shader.fragmentShader = fragShader;
 				
 				for(let i = 0;i<9;i++) {
-					// const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
-					// 											this.lpvParameters.width*this.lpvParameters.density,
-					// 											this.lpvParameters.depth*this.lpvParameters.density,
-					// 											this.lpvParameters.height*this.lpvParameters.density);
-					// sh3DTexture.magFilter = THREE.LinearFilter;
-					// sh3DTexture.type = THREE.FloatType;
-					// sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
-					// sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
-					// sh3DTexture.wrapR = THREE.ClampToEdgeWrapping
-					// sh3DTexture.needsUpdate = true;
-					
-					// shader.uniforms["sh"+i] = {value: sh3DTexture};
-
 					const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
-						this.lpvParameters.width*this.lpvParameters.density,
-						this.lpvParameters.depth*this.lpvParameters.density,
-						this.lpvParameters.height*this.lpvParameters.density);
-						sh3DTexture.magFilter = THREE.LinearFilter;
-						sh3DTexture.type = THREE.FloatType;
-						sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
-						sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
-						sh3DTexture.wrapR = THREE.ClampToEdgeWrapping
-						sh3DTexture.needsUpdate = true;
+																this.lpvParameters.width*this.lpvParameters.density,
+																this.lpvParameters.depth*this.lpvParameters.density,
+																this.lpvParameters.height*this.lpvParameters.density);
+					sh3DTexture.magFilter = THREE.LinearFilter;
+					sh3DTexture.type = THREE.FloatType;
+					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
+					sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
+					sh3DTexture.wrapR = THREE.ClampToEdgeWrapping
+					sh3DTexture.needsUpdate = true;
+					
+					shader.uniforms["sh"+i] = {value: sh3DTexture};
 
-						shader.uniforms["sh"+i] = {value: sh3DTexture};
 				}
 
 				// const invalidityTexture = new THREE.Data3DTexture(scene.invalidityTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);

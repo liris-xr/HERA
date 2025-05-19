@@ -258,28 +258,30 @@ export class MeshManager {
 			.then((res) => res.text())
 			.then((text) => {
 				const values = text.split(',').map(Number);
+				
 				this.shTextures.push(new Float32Array(values));
 			})
 			.catch((e) => console.error(e));
 		}
-
+		
 		fetch(BASE_URL+"textures/lpvParameters.json")
-			.then((res) => res.json())
-			.then((json) => {
-				this.lpvParameters = json;
-			})
-			.catch((e) => console.error(e));
+		.then((res) => res.json())
+		.then((json) => {
+			this.lpvParameters = json;
+		})
+		.catch((e) => console.error(e));
     }
-
+	
     getMeshes = computed(()=>{
-        return this.#meshes;
+		return this.#meshes;
     });
-
+	
     addSubMesh(scene,mesh,meshData) {
 		
 		mesh.material.customProgramCacheKey = () => {
 			mesh.material.needsUpdate = true;
-			return this.lpvParameters ? '1' : '0';
+			
+			return this.lpvParameters && this.shTextures.length > 0 ? '1' : '0';
 		}
         
         mesh.material.onBeforeCompile = (shader) => {
@@ -287,20 +289,33 @@ export class MeshManager {
 			if(this.lpvParameters) {
 				shader.vertexShader = vertexShader;
 				shader.fragmentShader = fragShader;
-
+				
 				for(let i = 0;i<9;i++) {
-					const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
-																this.lpvParameters.width*this.lpvParameters.density,
-																this.lpvParameters.depth*this.lpvParameters.density,
-																this.lpvParameters.height*this.lpvParameters.density);
-					sh3DTexture.magFilter = THREE.LinearFilter;
-					sh3DTexture.type = THREE.FloatType;
-					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
-					sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
-					sh3DTexture.wrapR = THREE.ClampToEdgeWrapping
-					sh3DTexture.needsUpdate = true;
+					// const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
+					// 											this.lpvParameters.width*this.lpvParameters.density,
+					// 											this.lpvParameters.depth*this.lpvParameters.density,
+					// 											this.lpvParameters.height*this.lpvParameters.density);
+					// sh3DTexture.magFilter = THREE.LinearFilter;
+					// sh3DTexture.type = THREE.FloatType;
+					// sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
+					// sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
+					// sh3DTexture.wrapR = THREE.ClampToEdgeWrapping
+					// sh3DTexture.needsUpdate = true;
 					
-					shader.uniforms["sh"+i] = {value: sh3DTexture};
+					// shader.uniforms["sh"+i] = {value: sh3DTexture};
+
+					const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
+						this.lpvParameters.width*this.lpvParameters.density,
+						this.lpvParameters.depth*this.lpvParameters.density,
+						this.lpvParameters.height*this.lpvParameters.density);
+						sh3DTexture.magFilter = THREE.LinearFilter;
+						sh3DTexture.type = THREE.FloatType;
+						sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
+						sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
+						sh3DTexture.wrapR = THREE.ClampToEdgeWrapping
+						sh3DTexture.needsUpdate = true;
+
+						shader.uniforms["sh"+i] = {value: sh3DTexture};
 				}
 
 				// const invalidityTexture = new THREE.Data3DTexture(scene.invalidityTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);

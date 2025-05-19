@@ -74,6 +74,10 @@ async function newLabel(label) {
 
   if(index !== -1)
     scenes.value[index].labels.push(label)
+
+  if(editingScene.value?.id === label.sceneId) {
+    editingScene.value.labels.push(label)
+  }
 }
 
 function editLabel(label) {
@@ -97,6 +101,11 @@ async function supprLabel(label) {
     if(index2 !== -1)
       scene.labels.splice(index2, 1)
   }
+
+  if(editingScene.value?.id === label.sceneId) {
+    const index2 = editingScene.value.labels.findIndex(l => l.id === label.id)
+    editingScene.value.labels.splice(index2, 1)
+  }
 }
 
 async function newAsset(asset) {
@@ -104,6 +113,10 @@ async function newAsset(asset) {
 
   if(index !== -1)
     scenes.value[index].assets.push(asset)
+
+  if(editingScene.value?.id === asset.sceneId) {
+    editingScene.value.assets.push(asset)
+  }
 }
 
 async function supprAsset(asset) {
@@ -115,6 +128,11 @@ async function supprAsset(asset) {
 
     if(index2 !== -1)
       scene.assets.splice(index2, 1)
+  }
+
+  if(editingScene.value?.id === asset.sceneId) {
+    const index2 = editingScene.value.assets.findIndex(a => a.id === asset.id)
+    editingScene.value.assets.splice(index2, 1)
   }
 }
 

@@ -156,6 +156,31 @@ export const adminUploadAsset = multer({ storage: multer.diskStorage({
     })});
 
 
+export const uploadProject = multer({ storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+
+            const uploadDirectory = path.join(DIRNAME, 'public', 'files', 'temp')
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory, { recursive: true })
+            }
+
+            cb(null, uploadDirectory)
+        },
+
+        filename: (req, file, cb) => {
+
+            const filename = Date.now() + "-" + file.originalname
+
+            req.uploadedFilePath = path.join(DIRNAME, 'public', 'files', 'temp',  filename)
+
+            cb(null, filename)
+        }
+    })})
+
+
+export function getTempDirectory() {
+    return path.join('public', 'files', 'temp')
+}
 
 export function getProjectDirectory(projectId){
     return path.join('public','files',projectId);

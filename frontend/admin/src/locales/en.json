@@ -217,8 +217,11 @@
     "materialSection": {
       "title": "Material",
       "color": "Color",
-      "matallicness": "Metallicness",
-      "roughness": "Roughness"
+      "metalness": "Metalness",
+      "roughness": "Roughness",
+      "opacity": "Opacity",
+      "emissive": "Emissive color",
+      "emissiveIntensity": "Emissive intensity"
     },
     "bottomActionBar": {
       "backButton": "Back",
@@ -257,6 +260,8 @@
         "edit": "Edit project",
         "delete": "Delete project",
         "create": "Create a new project",
+        "import": "Importer un projet",
+        "zip": "ZIP file",
         "title": "Title",
         "scenes": "Scenes",
         "published": "Published",

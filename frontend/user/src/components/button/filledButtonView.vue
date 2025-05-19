@@ -57,6 +57,10 @@ let buttonTheme = props.theme
   background-color: var(--warningColor);
   border-color: var(--warningColor);
 }
+.successButton{
+  background-color: var(--succesColor);
+  border-color: var(--succesColor);
+}
 
 button{
   display: flex;

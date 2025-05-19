@@ -24,6 +24,10 @@ export const DIRNAME = path.dirname(__filename);
 //for https only :
 import * as fs from "node:fs";
 import * as https from "node:https";
+import {Server} from "socket.io";
+import setupSocket from "./src/socket/index.js";
+import {errorHandler} from "./src/utils/errorHandler.js";
+import zip from 'express-easy-zip'
 const options = {
     key: fs.readFileSync('privatekey.key'),
     cert: fs.readFileSync('certificate.crt')
@@ -33,6 +37,8 @@ const options = {
 const app = express()
 app.use(express.json())
 app.use(cors({}))
+app.use(zip())
+app.use(errorHandler)
 
 async function main () {
     await initializeDatabase({force: false});
@@ -48,7 +54,20 @@ async function main () {
     app.use(label)
     app.use('/public', express.static('public'));       //serving static files
 
-    https.createServer(options, app).listen(8080, () => {
+    const httpsServer = https.createServer(options, app)
+
+    // mise en place du socket
+    const io = new Server(httpsServer, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"],
+        },
+        path: "/api/socket"
+    })
+    setupSocket(io)
+
+
+    httpsServer.listen(8080, () => {
         console.log('Server started on port 8080')
     })
 }

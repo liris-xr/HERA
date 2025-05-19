@@ -10,6 +10,8 @@ const props = defineProps({
   data:  {type: Array, required: true},
   totalPages: {type: Number, required: true},
   create: {type: Boolean, default: true},
+  titleButtons: {type: Array, default: []},
+  itemButtons: {type: Array, default: []},
 })
 
 const emit = defineEmits(["edit", "delete", "create", "fetch", "page"])
@@ -69,7 +71,15 @@ function getProperty(obj, prop) {
 
     <div class="title">
       <h2>{{$t(`admin.sections.${props.sectionName}.h1`)}}</h2>
-      <button-view v-if="create" icon="/icons/add.svg" @click="$emit('create')"></button-view>
+
+      <button-view v-if="create"
+                   icon="/icons/add.svg"
+                   @click="$emit('create')" />
+
+      <button-view v-if="titleButtons"
+                   v-for="button in titleButtons"
+                   :icon="button.icon"
+                   @click="button.func()" />
     </div>
 
     <slot></slot>
@@ -96,6 +106,12 @@ function getProperty(obj, prop) {
 
           <td>
             <div class="inline-flex">
+
+              <button-view v-for="button in itemButtons"
+                           :icon="button.icon"
+                           :theme="button.theme || 'default'"
+                           @click="button.func(element)" />
+
               <button-view icon="/icons/edit.svg" @click="$emit('edit', {...element})"></button-view>
               <button-view icon="/icons/delete.svg" theme="danger" @click="$emit('delete', element)"></button-view>
             </div>

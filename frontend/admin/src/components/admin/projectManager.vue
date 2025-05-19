@@ -32,6 +32,10 @@ const creatingProject = ref(null)
 
 const totalPages = ref(1)
 
+const uploadingProject = ref(null)
+
+const showSpinner = ref(false)
+
 
 function newScene(scene) {
   const index = projects.value.findIndex(project => project.id === scene.projectId)
@@ -200,6 +204,68 @@ async function fetchProjects(data=null) {
   }
 }
 
+async function exportProject(project) {
+
+  showSpinner.value = true
+
+  try {
+    await fetch(`${ENDPOINT}project/${project.id}/export`,
+        {
+          headers: {
+            'Authorization': `Bearer ${props.token}`,
+          }
+        })
+        .then(resp => resp.blob())
+        .then(blob => window.location.assign(window.URL.createObjectURL(blob)))
+  } catch(e) {} finally {
+    showSpinner.value = false
+  }
+
+
+}
+
+function importProject() {
+  uploadingProject.value = {}
+}
+
+async function confirmProjectImport() {
+  const formData = new FormData()
+
+  for(const key in uploadingProject.value)
+    if(uploadingProject.value.hasOwnProperty(key))
+      formData.append(key, uploadingProject.value[key]);
+
+  showSpinner.value = true
+
+  try {
+    const res = await fetch(`${ENDPOINT}project/import`,{
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${props.token}`,
+      },
+      body: formData
+    })
+
+    if(res.ok) {
+      const data = await res.json()
+
+      projects.value.push(data)
+    } else {
+      toast.error(res.status + " : " + res.statusText, {
+        position: toast.POSITION.BOTTOM_RIGHT
+      })
+    }
+  } catch(e) {
+    toast.error(res.status + " : " + res.statusText, {
+      position: toast.POSITION.BOTTOM_RIGHT
+    })
+  } finally {
+    showSpinner.value = false
+  }
+
+  uploadingProject.value = null
+}
+
 onMounted(async () => {
   await fetchProjects()
 })
@@ -211,6 +277,10 @@ defineExpose({projects, newScene, supprScene, editScene, element})
 
 <template>
 
+  <div class="spinner-wrapper" v-if="showSpinner">
+    <icon-svg url="/icons/spinner.svg" theme="default" />
+  </div>
+
   <section ref="element">
 
     <generic-table
@@ -219,6 +289,20 @@ defineExpose({projects, newScene, supprScene, editScene, element})
         :fields="['title']"
         :data="projects"
         :total-pages="totalPages"
+
+        :title-buttons="[
+            {
+              icon: '/icons/upload.svg',
+              func: importProject
+            }
+        ]"
+
+        :item-buttons="[
+          {
+            icon: '/icons/download.svg',
+            func: exportProject,
+          }
+        ]"
 
         @create="creatingProject = {}"
         @edit="editingProject = $event"
@@ -359,10 +443,39 @@ defineExpose({projects, newScene, supprScene, editScene, element})
       @cancel="creatingProject = null"
   />
 
+    <generic-modal
+        title="import"
+        section-name="projects"
+
+        :subject="uploadingProject"
+        :fields="[
+            {
+              name: 'zip',
+              type: 'file',
+              accept: '.zip',
+              required: true,
+            }
+        ]"
+
+        @confirm="confirmProjectImport"
+        @cancel="uploadingProject = null"
+    />
+
   </section>
 
 </template>
 
 <style scoped>
+
+.spinner-wrapper {
+  position: fixed;
+  inset: 0 0 0 0;
+
+  z-index: 1023;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 </style>

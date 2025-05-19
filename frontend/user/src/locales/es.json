@@ -1,3 +1,4 @@
+
 {
   "locale": "es-ES",
   "header": {
@@ -6,6 +7,8 @@
     "logout": "Déconnexion",
     "allProjects": "Todos los proyectos"
   },
+
+  "none": "Ninguno",
 
   "login": {
     "emailLabel": "Correo electrónico",
@@ -63,7 +66,11 @@
       "updatedOn": "Actualizado el: ",
       "sceneCount": "Número de escenas: ",
       "at": "a"
-    }
+    },
+    "startPresentation": "Démarrer une nouvelle présentation",
+    "presentationState": "Etat de la présentation",
+    "terminated": "La présentation est maintenant terminée, merci pour votre attention",
+    "seeProject": "Voir le projet"
   },
 
   "account": {
@@ -80,6 +87,58 @@
       "notMatching": "Les mots de passes ne correspondent pas",
       "success": "Mot de passe modifié avec succès"
     }
+  },
+
+  "presentation": {
+    "sceneTitle": "Scène",
+    "controls": {
+      "title": "Contrôles",
+      "connected": {
+        "true": "Connecté",
+        "false": "Non connecté"
+      },
+      "showQrcode": "Afficher le QR code",
+      "reset": "Réinitialiser la scène",
+      "showAll": "Tout afficher",
+      "hideAll": "Tout masquer",
+      "terminate": "Achever la présentation"
+    },
+    "sections": {
+      "presets": {
+        "title": "Presets",
+        "manageButton": "Gérer",
+        "managementTitle": "Gestion des presets",
+        "save": "Sauvegarder",
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "removeTitle": "Supprimer le preset",
+        "removeWarning": "Voulez vous vraiment supprimer ce preset ? Cette action est irréversible",
+        "editTitle": "Modifier le preset",
+        "icon": "Icone",
+        "text": "Texte",
+        "redefineLabel": "Redéfinir les actions",
+        "redefine": "Redéfinir",
+        "createTitle": "Créer un preset",
+        "define": "Définir",
+        "defineLabel": "Définir les actions",
+        "recording": "Enregistrement des actions..."
+      },
+      "assets": {
+        "title": "Assets"
+      },
+      "labels": {
+        "title": "Labels"
+      }
+    },
+    "quitQr": "Appuyez n'importe ou pour faire disparaitre le QR code",
+    "unpublishedWarning": "Impossible d'afficher le QR code : votre projet est privé",
+    "brightnessTip": "Pour faciliter le scan du QR code, augmentez la luminosité de votre écran",
+    "viewers": "spectateurs",
+    "currentScene": "Scène actuelle",
+    "terminated": "Presentation terminée",
+    "restart": "Redémarrer une présentation",
+    "seeProject": "Voir le projet",
+    "validateTerminate": "Voulez-vous vraiment achever cette présentation ?"
   },
 
   "projectCard": {

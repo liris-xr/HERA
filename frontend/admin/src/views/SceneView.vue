@@ -221,6 +221,7 @@ async function saveAll(){
     labels:editor.scene.labelManager.getResultLabel(),
     assets:editor.scene.assetManager.getResultAssets(),
     meshes:editor.scene.assetManager.getResultMeshes(),
+    triggers:editor.scene.triggerManager.getResultTriggers(),
     envmapUrl: scene.value.envmapUrl || "",
   };
 
@@ -444,11 +445,12 @@ onBeforeRouteUpdate((to, from, next)=>{
                             class="sceneItem"
                             :index="index"
                             :active="trigger.isSelected.value"
+                            :action="trigger.action"
                             :hide-in-viewer="trigger.hideInViewer.value"
                             @click="editor.scene.setSelected(trigger)"
                             @delete="editor.scene.removeTrigger(trigger)"
                             @hide-in-viewer="()=>{trigger.switchViewerDisplayStatus(); saved = false}"
-                            @action="(selectedAction)=>{trigger.setAction(selectedAction)}"
+                            @action="(selectedAction)=>{trigger.setAction(selectedAction);}"
                 />
                 <div v-if="!editor.scene.triggerManager.hasTriggers.value">{{$t('sceneView.leftSection.sceneTriggers.noLabelInfo')}}</div>
             </div>

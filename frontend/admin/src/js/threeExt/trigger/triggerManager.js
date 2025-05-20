@@ -23,7 +23,6 @@ export class TriggerManager {
         if (trigger === null){
             trigger = {
                 id : 'new-trigger' + (currentTriggerId++),
-                hideInViewer: false
             };
         }
 
@@ -62,14 +61,16 @@ export class TriggerManager {
 
     }
 
-    getResultAssets(){
+    getResultTriggers(){
         const result = []
         for (let trigger of this.#triggers) {
             result.push({
                 id: trigger.id,
                 position:trigger.getResultPosition(),
                 scale: trigger.getResultScale(),
-                hideInViewer: trigger.hideInViewer.value
+                hideInViewer: trigger.hideInViewer.value,
+                radius: trigger.radius,
+                action: trigger.action,
             });
         }
         return result;

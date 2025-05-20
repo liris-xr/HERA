@@ -23,7 +23,7 @@ defineEmits(['select', 'duplicate','delete', 'hideInViewer', 'action']);
 
 const text = defineModel();
 
-const selectedAction = "None";
+const selectedAction = props.action || "None";
 
 </script>
 
@@ -36,7 +36,7 @@ const selectedAction = "None";
       <span v-if="hideInViewer" class="notDisplayedInfo">{{$t("sceneView.leftSection.sceneAssets.assetNotDisplayed")}}</span>
       <span>Action: </span>
       <select v-model="selectedAction" @change="()=>{$emit('action', selectedAction)}" >
-        <option v-for="(fn, name) in actionManager.getActions()" :key="name" :value="name" @click="onClick(()=>{$emit('action',true)})">
+        <option v-for="(fn, name) in actionManager.getActions()" :key="name" :value="name">
           {{ name }}
         </option>
       </select>

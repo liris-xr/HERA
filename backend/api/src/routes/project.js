@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware from "../middlewares/auth.js";
 import {
@@ -90,6 +90,14 @@ router.get(baseUrl+'project/:projectId', async (req, res) => {
                         {
                             model: ArLabel,
                             as: "labels",
+                        },
+                        {
+                            model: ArTrigger,
+                            as: "triggers",
+                            where:{
+                                hideInViewer: false
+                            },
+                            required:false
                         },
                     ],
                 },
@@ -279,6 +287,10 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                             model: ArLabel,
                             as: 'labels'
                         },
+                        {
+                            model: ArTrigger,
+                            as: 'triggers'
+                        },
                     ]
                 },
                 {
@@ -347,9 +359,20 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                     });
                 }));
 
+                await Promise.all(scene.triggers.map(async trigger => {
+                    return ArTrigger.create({
+                        ...trigger.get({ plain: true }),
+                        id: undefined, // générer un nouvel id
+                        sceneId: newScene.id, // lier le nouvel asset à la nouvelle scène
+                    }, {
+                        transaction:t
+                    });
+                }));
 
                 return newScene;
             }));
+
+
 
 
             await duplicateFolder(getProjectDirectory(projectId), getProjectDirectory(newProject.id))

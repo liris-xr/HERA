@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArAsset, ArLabel, ArProject, ArScene, ArTrigger, ArUser} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware from "../middlewares/auth.js";
 
@@ -94,6 +94,10 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
                             model: ArLabel,
                             as: "labels",
                         },
+                        {
+                            model: ArTrigger,
+                            as: "triggers",
+                        }
                     ],
                     separate: true,
                     order: [['index', 'ASC']],

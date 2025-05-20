@@ -28,7 +28,12 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
         this.id = triggerData.id;
         this.#isSelected = ref(false);
 
-        this.hideInViewer = ref(triggerData.hideInViewer);
+        if(triggerData.hideInViewer){
+            this.hideInViewer = ref(triggerData.hideInViewer);
+        }
+        else {
+            this.hideInViewer = ref(false);
+        }
 
         if(triggerData.radius){
             this.radius = triggerData.radius;
@@ -138,5 +143,10 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
 
     setAction(action){
         this.action = action;
+    }
+
+    copyFromAnotherTrigger(otherTrigger){
+        this.hideInViewer = otherTrigger.hideInViewer;
+        this.action = otherTrigger.action;
     }
 }

@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger} from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Sequelize} from "sequelize";
@@ -26,6 +26,10 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
                 {
                     model: ArLabel,
                     as: "labels",
+                },
+                {
+                    model: ArTrigger,
+                    as: "triggers"
                 },
                 {
                     model: ArProject,
@@ -79,6 +83,10 @@ const getPostUploadData = async (req, res, next) => {
             {
                 model: ArAsset,
                 as: "assets"
+            },
+            {
+                model: ArTrigger,
+                as: "triggers"
             },
             {
                 model: ArProject,
@@ -137,7 +145,11 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 {
                     model: ArMesh,
                     as: "meshes"
-                }
+                },
+                {
+                    model: ArTrigger,
+                    as: "triggers"
+                },
             ],
             where: {id: sceneId},
         })
@@ -155,6 +167,9 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         const knownLabelsIds = scene.labels.map( (label) => label.id )
         const knownAssetsIds = scene.assets.map( (asset) => asset.id )
         const knonwMeshesIds = scene.meshes.map( (mesh) => mesh.id )
+        const knownTriggersIds = scene.triggers.map( (trigger) => trigger.id )
+
+
 
         let assetsIdMatching = []
 
@@ -163,7 +178,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
         let insertedCount = 0;
         if(!req.uploadedFilenames) req.uploadedFilenames = [];
-
         await sequelize.transaction(async (t) => {
             await updateListById(knownLabelsIds, JSON.parse(req.body.labels),
                 async (label)=>{
@@ -288,6 +302,40 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                     await ArMesh.destroy({where: {id: knownId},transaction:t});
                 }
         
+            );
+
+            await updateListById(knownTriggersIds, JSON.parse(req.body.triggers),
+                async (trigger)=>{
+                    await ArTrigger.update({
+                        radius: trigger.radius,
+                        hideInViewer: trigger.hideInViewer,
+                        action: trigger.action,
+                        position: trigger.position,
+                        scale: trigger.scale,
+                    }, {
+                        where: {id: trigger.id},
+                        returning: true,
+                        transaction:t
+                    })
+                },
+
+                async (trigger)=>{
+                    console.log("abcd " + trigger)
+                    await ArTrigger.create({
+                        sceneId:scene.id,
+                        radius: trigger.radius,
+                        hideInViewer: trigger.hideInViewer,
+                        action: trigger.action,
+                        position: trigger.position,
+                        scale: trigger.scale,
+                    },{
+                        transaction:t
+                    })
+                },
+
+                async (knownId)=>{
+                    await ArTrigger.destroy({where: {id: knownId},transaction:t});
+                }
             );
 
             let updatedUrl = req.uploadedUrl;
@@ -453,6 +501,10 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
                     as: 'labels'
                 },
                 {
+                    model: ArTrigger,
+                    as: 'triggers'
+                },
+                {
                    model:ArProject,
                    as: "project",
                    attributes: ["id"],
@@ -505,6 +557,16 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             const newLabels = await Promise.all(scene.labels.map(async label => {
                 return ArLabel.create({
                     ...label.get({ plain: true }),
+                    id: undefined,
+                    sceneId: newScene.id
+                },{
+                    transaction:t
+                });
+            }));
+
+            const newTriggers = await Promise.all(scene.triggers.map(async trigger => {
+                return ArTrigger.create({
+                    ...trigger.get({ plain: true }),
                     id: undefined,
                     sceneId: newScene.id
                 },{

@@ -69,9 +69,9 @@ export class EditorScene extends THREE.Scene {
             this.labelManager.addToScene(this,labelData);
         }
 
-        // for (let triggerData of sceneData.triggers){
-        //     this.triggerManager.addToScene(this,triggerData);
-        // }
+        for (let triggerData of sceneData.triggers){
+            this.triggerManager.addToScene(this,triggerData);
+        }
 
         this.#gridPlane = new GridPlane();
         this.#gridPlane.pushToScene(this);
@@ -106,7 +106,6 @@ export class EditorScene extends THREE.Scene {
                     this.setTransformMode("translate");
                 }
             }
-            console.log("label clicked");
         } else{ //scene clicked
             const rect = event.target.getBoundingClientRect();
             const relativeX = event.clientX - rect.left;
@@ -141,8 +140,6 @@ export class EditorScene extends THREE.Scene {
     setSelected(object, selected = true){
         this.deselectAll();
         this.#selected.value = object;
-
-        console.log(object);
 
         if(object==null || selected === false || object.hasError.value){
             this.#transformControls.detach();

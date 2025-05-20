@@ -10,6 +10,8 @@ class LightProbe {
     public:
         Point position;
         Vector coefficients[9];
+        Vector directCoefficients[9];
+        Vector indirectCoefficients[9];
         unsigned int id;
         
         unsigned int nbDisplacement;

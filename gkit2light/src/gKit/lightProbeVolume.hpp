@@ -118,9 +118,7 @@ class LightProbeVolume {
         unsigned int nbIndirectSamples;
         unsigned int nbDirectIndirectSamples;
 
-        float directWeight; 
         float indirectWeight; 
-        float directIndrectWeight; 
 
         Vector getRandomSphereDirection(const Point & origin);
 

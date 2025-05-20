@@ -509,6 +509,7 @@ std::vector<GLTFMaterial> read_materials( cgltf_data *data )
         m.metallic= 0;
         m.roughness= 1;
         m.transmission= 0;
+        m.emissive_strength = 0;
         m.ior= 0;
         m.specular= 0;
         m.specular_color= Black();
@@ -555,6 +556,12 @@ std::vector<GLTFMaterial> read_materials( cgltf_data *data )
         
         //~ printf("  emissive color %f %f %f\n", material->emissive_factor[0], material->emissive_factor[1], material->emissive_factor[2]);
         m.emission= Color(material->emissive_factor[0], material->emissive_factor[1], material->emissive_factor[2]);
+        if(m.emission.max() > 0)
+            m.emissive_strength = 1;
+        
+        if(material->emissive_strength.emissive_strength > 0)
+            m.emissive_strength = material->emissive_strength.emissive_strength;
+
         if(material->emissive_texture.texture && material->emissive_texture.texture->image)
         {
             //~ printf("    texture %d\n", int(std::distance(data->images, material->emissive_texture.texture->image)));

@@ -49,13 +49,10 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->nbIndirectSamples = nbIndirectSamples;
     this->nbDirectIndirectSamples = nbDirectIndirectSamples;
 
+    this->indirectWeight = (1.0/float(nbIndirectSamples));
+
     this->writeParameters(density,width,depth,height,center);
 
-    this->directWeight = 1.0/float(nbDirectSamples);
-    this->indirectWeight = 1.0/float(nbIndirectSamples);
-    this->directIndrectWeight = 1.0/float(nbDirectIndirectSamples);
-
-    
     int n= mesh.triangle_count();
     for(int i= 0; i < n; i++) {
         TriangleData td = mesh.triangle(i);
@@ -260,12 +257,12 @@ void LightProbeVolume::updateDirectLighting(LightProbe & probe) {
         if(!this->isDirectionObstructed(probe.position, dir, intersectionDistance)) {
             float * shBasis = getBasis(dir);
             Color color = this->lightSources->getTriangleColor(lightSourceId);
+            float lightStrength = this->lightSources->getTriangleStrength(lightSourceId);
             
             for (unsigned int j = 0;j<9;j++) {
-                float contribution = shBasis[j] * this->directWeight;
-                probe.coefficients[j].x += color.r * contribution;
-                probe.coefficients[j].y += color.g * contribution;
-                probe.coefficients[j].z += color.b * contribution;
+                probe.directCoefficients[j].x += color.r * shBasis[j];
+                probe.directCoefficients[j].y += color.g * shBasis[j];
+                probe.directCoefficients[j].z += color.b * shBasis[j];
             }
         }
     }
@@ -312,39 +309,38 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
 
                         if(!this->isDirectionObstructed(lightReflectorOrigin, dir, intersectionDistance)) {
                             Color lightSourceColor = this->lightSources->getTriangleColor(lightSourceId);
-                            lightReflectorColor = lightReflectorColor + (material.color * directIndrectWeight);
+                            lightReflectorColor = lightReflectorColor + material.color;
                         }
-
                     }
+                    lightReflectorColor = (lightReflectorColor * this->lightSources->totalLuminance) / float(this->nbDirectIndirectSamples);
                     if(lightReflectorColor.max() > 0.0) {
                         float * shBasis = getBasis(sphereDirection);
                         for (unsigned int j = 0;j<9;j++) {
-                            float contribution = shBasis[j] * roughness * this->indirectWeight;
-                            probe.coefficients[j].x += lightReflectorColor.r * contribution;
-                            probe.coefficients[j].y += lightReflectorColor.g * contribution;
-                            probe.coefficients[j].z += lightReflectorColor.b * contribution;
+                            float contribution = shBasis[j] * roughness;
+                            probe.indirectCoefficients[j].x += lightReflectorColor.r*contribution;
+                            probe.indirectCoefficients[j].y += lightReflectorColor.g*contribution;
+                            probe.indirectCoefficients[j].z += lightReflectorColor.b*contribution;
                         }
                     }
                 }
             }
         }
     }
-
+    
     if(this->invalidityTexture[probe.id]) {
         this->invalidityTexture[probe.id] /= float(nbIntersection);
         if(this->invalidityTexture[probe.id] > 0.5 && probe.nbDisplacement < 3) {
             probe.position = probe.position + directionOfGeometry*distanceFromGeometry*1.1;
             probe.nbDisplacement++;
-
+            
             for (unsigned int j = 0;j<9;j++) {
-                probe.coefficients[j].x = 0;
-                probe.coefficients[j].y = 0;
-                probe.coefficients[j].z = 0;
+                probe.indirectCoefficients[j].x = 0;
+                probe.indirectCoefficients[j].y = 0;
+                probe.indirectCoefficients[j].z = 0;
             }
-
+            
             this->invalidityTexture[probe.id] = 0;
             this->updateIndirectLighting(probe);
-            // this->updateDirectLighting(probe);
         }
     }
 }
@@ -355,6 +351,19 @@ void LightProbeVolume::bake() {
         updateIndirectLighting(probe);
         updateDirectLighting(probe);
 
+        for (unsigned int j = 0;j<9;j++) {
+            probe.directCoefficients[j].x = (probe.directCoefficients[j].x * this->lightSources->totalLuminance) / float(this->nbDirectSamples);
+            probe.directCoefficients[j].y = (probe.directCoefficients[j].y * this->lightSources->totalLuminance) / float(this->nbDirectSamples);
+            probe.directCoefficients[j].z = (probe.directCoefficients[j].z * this->lightSources->totalLuminance) / float(this->nbDirectSamples);
+
+            probe.indirectCoefficients[j].x = (probe.indirectCoefficients[j].x * 4*M_PI) / float(this->nbIndirectSamples);
+            probe.indirectCoefficients[j].y = (probe.indirectCoefficients[j].y * 4*M_PI) / float(this->nbIndirectSamples);
+            probe.indirectCoefficients[j].z = (probe.indirectCoefficients[j].z * 4*M_PI) / float(this->nbIndirectSamples);
+
+            probe.coefficients[j].x = probe.directCoefficients[j].x + probe.indirectCoefficients[j].x;
+            probe.coefficients[j].y = probe.directCoefficients[j].y + probe.indirectCoefficients[j].y;
+            probe.coefficients[j].z = probe.directCoefficients[j].z + probe.indirectCoefficients[j].z;
+        }
         // if(probe.id % 100 == 0) {
         //     std::cout<<probe.id<<std::endl;
         // }

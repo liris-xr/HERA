@@ -59,6 +59,7 @@ struct GLTFMaterial
 {
     Color color;                    //!< base color.
     Color emission;                 //!< emission pour les sources de lumieres ou pas (= noir).
+    float emissive_strength;        //!< Puissance d'une lumière [0, +inf]
     float metallic;                 //!< metallic / dielectrique.
     float roughness;                //!< rugosite de la micro surface.
     float transmission;             //!< transmission, transparent ou pas (= 0)

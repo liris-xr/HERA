@@ -15,20 +15,22 @@ class LightSources {
         std::vector<unsigned int> triangleIds;
         std::vector<float> weights;
         std::vector<Color> triangleColor;
-        float area;
-
+        std::vector<float> triangleStrength;
+        
         std::discrete_distribution<unsigned int> dd;
-
         
         
-    public:
+        
+        public:
         LightSources(const Mesh & mesh,const std::vector<GLTFMaterial> & materials);
         ~LightSources();
         
         unsigned int getRandomWeightedLightSourceId();
         unsigned int getTriangleId(unsigned int lightSourceId);
         Color getTriangleColor(unsigned int lightSourceId);
-
+        float getTriangleStrength(unsigned int lightSourceId);
+        
+        float totalLuminance;
 };
 
 #endif

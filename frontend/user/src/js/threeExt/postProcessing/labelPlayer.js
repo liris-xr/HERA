@@ -67,8 +67,9 @@ export class LabelPlayer extends RenderLoopInterface{
         }
     }
 
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition) {
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer) {
         if (!this.hasLabels.value) return;
+
         const delta = time - this.#currentTime;
 
         this.#currentTime += delta;
@@ -79,8 +80,9 @@ export class LabelPlayer extends RenderLoopInterface{
 
         const t = this.#currentTime - this.#startOffset
         for (let label of this.#labels) {
-            label.setVisible(label.shouldBeVisible(t));
-            label.label?.lookAt(cameraPosition)
+            if(label.label) {
+                label.setVisible(label.shouldBeVisible(t));
+            }
         }
 
         if(t>=this.#maxTimestamp) this.pause();

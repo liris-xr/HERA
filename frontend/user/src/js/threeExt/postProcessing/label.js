@@ -14,6 +14,9 @@ export class Label{
     timestampEnd;
     #htmlContent
 
+    aspect
+    height
+
     constructor(labelData) {
         this.id = labelData.id
         this.content = labelData.text;
@@ -32,24 +35,40 @@ export class Label{
         const htmlLabel = this.#createHtmlLabel();
         this.setContent(this.content);
 
-        document.body.appendChild(htmlLabel)
+        const container = document.createElement("div")
+        container.style.position = "absolute";
+        container.style.width = "100vw";
+        container.style.height = "100vh";
+        container.style.top = "-10000px";
+        container.style.left = "-10000px";
+        document.body.appendChild(container)
+        container.appendChild(htmlLabel)
+
+
         const canvas = await html2canvas(htmlLabel, {backgroundColor: null, allowTaint: true, useCORS: true})
-        htmlLabel.remove()
+        container.remove()
+        this.height = canvas.height;
 
-        document.body.appendChild(canvas)
         const texture = new THREE.CanvasTexture(canvas)
-        const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true })
-        console.log(canvas.width, canvas.height)
 
-        const geometry = new THREE.PlaneGeometry(canvas.width/300, canvas.height/300)
+        const material = new THREE.SpriteMaterial({ map: texture, transparent: true })
+        material.sizeAttenuation = false
+        const sprite = new THREE.Sprite(material)
+        sprite.renderOrder = 999
+        sprite.material.depthTest = false
 
-        const mesh = new THREE.Mesh(geometry, material)
-        this.label = mesh
+        this.aspect = canvas.height / canvas.width;
+
+        const scaleFactor = 1;
+        sprite.scale.set(scaleFactor, this.aspect * scaleFactor, 1);
+
+        sprite.center.set(0.5, 0)
+
+
+        this.label = sprite
 
 
         // this.label = new CSS2DObject(htmlLabel);
-
-        console.log(this.label)
 
         this.label.position.set(this.position.x, this.position.y, this.position.z);
         // this.label.center.set( 0.5, 1);
@@ -72,6 +91,7 @@ export class Label{
         this.#htmlContent.style.textAlign = "justify";
         this.#htmlContent.style.pointerEvents = 'auto';
         this.#htmlContent.style.border = "solid 1px #00000088"
+        this.#htmlContent.classList.add("label-content")
 
 
         let connector = document.createElement("div");

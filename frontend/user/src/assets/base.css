@@ -51,3 +51,7 @@ h2{
 p{
   text-align: justify;
 }
+
+.label-content * {
+  max-width: 100%;
+}

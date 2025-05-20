@@ -125,9 +125,9 @@ export class ArSceneManager{
     })
 
 
-    onXrFrame(time, frame, localSpace, cameraPosition){
+    onXrFrame(time, frame, localSpace, camera, renderer){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
-        this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), cameraPosition);
+        this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), camera, renderer);
     }
 
     onSceneClick(event){

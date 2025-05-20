@@ -173,7 +173,7 @@ export class ArScene extends AbstractScene {
     }
 
 
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition){
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer){
         worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
 
         // animation
@@ -183,7 +183,7 @@ export class ArScene extends AbstractScene {
                 asset.animationMixer.update(delta)
 
 
-        this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition);
+        this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer);
     }
 
     hasAssets() {

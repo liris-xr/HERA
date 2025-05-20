@@ -62,6 +62,7 @@ const buttonText = computed(() => {
 </script>
 
 <template>
+
   <div id="startButton">
     <button-view icon="/icons/ar.svg" :text="buttonText" @click="arSessionManager.start(json.displayMode)" :disabled="!loaded || !xrCompatible" :class="{buttonDisabled:!loaded || !xrCompatible }" v-if="loaded"></button-view>
     <span v-if="!loaded">
@@ -174,7 +175,6 @@ const buttonText = computed(() => {
 </template>
 
 <style scoped>
-
 
 h2{
   overflow: hidden;

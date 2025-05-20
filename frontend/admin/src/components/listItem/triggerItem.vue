@@ -1,7 +1,6 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
-import {getCurrentInstance} from "vue";
 import {ActionManager} from "@/js/threeExt/trigger/actionManager.js";
 
 
@@ -65,7 +64,6 @@ input{
   border-radius: 4px;
   margin-right: 4px;
   font-size: 16px;
-  field-sizing: content;
 }
 
 input:focus{

@@ -1,7 +1,3 @@
-import i18n from "@/i18n.js";
-
-// i18n.global.t()
-
 export class  ActionManager {
     #actions = {
         None : "None",

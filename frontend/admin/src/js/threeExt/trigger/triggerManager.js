@@ -1,7 +1,5 @@
-import {computed, shallowReactive, shallowRef} from "vue";
+import {computed, shallowReactive} from "vue";
 import {MeshLoadError} from "@/js/threeExt/error/meshLoadError.js";
-import i18n from "@/i18n.js";
-import {Label} from "@/js/threeExt/postprocessing/label.js";
 import {Trigger} from "@/js/threeExt/trigger/trigger.js";
 import {ActionManager} from "@/js/threeExt/trigger/actionManager.js";
 

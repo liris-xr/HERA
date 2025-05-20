@@ -80,7 +80,7 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
 
 
     load(){
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             this.#hasError.value = false;
             this.#isLoading.value = false;
 

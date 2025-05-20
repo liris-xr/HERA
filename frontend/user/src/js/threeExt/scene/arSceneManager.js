@@ -128,10 +128,44 @@ export class ArSceneManager{
     onXrFrame(time, frame, localSpace, cameraPosition){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
         this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), cameraPosition);
+
+        if (this.isArRunning.value && !this.scenePlacementManager.isEnabled.value){
+            console.log(this.activeSceneId.value);
+            const activeScene = this.getActiveScene();
+            const triggers = activeScene.getTriggers();
+
+            for (let trigger of triggers) {
+                const distance = this.calculateDistanceTriggers(cameraPosition, trigger.position);
+
+                if (distance < trigger.getRadius()){
+                    trigger.doAction();
+
+                }
+            }
+        }
     }
 
     onSceneClick(event){
         if(this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value)
             this.scenePlacementManager.disable();
+    }
+
+    calculateDistanceTriggers(cameraPosition, triggerPosition) {
+        const X = (cameraPosition.x - triggerPosition.x);
+        const Y = (cameraPosition.y - triggerPosition.y);
+        const Z = (cameraPosition.z - triggerPosition.z);
+
+        const distance = Math.sqrt(X * X + Y * Y + Z * Z);
+
+        return distance.toFixed(2);
+    }
+
+
+    getActiveScene(){
+        for (let scene of this.scenes) {
+            if (scene.sceneId === this.activeSceneId.value){
+                return scene;
+            }
+        }
     }
 }

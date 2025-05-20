@@ -39,7 +39,7 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
             this.radius = triggerData.radius;
         }
         else {
-            this.radius = 0.5;
+            this.radius = 1;
         }
 
         if(triggerData.position){

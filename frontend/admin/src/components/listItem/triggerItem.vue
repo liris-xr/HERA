@@ -1,7 +1,7 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
-import {ActionManager} from "@/js/threeExt/trigger/actionManager.js";
+import {ActionManager} from "@/js/threeExt/triggerManagement/actionManager.js";
 
 
 const props = defineProps({
@@ -36,7 +36,7 @@ const selectedAction = props.action || "None";
       <span v-if="hideInViewer" class="notDisplayedInfo">{{$t("sceneView.leftSection.sceneAssets.assetNotDisplayed")}}</span>
       <span>Action: </span>
       <select v-model="selectedAction" @change="()=>{$emit('action', selectedAction)}" >
-        <option v-for="(fn, name) in actionManager.getActions()" :key="name" :value="name">
+        <option v-for="(name) in actionManager.getActions()" :key="name" :value="name">
           {{ name }}
         </option>
       </select>

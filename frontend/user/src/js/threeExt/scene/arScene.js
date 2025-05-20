@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
+import {Trigger} from "@/js/threeExt/TriggerManagement/trigger.js";
 import {computed} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
@@ -15,6 +16,7 @@ export class ArScene extends AbstractScene {
     title;
     description;
     #assets
+    #triggers
     labelPlayer;
     #shadowPlane
     #errors;
@@ -30,6 +32,11 @@ export class ArScene extends AbstractScene {
         this.#assets = [];
         for (let assetData of sceneData.assets) {
             this.#assets.push(new Asset(assetData));
+        }
+
+        this.#triggers = [];
+        for (let triggerData of sceneData.triggers) {
+            this.#triggers.push(new Trigger(triggerData));
         }
 
         if(this.#assets.length == 0) this.#assets.push(new EmptyAsset())
@@ -63,6 +70,13 @@ export class ArScene extends AbstractScene {
             }
             assetData.pushToScene(this);
         }
+
+        for (let triggerData of this.#triggers) {
+            await triggerData.load();
+            triggerData.pushToScene(this);
+        }
+
+
         this.computeBoundingSphere(true);
         this.#shadowPlane = new ShadowPlane(this.computeBoundingBox(false));
         this.#shadowPlane.pushToScene(this);
@@ -121,5 +135,9 @@ export class ArScene extends AbstractScene {
 
 
         this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition);
+    }
+
+    getTriggers(){
+        return this.#triggers;
     }
 }

@@ -1,18 +1,14 @@
 import {computed, shallowReactive} from "vue";
 import {MeshLoadError} from "@/js/threeExt/error/meshLoadError.js";
-import {Trigger} from "@/js/threeExt/trigger/trigger.js";
-import {ActionManager} from "@/js/threeExt/trigger/actionManager.js";
-
+import {Trigger} from "@/js/threeExt/triggerManagement/trigger.js";
 let currentTriggerId = 0;
 
 export class TriggerManager {
     #triggers;
     onChanged;
-    #actionManager;
 
     constructor() {
         this.#triggers = shallowReactive([]);
-        this.#actionManager = new ActionManager();
     }
 
     getTriggers = computed(()=>{
@@ -32,7 +28,7 @@ export class TriggerManager {
         newTrigger.load().then((mesh)=>{
             scene.add(mesh)
         }).catch(()=>{
-                scene.appendError(new MeshLoadError("Failed to load trigger."));
+                scene.appendError(new MeshLoadError("Failed to load triggerManagement."));
             }
         );
 

@@ -192,7 +192,14 @@
         "label": "Triggers :",
         "addLabelButton": "Ajouter",
         "noLabelInfo": "Cette scène ne contient aucun trigger",
-        "assetNotDisplayed": "Ce trigger ne sera pas affiché lors de la visualisation"
+        "assetNotDisplayed": "Ce trigger ne sera pas affiché lors de la visualisation",
+        "actions": {
+          "none":  "Aucun",
+          "playSound": "Joue un son",
+          "changeScene":  "Changer de scène",
+          "animation": "Déclenché une animation",
+          "startDialogue": "Dialogue"
+        }
       },
       "buttons": {
         "duplicate": "Dupliquer la scène",

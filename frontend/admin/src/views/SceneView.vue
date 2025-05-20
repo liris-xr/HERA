@@ -27,6 +27,7 @@ import {bytesToMBytes} from "@/js/projectPicture.js";
 import EnvmapItem from "@/components/listItem/envmapItem.vue";
 import {useI18n} from "vue-i18n";
 import {EXRLoader} from "three/addons";
+import TriggerItem from "@/components/listItem/triggerItem.vue";
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
@@ -435,12 +436,21 @@ onBeforeRouteUpdate((to, from, next)=>{
           <div class="multilineField">
             <div class="inlineFlex">
               <label>{{$t("sceneView.leftSection.sceneTriggers.label")}}</label>
-              <button-view :text="$t('sceneView.leftSection.sceneTriggers.addLabelButton')" icon="/icons/add.svg" @click="">BUTTON ADD</button-view>
+              <button-view :text="$t('sceneView.leftSection.sceneTriggers.addLabelButton')" icon="/icons/add.svg" @click="editor.scene.addNewTrigger()"></button-view>
             </div>
 
             <div id="triggerList">
-                <div> COMPONENT TRIGGER</div>
-                <div> IL Y A PAS DE TRIGGER DANS CETTE SCENE </div>
+                <trigger-item v-for="(trigger, index) in editor.scene.triggerManager.getTriggers.value"
+                            class="sceneItem"
+                            :index="index"
+                            :active="trigger.isSelected.value"
+                            :hide-in-viewer="trigger.hideInViewer.value"
+                            @click="editor.scene.setSelected(trigger)"
+                            @delete="editor.scene.removeTrigger(trigger)"
+                            @hide-in-viewer="()=>{trigger.switchViewerDisplayStatus(); saved = false}"
+                            @action="(selectedAction)=>{trigger.setAction(selectedAction)}"
+                />
+                <div v-if="!editor.scene.triggerManager.hasTriggers.value">{{$t('sceneView.leftSection.sceneTriggers.noLabelInfo')}}</div>
             </div>
           </div>
 
@@ -474,7 +484,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                             :active-animation="asset.activeAnimation"
                             :download-url="getResource(asset.sourceUrl)"
                             :hide-in-viewer="asset.hideInViewer.value"
-                            :active="asset.isSelected.value"
+                              :active="asset.isSelected.value"
                             :error="asset.hasError.value"
                             :loading="asset.isLoading.value"
                             :asset="asset"

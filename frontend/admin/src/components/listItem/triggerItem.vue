@@ -2,35 +2,45 @@
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
 import {getCurrentInstance} from "vue";
+import {ActionManager} from "@/js/threeExt/trigger/actionManager.js";
 
 
 const props = defineProps({
   index: {type: Number, default: 0},
   active: {type: Boolean, default: false},
   hideInViewer: {type: Boolean, default: false},
+  action: {type: String, default: "None"},
   loading: {type: Boolean, default: false},
   error: {type: Boolean, default: false},
 })
+
+const actionManager = new ActionManager()
 
 const onClick = (emit) =>{
   if(!(props.loading)) emit()
 }
 
-defineEmits(['select', 'duplicate','delete', 'hideInViewer']);
+defineEmits(['select', 'duplicate','delete', 'hideInViewer', 'action']);
 
 const text = defineModel();
 
-const id = getCurrentInstance().uid;
+const selectedAction = "None";
+
 </script>
 
 <template>
   <div class="item" :class="{active: active}">
     <div class="inlineFlex">
       <span>{{index+1}}</span>
-      <input :id="id" type="text" v-model="text" :placeholder="props.placeholder" :maxLength="props.maxLength" @keydown.enter.prevent>
-      <label :for="id">
-        <icon-svg url="/icons/edit.svg" theme="default" :hover-effect="true"></icon-svg>
-      </label>
+
+      <span :class="{textStrike: hideInViewer||error}">{{text}}</span>
+      <span v-if="hideInViewer" class="notDisplayedInfo">{{$t("sceneView.leftSection.sceneAssets.assetNotDisplayed")}}</span>
+      <span>Action: </span>
+      <select v-model="selectedAction" @change="()=>{$emit('action', selectedAction)}" >
+        <option v-for="(fn, name) in actionManager.getActions()" :key="name" :value="name" @click="onClick(()=>{$emit('action',true)})">
+          {{ name }}
+        </option>
+      </select>
 
     </div>
     <div class="inlineFlex">
@@ -96,6 +106,12 @@ label{
 
 .item > div > * {
   margin-right: 8px;
+}
+
+.notDisplayedInfo{
+  font-size: 10pt;
+  font-style: italic;
+  color: var(--textImportantColor);
 }
 
 </style>

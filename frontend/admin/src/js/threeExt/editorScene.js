@@ -8,11 +8,13 @@ import {AssetManager} from "@/js/threeExt/modelManagement/assetManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
+import {TriggerManager} from "@/js/threeExt/trigger/triggerManager.js";
 
 
 export class EditorScene extends THREE.Scene {
     assetManager;
     labelManager;
+    triggerManager;
     #errors;
     #gridPlane;
     #lightSet;
@@ -28,6 +30,7 @@ export class EditorScene extends THREE.Scene {
         super();
         this.labelManager = new LabelManager();
         this.assetManager = new AssetManager();
+        this.triggerManager = new TriggerManager();
         this.#errors = ref([]);
         this.#lightSet = new LightSet(shadowMapSize);
         this.#lightSet.pushToScene(this);
@@ -66,6 +69,10 @@ export class EditorScene extends THREE.Scene {
             this.labelManager.addToScene(this,labelData);
         }
 
+        // for (let triggerData of sceneData.triggers){
+        //     this.triggerManager.addToScene(this,triggerData);
+        // }
+
         this.#gridPlane = new GridPlane();
         this.#gridPlane.pushToScene(this);
         this.assetManager.onMoved = ()=>{this.updatePlaygroundSize()};
@@ -99,6 +106,7 @@ export class EditorScene extends THREE.Scene {
                     this.setTransformMode("translate");
                 }
             }
+            console.log("label clicked");
         } else{ //scene clicked
             const rect = event.target.getBoundingClientRect();
             const relativeX = event.clientX - rect.left;
@@ -118,15 +126,23 @@ export class EditorScene extends THREE.Scene {
                     object = asset;
                 }
             }
+
+            for (let trigger of this.triggerManager.getTriggers.value) {
+                const intersects = raycaster.intersectObject(trigger.getObject(), true);
+                if (intersects.length > 0) {
+                    object = trigger;
+                }
+            }
         }
 
         this.setSelected(object);
-
     }
 
     setSelected(object, selected = true){
         this.deselectAll();
         this.#selected.value = object;
+
+        console.log(object);
 
         if(object==null || selected === false || object.hasError.value){
             this.#transformControls.detach();
@@ -144,6 +160,7 @@ export class EditorScene extends THREE.Scene {
     deselectAll(){
         this.#clearSelectedLabels();
         this.#clearSelectedObjects();
+        this.#clearSelectedTrigger();
     }
 
     #clearSelectedLabels(){
@@ -156,6 +173,24 @@ export class EditorScene extends THREE.Scene {
         for (let asset of this.assetManager.getAssets.value){
             asset.setSelected(false);
         }
+    }
+
+    #clearSelectedTrigger(){
+        for(let trigger of this.triggerManager.getTriggers.value){
+            trigger.setSelected(false);
+        }
+    }
+
+    addNewTrigger(){
+        console.log("addNewTrigger");
+        const trigger = this.triggerManager.addToScene(this);
+        this.setSelected(trigger);
+        this.setTransformMode("translate");
+    }
+
+    removeTrigger(trigger){
+        this.setSelected(null);
+        this.triggerManager.removeFromScene(this, trigger);
     }
 
 
@@ -208,7 +243,6 @@ export class EditorScene extends THREE.Scene {
             copiedUrl: asset.sourceUrl,
         }
         const newAsset = new Asset(assetData);
-        console.log(newAsset)
 
         this.assetManager.addToScene(this,newAsset,(newAsset)=>this.setSelected(newAsset));
 

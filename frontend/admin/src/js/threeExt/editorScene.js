@@ -8,7 +8,7 @@ import {AssetManager} from "@/js/threeExt/modelManagement/assetManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
-import {TriggerManager} from "@/js/threeExt/trigger/triggerManager.js";
+import {TriggerManager} from "@/js/threeExt/triggerManagement/triggerManager.js";
 
 
 export class EditorScene extends THREE.Scene {

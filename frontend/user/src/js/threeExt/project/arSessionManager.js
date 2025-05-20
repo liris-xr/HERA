@@ -6,6 +6,7 @@ import {computed, ref} from "vue";
 import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
 import Stats from 'three/addons/libs/stats.module.js';
 import {CustomBlending, Vector2} from "three";
+import {Xr3dUi} from "@/js/threeExt/ui/Xr3dUi.js";
 
 export class ArSessionManager {
     sceneManager;
@@ -20,6 +21,7 @@ export class ArSessionManager {
 
     xrMode
     enable3dUI;
+    xr3dUi
 
     domOverlay;
     domWidth;
@@ -40,6 +42,8 @@ export class ArSessionManager {
 
         this.sceneManager.onSceneChanged = function(){
             this.labelRenderer.clear()
+            if(this.xr3dUi)
+                this.xr3dUi.addToScene(this.sceneManager.active.value)
         }.bind(this);
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
@@ -121,6 +125,7 @@ export class ArSessionManager {
                 'immersive-' + mode,
                 options
             )
+
         } catch(e) {
             if(e.name === "NotSupportedError") {
                 // le dom-overlay n'est pas supporté
@@ -129,6 +134,11 @@ export class ArSessionManager {
                     'immersive-' + mode
                 )
             }
+        }
+
+        if(mode === "vr") {
+            this.enable3dUI = true
+            this.sceneManager.scenePlacementManager.disable()
         }
 
         this.xrMode = mode
@@ -145,8 +155,13 @@ export class ArSessionManager {
 
         if(this.xrMode === "ar") {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
-        } else {
-            this.sceneManager.scenePlacementManager.disable()
+        }
+
+        if(this.enable3dUI) {
+            this.xr3dUi = new Xr3dUi(this.arRenderer, this.arCamera, this.arSession, this.sceneManager, this.referenceSpace)
+            this.xr3dUi.init()
+
+            this.xr3dUi.addToScene(this.sceneManager.active.value)
         }
 
         this.sceneManager.isArRunning.value = true;
@@ -183,6 +198,9 @@ export class ArSessionManager {
         }else{
             this.labelRenderer.clear();
         }
+
+        if(this.xr3dUi)
+            this.xr3dUi.loop(frame)
     }
 
 

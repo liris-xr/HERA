@@ -32,46 +32,9 @@ export class Label{
     }
 
     async init(){
-        const htmlLabel = this.#createHtmlLabel();
-        this.setContent(this.content);
-
-        const container = document.createElement("div")
-        container.style.position = "absolute";
-        container.style.width = "100vw";
-        container.style.height = "100vh";
-        container.style.top = "-10000px";
-        container.style.left = "-10000px";
-        document.body.appendChild(container)
-        container.appendChild(htmlLabel)
-
-
-        const canvas = await html2canvas(htmlLabel, {backgroundColor: null, allowTaint: true, useCORS: true})
-        container.remove()
-        this.height = canvas.height;
-
-        const texture = new THREE.CanvasTexture(canvas)
-
-        const material = new THREE.SpriteMaterial({ map: texture, transparent: true })
-        material.sizeAttenuation = false
-        const sprite = new THREE.Sprite(material)
-        sprite.renderOrder = 999
-        sprite.material.depthTest = false
-
-        this.aspect = canvas.height / canvas.width;
-
-        const scaleFactor = 1;
-        sprite.scale.set(scaleFactor, this.aspect * scaleFactor, 1);
-
-        sprite.center.set(0.5, 0)
-
-
-        this.label = sprite
-
-
-        // this.label = new CSS2DObject(htmlLabel);
+        await this.setContent(this.content);
 
         this.label.position.set(this.position.x, this.position.y, this.position.z);
-        // this.label.center.set( 0.5, 1);
     }
 
     #createHtmlLabel(){
@@ -119,8 +82,44 @@ export class Label{
         return boundingBox;
     }
 
-    setContent(text){
+    async setContent(text){
+        const htmlLabel = this.#createHtmlLabel();
+
+        this.content = text;
         this.#htmlContent.innerHTML = text;
+
+        const container = document.createElement("div")
+        container.style.position = "absolute";
+        container.style.width = "100vw";
+        container.style.height = "100vh";
+        container.style.top = "-10000px";
+        container.style.left = "-10000px";
+
+        container.appendChild(htmlLabel)
+        document.body.appendChild(container)
+
+
+        const canvas = await html2canvas(htmlLabel, {backgroundColor: null, allowTaint: true, useCORS: true})
+        container.remove()
+        this.height = canvas.height;
+
+        const texture = new THREE.CanvasTexture(canvas)
+
+        const material = new THREE.SpriteMaterial({ map: texture, transparent: true })
+        material.sizeAttenuation = false
+        const sprite = new THREE.Sprite(material)
+        sprite.renderOrder = 999
+        sprite.material.depthTest = false
+
+        this.aspect = canvas.height / canvas.width;
+
+        const scaleFactor = 1;
+        sprite.scale.set(scaleFactor, this.aspect * scaleFactor, 1);
+
+        sprite.center.set(0.5, 0)
+
+
+        this.label = sprite
     }
 
     setVisible(visible){

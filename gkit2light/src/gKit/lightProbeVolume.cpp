@@ -62,17 +62,27 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     
     float freq = 1.0/density;
     unsigned int nbProbe = 0;
-    for(float y = -height/float(2);y<height/float(2);y = y + freq) {
-        for(float z = -depth/float(2);z<depth/float(2);z = z + freq) {
-            for(float x = -width/float(2);x<width/float(2);x = x + freq) {
-                Point pos(x,y,z);
+
+    for(unsigned int i = 0;i<texturesHeight;i++) {
+        for(unsigned int j = 0; j<texturesDepth; j++) {
+            for(unsigned int k = 0;k<texturesWidth;k++) {
+                Point pos(
+                    ( (float(k)/texturesWidth) * width ) - width/2.0,
+                    ( (float(i)/texturesHeight) * height ) - height/2.0,
+                    ( (float(j)/texturesDepth) * depth ) - depth/2.0
+                );
+
                 pos = pos + center;
                 
                 probes.push_back(LightProbe(pos,nbProbe));
                 nbProbe++;
+
             }
         }
     }
+
+    std::cout<<nbProbe<<std::endl;
+
     for(int i = 0;i<9;i++) {
         this->shTextures[i].resize(nbProbe*4);
     

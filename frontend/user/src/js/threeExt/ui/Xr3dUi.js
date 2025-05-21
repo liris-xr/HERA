@@ -317,7 +317,7 @@ export class Xr3dUi {
         const size = new THREE.Vector3();
         box.getSize(size);
 
-        this.container.position.y -= size.y / 2 + 0.05;
+        this.container.position.y -= size.y / 2 - 0.1;
     }
 
     hide() {

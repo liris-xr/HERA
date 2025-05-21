@@ -126,6 +126,9 @@ export class ArSessionManager {
                 options
             )
 
+            if(mode === "ar")
+                this.sceneManager.scenePlacementManager.enable()
+
         } catch(e) {
             console.error(e)
             if(e.name === "NotSupportedError") {

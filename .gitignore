@@ -132,6 +132,10 @@ dist
 # Notes
 issues.txt
 
+# Textures
+frontend/admin/public/textures/lpvParameters.json
+frontend/admin/public/textures/sh*
+
 # gkit2light
 gkit2light/bin
 gkit2light/obj

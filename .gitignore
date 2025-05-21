@@ -134,6 +134,7 @@ issues.txt
 
 # Textures
 frontend/admin/public/textures/lpvParameters.json
+frontend/admin/public/textures/distanceFromGeometry.csv
 frontend/admin/public/textures/sh*
 
 # gkit2light

@@ -78,13 +78,21 @@ uniform sampler3D sh6;
 uniform sampler3D sh7;
 uniform sampler3D sh8;
 
-uniform sampler3D invalidity;
 uniform sampler3D distanceFromGeometry;
 
 uniform vec3 lpvCenter;
 uniform float lpvWidth;
 uniform float lpvDepth;
 uniform float lpvHeight;
+uniform float lpvTextureWidth;
+uniform float lpvTextureHeight;
+uniform float lpvTextureDepth;
+uniform float lpvDensity;
+float freqX = 1.0/lpvTextureWidth;
+float freqY = 1.0/lpvTextureHeight;
+float freqZ = 1.0/lpvTextureDepth;
+float worldFreq = 1.0/lpvDensity;
+
 
 in vec4 wPosition;
 in vec3 wNormal;
@@ -159,23 +167,149 @@ varying vec3 vViewPosition;
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
 
-// r1,r2 : [0,1]
-vec3 getRandomHemisphereDirection(vec3 n,float r1,float r2) {
-		float phi = 2.*3.14159*r1;
-		float theta = acos(r2); 
+// Considering a point in a cube,
+//    7 -----  6	
+//   / |     / |
+//	/  |	/  |
+// 4 ---- 5    |
+// |   |  |    |
+// |   3 -|--- 2	
+// |  /   |  /	
+// | /	  |	/ 
+// 0 ---- 1
+// Depending of the cube texcoord is in, we want to get the coord of i
 
-		float x = cos(phi) * sqrt(1.-(r2*r2));
-		float y = sin(phi) * sqrt(1.-(r2*r2));
-		float z = r2;
+vec3 getITexcoord(int & i,vec3 & texcoord) {
+	float x = int(texcoord.x*lpvTextureWidth)/lpvTextureWidth;
+	float y = int(texcoord.y*lpvTextureHeight)/lpvTextureHeight;
+	float z = int(texcoord.z*lpvTextureDepth)/lpvTextureDepth;
 
-		vec3 dir = vec3(x,y,z);
-
-		if(dot(n,dir) > 0.) {
-			return dir;
-		} else {
-			return -dir; 
-		}
+	if(i == 0) {
+		return vec3(x,y,z);
+	} else if(i == 1) {
+		return vec3(x+freqX,y,z);
+	} else if(i == 2) {
+		return vec3(x+freqX,y,z+freqZ);
+	} else if(i == 3) {
+		return vec3(x,y,z+freqZ); 
+	} else if(i == 4) {
+		return vec3(x,y+freqY,z); 
+	} else if(i == 5) {
+	 	return vec3(x+freqX,y+freqY,z);
+	} else if(i == 6) {
+		return vec3(x+freqX,y+freqY,z+freqZ); 
+	} else if(i == 7) {
+		return vec3(x,y+freqY,z+freqZ); 
 	}
+}
+
+vec3 getIProbeWorldPosition(int & i, vec3 & texcoord ) {
+	float x = ((texcoord.x * 2) - 1) * lpvWidth + lpvCenter.x;
+	float y = ((texcoord.y * 2) - 1) * lpvHeight + lpvCenter.y;
+	float z = ((texcoord.z * 2) - 1) * lpvDepth + lpvCenter.z;
+
+	if(i == 0) {
+		return vec3(x,y,z);
+	} else if(i == 1) {
+		return vec3(x+worldFreq,y,z);
+	} else if(i == 2) {
+		return vec3(x+worldFreq,y,z+worldFreq);
+	} else if(i == 3) {
+		return vec3(x,y,z+worldFreq); 
+	} else if(i == 4) {
+		return vec3(x,y+worldFreq,z); 
+	} else if(i == 5) {
+	 	return vec3(x+worldFreq,y+worldFreq,z);
+	} else if(i == 6) {
+		return vec3(x+worldFreq,y+worldFreq,z+worldFreq); 
+	} else if(i == 7) {
+		return vec3(x,y+worldFreq,z+worldFreq); 
+	}
+}
+
+
+float getProbeDistanceFromGeometry(int & i,vec3 & texcoord) {
+	return texture(distanceFromGeometry,getITexcoord(i,texcoord)).r;
+}
+
+vec3[9] getProbeSH(int & i,vec3 & texcoord) {
+	return vec3[9]( texture(sh0,getITexcoord(i,texcoord)).r,
+					texture(sh1,getITexcoord(i,texcoord)).r,
+					texture(sh2,getITexcoord(i,texcoord)).r,
+					texture(sh3,getITexcoord(i,texcoord)).r,
+					texture(sh4,getITexcoord(i,texcoord)).r,
+					texture(sh5,getITexcoord(i,texcoord)).r,
+					texture(sh6,getITexcoord(i,texcoord)).r,
+					texture(sh7,getITexcoord(i,texcoord)).r,
+					texture(sh8,getITexcoord(i,texcoord)).r
+				  );
+}
+
+vec3[9] linearProbeInterpolation(vec3[9] & a, vec3[9] & b, float & v) {
+	vec3[9] res;
+	for(int i = 0;i<9;i++) {
+		res[i] = lerp(a[i],b[i],v);
+	}
+	return res;
+}
+
+vec3[9] getMaskedProbeInterpolation(bool aMask, bool bMask,float & v) {
+	if(interpolationMask[0] && interpolationMask[1]) {
+		return linearProbeInterpolation(getProbeSH(0,texcoord),getProbeSH(1,texcoord),x);
+	} else if(interpolationMask[0]) {
+		return getProbeSH(0,texcoord);
+	} else if(interpolationMask[1]) {
+		return getProbeSH(1,texcoord);
+	}
+	vec3 emptyRes[9];
+	emptyRes[0] = vec3(-1);
+	return emptyRes; 
+}
+
+vec3[9] getProbeInterpolation(vec3[9] & a, vec3[9] & b,float & v) {
+	if(a.x != -1 && b.x != -1) {
+		return linearProbeInterpolation(a,b,v);
+	} else if(a.x != -1) {
+		return a;
+	} else if(b.x != -1) {
+		return b;
+	}
+	vec3 emptyRes[9];
+	emptyRes[0] = vec3(-1);
+	return emptyRes; 
+}
+
+bool[8] getInterpolationMask(vec3 & texcoord,vec3 & p) {
+	bool res[9];
+
+	for(int i = 0;i<8;i++) {
+		vec3 worldTexcoord = getIProbeWorldPosition(i,texcoord);
+		// Si la probe est plus loin que la géométrie, alors elle est invalide
+		res = length(worldTexcoord - p) <= getProbeDistanceFromGeometry(i,texcoord);
+	}
+}
+
+vec3[9] getInterpolatedLightProbe(vec3 & texcoord, vec3 & p) {
+	bool interpolationMask[8] = getInterpolationMask(texcoord,p) 
+
+	float x = (texcoord.x - int(texcoord.x*lpvTextureWidth)/lpvTextureWidth) * lpvTextureWidth;
+	float y = (texcoord.y - int(texcoord.y*lpvTextureHeight)/lpvTextureHeight) * lpvTextureHeight;
+	float z = (texcoord.z - int(texcoord.z*lpvTextureDepth)/lpvTextureDepth) * lpvTextureDepth;
+
+	vec3 inter0_1[9] = getMaskedProbeInterpolation(interpolationMask[0],interpolationMask[1],x);  
+	vec3 inter3_2[9] = getMaskedProbeInterpolation(interpolationMask[3],interpolationMask[2],x);
+	
+	vec3 inter01_32[9] = getProbeInterpolation(inter0_1,inter3_2,z);
+
+
+	vec3 inter4_5[9] = getMaskedProbeInterpolation(interpolationMask[4],interpolationMask[5],x);  
+	vec3 inter7_6[9] = getMaskedProbeInterpolation(interpolationMask[7],interpolationMask[6],x);
+
+	vec3 inter45_76[9] = getProbeInterpolation(inter4_5,inter7_6,z);
+
+	return getProbeInterpolation(inter01_32,inter45_76,y);
+}
+
 void main() {
 
 	vec4 diffuseColor = vec4( diffuse, opacity );
@@ -208,35 +342,39 @@ void main() {
 		(((wPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
 		);
 		
-		vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
-		texture(sh1,texcoord).rgb,
-		texture(sh2,texcoord).rgb,
-		texture(sh3,texcoord).rgb,
-		texture(sh4,texcoord).rgb,
-		texture(sh5,texcoord).rgb,
-		texture(sh6,texcoord).rgb,
-		texture(sh7,texcoord).rgb,
-		texture(sh8,texcoord).rgb
-		);
-		vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
-		IncidentLight il = IncidentLight(color,normal,true);
-		
-		RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
-		
-		vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
-		vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
-		#include <transmission_fragment>
-		vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;
-		#ifdef USE_SHEEN
-			float sheenEnergyComp = 1.0 - 0.157 * max3( material.sheenColor );
-			outgoingLight = outgoingLight * sheenEnergyComp + sheenSpecularDirect + sheenSpecularIndirect;
-		#endif
-		#ifdef USE_CLEARCOAT
-			float dotNVcc = saturate( dot( geometryClearcoatNormal, geometryViewDir ) );
-			vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
-			outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
-		#endif
-	// outgoingLight = (material.diffuseColor * getLightProbeIrradiance(interpolatedLightProbe,normal))+totalEmissiveRadiance;
+	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
+	// texture(sh1,texcoord).rgb,
+	// texture(sh2,texcoord).rgb,
+	// texture(sh3,texcoord).rgb,
+	// texture(sh4,texcoord).rgb,
+	// texture(sh5,texcoord).rgb,
+	// texture(sh6,texcoord).rgb,
+	// texture(sh7,texcoord).rgb,
+	// texture(sh8,texcoord).rgb
+	// );
+
+	vec3 interpolatedLightProbe[9] = getInterpolatedLightProbe(texcoord,wPosition);
+
+	vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
+	IncidentLight il = IncidentLight(color,normal,true);
+	
+	RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+	
+	vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
+	vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
+	#include <transmission_fragment>
+	vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;
+	#ifdef USE_SHEEN
+		float sheenEnergyComp = 1.0 - 0.157 * max3( material.sheenColor );
+		outgoingLight = outgoingLight * sheenEnergyComp + sheenSpecularDirect + sheenSpecularIndirect;
+	#endif
+	#ifdef USE_CLEARCOAT
+		float dotNVcc = saturate( dot( geometryClearcoatNormal, geometryViewDir ) );
+		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
+		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
+	#endif
+
+	outgoingLight = vec3(texture(distanceFromGeometry,texcoord).r)*10000.;
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
@@ -250,6 +388,7 @@ export class MeshManager {
     #meshes
 	textureLoader
 	shTextures;
+	distFromGeometryTexture;
 	lpvParameters;
 
     constructor() {
@@ -267,6 +406,15 @@ export class MeshManager {
 			})
 			.catch((e) => console.error(e));
 		}
+
+		fetch(BASE_URL+'textures/distanceFromGeometry.csv')
+			.then((res) => res.text())
+			.then((text) => {
+				const values = text.split(',').map(Number);
+				
+				this.distFromGeometryTexture = new Float32Array(values);
+			})
+			.catch((e) => console.error(e));
 		
 		fetch(BASE_URL+"textures/lpvParameters.json")
 		.then((res) => res.json())
@@ -284,15 +432,22 @@ export class MeshManager {
 		
 		mesh.material.customProgramCacheKey = () => {
 			mesh.material.needsUpdate = true;
-			
-			return this.lpvParameters && this.shTextures.length == 9 ? '1' : '0';
+
+			var textSize;
+
+			if(this.lpvParameters) {
+				textSize = this.lpvParameters.width*this.lpvParameters.density * 
+							this.lpvParameters.depth*this.lpvParameters.density *
+							this.lpvParameters.height*this.lpvParameters.density;
+			}
+
+
+			return this.lpvParameters && this.shTextures.length == 9 && this.distFromGeometryTexture.length >= textSize ? '1' : '0';
 		}
         
         mesh.material.onBeforeCompile = (shader) => {
 			
 			if(this.lpvParameters) {
-				console.log(this.shTextures.length);
-				
 				shader.vertexShader = vertexShader;
 				shader.fragmentShader = fragShader;
 				
@@ -309,33 +464,31 @@ export class MeshManager {
 					sh3DTexture.needsUpdate = true;
 					
 					shader.uniforms["sh"+i] = {value: sh3DTexture};
-
 				}
 
-				// const invalidityTexture = new THREE.Data3DTexture(scene.invalidityTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
-				// invalidityTexture.format = THREE.RedFormat
-				// invalidityTexture.magFilter = THREE.LinearFilter;
-				// invalidityTexture.type = THREE.FloatType;
-				// invalidityTexture.wrapS = THREE.ClampToEdgeWrapping
-				// invalidityTexture.wrapT = THREE.ClampToEdgeWrapping
-				// invalidityTexture.wrapR = THREE.ClampToEdgeWrapping
-				// invalidityTexture.needsUpdate = true;
-				// shader.uniforms["invalidity"] = {value:invalidityTexture}
+				const distanceTexture = new THREE.Data3DTexture(this.distFromGeometryTexture,
+																this.lpvParameters.width*this.lpvParameters.density,
+																this.lpvParameters.depth*this.lpvParameters.density,
+																this.lpvParameters.height*this.lpvParameters.density,
+																THREE.RedFormat,
+																THREE.FloatType);
 
-				// const distanceFromGeometryTexture = new THREE.Data3DTexture(scene.distanceFromGeometryTexture,scene.shTexturesWidth,scene.shTexturesDepth,scene.shTexturesHeight);
-				// distanceFromGeometryTexture.format = THREE.RedFormat
-				// distanceFromGeometryTexture.magFilter = THREE.LinearFilter;
-				// distanceFromGeometryTexture.type = THREE.FloatType;
-				// distanceFromGeometryTexture.wrapS = THREE.ClampToEdgeWrapping
-				// distanceFromGeometryTexture.wrapT = THREE.ClampToEdgeWrapping
-				// distanceFromGeometryTexture.wrapR = THREE.ClampToEdgeWrapping
-				// distanceFromGeometryTexture.needsUpdate = true;
-				// shader.uniforms["distanceFromGeometry"] = {value:distanceFromGeometryTexture}
+				distanceTexture.magFilter = THREE.NearestFilter;
+				distanceTexture.wrapS = THREE.ClampToEdgeWrapping;
+				distanceTexture.wrapT = THREE.ClampToEdgeWrapping;
+				distanceTexture.wrapR = THREE.ClampToEdgeWrapping;
+				distanceTexture.needsUpdate = true;
+				shader.uniforms["distanceFromGeometry"] = { value:distanceTexture };
+
 
 				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParameters.center.x,this.lpvParameters.center.y,this.lpvParameters.center.z)};
 				shader.uniforms.lpvWidth = {value : this.lpvParameters.width};
 				shader.uniforms.lpvDepth = {value : this.lpvParameters.depth};
 				shader.uniforms.lpvHeight = {value : this.lpvParameters.height};
+				shader.uniforms.lpvTextureWidth = {value : this.lpvParameters.width*this.lpvParameters.density};
+				shader.uniforms.lpvTextureDepth = {value : this.lpvParameters.depth*this.lpvParameters.density};
+				shader.uniforms.lpvTextureHeight = {value : this.lpvParameters.height*this.lpvParameters.density};
+				shader.uniforms.lpvDensity = {value : this.lpvParameters.density};
 			}
 			
         }

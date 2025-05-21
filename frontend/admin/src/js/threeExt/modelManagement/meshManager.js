@@ -285,12 +285,14 @@ export class MeshManager {
 		mesh.material.customProgramCacheKey = () => {
 			mesh.material.needsUpdate = true;
 			
-			return this.lpvParameters && this.shTextures.length > 0 ? '1' : '0';
+			return this.lpvParameters && this.shTextures.length == 9 ? '1' : '0';
 		}
         
         mesh.material.onBeforeCompile = (shader) => {
 			
 			if(this.lpvParameters) {
+				console.log(this.shTextures.length);
+				
 				shader.vertexShader = vertexShader;
 				shader.fragmentShader = fragShader;
 				

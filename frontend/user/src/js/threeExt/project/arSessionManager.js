@@ -184,6 +184,8 @@ export class ArSessionManager {
         this.#isArRunning.value = false;
         this.sceneManager.isArRunning.value = false;
         this.#resetCameraPosition()
+        if(this.xr3dUi)
+            this.xr3dUi.removeFromScene(this.sceneManager.active.value)
     }
 
     reset() {

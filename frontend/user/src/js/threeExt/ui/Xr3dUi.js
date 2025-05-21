@@ -16,7 +16,7 @@ export class Xr3dUi {
     hittables
 
     container
-    pointer
+    pointers
     sceneText
     notificationsContainer
 
@@ -27,6 +27,7 @@ export class Xr3dUi {
         this.sceneManager = sceneManager
         this.referenceSpace = referenceSpace
         this.hittables = []
+        this.pointers = []
 
         this.rayCaster = new THREE.Raycaster(undefined, undefined)
         this.rayCaster.camera = camera
@@ -36,13 +37,24 @@ export class Xr3dUi {
         this.setupUI()
         this.initListeners()
 
-        this.pointer = new THREE.Mesh(
+        this.createPointer()
+    }
+
+    createPointer() {
+        const pointer = new THREE.Mesh(
             new THREE.SphereGeometry(0.01, 8, 8),
             new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true })
         )
-        this.pointer.renderOrder = 999
-        this.pointer.material.depthTest = false
-        this.pointer.visible = true
+        pointer.renderOrder = 999
+        pointer.material.depthTest = false
+        pointer.visible = true
+
+        this.pointers.push(pointer)
+
+        if(this.sceneManager.active.value)
+            this.sceneManager.active.value.add(pointer)
+
+        return pointer
     }
 
     initListeners() {
@@ -56,7 +68,6 @@ export class Xr3dUi {
         })
 
         watch(this.sceneManager.active.value.getErrors, (value) => {
-            console.log(value)
             this.createNotification(value)
         })
 
@@ -136,40 +147,47 @@ export class Xr3dUi {
 
         // Buttons creation, with the options objects passed in parameters.
 
-        const buttonNext = new ThreeMeshUI.Block( buttonOptions );
-        const buttonPrevious = new ThreeMeshUI.Block( buttonOptions );
+        // const buttonNext = new ThreeMeshUI.Block( buttonOptions );
+        // const buttonPrevious = new ThreeMeshUI.Block( buttonOptions );
+        // this.hittables.push(buttonNext, buttonPrevious)
+        //
+        // const buttonSelect = new ThreeMeshUI.Block( selectOptions );
+        //
+        // buttonSelect.set({
+        //     backgroundColor: new THREE.Color(0xBBBBBB)
+        // })
+        //
+        // // Add text to buttons
+        //
+        // buttonNext.add(
+        //     new ThreeMeshUI.Text( { content: "next" } )
+        // )
+        //
+        // buttonPrevious.add(
+        //     new ThreeMeshUI.Text( { content: "previous" } )
+        // )
+        //
+        //
+        // this.sceneText =   new ThreeMeshUI.Text( { content: this.sceneManager.active.value.title } )
+        //
+        // buttonSelect.add(
+        //    this.sceneText
+        // )
+        // buttonNext.setupState( hoveredStateAttributes );
+        // buttonNext.setupState( idleStateAttributes );
+        //
+        //
+        // buttonPrevious.setupState( hoveredStateAttributes );
+        // buttonPrevious.setupState( idleStateAttributes );
+        //
+        // buttonSelect.setupState(idleStateAttributes)
+
+        const buttonPrevious = createButton("previous")
+        const buttonNext = createButton("next")
         this.hittables.push(buttonNext, buttonPrevious)
 
-        const buttonSelect = new ThreeMeshUI.Block( selectOptions );
-
-        buttonSelect.set({
-            backgroundColor: new THREE.Color(0xBBBBBB)
-        })
-
-        // Add text to buttons
-
-        buttonNext.add(
-            new ThreeMeshUI.Text( { content: "next" } )
-        )
-
-        buttonPrevious.add(
-            new ThreeMeshUI.Text( { content: "previous" } )
-        )
-
-
         this.sceneText =   new ThreeMeshUI.Text( { content: this.sceneManager.active.value.title } )
-
-        buttonSelect.add(
-           this.sceneText
-        )
-        buttonNext.setupState( hoveredStateAttributes );
-        buttonNext.setupState( idleStateAttributes );
-
-
-        buttonPrevious.setupState( hoveredStateAttributes );
-        buttonPrevious.setupState( idleStateAttributes );
-
-        buttonSelect.setupState(idleStateAttributes)
+        const buttonSelect = createButton(this.sceneText, {width: 0.6})
 
         buttonPrevious.onClick = () => {
             this.sceneManager.setPreviousActive()
@@ -186,7 +204,8 @@ export class Xr3dUi {
             fontSize: 0.07,
             padding: 0.02,
             borderRadius: 0.11,
-            backgroundColor: null
+            margin: 0.02,
+            backgroundOpacity: 0,
         } );
 
         sceneContainer.add( buttonNext, buttonSelect, buttonPrevious );
@@ -228,10 +247,15 @@ export class Xr3dUi {
             this.container.traverse(child => {
                 child?.updateLayout?.()
             })
+
+            const index = this.hittables.indexOf(hideButton)
+            if(index !== -1)
+                this.hittables.splice(index, 1)
+
+            this.updatePosition()
         }
 
         const text = new ThreeMeshUI.Text( { content: message, wrapCount: 50 } )
-        console.log(text)
 
         notification.add(
             hideButton,
@@ -244,6 +268,7 @@ export class Xr3dUi {
         this.notificationsContainer.updateLayout()
         this.container.updateLayout()
 
+        this.updatePosition()
         this.forceVisibility()
     }
 
@@ -267,7 +292,16 @@ export class Xr3dUi {
     }
 
     show() {
-        const distance = 1
+
+        this.updatePosition()
+
+        this.forceVisibility()
+        this.container.visible = true
+
+    }
+
+    updatePosition() {
+        const distance = 2
 
         const direction = new THREE.Vector3()
         this.camera.getWorldDirection(direction)
@@ -278,9 +312,12 @@ export class Xr3dUi {
         this.container.position.copy(newPos)
         this.container.lookAt(this.camera.position)
 
-        this.forceVisibility()
-        this.container.visible = true
+        // allignement du haut de l'ui avec le centre de la caméra
+        const box = new THREE.Box3().setFromObject(this.container);
+        const size = new THREE.Vector3();
+        box.getSize(size);
 
+        this.container.position.y -= size.y / 2 + 0.05;
     }
 
     hide() {
@@ -294,9 +331,16 @@ export class Xr3dUi {
 
     addToScene(scene) {
         scene.add(this.container)
-        scene.add(this.pointer)
+        for(let pointer of this.pointers)
+            scene.add(pointer)
 
         this.forceVisibility()
+    }
+
+    removeFromScene(scene) {
+        scene.remove(this.container)
+        for(let pointer of this.pointers)
+            scene.remove(pointer)
     }
 
     hitTest(event) {
@@ -309,7 +353,12 @@ export class Xr3dUi {
             new THREE.Quaternion(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w)
         );
 
-        this.rayCaster.set(origin, direction)
+        const pointerPos = origin.clone().add(direction.clone().multiplyScalar(1));
+
+        const cameraPos = this.camera.position.clone()
+        const dir = new THREE.Vector3().subVectors(pointerPos, cameraPos).normalize()
+
+        this.rayCaster.set(cameraPos, dir)
 
         for(let i of this.hittables) {
             if(this.rayCaster.intersectObject(i).length > 0) {
@@ -328,7 +377,10 @@ export class Xr3dUi {
     hoverTest(frame) {
         if (!frame) return;
 
+        const hovered = []
+
         const inputSources = this.xrSession.inputSources;
+        let count = 0;
 
         for (const inputSource of inputSources) {
             if (!inputSource.targetRaySpace) continue;
@@ -336,29 +388,37 @@ export class Xr3dUi {
             const pose = frame.getPose(inputSource.targetRaySpace, this.referenceSpace);
             if (!pose) continue;
 
+            let pointer
+            if(this.pointers.length <= count)
+                pointer = this.createPointer()
+            else
+                pointer = this.pointers[count++]
+
             const origin = new THREE.Vector3(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
             const direction = new THREE.Vector3().set(0, 0, -1).applyQuaternion(
                 new THREE.Quaternion(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w)
             );
 
-            this.rayCaster.set(origin, direction)
-
             const pointerPos = origin.clone().add(direction.clone().multiplyScalar(1));
-            this.pointer.position.copy(pointerPos);
-            this.pointer.visible = true;
+            pointer.position.copy(pointerPos);
+            pointer.visible = true;
 
-            let hovered = false;
+            const cameraPos = this.camera.position.clone()
+            const dir = new THREE.Vector3().subVectors(pointerPos, cameraPos).normalize()
+
+            this.rayCaster.set(cameraPos, dir)
+
             for (const btn of this.hittables) {
                 const intersections = this.rayCaster.intersectObject(btn, true);
                 if (intersections.length > 0) {
                     btn.setState("hovered");
-                    hovered = true;
+                    hovered.push(btn)
                 } else {
-                    btn.setState("idle");
+                    if(!hovered.includes(btn))
+                        btn.setState("idle");
                 }
             }
 
-            if (hovered) break;
         }
     }
 

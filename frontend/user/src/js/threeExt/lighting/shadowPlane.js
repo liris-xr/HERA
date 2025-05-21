@@ -27,6 +27,9 @@ export class ShadowPlane extends classes(THREE.Group, SceneElementInterface){
         shadowPlane.position.set(center.x, 0, center.z);
         shadowPlane.receiveShadow = true;
 
+        occlusionPlane.visible = false;
+        shadowPlane.visible = false;
+
         this.add(occlusionPlane);
         this.add(shadowPlane);
     }

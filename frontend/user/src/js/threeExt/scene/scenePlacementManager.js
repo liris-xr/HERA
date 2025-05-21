@@ -66,13 +66,14 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
         this.#shadowPlane.visible = false;
     }
 
-    reset(){
+    reset(reenable=true){
         this.pointerObject.position.set(0, 0, 0);
         this.pointerObject.rotation.set(0, 0, 0);
         this.pointerObject.updateMatrix();
         this.#foundPlane.value = false;
         this.pointerObject.visisble = false;
-        this.enable();
+        if(reenable)
+            this.enable();
     }
 
     isEnabled = computed(() =>{

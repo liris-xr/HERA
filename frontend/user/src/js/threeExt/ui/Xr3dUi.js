@@ -2,6 +2,7 @@ import * as ThreeMeshUI from "three-mesh-ui"
 import * as THREE from "three"
 import {watch} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
+import {createButton} from "@/js/threeExt/ui/utils.js";
 
 export class Xr3dUi {
 
@@ -161,26 +162,10 @@ export class Xr3dUi {
         buttonSelect.add(
            this.sceneText
         )
-
-        const selectedAttributes = {
-            offset: 0.02,
-            backgroundColor: new THREE.Color( 0x777777 ),
-            fontColor: new THREE.Color( 0x222222 )
-        };
-
-        buttonNext.setupState( {
-            state: 'selected',
-            attributes: selectedAttributes,
-        } );
         buttonNext.setupState( hoveredStateAttributes );
         buttonNext.setupState( idleStateAttributes );
 
-        //
 
-        buttonPrevious.setupState( {
-            state: 'selected',
-            attributes: selectedAttributes,
-        } );
         buttonPrevious.setupState( hoveredStateAttributes );
         buttonPrevious.setupState( idleStateAttributes );
 
@@ -201,37 +186,65 @@ export class Xr3dUi {
             fontSize: 0.07,
             padding: 0.02,
             borderRadius: 0.11,
-            backgroundColor: new THREE.Color(0x555555)
+            backgroundColor: null
         } );
 
         sceneContainer.add( buttonNext, buttonSelect, buttonPrevious );
 
-        container.add(sceneContainer)
+        container.add(sceneContainer, this.notificationsContainer)
         container.visible = false
 
         this.container = container
 
-        this.container.renderOrder = 900;
-        this.container.traverse(child => {
-            child.renderOrder = 900;
-            if(child.material) {
-                child.material.depthTest = false;
-                child.material.depthWrite = false;
-            }
-        });
+        this.forceVisibility()
 
     }
 
     createNotification(data) {
+        const message = data?.message?.normalize("NFD")?.replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9 ']/g, " ")
+
         const notification = new ThreeMeshUI.Block( {
+            contentDirection: 'column-reverse',
+            fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
+            fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
+            fontSize: 0.07,
+            padding: 0.05,
+            borderRadius: 0.11,
+            margin: 0.02,
             width: 1.6,
+            bestFit: "shrink",
+            textAlign: 'justify-left',
+            height: Math.ceil(message.length / 50) * 0.12 + 0.3,
             backgroundColor: new THREE.Color(0x999999),
         })
 
-        console.log("notif", data)
+        const hideButton = createButton("hide")
+        this.hittables.push(hideButton)
+        hideButton.onClick = () => {
+            this.notificationsContainer.remove(notification)
+            notification.visible = false
+            this.notificationsContainer.updateLayout()
+            this.container.updateLayout()
+            this.container.traverse(child => {
+                child?.updateLayout?.()
+            })
+        }
 
+        const text = new ThreeMeshUI.Text( { content: message, wrapCount: 50 } )
+        console.log(text)
+
+        notification.add(
+            hideButton,
+            text,
+        )
 
         this.notificationsContainer.add(notification)
+
+        notification.updateLayout()
+        this.notificationsContainer.updateLayout()
+        this.container.updateLayout()
+
+        this.forceVisibility()
     }
 
     handleSelect(event) {
@@ -241,6 +254,16 @@ export class Xr3dUi {
             if(!this.hitTest(event))
                 this.hide()
         }
+    }
+
+    forceVisibility() {
+        this.container.traverse(child => {
+            if(child.material) {
+                child.material.depthTest = false;
+                child.material.depthWrite = false;
+                child.material.transparent = true;
+            }
+        });
     }
 
     show() {
@@ -255,7 +278,9 @@ export class Xr3dUi {
         this.container.position.copy(newPos)
         this.container.lookAt(this.camera.position)
 
+        this.forceVisibility()
         this.container.visible = true
+
     }
 
     hide() {
@@ -270,6 +295,8 @@ export class Xr3dUi {
     addToScene(scene) {
         scene.add(this.container)
         scene.add(this.pointer)
+
+        this.forceVisibility()
     }
 
     hitTest(event) {

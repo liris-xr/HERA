@@ -89,7 +89,7 @@ export class ArSessionManager {
 
         this.#setSize(this.domWidth, this.domHeight);
 
-        this.sceneManager.scenePlacementManager.reset();
+        this.sceneManager.scenePlacementManager.reset(false);
         this.#resetCameraPosition();
     }
 
@@ -127,6 +127,7 @@ export class ArSessionManager {
             )
 
         } catch(e) {
+            console.error(e)
             if(e.name === "NotSupportedError") {
                 // le dom-overlay n'est pas supporté
                 this.enable3dUI = true
@@ -153,8 +154,10 @@ export class ArSessionManager {
         this.viewerSpace = await this.arSession.requestReferenceSpace('viewer');
 
 
-        if(this.xrMode === "ar") {
+        try {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
+        } catch(e) {
+            // pas supporté
         }
 
         if(this.enable3dUI) {

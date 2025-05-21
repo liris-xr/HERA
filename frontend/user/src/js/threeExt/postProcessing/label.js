@@ -8,6 +8,7 @@ export class Label{
     content;
     position;
     hidden
+    scene
 
     label;
     timestampStart;
@@ -17,7 +18,9 @@ export class Label{
     aspect
     height
 
-    constructor(labelData) {
+    xr
+
+    constructor(labelData, xr=false) {
         this.id = labelData.id
         this.content = labelData.text;
         if(labelData.position)
@@ -27,12 +30,23 @@ export class Label{
 
         this.timestampStart = labelData.timestampStart;
         this.timestampEnd = labelData.timestampEnd;
+        this.xr = xr;
 
         this.hidden = ref(false)
     }
 
     async init(){
-        await this.setContent(this.content);
+        if(this.xr) {
+            await this.setContent(this.content);
+            console.log("a")
+        } else {
+            console.log("b")
+            const htmlLabel = this.#createHtmlLabel();
+            await this.setContent(this.content);
+
+            this.label = new CSS2DObject(htmlLabel);
+            this.label.center.set( 0.5, 1);
+        }
 
         this.label.position.set(this.position.x, this.position.y, this.position.z);
     }
@@ -83,43 +97,49 @@ export class Label{
     }
 
     async setContent(text){
-        const htmlLabel = this.#createHtmlLabel();
+        if(this.xr) {
+            const htmlLabel = this.#createHtmlLabel();
 
-        this.content = text;
-        this.#htmlContent.innerHTML = text;
+            this.content = text;
+            this.#htmlContent.innerHTML = text;
 
-        const container = document.createElement("div")
-        container.style.position = "absolute";
-        container.style.width = "100vw";
-        container.style.height = "100vh";
-        container.style.top = "-10000px";
-        container.style.left = "-10000px";
+            const container = document.createElement("div")
+            container.style.position = "absolute";
+            container.style.width = "100vw";
+            container.style.height = "100vh";
+            container.style.top = "-10000px";
+            container.style.left = "-10000px";
 
-        container.appendChild(htmlLabel)
-        document.body.appendChild(container)
-
-
-        const canvas = await html2canvas(htmlLabel, {backgroundColor: null, allowTaint: true, useCORS: true})
-        container.remove()
-        this.height = canvas.height;
-
-        const texture = new THREE.CanvasTexture(canvas)
-
-        const material = new THREE.SpriteMaterial({ map: texture, transparent: true })
-        material.sizeAttenuation = false
-        const sprite = new THREE.Sprite(material)
-        sprite.renderOrder = 999
-        sprite.material.depthTest = false
-
-        this.aspect = canvas.height / canvas.width;
-
-        const scaleFactor = 1;
-        sprite.scale.set(scaleFactor, this.aspect * scaleFactor, 1);
-
-        sprite.center.set(0.5, 0)
+            container.appendChild(htmlLabel)
+            document.body.appendChild(container)
 
 
-        this.label = sprite
+            const canvas = await html2canvas(htmlLabel, {backgroundColor: null, allowTaint: true, useCORS: true})
+            container.remove()
+            this.height = canvas.height;
+
+            const texture = new THREE.CanvasTexture(canvas)
+
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true })
+            material.sizeAttenuation = false
+            const sprite = new THREE.Sprite(material)
+            sprite.renderOrder = 999
+            sprite.material.depthTest = false
+
+            this.aspect = canvas.height / canvas.width;
+
+            const scaleFactor = 1;
+            sprite.scale.set(scaleFactor, this.aspect * scaleFactor, 1);
+
+            sprite.center.set(0.5, 0)
+
+
+            this.label = sprite
+        } else {
+            this.content = text;
+            this.#htmlContent.innerHTML = text;
+            this.label = new CSS2DObject(this.#htmlContent);
+        }
     }
 
     setVisible(visible){
@@ -147,6 +167,18 @@ export class Label{
     pushToScene(scene){
         if(!this.label) return false;
         scene.add(this.label);
+        this.scene = scene
         return true;
+    }
+
+    async setXr(xr) {
+        if(this.xr !== xr) {
+            this.label.remove()
+            this.xr = xr
+            await this.init()
+            this.pushToScene(this.scene)
+        } else
+            this.xr = xr
+
     }
 }

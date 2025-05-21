@@ -130,19 +130,22 @@ export class ArSessionManager {
                 this.sceneManager.scenePlacementManager.enable()
 
         } catch(e) {
-            console.error(e)
             if(e.name === "NotSupportedError") {
+                console.log("aeaeae")
                 // le dom-overlay n'est pas supporté
                 this.enable3dUI = true
                 this.arSession = await navigator.xr.requestSession(
                     'immersive-' + mode
                 )
+
+                this.sceneManager.setXr(true)
             }
         }
 
         if(mode === "vr") {
             this.enable3dUI = true
             this.sceneManager.scenePlacementManager.disable()
+            this.sceneManager.setXr(true)
         }
 
         this.xrMode = mode

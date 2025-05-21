@@ -16,9 +16,11 @@ export class Xr3dUi {
     hittables
 
     container
-    pointers
+    animationContainer
+    playText
     sceneText
     notificationsContainer
+    pointers
 
     constructor(renderer, camera, xrSession, sceneManager, referenceSpace) {
         this.renderer = renderer
@@ -62,16 +64,14 @@ export class Xr3dUi {
 
         watch(this.sceneManager.active, () => {
             this.sceneText.set({ content: this.sceneManager.active.value.title })
+            this.clearNotifications()
 
             if(this.sceneManager.active.value.hasDescription())
                 this.createNotification({message: this.sceneManager.active.value.description})
-        })
 
-        watch(this.sceneManager.active.value.getErrors, (value) => {
-            this.createNotification(value)
+            this.animationContainer.visible = this.sceneManager.active.value.hasAnimation.value
+            this.updateAnimationText()
         })
-
-        this.createNotification({message: "test"})
 
     }
 
@@ -80,11 +80,43 @@ export class Xr3dUi {
             contentDirection: 'column',
             fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
             fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
-            fontSize: 0.07,
+            font: 0.07,
             padding: 0.02,
             borderRadius: 0.11,
             backgroundColor: new THREE.Color(0x222222)
         })
+
+        this.animationContainer = new ThreeMeshUI.Block( {
+            justifyContent: 'center',
+            contentDirection: 'row-reverse',
+            fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
+            fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
+            fontSize: 0.07,
+            padding: 0.02,
+            margin: 0.02,
+            borderRadius: 0.11,
+            backgroundColor: new THREE.Color(0x555555)
+        } );
+
+        this.playText = new ThreeMeshUI.Text( { content: "Play" } )
+        const buttonPlay = createButton(this.playText)
+        const buttonReset = createButton("Reset")
+        this.hittables.push(buttonPlay, buttonReset)
+
+        buttonPlay.onClick = () => {
+            this.sceneManager.active.value.labelPlayer.togglePlaying()
+            this.updateAnimationText()
+        }
+
+        buttonReset.onClick = () => {
+            this.sceneManager.active.value.labelPlayer.reset()
+            this.updateAnimationText()
+        }
+
+        this.animationContainer.add( buttonPlay, buttonReset );
+
+        this.animationContainer.visible = false
+
 
         const sceneContainer = new ThreeMeshUI.Block( {
             justifyContent: 'center',
@@ -93,100 +125,16 @@ export class Xr3dUi {
             fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
             fontSize: 0.07,
             padding: 0.02,
+            margin: 0.02,
             borderRadius: 0.11,
             backgroundColor: new THREE.Color(0x555555)
         } );
-
-        container.position.set( 0, 0, -3 );
-
-        // BUTTONS
-
-        // We start by creating objects containing options that we will use with the two buttons,
-        // in order to write less code.
-
-        const buttonOptions = {
-            width: 0.4,
-            height: 0.15,
-            justifyContent: 'center',
-            offset: 0.05,
-            margin: 0.02,
-            borderRadius: 0.075
-        };
-
-        const selectOptions = {
-            width: 0.6,
-            height: 0.15,
-            justifyContent: 'center',
-            offset: 0.05,
-            margin: 0.02,
-            borderRadius: 0.075,
-        };
-
-        // Options for component.setupState().
-        // It must contain a 'state' parameter, which you will refer to with component.setState( 'name-of-the-state' ).
-
-        const hoveredStateAttributes = {
-            state: 'hovered',
-            attributes: {
-                offset: 0.035,
-                backgroundColor: new THREE.Color( 0x999999 ),
-                backgroundOpacity: 1,
-                fontColor: new THREE.Color( 0xffffff )
-            },
-        };
-
-        const idleStateAttributes = {
-            state: 'idle',
-            attributes: {
-                offset: 0.035,
-                backgroundColor: new THREE.Color( 0x666666 ),
-                backgroundOpacity: 0.3,
-                fontColor: new THREE.Color( 0xffffff )
-            },
-        };
-
-        // Buttons creation, with the options objects passed in parameters.
-
-        // const buttonNext = new ThreeMeshUI.Block( buttonOptions );
-        // const buttonPrevious = new ThreeMeshUI.Block( buttonOptions );
-        // this.hittables.push(buttonNext, buttonPrevious)
-        //
-        // const buttonSelect = new ThreeMeshUI.Block( selectOptions );
-        //
-        // buttonSelect.set({
-        //     backgroundColor: new THREE.Color(0xBBBBBB)
-        // })
-        //
-        // // Add text to buttons
-        //
-        // buttonNext.add(
-        //     new ThreeMeshUI.Text( { content: "next" } )
-        // )
-        //
-        // buttonPrevious.add(
-        //     new ThreeMeshUI.Text( { content: "previous" } )
-        // )
-        //
-        //
-        // this.sceneText =   new ThreeMeshUI.Text( { content: this.sceneManager.active.value.title } )
-        //
-        // buttonSelect.add(
-        //    this.sceneText
-        // )
-        // buttonNext.setupState( hoveredStateAttributes );
-        // buttonNext.setupState( idleStateAttributes );
-        //
-        //
-        // buttonPrevious.setupState( hoveredStateAttributes );
-        // buttonPrevious.setupState( idleStateAttributes );
-        //
-        // buttonSelect.setupState(idleStateAttributes)
 
         const buttonPrevious = createButton("previous")
         const buttonNext = createButton("next")
         this.hittables.push(buttonNext, buttonPrevious)
 
-        this.sceneText =   new ThreeMeshUI.Text( { content: this.sceneManager.active.value.title } )
+        this.sceneText = new ThreeMeshUI.Text( { content: this.sceneManager.active.value.title } )
         const buttonSelect = createButton(this.sceneText, {width: 0.6})
 
         buttonPrevious.onClick = () => {
@@ -210,7 +158,7 @@ export class Xr3dUi {
 
         sceneContainer.add( buttonNext, buttonSelect, buttonPrevious );
 
-        container.add(sceneContainer, this.notificationsContainer)
+        container.add(this.animationContainer, sceneContainer, this.notificationsContainer)
         container.visible = false
 
         this.container = container
@@ -227,13 +175,14 @@ export class Xr3dUi {
             fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
             fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
             fontSize: 0.07,
+            interLine: 0.01,
             padding: 0.05,
             borderRadius: 0.11,
             margin: 0.02,
             width: 1.6,
             bestFit: "shrink",
             textAlign: 'justify-left',
-            height: Math.ceil(message.length / 50) * 0.12 + 0.3,
+            height: Math.ceil(message.length / 50) * 0.08 + 0.4,
             backgroundColor: new THREE.Color(0x999999),
         })
 
@@ -252,7 +201,6 @@ export class Xr3dUi {
             if(index !== -1)
                 this.hittables.splice(index, 1)
 
-            this.updatePosition()
         }
 
         const text = new ThreeMeshUI.Text( { content: message, wrapCount: 50 } )
@@ -268,8 +216,14 @@ export class Xr3dUi {
         this.notificationsContainer.updateLayout()
         this.container.updateLayout()
 
-        this.updatePosition()
         this.forceVisibility()
+    }
+
+    clearNotifications() {
+        for(let i of this.notificationsContainer.children) {
+            this.notificationsContainer.remove(i)
+            i.visible = false
+        }
     }
 
     handleSelect(event) {
@@ -311,13 +265,6 @@ export class Xr3dUi {
 
         this.container.position.copy(newPos)
         this.container.lookAt(this.camera.position)
-
-        // allignement du haut de l'ui avec le centre de la caméra
-        const box = new THREE.Box3().setFromObject(this.container);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-
-        this.container.position.y -= size.y / 2 - 0.1;
     }
 
     hide() {
@@ -341,6 +288,13 @@ export class Xr3dUi {
         scene.remove(this.container)
         for(let pointer of this.pointers)
             scene.remove(pointer)
+    }
+
+    updateAnimationText() {
+        if(this.sceneManager.active.value.hasAnimation.value)
+            this.playText.set({ content: this.sceneManager.active.value.labelPlayer.isPlaying.value ? "Pause" : "Play" })
+        else
+            this.playText.set({ content: "Play" })
     }
 
     hitTest(event) {

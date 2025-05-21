@@ -98,4 +98,9 @@ export class LabelPlayer extends RenderLoopInterface{
                 return label
         return null
     }
+
+    setXr(xr) {
+        for(const label of this.#labels)
+            label.setXr(xr);
+    }
 }

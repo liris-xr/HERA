@@ -58,11 +58,9 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
     resetLabels(){}
 
     enable(){
-        console.log("enabled");
         this.#isEnabled.value = true;
     }
     disable(){
-        console.log("disabled");
         this.#isEnabled.value = false;
         this.pointerObject.visible = false;
         this.#shadowPlane.visible = false;

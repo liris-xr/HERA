@@ -106,6 +106,7 @@ class LightProbeVolume {
         std::vector<float> invalidityTexture; // A single texture telling us how much a probe is invalid
                                               // The more a probe sees back-face, the more invalid it is
         std::vector<float> distanceFromGeometryTexture; // For each probe, the shortest distance from the geometry
+        std::vector<float> directionFromGeometryTexture; // For each probe, the direction of the shortest distance from the geometry
 
         LightSources * lightSources;
         Mesh mesh;

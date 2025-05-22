@@ -79,6 +79,7 @@ uniform sampler3D sh7;
 uniform sampler3D sh8;
 
 uniform sampler3D distanceFromGeometry;
+uniform sampler3D directionOfGeometry;
 
 uniform vec3 lpvCenter;
 uniform float lpvWidth;
@@ -88,10 +89,10 @@ uniform float lpvTextureWidth;
 uniform float lpvTextureHeight;
 uniform float lpvTextureDepth;
 uniform float lpvDensity;
-float freqX = 1.0/lpvTextureWidth;
-float freqY = 1.0/lpvTextureHeight;
-float freqZ = 1.0/lpvTextureDepth;
-float worldFreq = 1.0/lpvDensity;
+uniform float freqX;
+uniform float freqY;
+uniform float freqZ;
+uniform float worldFreq;
 
 
 in vec4 wPosition;
@@ -179,10 +180,10 @@ varying vec3 vViewPosition;
 // 0 ---- 1
 // Depending of the cube texcoord is in, we want to get the coord of i
 
-vec3 getITexcoord(int & i,vec3 & texcoord) {
-	float x = int(texcoord.x*lpvTextureWidth)/lpvTextureWidth;
-	float y = int(texcoord.y*lpvTextureHeight)/lpvTextureHeight;
-	float z = int(texcoord.z*lpvTextureDepth)/lpvTextureDepth;
+vec3 getITexcoord(int i,vec3 texcoord) {
+	float x = float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth;
+	float y = float(int(texcoord.y*lpvTextureHeight))/lpvTextureHeight;
+	float z = float(int(texcoord.z*lpvTextureDepth))/lpvTextureDepth;
 
 	if(i == 0) {
 		return vec3(x,y,z);
@@ -203,10 +204,10 @@ vec3 getITexcoord(int & i,vec3 & texcoord) {
 	}
 }
 
-vec3 getIProbeWorldPosition(int & i, vec3 & texcoord ) {
-	float x = ((texcoord.x * 2) - 1) * lpvWidth + lpvCenter.x;
-	float y = ((texcoord.y * 2) - 1) * lpvHeight + lpvCenter.y;
-	float z = ((texcoord.z * 2) - 1) * lpvDepth + lpvCenter.z;
+vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
+	float x = ((texcoord.x * 2.0) - 1.0) * lpvWidth + lpvCenter.x;
+	float y = ((texcoord.y * 2.0) - 1.0) * lpvHeight + lpvCenter.y;
+	float z = ((texcoord.z * 2.0) - 1.0) * lpvDepth + lpvCenter.z;
 
 	if(i == 0) {
 		return vec3(x,y,z);
@@ -228,86 +229,100 @@ vec3 getIProbeWorldPosition(int & i, vec3 & texcoord ) {
 }
 
 
-float getProbeDistanceFromGeometry(int & i,vec3 & texcoord) {
+float getProbeDistanceFromGeometry(int i,vec3 texcoord) {
 	return texture(distanceFromGeometry,getITexcoord(i,texcoord)).r;
 }
 
-vec3[9] getProbeSH(int & i,vec3 & texcoord) {
-	return vec3[9]( texture(sh0,getITexcoord(i,texcoord)).r,
-					texture(sh1,getITexcoord(i,texcoord)).r,
-					texture(sh2,getITexcoord(i,texcoord)).r,
-					texture(sh3,getITexcoord(i,texcoord)).r,
-					texture(sh4,getITexcoord(i,texcoord)).r,
-					texture(sh5,getITexcoord(i,texcoord)).r,
-					texture(sh6,getITexcoord(i,texcoord)).r,
-					texture(sh7,getITexcoord(i,texcoord)).r,
-					texture(sh8,getITexcoord(i,texcoord)).r
+vec3 getProbeDirectionOfGeometry(int i,vec3 texcoord) {
+	return texture(directionOfGeometry,getITexcoord(i,texcoord)).xyz;
+}
+
+void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
+	probeSH = vec3[9]( texture(sh0,getITexcoord(i,texcoord)).rgb,
+					texture(sh1,getITexcoord(i,texcoord)).rgb,
+					texture(sh2,getITexcoord(i,texcoord)).rgb,
+					texture(sh3,getITexcoord(i,texcoord)).rgb,
+					texture(sh4,getITexcoord(i,texcoord)).rgb,
+					texture(sh5,getITexcoord(i,texcoord)).rgb,
+					texture(sh6,getITexcoord(i,texcoord)).rgb,
+					texture(sh7,getITexcoord(i,texcoord)).rgb,
+					texture(sh8,getITexcoord(i,texcoord)).rgb
 				  );
 }
 
-vec3[9] linearProbeInterpolation(vec3[9] & a, vec3[9] & b, float & v) {
-	vec3[9] res;
+void linearProbeInterpolation(vec3[9] a, vec3[9] b, float v, inout vec3[9] probeSH) {
 	for(int i = 0;i<9;i++) {
-		res[i] = lerp(a[i],b[i],v);
+		probeSH[i] = mix(a[i],b[i],v);
 	}
-	return res;
 }
 
-vec3[9] getMaskedProbeInterpolation(bool aMask, bool bMask,float & v) {
-	if(interpolationMask[0] && interpolationMask[1]) {
-		return linearProbeInterpolation(getProbeSH(0,texcoord),getProbeSH(1,texcoord),x);
-	} else if(interpolationMask[0]) {
-		return getProbeSH(0,texcoord);
-	} else if(interpolationMask[1]) {
-		return getProbeSH(1,texcoord);
+void getMaskedProbeInterpolation(int ai, int bi, bool aMask, bool bMask,float v,vec3 texcoord,inout vec3[9] probeSH) {
+	if(aMask && bMask) {
+		vec3[9] a;
+		vec3[9] b;
+		getProbeSH(ai,texcoord,a);
+		getProbeSH(bi,texcoord,b);
+		linearProbeInterpolation(a,b,v,probeSH);
+	} else if(aMask) {
+		getProbeSH(ai,texcoord,probeSH);
+	} else if(bMask) {
+		getProbeSH(bi,texcoord,probeSH);
+	} else {
+		probeSH[0] = vec3(-1);
 	}
-	vec3 emptyRes[9];
-	emptyRes[0] = vec3(-1);
-	return emptyRes; 
 }
 
-vec3[9] getProbeInterpolation(vec3[9] & a, vec3[9] & b,float & v) {
-	if(a.x != -1 && b.x != -1) {
-		return linearProbeInterpolation(a,b,v);
-	} else if(a.x != -1) {
-		return a;
-	} else if(b.x != -1) {
-		return b;
+void getProbeInterpolation(vec3[9] a, vec3[9] b,float v,inout vec3[9] probeSH) {
+	if(a[0].x != -1.0 && b[0].x != -1.0) {
+		linearProbeInterpolation(a,b,v,probeSH);
+	} else if(a[0].x != -1.0) {
+		probeSH = a;
+	} else if(b[0].x != -1.0) {
+		probeSH = b;
+	} else {
+		probeSH[0] = vec3(-1);
 	}
-	vec3 emptyRes[9];
-	emptyRes[0] = vec3(-1);
-	return emptyRes; 
 }
 
-bool[8] getInterpolationMask(vec3 & texcoord,vec3 & p) {
-	bool res[9];
-
+void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask) {
 	for(int i = 0;i<8;i++) {
-		vec3 worldTexcoord = getIProbeWorldPosition(i,texcoord);
-		// Si la probe est plus loin que la géométrie, alors elle est invalide
-		res = length(worldTexcoord - p) <= getProbeDistanceFromGeometry(i,texcoord);
+		vec3 probeWorldTexcoord = getIProbeWorldPosition(i,texcoord);
+		vec3 pProbe = p - probeWorldTexcoord;
+
+		vec3 dirOfGeo = normalize(getProbeDirectionOfGeometry(i,texcoord));
+		vec3 projectionOnDirOfGeo = dot(dirOfGeo,pProbe)*dirOfGeo;
+
+		interpolationMask[i] = length(projectionOnDirOfGeo) <= getProbeDistanceFromGeometry(i,texcoord);
+
 	}
 }
 
-vec3[9] getInterpolatedLightProbe(vec3 & texcoord, vec3 & p) {
-	bool interpolationMask[8] = getInterpolationMask(texcoord,p) 
+void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH) {
+	bool interpolationMask[8];
+	getInterpolationMask(texcoord,p,interpolationMask);
 
-	float x = (texcoord.x - int(texcoord.x*lpvTextureWidth)/lpvTextureWidth) * lpvTextureWidth;
-	float y = (texcoord.y - int(texcoord.y*lpvTextureHeight)/lpvTextureHeight) * lpvTextureHeight;
-	float z = (texcoord.z - int(texcoord.z*lpvTextureDepth)/lpvTextureDepth) * lpvTextureDepth;
+	float x = (texcoord.x - float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth) * lpvTextureWidth;
+	float y = (texcoord.y - float(int(texcoord.y*lpvTextureHeight))/lpvTextureHeight) * lpvTextureHeight;
+	float z = (texcoord.z - float(int(texcoord.z*lpvTextureDepth))/lpvTextureDepth) * lpvTextureDepth;
 
-	vec3 inter0_1[9] = getMaskedProbeInterpolation(interpolationMask[0],interpolationMask[1],x);  
-	vec3 inter3_2[9] = getMaskedProbeInterpolation(interpolationMask[3],interpolationMask[2],x);
+	vec3 inter0_1[9];
+	getMaskedProbeInterpolation(0,1,interpolationMask[0],interpolationMask[1],x,texcoord,inter0_1);  
+	vec3 inter3_2[9];
+	getMaskedProbeInterpolation(3,2,interpolationMask[3],interpolationMask[2],x,texcoord,inter3_2);
 	
-	vec3 inter01_32[9] = getProbeInterpolation(inter0_1,inter3_2,z);
+	vec3 inter01_32[9];
+	getProbeInterpolation(inter0_1,inter3_2,z,inter01_32);
 
 
-	vec3 inter4_5[9] = getMaskedProbeInterpolation(interpolationMask[4],interpolationMask[5],x);  
-	vec3 inter7_6[9] = getMaskedProbeInterpolation(interpolationMask[7],interpolationMask[6],x);
+	vec3 inter4_5[9];
+	getMaskedProbeInterpolation(4,5,interpolationMask[4],interpolationMask[5],x,texcoord,inter4_5);  
+	vec3 inter7_6[9];
+	getMaskedProbeInterpolation(7,6,interpolationMask[7],interpolationMask[6],x,texcoord,inter7_6);
 
-	vec3 inter45_76[9] = getProbeInterpolation(inter4_5,inter7_6,z);
+	vec3 inter45_76[9];
+	getProbeInterpolation(inter4_5,inter7_6,z,inter45_76);
 
-	return getProbeInterpolation(inter01_32,inter45_76,y);
+	getProbeInterpolation(inter01_32,inter45_76,y,probeSH);
 }
 
 void main() {
@@ -353,7 +368,8 @@ void main() {
 	// texture(sh8,texcoord).rgb
 	// );
 
-	vec3 interpolatedLightProbe[9] = getInterpolatedLightProbe(texcoord,wPosition);
+	vec3 interpolatedLightProbe[9];
+	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe);
 
 	vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
 	IncidentLight il = IncidentLight(color,normal,true);
@@ -374,7 +390,9 @@ void main() {
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
 
-	outgoingLight = vec3(texture(distanceFromGeometry,texcoord).r)*10000.;
+	// outgoingLight = normalize(texture(directionOfGeometry,texcoord).xyz);
+	// outgoingLight = vec3(1,-1,-1);
+	outgoingLight = vec3(texture(distanceFromGeometry,texcoord).r)*100.;
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
@@ -389,6 +407,7 @@ export class MeshManager {
 	textureLoader
 	shTextures;
 	distFromGeometryTexture;
+	directionOfGeometryTexture;
 	lpvParameters;
 
     constructor() {
@@ -413,6 +432,15 @@ export class MeshManager {
 				const values = text.split(',').map(Number);
 				
 				this.distFromGeometryTexture = new Float32Array(values);
+			})
+			.catch((e) => console.error(e));
+
+		fetch(BASE_URL+'textures/directionOfGeometry.csv')
+			.then((res) => res.text())
+			.then((text) => {
+				const values = text.split(',').map(Number);
+				
+				this.directionOfGeometryTexture = new Float32Array(values);
 			})
 			.catch((e) => console.error(e));
 		
@@ -469,16 +497,28 @@ export class MeshManager {
 				const distanceTexture = new THREE.Data3DTexture(this.distFromGeometryTexture,
 																this.lpvParameters.width*this.lpvParameters.density,
 																this.lpvParameters.depth*this.lpvParameters.density,
-																this.lpvParameters.height*this.lpvParameters.density,
-																THREE.RedFormat,
-																THREE.FloatType);
-
+																this.lpvParameters.height*this.lpvParameters.density);
+				distanceTexture.format = THREE.RedFormat;
+				distanceTexture.type = THREE.FloatType;
 				distanceTexture.magFilter = THREE.NearestFilter;
 				distanceTexture.wrapS = THREE.ClampToEdgeWrapping;
 				distanceTexture.wrapT = THREE.ClampToEdgeWrapping;
 				distanceTexture.wrapR = THREE.ClampToEdgeWrapping;
 				distanceTexture.needsUpdate = true;
 				shader.uniforms["distanceFromGeometry"] = { value:distanceTexture };
+
+				const directionOfGeoMetryTexture = new THREE.Data3DTexture(this.directionOfGeometryTexture, 
+															this.lpvParameters.width*this.lpvParameters.density,
+															this.lpvParameters.depth*this.lpvParameters.density,
+															this.lpvParameters.height*this.lpvParameters.density);
+				directionOfGeoMetryTexture.magFilter = THREE.NearestFilter;
+				directionOfGeoMetryTexture.type = THREE.FloatType;
+				directionOfGeoMetryTexture.wrapS = THREE.ClampToEdgeWrapping
+				directionOfGeoMetryTexture.wrapT = THREE.ClampToEdgeWrapping
+				directionOfGeoMetryTexture.wrapR = THREE.ClampToEdgeWrapping
+				directionOfGeoMetryTexture.needsUpdate = true;
+
+				shader.uniforms["directionOfGeometry"] = { value:directionOfGeoMetryTexture};
 
 
 				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParameters.center.x,this.lpvParameters.center.y,this.lpvParameters.center.z)};
@@ -489,8 +529,12 @@ export class MeshManager {
 				shader.uniforms.lpvTextureDepth = {value : this.lpvParameters.depth*this.lpvParameters.density};
 				shader.uniforms.lpvTextureHeight = {value : this.lpvParameters.height*this.lpvParameters.density};
 				shader.uniforms.lpvDensity = {value : this.lpvParameters.density};
+
+				shader.uniforms.freqX = {value:1/(this.lpvParameters.width*this.lpvParameters.density)};
+				shader.uniforms.freqY = {value:1/(this.lpvParameters.height*this.lpvParameters.density)};
+				shader.uniforms.freqZ = {value:1/(this.lpvParameters.depth*this.lpvParameters.density)};
+				shader.uniforms.worldFreq = {value:1/this.lpvParameters.density};
 			}
-			
         }
 
 

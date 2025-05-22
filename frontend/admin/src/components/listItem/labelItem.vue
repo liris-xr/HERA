@@ -20,14 +20,12 @@ defineEmits(['advanced-edit','delete'])
     <div class="inlineFlex">
       <span>{{index+1}}</span>
       <input :id="id" type="text" v-model="text" :placeholder="props.placeholder" :maxLength="props.maxLength" @keydown.enter.prevent>
-      <label :for="id">
-        <icon-svg url="/icons/edit.svg" theme="default" :hover-effect="true"></icon-svg>
-      </label>
+      
 
     </div>
     <div class="inlineFlex">
       <tag text="2D/txt" icon="/icons/info.svg"/>
-      <icon-svg url="/icons/scale.svg" theme="text" class="iconAction" :hover-effect="true" @click="$emit('advanced-edit')"/>
+      <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="$emit('advanced-edit')"/>
       <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="$emit('delete')"/>
     </div>
   </div>

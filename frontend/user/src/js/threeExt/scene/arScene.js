@@ -6,7 +6,6 @@ import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
 import {LabelPlayer} from "@/js/threeExt/postProcessing/labelPlayer.js";
-import {Vector3} from "three";
 import {EmptyAsset} from "@/js/threeExt/modelManagement/emptyAsset.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
@@ -72,8 +71,11 @@ export class ArScene extends AbstractScene {
         }
 
         for (let triggerData of this.#triggers) {
-            await triggerData.load();
-            triggerData.pushToScene(this);
+            if (!triggerData.hideInViewer){
+                await triggerData.load();
+                triggerData.pushToScene(this);
+            }
+
         }
 
 

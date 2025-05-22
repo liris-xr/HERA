@@ -14,6 +14,8 @@ export class ArSceneManager{
     onSceneChanged
 
 
+
+
     constructor(scenes, shadowMapSize) {
         this.isArRunning = ref(false);
         this.#lightEstimate = new LightSet(shadowMapSize);
@@ -130,17 +132,24 @@ export class ArSceneManager{
         this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), cameraPosition);
 
         if (this.isArRunning.value && !this.scenePlacementManager.isEnabled.value){
-            console.log(this.activeSceneId.value);
             const activeScene = this.getActiveScene();
             const triggers = activeScene.getTriggers();
+
 
             for (let trigger of triggers) {
                 const distance = this.calculateDistanceTriggers(cameraPosition, trigger.position);
 
                 if (distance < trigger.getRadius()){
-                    trigger.doAction();
-
+                    trigger.userIn();
                 }
+                else{
+                    trigger.userOut();
+                }
+                if (trigger.thereIsUser !== trigger.userInside){
+                    trigger.doAction();
+                    trigger.thereIsUser = !trigger.thereIsUser;
+                }
+
             }
         }
     }

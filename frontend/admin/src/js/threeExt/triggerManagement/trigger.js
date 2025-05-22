@@ -3,15 +3,11 @@ import {SelectableInterface} from "@/js/threeExt/interfaces/selectableInterface.
 import {LoadableInterface} from "@/js/threeExt/interfaces/loadableInterface.js";
 import {computed, ref} from "vue";
 import * as THREE from "three";
-import {tri} from "three/addons/nodes/math/TriNoise3D.js";
-
 
 export class Trigger extends classes(SelectableInterface, LoadableInterface){
     id;
 
     mesh;
-    #geometry;
-    #material;
 
     radius
     position;

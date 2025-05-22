@@ -1,8 +1,6 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
-import {actions} from "@/js/threeExt/triggerManagement/actionList.js";
-
 
 const props = defineProps({
   index: {type: Number, default: 0},

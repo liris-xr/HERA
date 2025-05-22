@@ -1,13 +1,12 @@
 <script setup>
 
 import Modal from "@/components/modal/modal.vue";
-import {computed, getCurrentInstance, nextTick, ref, watch} from "vue";
+import {computed, nextTick, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import {actions} from "@/js/threeExt/triggerManagement/actionList.js";
 import {Trigger} from "@/js/threeExt/triggerManagement/trigger.js";
-import i18n from "@/i18n.js";
 
 const props = defineProps({
   show: {type: Boolean, default: false},
@@ -38,7 +37,7 @@ watch(() =>props.show,async (value) => {
     let arrayAssetsAnimation = []
     props.assets.forEach((asset) => {
       asset.animations.forEach((animation) => {
-        arrayAssetsAnimation.push(asset.name + " " + asset.animation);
+        arrayAssetsAnimation.push(asset.name + " " + animation);
       })
 
     })
@@ -200,7 +199,6 @@ input{
   padding: 4px;
   border-radius: 4px;
   font-size: 16px;
-  field-sizing: content;
   user-select: all;
 }
 
@@ -243,7 +241,6 @@ textarea{
   border: solid 1px var(--darkerBackgroundColor);
   border-radius: 4px;
   overflow-x: hidden;
-  field-sizing: content;
   display: block;
 }
 

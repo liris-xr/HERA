@@ -38,9 +38,7 @@ export class Label{
     async init(){
         if(this.xr) {
             await this.setContent(this.content);
-            console.log("a")
         } else {
-            console.log("b")
             const htmlLabel = this.#createHtmlLabel();
             await this.setContent(this.content);
 

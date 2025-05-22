@@ -4,6 +4,8 @@ import {watch} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {createButton} from "@/js/threeExt/ui/utils.js";
 
+const COYOTE_TIME = 150; // en ms, délai pendant lequel un bouton reste pressable pour compenser les tremblements
+
 export class Xr3dUi {
 
     renderer
@@ -22,6 +24,8 @@ export class Xr3dUi {
     notificationsContainer
     pointers
 
+    lastHittable
+
     constructor(renderer, camera, xrSession, sceneManager, referenceSpace) {
         this.renderer = renderer
         this.camera = camera
@@ -30,6 +34,7 @@ export class Xr3dUi {
         this.referenceSpace = referenceSpace
         this.hittables = []
         this.pointers = []
+        this.lastHittable = {}
 
         this.rayCaster = new THREE.Raycaster(undefined, undefined)
         this.rayCaster.camera = camera
@@ -39,7 +44,7 @@ export class Xr3dUi {
         this.setupUI()
         this.initListeners()
 
-        this.createPointer()
+        this.hide()
     }
 
     createPointer() {
@@ -55,6 +60,8 @@ export class Xr3dUi {
 
         if(this.sceneManager.active.value)
             this.sceneManager.active.value.add(pointer)
+
+        pointer.visible = this.container?.visible
 
         return pointer
     }
@@ -251,6 +258,8 @@ export class Xr3dUi {
 
         this.forceVisibility()
         this.container.visible = true
+        for(let pointer of this.pointers)
+            pointer.visible = true
 
     }
 
@@ -269,6 +278,8 @@ export class Xr3dUi {
 
     hide() {
         this.container.visible = false
+        for(let pointer of this.pointers)
+            pointer.visible = false
     }
 
     loop(frame) {
@@ -321,6 +332,17 @@ export class Xr3dUi {
             }
         }
 
+        // COYOTE TIME
+        const index = Array.from(this.xrSession.inputSources).indexOf(event.inputSource)
+        if(index !== -1 && this.lastHittable[index]) {
+            const lastHittable = this.lastHittable[index]
+            if(Date.now() - lastHittable.time < COYOTE_TIME) {
+                lastHittable.object.onClick?.()
+                return true
+            }
+
+        }
+
         // const arrow = new THREE.ArrowHelper( this.rayCaster.ray.direction, this.rayCaster.ray.origin, 1000, Math.random() * 0xffffff )
         // this.sceneManager.active.value.add( arrow )
 
@@ -346,7 +368,7 @@ export class Xr3dUi {
             if(this.pointers.length <= count)
                 pointer = this.createPointer()
             else
-                pointer = this.pointers[count++]
+                pointer = this.pointers[count]
 
             const origin = new THREE.Vector3(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
             const direction = new THREE.Vector3().set(0, 0, -1).applyQuaternion(
@@ -355,7 +377,6 @@ export class Xr3dUi {
 
             const pointerPos = origin.clone().add(direction.clone().multiplyScalar(1));
             pointer.position.copy(pointerPos);
-            pointer.visible = true;
 
             const cameraPos = this.camera.position.clone()
             const dir = new THREE.Vector3().subVectors(pointerPos, cameraPos).normalize()
@@ -367,12 +388,15 @@ export class Xr3dUi {
                 if (intersections.length > 0) {
                     btn.setState("hovered");
                     hovered.push(btn)
+                    this.lastHittable[count] = {object: btn, time: Date.now()}
+                    break
                 } else {
                     if(!hovered.includes(btn))
                         btn.setState("idle");
                 }
             }
 
+            count++
         }
     }
 

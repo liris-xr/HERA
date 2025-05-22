@@ -179,7 +179,6 @@ export class EditorScene extends THREE.Scene {
     }
 
     addNewTrigger(){
-        console.log("addNewTrigger");
         const trigger = this.triggerManager.addToScene(this);
         this.setSelected(trigger);
         this.setTransformMode("translate");
@@ -308,4 +307,7 @@ export class EditorScene extends THREE.Scene {
         }
     }
 
+    updateRadius(radius){
+        this.#selected.value.getObject().scale.set(radius, radius, radius);
+    }
 }

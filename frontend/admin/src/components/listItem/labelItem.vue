@@ -20,7 +20,6 @@ defineEmits(['advanced-edit','delete'])
     <div class="inlineFlex">
       <span>{{index+1}}</span>
       <input :id="id" type="text" v-model="text" :placeholder="props.placeholder" :maxLength="props.maxLength" @keydown.enter.prevent>
-      
 
     </div>
     <div class="inlineFlex">
@@ -87,6 +86,9 @@ label{
 
 .item > div input {
   width: 85%;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .item > div:last-child {

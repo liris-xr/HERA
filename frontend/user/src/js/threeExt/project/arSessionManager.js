@@ -190,6 +190,11 @@ export class ArSessionManager {
         this.#isArRunning.value = false;
         this.sceneManager.isArRunning.value = false;
         this.#resetCameraPosition()
+
+        if(this.sceneManager.active.value.hasLabels.value) {
+            this.sceneManager.active.value.labelPlayer.stop()
+        }
+
         if(this.xr3dUi)
             this.xr3dUi.removeFromScene(this.sceneManager.active.value)
     }

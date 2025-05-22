@@ -197,5 +197,9 @@ textarea{
   --p-editor-toolbar-item-active-color: var(--textImportantColor);
   --p-editor-content-border-color: var(--darkerBackgroundColor);
 
+  --p-editor-overlay-background: var(--backgroundColor);
+  --p-editor-overlay-option-focus-background: var(--darkerBackgroundColor);
+
+
 }
 </style>

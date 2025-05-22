@@ -49,6 +49,7 @@ export class LabelPlayer extends RenderLoopInterface{
     pause(){
         this.#isPlaying.value = false;
     }
+
     reset(){
         this.pause();
         this.#startOffset = this.#currentTime
@@ -102,5 +103,10 @@ export class LabelPlayer extends RenderLoopInterface{
     setXr(xr) {
         for(const label of this.#labels)
             label.setXr(xr);
+    }
+
+    stop() {
+        for(const label of this.#labels)
+            label.remove()
     }
 }

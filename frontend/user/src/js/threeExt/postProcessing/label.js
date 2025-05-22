@@ -170,13 +170,17 @@ export class Label{
     }
 
     async setXr(xr) {
-        if(this.xr !== xr) {
-            this.label.remove()
-            this.xr = xr
-            await this.init()
-            this.pushToScene(this.scene)
-        } else
-            this.xr = xr
+        if(this.xr === xr) return
 
+        this.remove()
+
+        this.xr = xr
+        await this.init()
+        this.pushToScene(this.scene)
+    }
+
+    remove() {
+        if(this.scene)
+            this.scene.remove(this.label)
     }
 }

@@ -1,23 +1,32 @@
 export const actions = {
-        none : () => {
+        none : (object) => {
             // DON'T DO ANYTHING
             },
-        play_sound: () => {
+        playSound: (object) => {
             // Code pour jouer un son
             console.log("Son lancé !");
+            console.log(object);
         },
-        change_scene: () => {
+        changeScene: (object) => {
             // Code pour changer de scène
             console.log("Scène changée !");
+            console.log(object);
         },
-        trigger_animation: () => {
+        animation: (object) => {
             // Code pour activer une animation
             console.log("Animation déclenchée !");
+            console.log(object);
         },
-        start_dialogue: () => {
-            // Code pour activer une animation
-            console.log("Animation déclenchée !");
+        startDialogue: (object) => {
+            // Code pour commencer un dialogue
+            console.log("Commencer un dialogue");
+            console.log(object);
         },
+        displayAsset: (object) => {
+            // Code pour afficher un asset
+            console.log("afficher un asset");
+            console.log(object);
+        }
 };
 
 

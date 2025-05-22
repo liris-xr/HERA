@@ -15,8 +15,8 @@ watch(() =>props.show,async (value) => {
 </script>
 <template>
   <Transition name="modal">
-    <div v-if="show" class="modal-mask" @click="$emit('close')">
-      <div ref="modalContainer" class="modal-container" @click="$event.stopPropagation()" @keydown.esc="$emit('close')" tabindex="0">
+    <div v-if="show" class="modal-mask" @mousedown="$emit('close')">
+      <div ref="modalContainer" class="modal-container" @mousedown="$event.stopPropagation()" @keydown.esc="$emit('close')" tabindex="0">
         <div class="modal-header">
           <slot name="header">default header</slot>
         </div>

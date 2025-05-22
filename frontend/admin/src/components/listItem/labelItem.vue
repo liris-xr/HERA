@@ -82,6 +82,15 @@ label{
   margin-bottom: 0;
 }
 
+.item > div:first-child {
+  width: 100%;
+  overflow: hidden;
+}
+
+.item > div input {
+  width: 85%;
+}
+
 .item > div:last-child {
   justify-content: flex-end;
 }

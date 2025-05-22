@@ -121,7 +121,7 @@ export class Label{
             const material = new THREE.SpriteMaterial({ map: texture, transparent: true })
             material.sizeAttenuation = false
             const sprite = new THREE.Sprite(material)
-            sprite.renderOrder = 999
+            sprite.renderOrder = 998
             sprite.material.depthTest = false
 
             this.aspect = canvas.height / canvas.width;

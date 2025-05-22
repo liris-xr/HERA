@@ -173,7 +173,7 @@ export class Xr3dUi {
 
         this.container = container
 
-        this.forceVisibility()
+        this.needsForceVisibility = true
 
     }
 
@@ -201,8 +201,7 @@ export class Xr3dUi {
         hideButton.onClick = () => {
             this.notificationsContainer.remove(notification)
             notification.visible = false
-            this.notificationsContainer.updateLayout()
-            this.container.updateLayout()
+
             this.container.traverse(child => {
                 child?.updateLayout?.()
             })
@@ -234,13 +233,13 @@ export class Xr3dUi {
     handleSelect(event) {
         if(!this.container.visible)
             this.show()
-        else {
-            if(!this.hitTest(event))
-                this.hide()
-        }
+        else
+            !this.hitTest(event) && this.hide()
+
     }
 
     forceVisibility() {
+        // this.container.renderOrder = 999
         this.container.traverse(child => {
             if(child.material) {
                 child.material.depthTest = false;
@@ -254,7 +253,7 @@ export class Xr3dUi {
 
         this.updatePosition()
 
-        this.forceVisibility()
+        this.needsForceVisibility = true
         this.container.visible = true
         for(let pointer of this.pointers)
             pointer.visible = true
@@ -295,7 +294,7 @@ export class Xr3dUi {
         for(let pointer of this.pointers)
             scene.add(pointer)
 
-        this.forceVisibility()
+        this.needsForceVisibility = true
     }
 
     removeFromScene(scene) {
@@ -311,22 +310,28 @@ export class Xr3dUi {
             this.playText.set({ content: "Play" })
     }
 
+    getRaycastParams(pose) {
+        const poseOrigin = new THREE.Vector3(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+        const poseDirection = new THREE.Vector3().set(0, 0, -1).applyQuaternion(
+            new THREE.Quaternion(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w)
+        );
+
+        const pointerPosition = poseOrigin.clone().add(poseDirection.clone().multiplyScalar(1));
+
+        const origin = this.camera.position.clone()
+        const direction = new THREE.Vector3().subVectors(pointerPosition, origin).normalize()
+
+        return {origin, direction, pointerPosition}
+    }
+
     hitTest(event) {
 
         const pose = event.frame.getPose(event.inputSource.targetRaySpace, this.referenceSpace)
         if(!pose) return
 
-        const origin = new THREE.Vector3(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-        const direction = new THREE.Vector3().set(0, 0, -1).applyQuaternion(
-            new THREE.Quaternion(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w)
-        );
+        const {origin, direction} = this.getRaycastParams(pose)
 
-        const pointerPos = origin.clone().add(direction.clone().multiplyScalar(1));
-
-        const cameraPos = this.camera.position.clone()
-        const dir = new THREE.Vector3().subVectors(pointerPos, cameraPos).normalize()
-
-        this.rayCaster.set(cameraPos, dir)
+        this.rayCaster.set(origin, direction)
 
         for(let i of this.hittables) {
             if(this.rayCaster.intersectObject(i).length > 0) {
@@ -373,18 +378,10 @@ export class Xr3dUi {
             else
                 pointer = this.pointers[count]
 
-            const origin = new THREE.Vector3(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-            const direction = new THREE.Vector3().set(0, 0, -1).applyQuaternion(
-                new THREE.Quaternion(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w)
-            );
+            const {origin, direction, pointerPosition} = this.getRaycastParams(pose)
 
-            const pointerPos = origin.clone().add(direction.clone().multiplyScalar(1));
-            pointer.position.copy(pointerPos);
-
-            const cameraPos = this.camera.position.clone()
-            const dir = new THREE.Vector3().subVectors(pointerPos, cameraPos).normalize()
-
-            this.rayCaster.set(cameraPos, dir)
+            pointer.position.copy(pointerPosition);
+            this.rayCaster.set(origin, direction)
 
             for (const btn of this.hittables) {
                 const intersections = this.rayCaster.intersectObject(btn, true);

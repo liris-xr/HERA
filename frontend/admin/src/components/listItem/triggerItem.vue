@@ -1,29 +1,24 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
-import {ActionManager} from "@/js/threeExt/triggerManagement/actionManager.js";
+import {actions} from "@/js/threeExt/triggerManagement/actionList.js";
 
 
 const props = defineProps({
   index: {type: Number, default: 0},
   active: {type: Boolean, default: false},
   hideInViewer: {type: Boolean, default: false},
-  action: {type: String, default: "None"},
   loading: {type: Boolean, default: false},
   error: {type: Boolean, default: false},
+  actionIn: {type: String, default: "none"},
+  actionOut: {type: String, default: "none"}
 })
-
-const actionManager = new ActionManager()
 
 const onClick = (emit) =>{
   if(!(props.loading)) emit()
 }
 
-defineEmits(['select', 'duplicate','delete', 'hideInViewer', 'action']);
-
-const text = defineModel();
-
-const selectedAction = props.action || "None";
+defineEmits(['select','delete', 'hideInViewer', 'advanced-edit']);
 
 </script>
 
@@ -32,20 +27,18 @@ const selectedAction = props.action || "None";
     <div class="inlineFlex">
       <span>{{index+1}}</span>
 
-      <span :class="{textStrike: hideInViewer||error}">{{text}}</span>
-      <span v-if="hideInViewer" class="notDisplayedInfo">{{$t("sceneView.leftSection.sceneAssets.assetNotDisplayed")}}</span>
+      <span :class="{textStrike: hideInViewer||error}"></span>
+      <span v-if="hideInViewer" class="notDisplayedInfo">{{$t("sceneView.leftSection.sceneTriggers.assetNotDisplayed")}}</span>
       <span>Action: </span>
-      <select v-model="selectedAction" @change="()=>{$emit('action', selectedAction)}" >
-        <option v-for="(name) in actionManager.getActions()" :key="name" :value="name">
-          {{ name }}
-        </option>
-      </select>
+      <span>{{$t("sceneView.leftSection.sceneTriggers.actionIn")}} : {{ props.actionIn }} {{$t("sceneView.leftSection.sceneTriggers.actionOut")}} : {{ props.actionOut }}</span>
+
 
     </div>
     <div class="inlineFlex">
       <tag text="3D/THREEJS" icon="/icons/info.svg"/>
       <icon-svg v-if="hideInViewer" url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer',true)})"/>
       <icon-svg v-else url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer', false)})"/>
+      <icon-svg url="/icons/scale.svg" theme="text" class="iconAction" :hover-effect="true" @click="$emit('advanced-edit')"/>
       <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="$emit('delete')"/>
     </div>
   </div>

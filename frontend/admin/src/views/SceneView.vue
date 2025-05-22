@@ -28,6 +28,7 @@ import EnvmapItem from "@/components/listItem/envmapItem.vue";
 import {useI18n} from "vue-i18n";
 import {EXRLoader} from "three/addons";
 import TriggerItem from "@/components/listItem/triggerItem.vue";
+import TriggerEditModal from "@/components/modal/triggerEditModal.vue";
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
@@ -41,7 +42,8 @@ const scene = ref({
     unit:""
   },
   labels:[],
-  assets:[]
+  assets:[],
+  triggers:[]
 });
 
 const saved = ref(true);
@@ -61,7 +63,9 @@ const showMaterialMenu = ref(false);
 const showSceneDeleteModal = ref(false);
 const showSceneDuplicateModal = ref(false);
 const showLabelEditModal = ref(false);
+const showTriggerEditModal = ref(false);
 let lastClickedLabel = null
+let lastClickedTrigger = null
 
 const uploadedEnvmap = ref({
   rawData:null,
@@ -445,12 +449,13 @@ onBeforeRouteUpdate((to, from, next)=>{
                             class="sceneItem"
                             :index="index"
                             :active="trigger.isSelected.value"
-                            :action="trigger.action"
+                            :actionIn="trigger.actionIn"
+                            :actionOut="trigger.actionOut"
                             :hide-in-viewer="trigger.hideInViewer.value"
                             @click="editor.scene.setSelected(trigger)"
                             @delete="editor.scene.removeTrigger(trigger)"
                             @hide-in-viewer="()=>{trigger.switchViewerDisplayStatus(); saved = false}"
-                            @action="(selectedAction)=>{trigger.setAction(selectedAction);}"
+                            @advanced-edit="()=>{lastClickedTrigger = trigger; showTriggerEditModal=true;}"
                 />
                 <div v-if="!editor.scene.triggerManager.hasTriggers.value">{{$t('sceneView.leftSection.sceneTriggers.noLabelInfo')}}</div>
             </div>
@@ -466,6 +471,22 @@ onBeforeRouteUpdate((to, from, next)=>{
                   showLabelEditModal = false;
                 }">
             </label-edit-modal>
+          </Teleport>
+
+          <Teleport to="body">
+            <trigger-edit-modal
+                :show="showTriggerEditModal && lastClickedTrigger!=null"
+                :trigger="lastClickedTrigger"
+                :assets="editor.scene.assetManager.getAssets.value"
+                @close="showTriggerEditModal = false"
+                @confirm="(trigger)=>{
+                  editor.scene.triggerManager.getSelectedTrigger.value.copyFromAnotherTrigger(trigger);
+                  editor.scene.getTransformMode.value = 'radius';
+                  editor.scene.updateRadius(trigger.radius);
+
+                  showTriggerEditModal = false;
+                }">
+            </trigger-edit-modal>
           </Teleport>
 
           <div class="multilineField">

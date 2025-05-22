@@ -186,19 +186,21 @@
         "noAssetsInfo": "Cette scène ne contient aucun modèle 3D",
         "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
         "assetLoadFailed": "Impossible de charger ce modèle 3D"
-
       },
       "sceneTriggers": {
         "label": "Triggers :",
         "addLabelButton": "Ajouter",
         "noLabelInfo": "Cette scène ne contient aucun trigger",
         "assetNotDisplayed": "Ce trigger ne sera pas affiché lors de la visualisation",
+        "actionIn" : "Entrant",
+        "actionOut": "Sortant",
         "actions": {
           "none":  "Aucun",
           "playSound": "Joue un son",
           "changeScene":  "Changer de scène",
           "animation": "Déclenché une animation",
-          "startDialogue": "Dialogue"
+          "startDialogue": "Dialogue",
+          "displayAsset": "Affiché/Caché un asset"
         }
       },
       "buttons": {
@@ -289,5 +291,15 @@
       "cancel": "Annuler",
       "confirm": "Valider"
     }
+  },
+  "triggerEditModal": {
+    "title": "Édition avancée",
+    "actionIn": "Action en entrant",
+    "actionOut": "Action en sortant",
+    "radius": "Rayon",
+    "objet": "Choisir Objet avec qui intéeragier",
+    "son": "Son",
+    "scene": "Scene:",
+    "dialogue": "Dialogue"
   }
 }

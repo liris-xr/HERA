@@ -24,7 +24,6 @@ export class TriggerManager {
 
         const newTrigger = new Trigger(trigger);
 
-
         newTrigger.load().then((mesh)=>{
             scene.add(mesh)
         }).catch(()=>{
@@ -66,7 +65,10 @@ export class TriggerManager {
                 scale: trigger.getResultScale(),
                 hideInViewer: trigger.hideInViewer.value,
                 radius: trigger.radius,
-                action: trigger.action,
+                actionIn: trigger.actionIn,
+                actionOut: trigger.actionOut,
+                objectIn: trigger.objectIn,
+                objectOut: trigger.objectOut,
             });
         }
         return result;
@@ -76,5 +78,11 @@ export class TriggerManager {
         return this.#triggers.length>0;
     })
 
+    getSelectedTrigger = computed(()=>{
+        for (let trigger of this.#triggers) {
+            if(trigger.isSelected.value) return trigger;
+        }
+        return null;
+    })
 
 }

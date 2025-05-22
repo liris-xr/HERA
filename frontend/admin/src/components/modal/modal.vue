@@ -51,6 +51,7 @@ watch(() =>props.show,async (value) => {
   backdrop-filter: blur(8px);
   display: flex;
   transition: opacity 0.3s ease;
+
 }
 
 .modal-container {
@@ -63,6 +64,9 @@ watch(() =>props.show,async (value) => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);
   transition: all 0.3s ease;
+
+  max-height: 95%;
+  overflow-y: auto;
 }
 
 .modal-container:focus-visible {

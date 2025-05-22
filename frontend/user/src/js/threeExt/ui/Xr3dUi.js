@@ -239,7 +239,6 @@ export class Xr3dUi {
     }
 
     forceVisibility() {
-        // this.container.renderOrder = 999
         this.container.traverse(child => {
             if(child.material) {
                 child.material.depthTest = false;

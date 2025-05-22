@@ -3,6 +3,7 @@ import {SelectableInterface} from "@/js/threeExt/interfaces/selectableInterface.
 import {LoadableInterface} from "@/js/threeExt/interfaces/loadableInterface.js";
 import {computed, ref} from "vue";
 import * as THREE from "three";
+import {tri} from "three/addons/nodes/math/TriNoise3D.js";
 
 
 export class Trigger extends classes(SelectableInterface, LoadableInterface){
@@ -17,7 +18,10 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
     scale;
 
     hideInViewer;
-    action;
+    actionIn;
+    actionOut;
+    objectIn
+    objectOut
 
     #isSelected;
     #hasError;
@@ -53,14 +57,35 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
             this.scale = triggerData.scale;
         }
         else {
-            this.scale = {x:1, y:1, z:1};
+            this.scale = {x:this.radius, y:this.radius, z:this.radius};
         }
 
-        if (triggerData.action){
-            this.action = triggerData.action;
+        if (triggerData.actionIn){
+            this.actionIn = triggerData.actionIn;
         }
         else{
-            this.action = "None";
+            this.actionIn = "none";
+        }
+
+        if(triggerData.actionOut){
+            this.actionOut = triggerData.actionOut;
+        }
+        else{
+            this.actionOut = "none";
+        }
+
+        if (triggerData.objectIn){
+            this.objectIn = triggerData.objectIn;
+        }
+        else{
+            this.objectIn = "none";
+        }
+
+        if (triggerData.objectOut){
+            this.objectOut = triggerData.objectOut;
+        }
+        else{
+            this.objectOut = "none";
         }
 
         this.#hasError = ref(false);
@@ -82,20 +107,17 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
     });
 
 
-
-
     load(){
         return new Promise((resolve) => {
             this.#hasError.value = false;
             this.#isLoading.value = false;
 
-            this.#geometry = new THREE.SphereGeometry( this.radius, 32, 16 );
-            this.#material = new THREE.MeshBasicMaterial( { color: 0xccaacc } );
-            this.mesh = new THREE.Mesh( this.#geometry, this.#material );
+            const geometry = new THREE.SphereGeometry(1, 32, 32);
+            const wireframe = new THREE.WireframeGeometry(geometry);
+            this.mesh = new THREE.LineSegments(wireframe, new THREE.LineBasicMaterial({ color: 0xeeebe3 }));
+
             this.mesh.position.set(this.position.x, this.position.y, this.position.z);
-            this.mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
-
-
+            this.mesh.scale.set(this.radius, this.radius, this.radius);
 
             resolve(this.mesh);
         })
@@ -121,6 +143,10 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
         return this.mesh;
     }
 
+    getActionIn(){
+        return this.actionIn;
+    }
+
     getResultPosition(){
         const result = {}
         result.x = this.getObject().position.x;
@@ -130,23 +156,22 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
     }
 
     getResultScale(){
-        const result = {}
-        result.x = this.getObject().scale.x;
-        result.y = this.getObject().scale.x;
-        result.z = this.getObject().scale.x;
-        return result;
+        return {x: this.radius, y: this.radius, z: this.radius};
     }
 
-    getRangeOfAction(){
-        return this.#geometry.radius;
+    getResultRotation(){
+        return {x:0, y:0, z:0};
     }
 
-    setAction(action){
-        this.action = action;
+    getRadius(){
+        return this.radius;
     }
 
     copyFromAnotherTrigger(otherTrigger){
-        this.hideInViewer = otherTrigger.hideInViewer;
-        this.action = otherTrigger.action;
+        this.actionIn = otherTrigger.actionIn;
+        this.actionOut = otherTrigger.actionOut;
+        this.radius = otherTrigger.radius;
+        this.objectIn = otherTrigger.objectIn;
+        this.objectOut = otherTrigger.objectOut;
     }
 }

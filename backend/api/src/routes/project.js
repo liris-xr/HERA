@@ -94,10 +94,6 @@ router.get(baseUrl+'project/:projectId', async (req, res) => {
                         {
                             model: ArTrigger,
                             as: "triggers",
-                            where:{
-                                hideInViewer: false
-                            },
-                            required:false
                         },
                     ],
                 },

@@ -9,15 +9,19 @@ export class Trigger extends SceneElementInterface{
     #geometry;
     #material;
 
+    hideInViewer
+
     radius
     position;
     scale;
 
-    action;
+    actionIn;
+    actionOut;
+    objectIn;
+    objectOut;
 
-
-
-
+    userInside;
+    thereIsUser;
 
     constructor(triggerData) {
         super();
@@ -36,6 +40,13 @@ export class Trigger extends SceneElementInterface{
             this.position = {x:0, y:0, z:0};
         }
 
+        if(triggerData.hideInViewer){
+            this.hideInViewer = triggerData.hideInViewer;
+        }
+        else{
+            this.hideInViewer = false;
+        }
+
         if(triggerData.scale){
             this.scale = triggerData.scale;
         }
@@ -43,24 +54,47 @@ export class Trigger extends SceneElementInterface{
             this.scale = {x:1, y:1, z:1};
         }
 
-        if (triggerData.action){
-            this.action = triggerData.action;
+        if (triggerData.actionIn){
+            this.actionIn = triggerData.actionIn;
         }
         else{
-            this.action = actions.none;
+            this.actionIn = actions.none;
         }
+
+        if(triggerData.actionOut){
+            this.actionOut = triggerData.actionOut;
+        }
+        else{
+            this.actionOut = "none";
+        }
+
+        if (triggerData.objectIn){
+            this.objectIn = triggerData.objectIn;
+        }
+        else{
+            this.objectIn = "none";
+        }
+
+        if (triggerData.objectOut){
+            this.objectOut = triggerData.objectOut;
+        }
+        else{
+            this.objectOut = "none";
+        }
+
+        this.userInside = false;
+        this.thereIsUser = false;
 
         this.mesh = this.load()
     }
 
 
     async load(){
-        this.#geometry = new THREE.SphereGeometry( this.radius, 32, 16 );
-        this.#material = new THREE.MeshBasicMaterial( { color: 0xccaacc } );
+        this.#geometry = new THREE.SphereGeometry( this.radius/10, 32, 16 );
+        this.#material = new THREE.MeshBasicMaterial( { color: 0xeeebe3 } );
         this.mesh = new THREE.Mesh( this.#geometry, this.#material );
         this.mesh.position.set(this.position.x, this.position.y, this.position.z);
         this.mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
-
     }
 
 
@@ -75,19 +109,24 @@ export class Trigger extends SceneElementInterface{
     }
 
     getAction(){
-        return this.action;
+        return this.actionIn;
     }
 
 
     doAction(){
-        actions[this.action]();
+        if(this.userInside){
+            actions[this.actionIn](this.objectIn);
+        }
+        else{
+            actions[this.actionOut](this.objectOut);
+        }
+
     }
 
-
-
-
-
-
-
-
+    userIn(){
+        this.userInside = true;
+    }
+    userOut(){
+        this.userInside = false;
+    }
 }

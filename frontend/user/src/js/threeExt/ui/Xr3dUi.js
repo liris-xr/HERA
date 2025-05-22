@@ -26,6 +26,8 @@ export class Xr3dUi {
 
     lastHittable
 
+    needsForceVisibility
+
     constructor(renderer, camera, xrSession, sceneManager, referenceSpace) {
         this.renderer = renderer
         this.camera = camera
@@ -35,6 +37,7 @@ export class Xr3dUi {
         this.hittables = []
         this.pointers = []
         this.lastHittable = {}
+        this.needsForceVisibility = false
 
         this.rayCaster = new THREE.Raycaster(undefined, undefined)
         this.rayCaster.camera = camera
@@ -85,8 +88,8 @@ export class Xr3dUi {
     setupUI() {
         const container = new ThreeMeshUI.Block({
             contentDirection: 'column',
-            fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
-            fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
+            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/public/fonts/Inter-variable.png',
             font: 0.07,
             padding: 0.02,
             borderRadius: 0.11,
@@ -96,8 +99,8 @@ export class Xr3dUi {
         this.animationContainer = new ThreeMeshUI.Block( {
             justifyContent: 'center',
             contentDirection: 'row-reverse',
-            fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
-            fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
+            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/public/fonts/Inter-variable.png',
             fontSize: 0.07,
             padding: 0.02,
             margin: 0.02,
@@ -128,8 +131,8 @@ export class Xr3dUi {
         const sceneContainer = new ThreeMeshUI.Block( {
             justifyContent: 'center',
             contentDirection: 'row-reverse',
-            fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
-            fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
+            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/public/fonts/Inter-variable.png',
             fontSize: 0.07,
             padding: 0.02,
             margin: 0.02,
@@ -154,8 +157,8 @@ export class Xr3dUi {
         this.notificationsContainer = new ThreeMeshUI.Block( {
             justifyContent: 'space-evenly',
             contentDirection: 'column',
-            fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
-            fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
+            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/public/fonts/Inter-variable.png',
             fontSize: 0.07,
             padding: 0.02,
             borderRadius: 0.11,
@@ -175,12 +178,12 @@ export class Xr3dUi {
     }
 
     createNotification(data) {
-        const message = data?.message?.normalize("NFD")?.replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9 ']/g, " ")
+        const message = data?.message
 
         const notification = new ThreeMeshUI.Block( {
             contentDirection: 'column-reverse',
-            fontFamily: '/viewer/public/fonts/Roboto-msdf.json',
-            fontTexture: '/viewer/public/fonts/Roboto-msdf.png',
+            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/public/fonts/Inter-variable.png',
             fontSize: 0.07,
             interLine: 0.01,
             padding: 0.05,
@@ -189,7 +192,7 @@ export class Xr3dUi {
             width: 1.6,
             bestFit: "shrink",
             textAlign: 'justify-left',
-            height: Math.ceil(message.length / 50) * 0.08 + 0.4,
+            height: Math.ceil(message.length / 50) * 0.09 + 0.4,
             backgroundColor: new THREE.Color(0x999999),
         })
 
@@ -218,12 +221,7 @@ export class Xr3dUi {
         )
 
         this.notificationsContainer.add(notification)
-
-        notification.updateLayout()
-        this.notificationsContainer.updateLayout()
-        this.container.updateLayout()
-
-        this.forceVisibility()
+        this.needsForceVisibility = true
     }
 
     clearNotifications() {
@@ -285,6 +283,11 @@ export class Xr3dUi {
     loop(frame) {
         ThreeMeshUI.update()
         this.hoverTest(frame)
+
+        if(this.needsForceVisibility) {
+            this.forceVisibility()
+            this.needsForceVisibility = false
+        }
     }
 
     addToScene(scene) {

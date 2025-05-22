@@ -30,8 +30,8 @@ export function createButton(text, buttonOptions={}) {
         margin = 0.02,
         borderRadius = 0.075,
         textAlign = 'center',
-        fontFamily = '/viewer/public/fonts/Roboto-msdf.json',
-        fontTexture = '/viewer/public/fonts/Roboto-msdf.png',
+        fontFamily ='/viewer/public/fonts/Inter-variable-msdf.json',
+        fontTexture = '/viewer/public/fonts/Inter-variable.png',
     } = buttonOptions;
 
     const button = new ThreeMeshUI.Block({

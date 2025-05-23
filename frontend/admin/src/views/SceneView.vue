@@ -222,6 +222,7 @@ async function saveAll(){
     labels:editor.scene.labelManager.getResultLabel(),
     assets:editor.scene.assetManager.getResultAssets(),
     meshes:editor.scene.assetManager.getResultMeshes(),
+    vrStartPosition: editor.scene.vrStartPosition,
     envmapUrl: scene.value.envmapUrl || "",
   };
 
@@ -421,6 +422,22 @@ onBeforeRouteUpdate((to, from, next)=>{
                           @delete="removeEnvmap" />
           </div>
 
+          <div class="multilineField" v-if="editor.scene.vrCamera">
+
+            <div class="inlineFlex">
+              <label>{{$t("sceneView.leftSection.sceneCamera.label")}}</label>
+            </div>
+
+            <asset-item
+                class="sceneItem"
+                :text="$t('sceneView.leftSection.sceneCamera.basePosition')"
+                :asset="editor.scene.vrCamera"
+                :active="editor.scene.vrCamera.isSelected.value"
+                :right-menu="false"
+                @select="editor.scene.setSelected(editor.scene.vrCamera)" />
+
+          </div>
+
           <div class="multilineField">
             <div class="inlineFlex">
               <label>{{$t("sceneView.leftSection.sceneLabels.label")}}</label>
@@ -469,22 +486,25 @@ onBeforeRouteUpdate((to, from, next)=>{
              ></file-upload-button-view>
             </div>
             <div id="assetList">
-                <asset-item v-for="(asset, index) in editor.scene.assetManager.getAssets.value"
-                            class="sceneItem"
-                            :index="index"
-                            :text="asset.name"
-                            :active-animation="asset.activeAnimation"
-                            :download-url="getResource(asset.sourceUrl)"
-                            :hide-in-viewer="asset.hideInViewer.value"
-                            :active="asset.isSelected.value"
-                            :error="asset.hasError.value"
-                            :loading="asset.isLoading.value"
-                            :asset="asset"
-                            @select="editor.scene.setSelected(asset)"
-                            @delete="editor.scene.removeAsset(asset)"
-                            @duplicate="editor.scene.duplicateAsset(asset)"
-                            @animationChanged="(val)=>{asset.activeAnimation = val; saved = false}"
-                            @hide-in-viewer="()=>{asset.switchViewerDisplayStatus(); saved = false}"/>
+                <template v-for="(asset, index) in editor.scene.assetManager.getAssets.value">
+                    <asset-item
+                        v-if="asset.id !== 'vrCamera'"
+                        class="sceneItem"
+                        :index="index"
+                        :text="asset.name"
+                        :active-animation="asset.activeAnimation"
+                        :download-url="getResource(asset.sourceUrl)"
+                        :hide-in-viewer="asset.hideInViewer.value"
+                        :active="asset.isSelected.value"
+                        :error="asset.hasError.value"
+                        :loading="asset.isLoading.value"
+                        :asset="asset"
+                        @select="editor.scene.setSelected(asset)"
+                        @delete="editor.scene.removeAsset(asset)"
+                        @duplicate="editor.scene.duplicateAsset(asset)"
+                        @animationChanged="(val)=>{asset.activeAnimation = val; saved = false}"
+                        @hide-in-viewer="()=>{asset.switchViewerDisplayStatus(); saved = false}"/>
+                </template>
                 <div v-if="scene.assets.length===0">{{$t("sceneView.leftSection.sceneAssets.noAssetsInfo")}}</div>
               </div>
             </div>

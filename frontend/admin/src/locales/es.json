@@ -187,6 +187,10 @@
         "assetNotDisplayed": "Este objeto no se mostrará en el visor",
         "assetLoadFailed": "No se pudo cargar este modelo 3D"
       },
+      "sceneCamera": {
+        "label": "Caméra VR",
+        "basePosition": "Position de base"
+      },
       "buttons": {
         "duplicate": "Duplicar escena",
         "delete": "Eliminar escena"

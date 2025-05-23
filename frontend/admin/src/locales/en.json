@@ -99,7 +99,7 @@
       },
       "projectEnvmap": {
         "label": "Envmap:",
-        "current": "Envmap actuelle:"
+        "current": "Current envmap:"
       },
       "buttons": {
         "duplicate": "Duplicate project",
@@ -189,6 +189,10 @@
         "noAssetsInfo": "This scene does not have any 3D model",
         "assetNotDisplayed": "This object will not be displayed in viewer",
         "assetLoadFailed": "Unable to load this 3D model"
+      },
+      "sceneCamera": {
+        "label": "VR Camera",
+        "basePosition": "Base position"
       },
       "buttons": {
         "duplicate": "Duplicate scene",

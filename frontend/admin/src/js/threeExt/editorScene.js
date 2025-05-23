@@ -11,6 +11,7 @@ import i18n from "@/i18n.js";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
+import {ModelLoader} from "@/js/threeExt/modelManagement/modelLoader.js";
 
 const transformModeKeys = {
     "translate":"position",
@@ -28,7 +29,9 @@ export class EditorScene extends THREE.Scene {
     #gridPlane;
     #lightSet;
     #transformControls;
-    
+    vrStartPosition;
+    vrCamera;
+
     selected;
     onChanged;
     #meshSelectionMode
@@ -143,6 +146,23 @@ export class EditorScene extends THREE.Scene {
 
                     // this.background = texture
                 })
+
+        this.vrStartPosition = sceneData.vrStartPosition;
+
+        if (sceneData.project.displayMode === "vr") {
+            const camera = new Asset({
+                id: "vrCamera",
+                name: "VR Origin",
+                url: "public/common/camera.glb"
+            })
+            this.assetManager.addToScene(this, camera, () => {
+                camera.mesh.position.set(this.vrStartPosition.position.x, this.vrStartPosition.position.y, this.vrStartPosition.position.z)
+                camera.mesh.rotation.set(this.vrStartPosition.rotation.x, this.vrStartPosition.rotation.y, this.vrStartPosition.rotation.z)
+            }, false)
+
+            this.vrCamera = camera;
+        }
+
     }
 
     setupControls(controls){
@@ -153,6 +173,21 @@ export class EditorScene extends THREE.Scene {
             
         this.#transformControls.addEventListener('mouseUp', (event) => {
             this.#updateSelectedTransformValues();
+
+            if(this.selected.value.id === "vrCamera") {
+                if(this.getTransformMode.value === "translate") {
+                    this.vrStartPosition.position.x = this.selected.value.mesh.position.x
+                    this.vrStartPosition.position.y = this.selected.value.mesh.position.y
+                    this.vrStartPosition.position.z = this.selected.value.mesh.position.z
+                } else if (this.getTransformMode.value === "rotate") {
+                    this.vrStartPosition.rotation.x = this.selected.value.mesh.rotation.x
+                    this.vrStartPosition.rotation.y = this.selected.value.mesh.rotation.y
+                    this.vrStartPosition.rotation.z = this.selected.value.mesh.rotation.z
+                }
+
+                console.log(this.vrStartPosition)
+                console.log(this.selected.value)
+            }
         });
     }
 

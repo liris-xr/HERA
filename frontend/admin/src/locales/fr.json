@@ -191,7 +191,10 @@
         "noAssetsInfo": "Cette scène ne contient aucun modèle 3D",
         "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
         "assetLoadFailed": "Impossible de charger ce modèle 3D"
-
+      },
+      "sceneCamera": {
+        "label": "Caméra VR",
+        "basePosition": "Position de base"
       },
       "buttons": {
         "duplicate": "Dupliquer la scène",

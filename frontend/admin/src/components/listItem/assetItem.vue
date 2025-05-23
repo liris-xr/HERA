@@ -9,7 +9,7 @@ import {useI18n} from "vue-i18n";
 import object3DNode from "three/addons/nodes/accessors/Object3DNode.js";
 
 const props = defineProps({
-  index: {type: Number, default: 0},
+  index: {type: Number, required: false},
   text: {type: String, required: true},
   downloadUrl: {type: String, required: false},
   hideInViewer: {type: Boolean, required: true, default: false},
@@ -17,7 +17,8 @@ const props = defineProps({
   error: {type: Boolean, default: false},
   loading: {type: Boolean, default: false},
   activeAnimation: {type: String, default: null},
-  asset: {type: Object, default: null}
+  asset: {type: Object, default: null},
+  rightMenu: {type: Boolean, default: true},
 })
 
 defineEmits(['select','delete','duplicate','hideInViewer', 'animationChanged'])
@@ -51,12 +52,12 @@ onMounted(async () => {
 <template>
   <div class="item" :class="{active: active}" @click.stop="onClick(()=>{$emit('select')})">
     <div class="inlineFlex">
-      <span>{{index+1}}</span>
+      <span v-if="index != undefined">{{index+1}}</span>
       <span :class="{textStrike: hideInViewer||error}">{{text}}</span>
       <span v-if="hideInViewer" class="notDisplayedInfo">{{$t("sceneView.leftSection.sceneAssets.assetNotDisplayed")}}</span>
     </div>
 
-    <div class="inlineFlex">
+    <div class="inlineFlex" v-if="rightMenu">
       <icon-svg url="/icons/warning.svg" theme="danger" v-if="error" :title="$t('sceneView.leftSection.sceneAssets.assetLoadFailed')" class="iconAction"/>
       <icon-svg url="/icons/spinner.svg" theme="default" v-if="loading"/>
 

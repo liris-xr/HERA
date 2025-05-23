@@ -116,18 +116,29 @@ const buttonText = computed(() => {
         <expandable-ar-notification v-for="error in arSessionManager.sceneManager.active.value.getErrors.value" :title="error.title" :text="error.message"></expandable-ar-notification>
 
 
-        <div id="playerActions" v-if="arSessionManager.sceneManager.active.value.hasAnimation.value">
-          <action-bubble
-              :icon="arSessionManager.sceneManager.active.value.labelPlayer.isPlaying.value ? '/icons/pause.svg' : '/icons/play.svg'"
-              @click="arSessionManager.sceneManager.active.value.labelPlayer.togglePlaying()"
-          />
+        <div id="playerActions">
+          <template v-if="arSessionManager.sceneManager.active.value.hasAnimation.value">
+            <action-bubble
+                :icon="arSessionManager.sceneManager.active.value.labelPlayer.isPlaying.value ? '/icons/pause.svg' : '/icons/play.svg'"
+                @click="arSessionManager.sceneManager.active.value.labelPlayer.togglePlaying()"
+            />
+
+            <action-bubble
+                icon="/icons/restart.svg"
+                @click="arSessionManager.sceneManager.active.value.labelPlayer.reset()"
+            />
+          </template>
 
           <action-bubble
-              icon="/icons/restart.svg"
-              @click="arSessionManager.sceneManager.active.value.labelPlayer.reset()"
+              v-if="!arSessionManager.sceneManager.scenePlacementManager.isEnabled.value"
+              icon="/icons/ar.svg"
+              @click="arSessionManager.sceneManager.scenePlacementManager.reset()"
           />
 
         </div>
+
+
+
       </div>
 
       <div id="overlayBottom" class="overlayBlur" v-if="overlayBottom">

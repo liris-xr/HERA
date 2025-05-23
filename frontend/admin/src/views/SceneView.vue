@@ -242,8 +242,7 @@ async function saveAll(){
 
 }
 
-async function updateEnvmap(event){
-  const file = event.target.files[0];
+async function updateEnvmap(file){
   if (file) {
     const size = bytesToMBytes(file.size)
     if(!file.name.endsWith(".exr")){
@@ -412,12 +411,18 @@ onBeforeRouteUpdate((to, from, next)=>{
           <div class="multilineField">
             <div class="inlineFlex">
               <label for="envMap">{{$t("projectView.leftSection.projectEnvmap.label")}}</label>
-              <input type="file" accept=".exr" @change="updateEnvmap($event)">
+              <file-upload-button-view
+                  :text="$t('projectView.leftSection.projectEnvmap.uploadButton')"
+                  icon="/icons/upload.svg"
+                  @fileSelected="(file)=>{updateEnvmap(file)}"
+                  :accept="['.exr']"
+              ></file-upload-button-view>
+
             </div>
               <envmap-item
                           ref="envmapElement"
                           :text="scene.envmapUrl"
-                          :download-url="getResource(scene.envmapUrl)"
+                          :download-url="scene.envmapUrl"
                           :hide-in-viewer=false
                           @delete="removeEnvmap" />
           </div>

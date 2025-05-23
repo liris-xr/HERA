@@ -97,7 +97,8 @@
       },
       "projectEnvmap": {
         "label": "Envmap:",
-        "current": "Envmap actuelle:"
+        "current": "Envmap actuelle:",
+        "uploadButton": "Ajouter"
       },
       "buttons": {
         "duplicate": "Duplicar proyecto",

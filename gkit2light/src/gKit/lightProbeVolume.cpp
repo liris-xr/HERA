@@ -339,7 +339,10 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
         }
     }
     this->distanceFromGeometryTexture[probe.id] = distanceFromGeometry;
-    probe.directionOfGeometry = directionOfGeometry;
+    this->directionFromGeometryTexture[(probe.id*4)] = directionOfGeometry.x;
+    this->directionFromGeometryTexture[(probe.id*4)+1] = directionOfGeometry.y;
+    this->directionFromGeometryTexture[(probe.id*4)+2] = directionOfGeometry.z;
+    this->directionFromGeometryTexture[(probe.id*4)+3] = 0;
     
     if(this->invalidityTexture[probe.id]) {
         this->invalidityTexture[probe.id] /= float(nbIntersection);
@@ -393,11 +396,6 @@ void LightProbeVolume::bake() {
                 this->shTextures[coef][(probe.id*4)+color] = value;
             }
         }
-
-        this->directionFromGeometryTexture[(probe.id*4)] = probe.directionOfGeometry.x;
-        this->directionFromGeometryTexture[(probe.id*4)+1] = probe.directionOfGeometry.y;
-        this->directionFromGeometryTexture[(probe.id*4)+2] = probe.directionOfGeometry.z;
-        this->directionFromGeometryTexture[(probe.id*4)+3] = 0;
     }
 }
 

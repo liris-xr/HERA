@@ -182,32 +182,32 @@ varying vec3 vViewPosition;
 
 vec3 getITexcoord(int i,vec3 texcoord) {
 	float x = float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth;
-	float y = float(int(texcoord.y*lpvTextureHeight))/lpvTextureHeight;
-	float z = float(int(texcoord.z*lpvTextureDepth))/lpvTextureDepth;
+	float y = float(int(texcoord.y*lpvTextureDepth))/lpvTextureDepth;
+	float z = float(int(texcoord.z*lpvTextureHeight))/lpvTextureHeight;
 
 	if(i == 0) {
 		return vec3(x,y,z);
 	} else if(i == 1) {
 		return vec3(x+freqX,y,z);
 	} else if(i == 2) {
-		return vec3(x+freqX,y,z+freqZ);
+		return vec3(x+freqX,y+freqZ,z);
 	} else if(i == 3) {
-		return vec3(x,y,z+freqZ); 
+		return vec3(x,y+freqZ,z); 
 	} else if(i == 4) {
-		return vec3(x,y+freqY,z); 
+		return vec3(x,y,z+freqY); 
 	} else if(i == 5) {
-	 	return vec3(x+freqX,y+freqY,z);
+	 	return vec3(x+freqX,y,z+freqY);
 	} else if(i == 6) {
-		return vec3(x+freqX,y+freqY,z+freqZ); 
+		return vec3(x+freqX,y+freqZ,z+freqY); 
 	} else if(i == 7) {
-		return vec3(x,y+freqY,z+freqZ); 
+		return vec3(x,y+freqZ,z+freqY); 
 	}
 }
 
 vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
 	float x = (((texcoord.x * 2.0) - 1.0) * (lpvWidth/2.0)) + lpvCenter.x;
-	float y = (((texcoord.y * 2.0) - 1.0) * (lpvHeight/2.0)) + lpvCenter.y;
-	float z = (((texcoord.z * 2.0) - 1.0) * (lpvDepth/2.0)) + lpvCenter.z;
+	float y = (((texcoord.z * 2.0) - 1.0) * (lpvHeight/2.0)) + lpvCenter.y;
+	float z = (((texcoord.y * 2.0) - 1.0) * (lpvDepth/2.0)) + lpvCenter.z;
 
 	if(i == 0) {
 		return vec3(x,y,z);
@@ -289,12 +289,12 @@ void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,v
 		vec3 probeWorldTexcoord = getIProbeWorldPosition(i,texcoord);
 		vec3 pProbe = p - probeWorldTexcoord;
 
-		vec3 dirOfGeo = normalize(getProbeDirectionOfGeometry(i,texcoord));
+		vec3 dirOfGeo = getProbeDirectionOfGeometry(i,texcoord);
 		vec3 projectionOnDirOfGeo = dot(dirOfGeo,pProbe)*dirOfGeo;
 
-		interpolationMask[i] = length(projectionOnDirOfGeo) <= getProbeDistanceFromGeometry(i,texcoord);
+		interpolationMask[i] = dot(dirOfGeo,pProbe) <= getProbeDistanceFromGeometry(i,texcoord);
 
-		interpolationMask[i] = dot(normalize(-pProbe),n) > 0.0;
+		// interpolationMask[i] = dot(normalize(-pProbe),n) > 0.0;
 
 	}
 }
@@ -304,8 +304,8 @@ void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3
 	getInterpolationMask(texcoord,p,interpolationMask,n);
 
 	float x = (texcoord.x - float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth) * lpvTextureWidth;
-	float y = (texcoord.y - float(int(texcoord.y*lpvTextureHeight))/lpvTextureHeight) * lpvTextureHeight;
-	float z = (texcoord.z - float(int(texcoord.z*lpvTextureDepth))/lpvTextureDepth) * lpvTextureDepth;
+	float z = (texcoord.y - float(int(texcoord.y*lpvTextureDepth))/lpvTextureDepth) * lpvTextureDepth;
+	float y = (texcoord.z - float(int(texcoord.z*lpvTextureHeight))/lpvTextureHeight) * lpvTextureHeight;
 
 	vec3 inter0_1[9];
 	getMaskedProbeInterpolation(0,1,interpolationMask[0],interpolationMask[1],x,texcoord,inter0_1);  
@@ -393,6 +393,11 @@ void main() {
 	#endif
 
 	// outgoingLight = texture(directionOfGeometry,texcoord).xyz;
+	// outgoingLight = vec3(getProbeDistanceFromGeometry(5,texcoord));
+	// outgoingLight = wPosition.xyz;
+	// outgoingLight = getIProbeWorldPosition(0,texcoord)-wPosition.xyz;
+	// outgoingLight = getITexcoord(0,texcoord);
+	// outgoingLight = getITexcoord(0,texcoord)-texcoord;
 	// outgoingLight = wNormal;
 
 	#include <opaque_fragment>

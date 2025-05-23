@@ -394,10 +394,10 @@ void LightProbeVolume::bake() {
             }
         }
 
-        for(unsigned int axis = 0;axis<4;axis++) {
-            float value = axis == 0 ? probe.directionOfGeometry.x : axis == 1 ? probe.directionOfGeometry.y : axis == 2 ? probe.directionOfGeometry.z : 0;
-            this->directionFromGeometryTexture[(probe.id*4)+axis] = value;
-        }
+        this->directionFromGeometryTexture[(probe.id*4)] = probe.directionOfGeometry.x;
+        this->directionFromGeometryTexture[(probe.id*4)+1] = probe.directionOfGeometry.y;
+        this->directionFromGeometryTexture[(probe.id*4)+2] = probe.directionOfGeometry.z;
+        this->directionFromGeometryTexture[(probe.id*4)+3] = 0;
     }
 }
 

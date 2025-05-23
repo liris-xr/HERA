@@ -205,9 +205,9 @@ vec3 getITexcoord(int i,vec3 texcoord) {
 }
 
 vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
-	float x = ((texcoord.x * 2.0) - 1.0) * lpvWidth + lpvCenter.x;
-	float y = ((texcoord.y * 2.0) - 1.0) * lpvHeight + lpvCenter.y;
-	float z = ((texcoord.z * 2.0) - 1.0) * lpvDepth + lpvCenter.z;
+	float x = (((texcoord.x * 2.0) - 1.0) * (lpvWidth/2.0)) + lpvCenter.x;
+	float y = (((texcoord.y * 2.0) - 1.0) * (lpvHeight/2.0)) + lpvCenter.y;
+	float z = (((texcoord.z * 2.0) - 1.0) * (lpvDepth/2.0)) + lpvCenter.z;
 
 	if(i == 0) {
 		return vec3(x,y,z);
@@ -284,7 +284,7 @@ void getProbeInterpolation(vec3[9] a, vec3[9] b,float v,inout vec3[9] probeSH) {
 	}
 }
 
-void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask) {
+void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n) {
 	for(int i = 0;i<8;i++) {
 		vec3 probeWorldTexcoord = getIProbeWorldPosition(i,texcoord);
 		vec3 pProbe = p - probeWorldTexcoord;
@@ -294,12 +294,14 @@ void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask) 
 
 		interpolationMask[i] = length(projectionOnDirOfGeo) <= getProbeDistanceFromGeometry(i,texcoord);
 
+		interpolationMask[i] = dot(normalize(-pProbe),n) > 0.0;
+
 	}
 }
 
-void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH) {
+void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3 n ) {
 	bool interpolationMask[8];
-	getInterpolationMask(texcoord,p,interpolationMask);
+	getInterpolationMask(texcoord,p,interpolationMask,n);
 
 	float x = (texcoord.x - float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth) * lpvTextureWidth;
 	float y = (texcoord.y - float(int(texcoord.y*lpvTextureHeight))/lpvTextureHeight) * lpvTextureHeight;
@@ -357,6 +359,9 @@ void main() {
 		(((wPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
 		);
 		
+	vec3 interpolatedLightProbe[9];
+	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,wNormal);
+		
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 	// texture(sh1,texcoord).rgb,
 	// texture(sh2,texcoord).rgb,
@@ -367,9 +372,6 @@ void main() {
 	// texture(sh7,texcoord).rgb,
 	// texture(sh8,texcoord).rgb
 	// );
-
-	vec3 interpolatedLightProbe[9];
-	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe);
 
 	vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
 	IncidentLight il = IncidentLight(color,normal,true);
@@ -390,9 +392,8 @@ void main() {
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
 
-	// outgoingLight = normalize(texture(directionOfGeometry,texcoord).xyz);
-	// outgoingLight = vec3(1,-1,-1);
-	outgoingLight = vec3(texture(distanceFromGeometry,texcoord).r)*100.;
+	// outgoingLight = texture(directionOfGeometry,texcoord).xyz;
+	// outgoingLight = wNormal;
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
@@ -485,6 +486,7 @@ export class MeshManager {
 																this.lpvParameters.depth*this.lpvParameters.density,
 																this.lpvParameters.height*this.lpvParameters.density);
 					sh3DTexture.magFilter = THREE.LinearFilter;
+					sh3DTexture.minFilter = THREE.LinearFilter;
 					sh3DTexture.type = THREE.FloatType;
 					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
 					sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
@@ -500,25 +502,27 @@ export class MeshManager {
 																this.lpvParameters.height*this.lpvParameters.density);
 				distanceTexture.format = THREE.RedFormat;
 				distanceTexture.type = THREE.FloatType;
-				distanceTexture.magFilter = THREE.NearestFilter;
+				distanceTexture.magFilter = THREE.LinearFilter;
+				distanceTexture.magFilter = THREE.LinearFilter;
 				distanceTexture.wrapS = THREE.ClampToEdgeWrapping;
 				distanceTexture.wrapT = THREE.ClampToEdgeWrapping;
 				distanceTexture.wrapR = THREE.ClampToEdgeWrapping;
 				distanceTexture.needsUpdate = true;
 				shader.uniforms["distanceFromGeometry"] = { value:distanceTexture };
 
-				const directionOfGeoMetryTexture = new THREE.Data3DTexture(this.directionOfGeometryTexture, 
+				const directionOfGeometryTexture = new THREE.Data3DTexture(this.directionOfGeometryTexture, 
 															this.lpvParameters.width*this.lpvParameters.density,
 															this.lpvParameters.depth*this.lpvParameters.density,
 															this.lpvParameters.height*this.lpvParameters.density);
-				directionOfGeoMetryTexture.magFilter = THREE.NearestFilter;
-				directionOfGeoMetryTexture.type = THREE.FloatType;
-				directionOfGeoMetryTexture.wrapS = THREE.ClampToEdgeWrapping
-				directionOfGeoMetryTexture.wrapT = THREE.ClampToEdgeWrapping
-				directionOfGeoMetryTexture.wrapR = THREE.ClampToEdgeWrapping
-				directionOfGeoMetryTexture.needsUpdate = true;
+				directionOfGeometryTexture.magFilter = THREE.LinearFilter;
+				directionOfGeometryTexture.magFilter = THREE.LinearFilter;
+				directionOfGeometryTexture.type = THREE.FloatType;
+				directionOfGeometryTexture.wrapS = THREE.ClampToEdgeWrapping
+				directionOfGeometryTexture.wrapT = THREE.ClampToEdgeWrapping
+				directionOfGeometryTexture.wrapR = THREE.ClampToEdgeWrapping
+				directionOfGeometryTexture.needsUpdate = true;
 
-				shader.uniforms["directionOfGeometry"] = { value:directionOfGeoMetryTexture};
+				shader.uniforms["directionOfGeometry"] = { value:directionOfGeometryTexture};
 
 
 				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParameters.center.x,this.lpvParameters.center.y,this.lpvParameters.center.z)};

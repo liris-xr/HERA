@@ -7,6 +7,7 @@ import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
 import Stats from 'three/addons/libs/stats.module.js';
 import {CustomBlending, Vector2} from "three";
 import {Xr3dUi} from "@/js/threeExt/ui/Xr3dUi.js";
+import * as THREE from "three";
 
 export class ArSessionManager {
     sceneManager;
@@ -44,6 +45,7 @@ export class ArSessionManager {
             this.labelRenderer.clear()
             if(this.xr3dUi)
                 this.xr3dUi.addToScene(this.sceneManager.active.value)
+            this.applyVrCameraPosition()
         }.bind(this);
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
@@ -167,7 +169,6 @@ export class ArSessionManager {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
             this.arSession.addEventListener('select', this.sceneManager.onSelect.bind(this.sceneManager));
         } catch(e) {
-            console.log(e)
             // pas supporté
         }
 
@@ -178,10 +179,54 @@ export class ArSessionManager {
             this.xr3dUi.addToScene(this.sceneManager.active.value)
         }
 
+        if(this.xrMode === "vr" && this.sceneManager.active.value.vrStartPosition) {
+            this.applyVrCameraPosition()
+        }
+
         this.sceneManager.isArRunning.value = true;
     }
 
+    applyVrCameraPosition() {
+        const scene = this.sceneManager.active.value
+        if(scene.getObjectByName("vrCameraGroup"))
+            return
 
+        const group = new THREE.Group()
+        group.name = "vrCameraGroup"
+
+        let index = 0;
+        while (scene.children.length > index) {
+            const child = scene.children[index]
+            if(child.name === "UI" || child.name.startsWith("pointer"))
+                index++
+            else
+                group.add(child)
+        }
+
+        scene.add(group)
+
+        group.position.x = - scene.vrStartPosition.position.x
+        group.position.y = - scene.vrStartPosition.position.y
+        group.position.z = - scene.vrStartPosition.position.z
+
+        group.rotation.x = - scene.vrStartPosition.rotation.x
+        group.rotation.y = - scene.vrStartPosition.rotation.y
+        group.rotation.z = - scene.vrStartPosition.rotation.z
+
+    }
+
+    removeVrCameraPosition() {
+        for(let scene of this.sceneManager.scenes) {
+            const group = scene.getObjectByName("vrCameraGroup")
+            if(!group)
+                continue
+
+            while (group.children.length > 0)
+                scene.add(group.children[0])
+
+            scene.remove(group)
+        }
+    }
 
     async stop(){
         if(this.arSession != null)
@@ -194,6 +239,8 @@ export class ArSessionManager {
         this.sceneManager.scenePlacementManager.hitTestSource = null
         this.#isArRunning.value = false;
         this.sceneManager.isArRunning.value = false;
+        if(this.xrMode === "vr")
+            this.removeVrCameraPosition()
         this.#resetCameraPosition()
 
         if(this.sceneManager.active.value.hasLabels.value) {
@@ -202,6 +249,8 @@ export class ArSessionManager {
 
         if(this.xr3dUi)
             this.xr3dUi.removeFromScene(this.sceneManager.active.value)
+
+
     }
 
     reset() {
@@ -209,6 +258,7 @@ export class ArSessionManager {
     }
 
     onXrFrame(time, frame) {
+
         this.sceneManager.onXrFrame(time, frame, this.referenceSpace, this.arCamera, this.arRenderer);
         this.controls.update();
 

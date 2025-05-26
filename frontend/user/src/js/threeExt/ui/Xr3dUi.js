@@ -3,6 +3,7 @@ import * as THREE from "three"
 import {watch} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {createButton} from "@/js/threeExt/ui/utils.js";
+import {generateUUID} from "three/src/math/MathUtils.js";
 
 const COYOTE_TIME = 150; // en ms, délai pendant lequel un bouton reste pressable pour compenser les tremblements
 
@@ -55,6 +56,8 @@ export class Xr3dUi {
             new THREE.SphereGeometry(0.01, 8, 8),
             new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true })
         )
+        pointer.name = "pointer" + generateUUID()
+
         pointer.renderOrder = 999
         pointer.material.depthTest = false
         pointer.visible = true
@@ -95,6 +98,8 @@ export class Xr3dUi {
             borderRadius: 0.11,
             backgroundColor: new THREE.Color(0x222222)
         })
+
+        container.name = "UI"
 
         this.animationContainer = new ThreeMeshUI.Block( {
             justifyContent: 'center',
@@ -265,8 +270,12 @@ export class Xr3dUi {
         const direction = new THREE.Vector3()
         this.camera.getWorldDirection(direction)
 
+
         const newPos = new THREE.Vector3()
         newPos.copy(this.camera.position).add(direction.multiplyScalar(distance))
+
+        console.log(newPos)
+
 
         this.container.position.copy(newPos)
         this.container.lookAt(this.camera.position)

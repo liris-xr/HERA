@@ -97,7 +97,8 @@
       },
       "projectEnvmap": {
         "label": "Envmap:",
-        "current": "Envmap actuelle:"
+        "current": "Envmap actuelle:",
+        "uploadButton": "Ajouter"
       },
       "buttons": {
         "duplicate": "Duplicar proyecto",
@@ -186,6 +187,10 @@
         "noAssetsInfo": "Esta escena no tiene ningún modelo 3D",
         "assetNotDisplayed": "Este objeto no se mostrará en el visor",
         "assetLoadFailed": "No se pudo cargar este modelo 3D"
+      },
+      "sceneCamera": {
+        "label": "Caméra VR",
+        "basePosition": "Position de base"
       },
       "buttons": {
         "duplicate": "Duplicar escena",

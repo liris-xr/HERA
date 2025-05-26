@@ -165,6 +165,7 @@ export class ArSessionManager {
 
         try {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
+            this.arSession.addEventListener('select', this.sceneManager.onSelect.bind(this.sceneManager));
         } catch(e) {
             console.log(e)
             // pas supporté

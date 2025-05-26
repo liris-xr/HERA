@@ -132,8 +132,9 @@ export class ArSceneManager{
     }
 
     onSceneClick(event){
-        if(this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value)
+        if(this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value) {
             this.scenePlacementManager.disable();
+        }
     }
 
     getScenes() {

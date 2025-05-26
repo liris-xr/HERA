@@ -1,6 +1,10 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
 import {computed, onMounted, reactive, ref} from "vue";
+import {useI18n} from "vue-i18n";
+import {getResource} from "@/js/endpoints.js";
+
+const {t} = useI18n();
 
 const props = defineProps({
   text: {type: String},
@@ -22,7 +26,7 @@ const onClick = (cb) => {
   if(!(props.error || props.loading)) cb()
 }
 
-const fileLabel = computed(() => props.text?.split("\\")[props.text.split("\\").length - 1] || "Aucune");
+const fileLabel = computed(() => props.text?.split("\\")[props.text.split("\\").length - 1] || t("none"));
 
 </script>
 
@@ -35,10 +39,10 @@ const fileLabel = computed(() => props.text?.split("\\")[props.text.split("\\").
         <icon-svg url="/icons/warning.svg" theme="danger" v-if="error" :title="$t('sceneView.leftSection.sceneAssets.assetLoadFailed')" class="iconAction"/>
         <icon-svg url="/icons/spinner.svg" theme="default" v-if="loading"/>
 
-        <a v-if="downloadUrl" target="_blank" rel="noopener noreferrer" :href="downloadUrl">
+        <a v-if="downloadUrl" target="_blank" rel="noopener noreferrer" :href="getResource(downloadUrl)">
           <icon-svg url="/icons/download.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop=""/>
         </a>
-        <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete')})"/>
+        <icon-svg v-if="downloadUrl" url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete')})"/>
       </span>
     </div>
   </div>
@@ -58,7 +62,6 @@ const fileLabel = computed(() => props.text?.split("\\")[props.text.split("\\").
 .item > div {
   align-items: center;
   height: 100%;
-  width: fit-content;
   margin-bottom: 0;
 }
 
@@ -73,6 +76,10 @@ const fileLabel = computed(() => props.text?.split("\\")[props.text.split("\\").
 .item > div > * {
   margin-right: 8px;
   margin-bottom: 0;
+}
+
+.item span {
+  overflow: visible;
 }
 
 .active{

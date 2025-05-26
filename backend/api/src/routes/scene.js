@@ -30,7 +30,7 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
                 {
                     model: ArProject,
                     as: "project",
-                    attributes: ["id","title", "unit"],
+                    attributes: ["id","title", "unit", "displayMode"],
                     include:[{
                         model: ArUser,
                         as:"owner",
@@ -310,7 +310,8 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
             await ArScene.update({
                 title: req.body.title,
                 description: req.body.description,
-                envmapUrl: updatedUrl || req.body.envmapUrl
+                envmapUrl: updatedUrl || req.body.envmapUrl,
+                vrStartPosition: typeof req.body.vrStartPosition === "object" ? req.body.vrStartPosition : JSON.parse(req.body.vrStartPosition),
             },{
                 where: {id: sceneId},
                 transaction:t,

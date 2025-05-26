@@ -205,9 +205,9 @@ vec3 getITexcoord(int i,vec3 texcoord) {
 }
 
 vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
-	float x = (((texcoord.x * 2.0) - 1.0) * (lpvWidth/2.0)) + lpvCenter.x;
-	float y = (((texcoord.z * 2.0) - 1.0) * (lpvHeight/2.0)) + lpvCenter.y;
-	float z = (((texcoord.y * 2.0) - 1.0) * (lpvDepth/2.0)) + lpvCenter.z;
+	float x = ((lpvWidth * ((2.0*texcoord.x)-1.0)) / 2.0) + lpvCenter.x;
+	float y = ((lpvHeight * ((2.0*texcoord.z)-1.0)) / 2.0) + lpvCenter.y;
+	float z = ((lpvDepth * ((2.0*texcoord.y)-1.0)) / 2.0) + lpvCenter.z;
 
 	if(i == 0) {
 		return vec3(x,y,z);
@@ -268,19 +268,19 @@ void getMaskedProbeInterpolation(int ai, int bi, bool aMask, bool bMask,float v,
 	} else if(bMask) {
 		getProbeSH(bi,texcoord,probeSH);
 	} else {
-		probeSH[0] = vec3(-1);
+		probeSH[0] = vec3(3.0,0,0);
 	}
 }
 
 void getProbeInterpolation(vec3[9] a, vec3[9] b,float v,inout vec3[9] probeSH) {
-	if(a[0].x != -1.0 && b[0].x != -1.0) {
+	if(a[0].x != 3.0 && b[0].x != 3.0) {
 		linearProbeInterpolation(a,b,v,probeSH);
-	} else if(a[0].x != -1.0) {
+	} else if(a[0].x != 3.0) {
 		probeSH = a;
-	} else if(b[0].x != -1.0) {
+	} else if(b[0].x != 3.0) {
 		probeSH = b;
 	} else {
-		probeSH[0] = vec3(-1);
+		probeSH[0] = vec3(3.0,0,0);
 	}
 }
 
@@ -290,12 +290,9 @@ void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,v
 		vec3 pProbe = p - probeWorldTexcoord;
 
 		vec3 dirOfGeo = getProbeDirectionOfGeometry(i,texcoord);
-		vec3 projectionOnDirOfGeo = dot(dirOfGeo,pProbe)*dirOfGeo;
+		// vec3 projectionOnDirOfGeo = dot(dirOfGeo,pProbe)*dirOfGeo;
 
-		interpolationMask[i] = dot(dirOfGeo,pProbe) <= getProbeDistanceFromGeometry(i,texcoord);
-
-		// interpolationMask[i] = dot(normalize(-pProbe),n) > 0.0;
-
+		interpolationMask[i] = dot(dirOfGeo,pProbe)-0.1 < getProbeDistanceFromGeometry(i,texcoord);
 	}
 }
 
@@ -354,13 +351,13 @@ void main() {
 	
 	
 	vec3 texcoord = vec3(
-		(((wPosition.x-lpvCenter.x) / (lpvWidth/2.)) + 1.) / 2.,
-		(((wPosition.z-lpvCenter.z) / (lpvDepth/2.)) + 1.) / 2.,
-		(((wPosition.y-lpvCenter.y) / (lpvHeight/2.)) + 1.) / 2.
+		(2.0*((wPosition.x-lpvCenter.x) / lpvWidth) + 1.) / 2.,
+		(2.0*((wPosition.z-lpvCenter.z) / lpvDepth) + 1.) / 2.,
+		(2.0*((wPosition.y-lpvCenter.y) / lpvHeight) + 1.) / 2.
 		);
 		
 	vec3 interpolatedLightProbe[9];
-	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,wNormal);
+	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,normal);
 		
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 	// texture(sh1,texcoord).rgb,
@@ -373,7 +370,7 @@ void main() {
 	// texture(sh8,texcoord).rgb
 	// );
 
-	vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
+	vec3 color = getLightProbeIrradiance(interpolatedLightProbe,wNormal);
 	IncidentLight il = IncidentLight(color,normal,true);
 	
 	RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
@@ -539,10 +536,10 @@ export class MeshManager {
 				shader.uniforms.lpvTextureHeight = {value : this.lpvParameters.height*this.lpvParameters.density};
 				shader.uniforms.lpvDensity = {value : this.lpvParameters.density};
 
-				shader.uniforms.freqX = {value:1/(this.lpvParameters.width*this.lpvParameters.density)};
-				shader.uniforms.freqY = {value:1/(this.lpvParameters.height*this.lpvParameters.density)};
-				shader.uniforms.freqZ = {value:1/(this.lpvParameters.depth*this.lpvParameters.density)};
-				shader.uniforms.worldFreq = {value:1/this.lpvParameters.density};
+				shader.uniforms.freqX = {value:1.0/(this.lpvParameters.width*this.lpvParameters.density)};
+				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.height*this.lpvParameters.density)};
+				shader.uniforms.freqZ = {value:1.0/(this.lpvParameters.depth*this.lpvParameters.density)};
+				shader.uniforms.worldFreq = {value:1.0/this.lpvParameters.density};
 			}
         }
 

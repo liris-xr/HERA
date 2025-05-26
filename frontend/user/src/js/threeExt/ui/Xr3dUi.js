@@ -72,8 +72,18 @@ export class Xr3dUi {
         return pointer
     }
 
+    removePointer(pointer) {
+        const index = this.pointers.indexOf(pointer)
+        if(index !== -1)
+            this.pointers.splice(index, 1)
+
+        if(this.sceneManager.active.value)
+            this.sceneManager.active.value.remove(pointer)
+    }
+
     initListeners() {
         this.xrSession.addEventListener("select", this.handleSelect.bind(this))
+        this.xrSession.addEventListener("inputsourcechange", this.handleInputSourceChange.bind(this))
 
         watch(this.sceneManager.active, () => {
             this.sceneText.set({ content: this.sceneManager.active.value.title })
@@ -233,6 +243,17 @@ export class Xr3dUi {
             this.notificationsContainer.remove(i)
             i.visible = false
         }
+    }
+
+    handleInputSourceChange(event) {
+        const delta = event.added.length - event.removed.length
+
+        if(delta > 0)
+            for(let i = 0; i < delta; i++)
+                this.createPointer()
+        else if (delta < 0)
+            for(let i = 0; i < Math.abs(delta); i++)
+                this.removePointer(this.pointers[this.pointers.length - 1])
     }
 
     handleSelect(event) {

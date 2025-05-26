@@ -85,6 +85,8 @@ export class Xr3dUi {
         this.xrSession.addEventListener("select", this.handleSelect.bind(this))
         this.xrSession.addEventListener("inputsourcechange", this.handleInputSourceChange.bind(this))
 
+        this.xrSession.addEventListener("reset", (event) => console.log(event))
+
         watch(this.sceneManager.active, () => {
             this.sceneText.set({ content: this.sceneManager.active.value.title })
             this.clearNotifications()
@@ -169,6 +171,26 @@ export class Xr3dUi {
             this.sceneManager.setNextActive()
         }
 
+        const vrActionsContainer = new ThreeMeshUI.Block( {
+            justifyContent: 'center',
+            contentDirection: 'row-reverse',
+            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/public/fonts/Inter-variable.png',
+            fontSize: 0.07,
+            padding: 0.02,
+            margin: 0.02,
+            borderRadius: 0.11,
+            backgroundColor: new THREE.Color(0x555555)
+        } );
+
+        const buttonRecalibrate = createButton("Recalibrate")
+        vrActionsContainer.add(buttonRecalibrate)
+        this.hittables.push(buttonRecalibrate)
+
+        vrActionsContainer.onClick = () => {
+
+        }
+
         this.notificationsContainer = new ThreeMeshUI.Block( {
             justifyContent: 'space-evenly',
             contentDirection: 'column',
@@ -183,7 +205,7 @@ export class Xr3dUi {
 
         sceneContainer.add( buttonNext, buttonSelect, buttonPrevious );
 
-        container.add(this.animationContainer, sceneContainer, this.notificationsContainer)
+        container.add(this.animationContainer, sceneContainer, vrActionsContainer, this.notificationsContainer)
         container.visible = false
 
         this.container = container

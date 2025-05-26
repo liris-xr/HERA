@@ -42,7 +42,8 @@ const scene = ref({
     unit:""
   },
   labels:[],
-  assets:[]
+  assets:[],
+  envmapUrl: ""
 });
 
 const saved = ref(true);
@@ -265,6 +266,8 @@ async function updateEnvmap(file){
           // this.background = texture
         })
 
+        scene.value.envmapUrl = url;
+
       } catch(error) {
         alert(t('projectView.selectedFile.notAnExrError'))
         uploadedEnvmap.value.rawData = null;
@@ -340,8 +343,21 @@ function beforeRedirect(to, from, next){
 function removeEnvmap() {
   scene.value.envmapUrl = "";
 
-  if (uploadedEnvmap.value.rawData === null)
-    editor.scene.environment = null
+  editor.scene.environment = null
+
+}
+
+function resetVrCamera() {
+  if(!editor.scene.vrCamera) return;
+
+  editor.scene.vrStartPosition = {
+    position: {x: 0, y: 1.7, z: 0},
+    rotation: {x: 0, y: 0, z: 0},
+  }
+  editor.scene.vrCamera.mesh.position.set(0, 1.7, 0);
+  editor.scene.vrCamera.mesh.rotation.set(0, 0, 0);
+
+  saved.value = false;
 }
 
 onBeforeRouteLeave( (to, from, next)=>{
@@ -439,7 +455,9 @@ onBeforeRouteUpdate((to, from, next)=>{
                 :asset="editor.scene.vrCamera"
                 :active="editor.scene.vrCamera.isSelected.value"
                 :right-menu="false"
-                @select="editor.scene.setSelected(editor.scene.vrCamera)" />
+                :reset="true"
+                @select="editor.scene.setSelected(editor.scene.vrCamera)"
+                @reset="resetVrCamera()" />
 
           </div>
 

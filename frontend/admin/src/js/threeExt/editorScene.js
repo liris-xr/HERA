@@ -74,6 +74,18 @@ export class EditorScene extends THREE.Scene {
 
                 this.selected.value.getObject()[transformModeKeys[this.getTransformMode.value]].set(value.value.x, value.value.y, value.value.z)
 
+                if(this.selected.value.id === "vrCamera") {
+                    if(this.getTransformMode.value === "translate") {
+                        this.vrStartPosition.position.x = this.selected.value.mesh.position.x
+                        this.vrStartPosition.position.y = this.selected.value.mesh.position.y
+                        this.vrStartPosition.position.z = this.selected.value.mesh.position.z
+                    } else if (this.getTransformMode.value === "rotate") {
+                        this.vrStartPosition.rotation.x = this.selected.value.mesh.rotation.x
+                        this.vrStartPosition.rotation.y = this.selected.value.mesh.rotation.y
+                        this.vrStartPosition.rotation.z = this.selected.value.mesh.rotation.z
+                    }
+                }
+
             } else {
 
                 this.selected.value[transformModeKeys[this.getTransformMode.value]].x = value.value.x

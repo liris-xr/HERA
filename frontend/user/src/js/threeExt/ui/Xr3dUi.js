@@ -4,6 +4,7 @@ import {watch} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {createButton} from "@/js/threeExt/ui/utils.js";
 import {generateUUID} from "three/src/math/MathUtils.js";
+import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.js";
 
 const COYOTE_TIME = 150; // en ms, délai pendant lequel un bouton reste pressable pour compenser les tremblements
 
@@ -14,6 +15,7 @@ export class Xr3dUi {
     xrSession
     sceneManager
     referenceSpace
+    recalibrate
 
     rayCaster
     hittables
@@ -29,12 +31,14 @@ export class Xr3dUi {
 
     needsForceVisibility
 
-    constructor(renderer, camera, xrSession, sceneManager, referenceSpace) {
+    constructor(renderer, camera, xrSession, sceneManager, referenceSpace, recalibrate) {
         this.renderer = renderer
         this.camera = camera
         this.xrSession = xrSession
         this.sceneManager = sceneManager
         this.referenceSpace = referenceSpace
+        this.recalibrate = recalibrate
+
         this.hittables = []
         this.pointers = []
         this.lastHittable = {}
@@ -84,8 +88,6 @@ export class Xr3dUi {
     initListeners() {
         this.xrSession.addEventListener("select", this.handleSelect.bind(this))
         this.xrSession.addEventListener("inputsourcechange", this.handleInputSourceChange.bind(this))
-
-        this.xrSession.addEventListener("reset", (event) => console.log(event))
 
         watch(this.sceneManager.active, () => {
             this.sceneText.set({ content: this.sceneManager.active.value.title })
@@ -183,12 +185,15 @@ export class Xr3dUi {
             backgroundColor: new THREE.Color(0x555555)
         } );
 
-        const buttonRecalibrate = createButton("Recalibrate")
+        const buttonRecalibrate = createButton("Recalibrate", {width: 0.5})
         vrActionsContainer.add(buttonRecalibrate)
         this.hittables.push(buttonRecalibrate)
 
-        vrActionsContainer.onClick = () => {
+        buttonRecalibrate.onClick = () => {
+            const position = this.renderer.xr.getCamera(this.camera).position
+            const rotation = this.renderer.xr.getCamera(this.camera).rotation
 
+            this.recalibrate(position, rotation)
         }
 
         this.notificationsContainer = new ThreeMeshUI.Block( {
@@ -287,6 +292,10 @@ export class Xr3dUi {
     }
 
     forceVisibility() {
+        this.container.depthTest = false
+        this.container.depthWrite = false
+        this.container.transparent = true
+
         this.container.traverse(child => {
             if(child.material) {
                 child.material.depthTest = false;
@@ -341,6 +350,9 @@ export class Xr3dUi {
     }
 
     addToScene(scene) {
+        if(scene instanceof  ScenePlacementManager)
+            return
+
         scene.add(this.container)
         for(let pointer of this.pointers)
             scene.add(pointer)

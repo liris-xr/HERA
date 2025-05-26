@@ -167,13 +167,14 @@ export class ArSessionManager {
 
         try {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
-            this.arSession.addEventListener('select', this.sceneManager.onSelect.bind(this.sceneManager));
+            this.arSession.addEventListener('select', this.sceneManager.onSceneClick.bind(this.sceneManager));
         } catch(e) {
+            this.sceneManager.scenePlacementManager.disable()
             // pas supporté
         }
 
         if(this.enable3dUI) {
-            this.xr3dUi = new Xr3dUi(this.arRenderer, this.arCamera, this.arSession, this.sceneManager, this.referenceSpace)
+            this.xr3dUi = new Xr3dUi(this.arRenderer, this.arCamera, this.arSession, this.sceneManager, this.referenceSpace, this.applyVrCameraPosition.bind(this))
             this.xr3dUi.init()
 
             this.xr3dUi.addToScene(this.sceneManager.active.value)
@@ -186,32 +187,41 @@ export class ArSessionManager {
         this.sceneManager.isArRunning.value = true;
     }
 
-    applyVrCameraPosition() {
-        const scene = this.sceneManager.active.value
-        if(scene.getObjectByName("vrCameraGroup"))
+    applyVrCameraPosition(position=new THREE.Vector3(0, 0, 0), rotation=new THREE.Vector3(0, 0, 0)) {
+        if(this.xrMode !== "vr")
             return
 
-        const group = new THREE.Group()
-        group.name = "vrCameraGroup"
+        const scene = this.sceneManager.active.value
+        if(!scene.vrStartPosition || (scene.getObjectByName("vrCameraGroup") && position.length() === 0 && rotation.length() === 0))
+            return
 
-        let index = 0;
-        while (scene.children.length > index) {
-            const child = scene.children[index]
-            if(child.name === "UI" || child.name.startsWith("pointer"))
-                index++
-            else
-                group.add(child)
+        let group = scene.getObjectByName("vrCameraGroup");
+
+        if(!group) {
+            group = new THREE.Group()
+            group.name = "vrCameraGroup"
+
+            let index = 0;
+            while (scene.children.length > index) {
+                const child = scene.children[index]
+                console.log(child)
+                if(child.name === "UI" || child.name.startsWith("pointer"))
+                    index++
+                else
+                    group.add(child)
+            }
+
+            scene.add(group)
         }
 
-        scene.add(group)
+        group.position.x = - (scene.vrStartPosition.position.x - position.x)
+        group.position.y = - (scene.vrStartPosition.position.y - position.y)
+        group.position.z = - (scene.vrStartPosition.position.z - position.z)
 
-        group.position.x = - scene.vrStartPosition.position.x
-        group.position.y = - scene.vrStartPosition.position.y
-        group.position.z = - scene.vrStartPosition.position.z
-
-        group.rotation.x = - scene.vrStartPosition.rotation.x
-        group.rotation.y = - scene.vrStartPosition.rotation.y
-        group.rotation.z = - scene.vrStartPosition.rotation.z
+        //TODO
+        group.rotation.x = - (scene.vrStartPosition.rotation.x/* - rotation.x*/)
+        group.rotation.y = - (scene.vrStartPosition.rotation.y/* - rotation.y*/)
+        group.rotation.z = - (scene.vrStartPosition.rotation.z )
 
     }
 

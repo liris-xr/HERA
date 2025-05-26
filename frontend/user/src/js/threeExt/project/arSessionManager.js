@@ -126,21 +126,24 @@ export class ArSessionManager {
                 options
             )
 
-            if(mode === "ar")
-                this.sceneManager.scenePlacementManager.enable()
-
         } catch(e) {
             if(e.name === "NotSupportedError") {
-                console.log("aeaeae")
                 // le dom-overlay n'est pas supporté
+                if(options.requiredFeatures && options.requiredFeatures.includes('dom-overlay'))
+                    options.requiredFeatures.splice(options.requiredFeatures.indexOf('dom-overlay'), 1)
+
                 this.enable3dUI = true
                 this.arSession = await navigator.xr.requestSession(
-                    'immersive-' + mode
+                    'immersive-' + mode,
+                    options
                 )
 
                 this.sceneManager.setXr(true)
             }
         }
+
+        if(mode === "ar")
+            this.sceneManager.scenePlacementManager.enable()
 
         if(mode === "vr") {
             this.enable3dUI = true
@@ -163,6 +166,7 @@ export class ArSessionManager {
         try {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
         } catch(e) {
+            console.log(e)
             // pas supporté
         }
 

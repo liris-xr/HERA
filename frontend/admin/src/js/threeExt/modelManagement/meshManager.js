@@ -293,6 +293,7 @@ void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,v
 		// vec3 projectionOnDirOfGeo = dot(dirOfGeo,pProbe)*dirOfGeo;
 
 		interpolationMask[i] = dot(dirOfGeo,pProbe)-0.1 < getProbeDistanceFromGeometry(i,texcoord);
+		// interpolationMask[i] = true;
 	}
 }
 
@@ -322,6 +323,7 @@ void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3
 	getProbeInterpolation(inter4_5,inter7_6,z,inter45_76);
 
 	getProbeInterpolation(inter01_32,inter45_76,y,probeSH);
+	// getProbeSH(0,texcoord,probeSH);
 }
 
 void main() {
@@ -359,6 +361,7 @@ void main() {
 	vec3 interpolatedLightProbe[9];
 	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,normal);
 		
+	
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 	// texture(sh1,texcoord).rgb,
 	// texture(sh2,texcoord).rgb,
@@ -370,7 +373,7 @@ void main() {
 	// texture(sh8,texcoord).rgb
 	// );
 
-	vec3 color = getLightProbeIrradiance(interpolatedLightProbe,wNormal);
+	vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
 	IncidentLight il = IncidentLight(color,normal,true);
 	
 	RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
@@ -390,7 +393,8 @@ void main() {
 	#endif
 
 	// outgoingLight = texture(directionOfGeometry,texcoord).xyz;
-	// outgoingLight = vec3(getProbeDistanceFromGeometry(5,texcoord));
+	// outgoingLight = getProbeDirectionOfGeometry(0,texcoord);
+	// outgoingLight = vec3(getProbeDistanceFromGeometry(1,texcoord));
 	// outgoingLight = wPosition.xyz;
 	// outgoingLight = getIProbeWorldPosition(0,texcoord)-wPosition.xyz;
 	// outgoingLight = getITexcoord(0,texcoord);
@@ -487,8 +491,8 @@ export class MeshManager {
 																this.lpvParameters.width*this.lpvParameters.density,
 																this.lpvParameters.depth*this.lpvParameters.density,
 																this.lpvParameters.height*this.lpvParameters.density);
-					sh3DTexture.magFilter = THREE.LinearFilter;
-					sh3DTexture.minFilter = THREE.LinearFilter;
+					sh3DTexture.magFilter = THREE.NearestFilter;
+					sh3DTexture.minFilter = THREE.NearestFilter;
 					sh3DTexture.type = THREE.FloatType;
 					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
 					sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
@@ -504,8 +508,8 @@ export class MeshManager {
 																this.lpvParameters.height*this.lpvParameters.density);
 				distanceTexture.format = THREE.RedFormat;
 				distanceTexture.type = THREE.FloatType;
-				distanceTexture.magFilter = THREE.LinearFilter;
-				distanceTexture.magFilter = THREE.LinearFilter;
+				distanceTexture.magFilter = THREE.NearestFilter;
+				distanceTexture.minFilter = THREE.NearestFilter;
 				distanceTexture.wrapS = THREE.ClampToEdgeWrapping;
 				distanceTexture.wrapT = THREE.ClampToEdgeWrapping;
 				distanceTexture.wrapR = THREE.ClampToEdgeWrapping;
@@ -516,8 +520,8 @@ export class MeshManager {
 															this.lpvParameters.width*this.lpvParameters.density,
 															this.lpvParameters.depth*this.lpvParameters.density,
 															this.lpvParameters.height*this.lpvParameters.density);
-				directionOfGeometryTexture.magFilter = THREE.LinearFilter;
-				directionOfGeometryTexture.magFilter = THREE.LinearFilter;
+				directionOfGeometryTexture.magFilter = THREE.NearestFilter;
+				directionOfGeometryTexture.minFilter = THREE.NearestFilter;
 				directionOfGeometryTexture.type = THREE.FloatType;
 				directionOfGeometryTexture.wrapS = THREE.ClampToEdgeWrapping
 				directionOfGeometryTexture.wrapT = THREE.ClampToEdgeWrapping

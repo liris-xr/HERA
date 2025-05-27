@@ -169,8 +169,8 @@ export class ArSessionManager {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
             this.arSession.addEventListener('select', this.sceneManager.onSceneClick.bind(this.sceneManager));
         } catch(e) {
-            this.sceneManager.scenePlacementManager.disable()
             // pas supporté
+            this.sceneManager.scenePlacementManager.disable()
         }
 
         if(this.enable3dUI) {
@@ -181,19 +181,38 @@ export class ArSessionManager {
         }
 
         if(this.xrMode === "vr" && this.sceneManager.active.value.vrStartPosition) {
-            this.applyVrCameraPosition()
+            // timeout nécessaire car le apple vision pro réhausse la scène lors du premier tick sans qu'on lui demande
+            setTimeout(() => this.applyVrCameraPosition(), 0)
         }
 
         this.sceneManager.isArRunning.value = true;
     }
 
-    applyVrCameraPosition(position=new THREE.Vector3(0, 0, 0), rotation=new THREE.Vector3(0, 0, 0)) {
+    extractYawQuaternion(q) {
+        // Convert quaternion to direction vector (Z forward)
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
+
+        // Projeter sur le plan horizontal (XZ)
+        forward.y = 0;
+        forward.normalize();
+
+        // Construire un quaternion représentant uniquement cette direction (yaw)
+        const yawQuat = new THREE.Quaternion();
+        yawQuat.setFromUnitVectors(new THREE.Vector3(0, 0, -1), forward);
+
+        return yawQuat;
+    }
+
+    applyVrCameraPosition() {
         if(this.xrMode !== "vr")
             return
 
         const scene = this.sceneManager.active.value
-        if(!scene.vrStartPosition || (scene.getObjectByName("vrCameraGroup") && position.length() === 0 && rotation.length() === 0))
+        if(!scene.vrStartPosition)
             return
+
+        const position = this.arRenderer.xr.getCamera(this.arCamera).position
+        const rotation = this.arRenderer.xr.getCamera(this.arCamera).quaternion
 
         let group = scene.getObjectByName("vrCameraGroup");
 
@@ -204,7 +223,6 @@ export class ArSessionManager {
             let index = 0;
             while (scene.children.length > index) {
                 const child = scene.children[index]
-                console.log(child)
                 if(child.name === "UI" || child.name.startsWith("pointer"))
                     index++
                 else
@@ -214,14 +232,40 @@ export class ArSessionManager {
             scene.add(group)
         }
 
-        group.position.x = - (scene.vrStartPosition.position.x - position.x)
-        group.position.y = - (scene.vrStartPosition.position.y - position.y)
-        group.position.z = - (scene.vrStartPosition.position.z - position.z)
+        // reset la transformation
+        group.position.set(0, 0, 0)
+        group.rotation.set(0, 0, 0)
 
-        //TODO
-        group.rotation.x = - (scene.vrStartPosition.rotation.x/* - rotation.x*/)
-        group.rotation.y = - (scene.vrStartPosition.rotation.y/* - rotation.y*/)
-        group.rotation.z = - (scene.vrStartPosition.rotation.z )
+        // appliquer la nouvelle transformation
+        const translation = new THREE.Matrix4().makeTranslation(
+            - scene.vrStartPosition.position.x + position.x,
+            - scene.vrStartPosition.position.y + position.y,
+            - scene.vrStartPosition.position.z + position.z
+        )
+
+        // const euler = new THREE.Euler(
+        //     - scene.vrStartPosition.rotation.x + rotation.x,
+        //     - scene.vrStartPosition.rotation.y + rotation.y,
+        //     - scene.vrStartPosition.rotation.z + rotation.z,
+        //     'XYZ')
+        // const quaternion = new THREE.Quaternion().setFromEuler(euler)
+        const rot = new THREE.Matrix4().makeRotationFromQuaternion(this.extractYawQuaternion(rotation))
+        rot.multiply(new THREE.Matrix4().makeRotationFromEuler(
+            new THREE.Euler(
+                - scene.vrStartPosition.rotation.x,
+                - scene.vrStartPosition.rotation.y,
+                - scene.vrStartPosition.rotation.z,
+                'XYZ')
+        ))
+
+        const transformation = new THREE.Matrix4()
+            .premultiply(translation)
+            .premultiply(rot)
+
+        group.applyMatrix4(transformation)
+        // group.rotation.x = - scene.vrStartPosition.rotation.x
+        // group.rotation.z = - scene.vrStartPosition.rotation.z
+        group.updateMatrixWorld(true)
 
     }
 

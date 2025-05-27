@@ -115,8 +115,6 @@ const connectedText = computed(() => {
   return t("presentation.controls.connected.false");
 })
 
-
-
 </script>
 <template>
   <main>

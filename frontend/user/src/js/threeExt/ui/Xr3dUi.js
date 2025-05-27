@@ -190,10 +190,7 @@ export class Xr3dUi {
         this.hittables.push(buttonRecalibrate)
 
         buttonRecalibrate.onClick = () => {
-            const position = this.renderer.xr.getCamera(this.camera).position
-            const rotation = this.renderer.xr.getCamera(this.camera).rotation
-
-            this.recalibrate(position, rotation)
+            this.recalibrate()
         }
 
         this.notificationsContainer = new ThreeMeshUI.Block( {
@@ -325,9 +322,6 @@ export class Xr3dUi {
 
         const newPos = new THREE.Vector3()
         newPos.copy(this.camera.position).add(direction.multiplyScalar(distance))
-
-        console.log(newPos)
-
 
         this.container.position.copy(newPos)
         this.container.lookAt(this.camera.position)

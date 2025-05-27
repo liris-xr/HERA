@@ -8,6 +8,7 @@ import Stats from 'three/addons/libs/stats.module.js';
 import {CustomBlending, Vector2} from "three";
 import {Xr3dUi} from "@/js/threeExt/ui/Xr3dUi.js";
 import * as THREE from "three";
+import {extractYawQuaternion} from "@/js/utils/extractYawQuaternion.js";
 
 export class ArSessionManager {
     sceneManager;
@@ -188,21 +189,6 @@ export class ArSessionManager {
         this.sceneManager.isArRunning.value = true;
     }
 
-    extractYawQuaternion(q) {
-        // Convert quaternion to direction vector (Z forward)
-        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
-
-        // Projeter sur le plan horizontal (XZ)
-        forward.y = 0;
-        forward.normalize();
-
-        // Construire un quaternion représentant uniquement cette direction (yaw)
-        const yawQuat = new THREE.Quaternion();
-        yawQuat.setFromUnitVectors(new THREE.Vector3(0, 0, -1), forward);
-
-        return yawQuat;
-    }
-
     applyVrCameraPosition() {
         if(this.xrMode !== "vr")
             return
@@ -243,13 +229,7 @@ export class ArSessionManager {
             - scene.vrStartPosition.position.z + position.z
         )
 
-        // const euler = new THREE.Euler(
-        //     - scene.vrStartPosition.rotation.x + rotation.x,
-        //     - scene.vrStartPosition.rotation.y + rotation.y,
-        //     - scene.vrStartPosition.rotation.z + rotation.z,
-        //     'XYZ')
-        // const quaternion = new THREE.Quaternion().setFromEuler(euler)
-        const rot = new THREE.Matrix4().makeRotationFromQuaternion(this.extractYawQuaternion(rotation))
+        const rot = new THREE.Matrix4().makeRotationFromQuaternion(extractYawQuaternion(rotation))
         rot.multiply(new THREE.Matrix4().makeRotationFromEuler(
             new THREE.Euler(
                 - scene.vrStartPosition.rotation.x,
@@ -263,8 +243,6 @@ export class ArSessionManager {
             .premultiply(rot)
 
         group.applyMatrix4(transformation)
-        // group.rotation.x = - scene.vrStartPosition.rotation.x
-        // group.rotation.z = - scene.vrStartPosition.rotation.z
         group.updateMatrixWorld(true)
 
     }

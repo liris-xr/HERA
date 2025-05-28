@@ -44,7 +44,7 @@ void main() {
 	#include <logdepthbuf_vertex>
 	#include <clipping_planes_vertex>
 	vViewPosition = - mvPosition.xyz;
-	wNormal = objectNormal; 
+	wNormal = vec3(objectNormal.x,-objectNormal.z,objectNormal.y); 
 
 	#include <worldpos_vertex>
 	#include <shadowmap_vertex>
@@ -205,9 +205,10 @@ vec3 getITexcoord(int i,vec3 texcoord) {
 }
 
 vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
-	float x = ((lpvWidth * ((2.0*texcoord.x)-1.0)) / 2.0) + lpvCenter.x;
-	float y = ((lpvHeight * ((2.0*texcoord.z)-1.0)) / 2.0) + lpvCenter.y;
-	float z = ((lpvDepth * ((2.0*texcoord.y)-1.0)) / 2.0) + lpvCenter.z;
+	vec3 itexcoord = getITexcoord(i,texcoord);
+	float x = ((lpvWidth * ((2.0*itexcoord.x)-1.0)) / 2.0) + lpvCenter.x;
+	float y = ((lpvHeight * ((2.0*itexcoord.z)-1.0)) / 2.0) + lpvCenter.y;
+	float z = ((lpvDepth * ((2.0*itexcoord.y)-1.0)) / 2.0) + lpvCenter.z;
 
 	if(i == 0) {
 		return vec3(x,y,z);
@@ -292,8 +293,8 @@ void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,v
 		vec3 dirOfGeo = getProbeDirectionOfGeometry(i,texcoord);
 		// vec3 projectionOnDirOfGeo = dot(dirOfGeo,pProbe)*dirOfGeo;
 
-		interpolationMask[i] = dot(dirOfGeo,pProbe)-0.1 < getProbeDistanceFromGeometry(i,texcoord);
-		// interpolationMask[i] = true;
+		interpolationMask[i] = dot(n,-pProbe) > -0.01;
+		// interpolationMask[i] = dot(dirOfGeo,pProbe)-0.05 < getProbeDistanceFromGeometry(i,texcoord);
 	}
 }
 
@@ -359,7 +360,7 @@ void main() {
 		);
 		
 	vec3 interpolatedLightProbe[9];
-	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,normal);
+	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,wNormal);
 		
 	
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
@@ -394,12 +395,17 @@ void main() {
 
 	// outgoingLight = texture(directionOfGeometry,texcoord).xyz;
 	// outgoingLight = getProbeDirectionOfGeometry(0,texcoord);
-	// outgoingLight = vec3(getProbeDistanceFromGeometry(1,texcoord));
+	// outgoingLight = vec3(getProbeDistanceFromGeometry(0,texcoord));
 	// outgoingLight = wPosition.xyz;
 	// outgoingLight = getIProbeWorldPosition(0,texcoord)-wPosition.xyz;
 	// outgoingLight = getITexcoord(0,texcoord);
 	// outgoingLight = getITexcoord(0,texcoord)-texcoord;
 	// outgoingLight = wNormal;
+
+	// vec3 probeWorldTexcoord = getIProbeWorldPosition(0,texcoord);
+	// vec3 pProbe = (wPosition.xyz - probeWorldTexcoord)*1000.;
+	// outgoingLight = probeWorldTexcoord;
+	
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>

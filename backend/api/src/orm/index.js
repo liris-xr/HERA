@@ -7,6 +7,7 @@ import ArAsset from "./models/arAsset.js";
 import ArMesh from "./models/arMesh.js";
 import ArLabel from "./models/arLabel.js";
 import ArTrigger from "./models/arTrigger.js";
+import ArSound from "./models/arSound.js";
 
 ArUser.hasMany(ArProject, { as: 'projects', foreignKey: 'userId', onDelete: 'CASCADE' });
 
@@ -18,14 +19,16 @@ ArScene.hasMany(ArAsset, { as: 'assets', foreignKey: 'sceneId', onDelete: 'CASCA
 ArScene.hasMany(ArLabel, {as: 'labels', foreignKey: 'sceneId', onDelete: 'CASCADE' });
 ArScene.hasMany(ArMesh, {as: 'meshes', foreignKey: 'sceneId', onDelete: 'CASCADE' });
 ArScene.hasMany(ArTrigger, {as: 'triggers', foreignKey: 'sceneId', onDelete: 'CASCADE' });
+ArScene.hasMany(ArSound, {as: 'sounds', foreignKey: 'sceneId', onDelete: 'CASCADE' });
 
 ArAsset.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 ArMesh.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 ArLabel.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 ArTrigger.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
+ArSound.belongsTo(ArSound, { as: 'scene', foreignKey: 'sceneId' });
 
 export async function initializeDatabase (options) {
     return await sequelize.sync(options);
 }
 
-export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh, ArTrigger}
+export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh, ArTrigger, ArSound}

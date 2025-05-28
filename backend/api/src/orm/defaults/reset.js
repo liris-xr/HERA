@@ -5,6 +5,7 @@ import ArAsset from "../models/arAsset.js";
 import ArMesh from "../models/arMesh.js";
 import ArLabel from "../models/arLabel.js";
 import ArTrigger from "../models/arTrigger.js";
+import ArSound from "../models/arSound.js";
 
 export async function resetDatabase() {
     console.log();
@@ -15,5 +16,6 @@ export async function resetDatabase() {
     await ArLabel.destroy({where:{}})
     await ArMesh.destroy({where:{}})
     await ArTrigger.destroy({where:{}})
+    await ArSound.destroy({where:{}})
     console.log("Database reset successfully.");
 }

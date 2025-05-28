@@ -1,11 +1,11 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger, ArSound} from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Sequelize} from "sequelize";
 import {updateListById} from "../utils/updateListById.js";
-import {deleteAsset, deleteFile, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
+import {deleteAsset, deleteFile, deleteSound, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
 
 const router = express.Router()
 
@@ -30,6 +30,10 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
                 {
                     model: ArTrigger,
                     as: "triggers"
+                },
+                {
+                    model: ArSound,
+                    as: "sounds"
                 },
                 {
                     model: ArProject,
@@ -87,6 +91,10 @@ const getPostUploadData = async (req, res, next) => {
             {
                 model: ArTrigger,
                 as: "triggers"
+            },
+            {
+                model: ArSound,
+                as: "sounds"
             },
             {
                 model: ArProject,
@@ -150,6 +158,10 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                     model: ArTrigger,
                     as: "triggers"
                 },
+                {
+                    model: ArSound,
+                    as: "sounds"
+                },
             ],
             where: {id: sceneId},
         })
@@ -168,13 +180,11 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         const knownAssetsIds = scene.assets.map( (asset) => asset.id )
         const knonwMeshesIds = scene.meshes.map( (mesh) => mesh.id )
         const knownTriggersIds = scene.triggers.map( (trigger) => trigger.id )
-
+        const knownSoundsIds = scene.sounds.map( (sound) => sound.id )
 
 
         let assetsIdMatching = []
-
-        console.log("known ids")
-        console.log(knownAssetsIds)
+        let soundsIdMatching = []
 
         let insertedCount = 0;
         if(!req.uploadedFilenames) req.uploadedFilenames = [];
@@ -323,7 +333,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 },
 
                 async (trigger)=>{
-                    console.log("abcd " + trigger)
                     await ArTrigger.create({
                         sceneId:scene.id,
                         radius: trigger.radius,
@@ -341,6 +350,50 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
                 async (knownId)=>{
                     await ArTrigger.destroy({where: {id: knownId},transaction:t});
+                }
+            );
+
+            await updateListById(knownSoundsIds, JSON.parse(req.body.sounds),
+                async (sound)=>{
+                    await ArSound.update({
+                        playOnStartup: sound.playOnStartup,
+                        isLoopingEnabled: sound.isLoopingEnabled,
+                    },{
+                        where: {id: sound.id},
+                        returning: true,
+                        transaction:t
+                    })
+                },
+
+
+                async (sound)=>{
+                    let data = {
+                        sceneId:scene.id,
+                        name: sound.name,
+                        playOnStartup: sound.playOnStartup,
+                        isLoopingEnabled: sound.isLoopingEnabled,
+                    }
+
+                    if(sound.copiedUrl) {
+                        data.url = sound.copiedUrl
+                    } else
+                        data.url = req.uploadedFilenames[insertedCount++]
+
+                    const newSound = await ArSound.create(data,{
+                        transaction:t
+                    })
+
+                    soundsIdMatching.push({
+                        tempId:sound.id,
+                        newId:newSound.id
+                    })
+                },
+
+                async (knownId)=>{
+                    const soundToDelete = await ArSound.findOne({where: {id: knownId},transaction:t})
+                    await deleteSound(soundToDelete)
+                    soundToDelete.destroy({transaction:t})
+                    await soundToDelete.save({transaction:t})
                 }
             );
 
@@ -369,7 +422,8 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
         res.status(200).send({
             scene:scene,
-            assetsIdMatching: assetsIdMatching
+            assetsIdMatching: assetsIdMatching,
+            soundsIdMatching: soundsIdMatching
         })
     }catch (e){
         console.log(e)
@@ -455,6 +509,10 @@ router.delete(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
                 {
                     model: ArAsset,
                     as:"assets"
+                },
+                {
+                    model: ArSound,
+                    as:"sounds"
                 }
             ],
             where: {id: sceneId},
@@ -474,6 +532,10 @@ router.delete(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
 
         for (let asset of scene.assets) {
             await deleteAsset(asset);
+        }
+
+        for (let sound of scene.sounds) {
+            await deleteSound(sound);
         }
 
         await scene.destroy();
@@ -509,6 +571,10 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
                 {
                     model: ArTrigger,
                     as: 'triggers'
+                },
+                {
+                    model: ArSound,
+                    as: 'sounds'
                 },
                 {
                    model:ArProject,
@@ -573,6 +639,16 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             const newTriggers = await Promise.all(scene.triggers.map(async trigger => {
                 return ArTrigger.create({
                     ...trigger.get({ plain: true }),
+                    id: undefined,
+                    sceneId: newScene.id
+                },{
+                    transaction:t
+                });
+            }));
+
+            const newSounds = await Promise.all(scene.sounds.map(async sound => {
+                return ArSound.create({
+                    ...sound.get({ plain: true }),
                     id: undefined,
                     sceneId: newScene.id
                 },{

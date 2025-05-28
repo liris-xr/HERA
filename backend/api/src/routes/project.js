@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger} from "../orm/index.js";
+import {ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger, ArSound} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware from "../middlewares/auth.js";
 import {
@@ -94,6 +94,10 @@ router.get(baseUrl+'project/:projectId', async (req, res) => {
                         {
                             model: ArTrigger,
                             as: "triggers",
+                        },
+                        {
+                            model: ArSound,
+                            as: "sounds",
                         },
                     ],
                 },
@@ -287,6 +291,10 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                             model: ArTrigger,
                             as: 'triggers'
                         },
+                        {
+                            model: ArSound,
+                            as: 'sounds'
+                        },
                     ]
                 },
                 {
@@ -358,8 +366,19 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                 await Promise.all(scene.triggers.map(async trigger => {
                     return ArTrigger.create({
                         ...trigger.get({ plain: true }),
-                        id: undefined, // générer un nouvel id
-                        sceneId: newScene.id, // lier le nouvel asset à la nouvelle scène
+                        id: undefined,
+                        sceneId: newScene.id,
+                    }, {
+                        transaction:t
+                    });
+                }));
+
+                await Promise.all(scene.sounds.map(async sound => {
+                    return ArSound.create({
+                        ...sound.get({ plain: true }),
+                        id: undefined,
+                        sceneId: newScene.id,
+                        url: getUpdatedPath(sound.url, projectId, newProject.id)
                     }, {
                         transaction:t
                     });

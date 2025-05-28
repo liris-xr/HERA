@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import arAsset from "../orm/models/arAsset.js";
 import {Op} from "sequelize";
+import arSound from "../orm/models/arSound.js";
 
 
 
@@ -51,9 +52,19 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
                 }
 
                 cb(null, uploadDirectory);
-            } else cb(null, "")
+            }
+            else if (file.fieldname === "soundToUploads") {
+                const uploadDirectory = path.join(DIRNAME, getSoundsDirectory(projectId))
+                if (!fs.existsSync(uploadDirectory)) {
+                    fs.mkdirSync(uploadDirectory, { recursive: true });
+                }
+
+                cb(null, uploadDirectory);
+            }
+            else cb(null, "")
         },
         filename: (req, file, cb) => {
+
             const projectId = req.projectId;
             const ext = path.extname(file.originalname);
             if(file.fieldname === 'uploadedEnvmap') {
@@ -73,7 +84,21 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
                 req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
 
                 cb(null, filename);
-            } else cb(null, "")
+            }
+            else if (file.fieldname === "soundToUploads") {
+                if(!req.currentSoundCount){
+                    req.currentSoundCount = 0
+                }
+                const filename = "sounds" + Date.now() + req.currentSoundCount + ext
+                req.currentSoundCount++;
+
+                if(!req.uploadedFilenames)
+                    req.uploadedFilenames = [];
+                req.uploadedFilenames.push(path.join(getSoundsDirectory(req.projectId), filename));
+
+                cb(null, filename);
+            }
+            else cb(null, "")
         }
     })})
 
@@ -110,6 +135,35 @@ export const uploadAsset = multer({ storage: multer.diskStorage({
         }
 })});
 
+export const uploadSound = multer({ storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            const projectId = req.projectId;
+            if(!projectId) throw new Error('Project Id is missing');
+
+            const uploadDirectory = path.join(DIRNAME, getSoundsDirectory(projectId))
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory, { recursive: true });
+            }
+
+            cb(null, uploadDirectory);
+        },
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname);
+
+            if(!req.currentSoundCount){
+                req.currentSoundCount = 0
+            }
+            const filename = "sound" + Date.now() + req.currentSoundCount + ext
+            req.currentSoundCount++;
+
+            if(!req.uploadedFilenames)
+                req.uploadedFilenames = [];
+            req.uploadedFilenames.push(path.join(getSoundsDirectory(req.projectId), filename));
+
+            cb(null, filename);
+        }
+    })});
+
 
 
 export function getProjectDirectory(projectId){
@@ -122,6 +176,10 @@ function getImagesDirectory(projectId){
 
 function getAssetsDirectory(projectId){
     return path.join(getProjectDirectory(projectId),'assets');
+}
+
+function getSoundsDirectory(projectId){
+    return path.join(getProjectDirectory(projectId),'sounds');
 }
 
 function getEnvmapsDirectory(projectId){
@@ -179,10 +237,6 @@ export function getUpdatedPath(currentPath, oldId, newId){
 }
 
 
-
-
-
-
 export async function deleteAsset(asset) {
 
 
@@ -197,6 +251,20 @@ export async function deleteAsset(asset) {
 
     if (assetsUsingSameUrl.length === 0)
         deleteFile(asset.url);
+}
+
+export async function deleteSound(sound) {
+    let soundsUsingSameUrl = await arSound.findAll({
+        where:{
+            url:sound.url,
+            id:{
+                [Op.not]: sound.id
+            }
+        }
+    })
+
+    if (soundsUsingSameUrl.length === 0)
+        deleteFile(sound.url);
 }
 /*
 

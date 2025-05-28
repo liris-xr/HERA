@@ -48,7 +48,7 @@ struct Triangle
     Vector n;           // Normale du triangle
     int id;             // indice du triangle
     
-    Triangle( const TriangleData& data, const int _id ) : p(data.a), e1(Vector(data.a, data.b)), e2(Vector(data.a, data.c)), n(normalize(cross(e1,e2))), id(_id) {}
+    Triangle( const TriangleData& data, const int _id ) : p(data.a), e1(Vector(data.a, data.b)), e2(Vector(data.a, data.c)), n((normalize(data.na)+normalize(data.nb)+normalize(data.nc))/3.0), id(_id) {}
     
     /* calcule l'intersection ray/triangle
         cf "fast, minimum storage ray-triangle intersection" 

@@ -29,6 +29,7 @@ import {useI18n} from "vue-i18n";
 import {EXRLoader} from "three/addons";
 import TriggerItem from "@/components/listItem/triggerItem.vue";
 import TriggerEditModal from "@/components/modal/triggerEditModal.vue";
+import SoundItem from "@/components/listItem/soundItem.vue";
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
@@ -43,7 +44,8 @@ const scene = ref({
   },
   labels:[],
   assets:[],
-  triggers:[]
+  triggers:[],
+  sounds: []
 });
 
 const saved = ref(true);
@@ -157,6 +159,8 @@ onMounted(async () => {
 
   editor.scene.labelManager.onChanged = ()=>{saved.value = false};
   editor.scene.assetManager.onChanged = ()=>{saved.value = false};
+  editor.scene.triggerManager.onChanged = ()=>{saved.value = false};
+  editor.scene.soundManager.onChanged = ()=>{saved.value = false};
   editor.scene.onChanged = ()=>{saved.value = false};
   editor.onChanged = ()=>{saved.value = false};
   await sleep(100);
@@ -169,7 +173,7 @@ onMounted(async () => {
 
 
 
-async function saveScene(sceneData, uploads, envmapFile) {
+async function saveScene(sceneData, uploads, envmapFile, soundToUploads) {
   try {
     const formData = new FormData();
 
@@ -185,6 +189,12 @@ async function saveScene(sceneData, uploads, envmapFile) {
     if (uploads && uploads.length >0) {
       uploads.forEach(file => {
         formData.append('uploads', file);
+      });
+    }
+
+    if (soundToUploads && soundToUploads.length >0) {
+      soundToUploads.forEach(file => {
+        formData.append('soundToUploads', file);
       });
     }
 
@@ -226,19 +236,22 @@ async function saveAll(){
     assets:editor.scene.assetManager.getResultAssets(),
     meshes:editor.scene.assetManager.getResultMeshes(),
     triggers:editor.scene.triggerManager.getResultTriggers(),
+    sounds:editor.scene.soundManager.getResultSounds(),
     envmapUrl: scene.value.envmapUrl || "",
   };
 
   const uploads = editor.scene.assetManager.getResultUploads();
+  const soundToUploads = editor.scene.soundManager.getResultUploads();
 
-  const r = await saveScene(resultScene, uploads, uploadedEnvmap.value.rawData);
+  const r = await saveScene(resultScene, uploads, uploadedEnvmap.value.rawData, soundToUploads);
 
   if (r != null) {
     uploadedEnvmap.value.rawData = null;
     scene.value.envmapUrl = r.scene.envmapUrl;
     await sleep(1000);
     saved.value = true;
-    editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching)
+    editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching);
+    editor.scene.soundManager.setUploaded(r.scene.sounds, r.soundsIdMatching);
     // window.location.reload();
   }
   saving.value = false
@@ -279,7 +292,27 @@ async function updateEnvmap(event){
       reader.readAsDataURL(file);
       saved.value = false;
     }
+  }
+}
 
+async function uploadSound(file) {
+  if (file) {
+    if (!file.name.endsWith(".mp3")) {
+      alert(t('projectView.selectedFile.notAnMP3Error'));
+    }
+    else {
+      const buffer = await file.arrayBuffer();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      try {
+        await audioContext.decodeAudioData(buffer);
+      } catch (error) {
+        alert(t('projectView.selectedFile.notAnMp3Error'));
+        return;
+      }
+
+      editor.scene.addNewSound(file);
+      saved.value = false;
+    }
   }
 }
 
@@ -418,6 +451,36 @@ onBeforeRouteUpdate((to, from, next)=>{
 
           <div class="multilineField">
             <div class="inlineFlex">
+              <label>{{$t("sceneView.leftSection.sceneSounds.label")}}</label>
+              <file-upload-button-view
+                  :text="$t('sceneView.leftSection.sceneSounds.addSoundButton')"
+                  icon="/icons/upload.svg"
+                  @fileSelected="(file)=>{uploadSound(file)}"
+                  :accept="['.mp3']"
+              ></file-upload-button-view>
+            </div>
+            <div id="soundList">
+              <sound-item v-for="(sound, index) in editor.scene.soundManager.getSounds.value"
+                          class="sceneItem"
+                          :index="index"
+                          :text="sound.name"
+                          :downloadUrl="getResource(sound.url) || 'null'"
+                          :playOnStartup="sound.playOnStartup.value"
+                          :isLoopingEnabled="sound.isLoopingEnabled.value"
+                          :error="sound.hasError.value "
+                          :loading="sound.isLoading.value "
+                          @playOnStartup="(status)=>{sound.switchPlayOnStartupStatus(status); saved = false;}"
+                          @loopingEnabled="(status)=>{sound.switchLoopingEnabledStatus(status); saved = false;}"
+                          @delete="editor.scene.removeSound(sound)"
+                          @duplicate="editor.scene.duplicateSound(sound)"
+              />
+              <div v-if="!editor.scene.soundManager.hasSound.value">{{$t('sceneView.leftSection.sceneSounds.noSoundInfo')}}</div>
+            </div>
+          </div>
+
+
+          <div class="multilineField">
+            <div class="inlineFlex">
               <label>{{$t("sceneView.leftSection.sceneLabels.label")}}</label>
               <button-view :text="$t('sceneView.leftSection.sceneLabels.addLabelButton')" icon="/icons/add.svg" @click="editor.scene.addNewLabel()"></button-view>
             </div>
@@ -441,23 +504,25 @@ onBeforeRouteUpdate((to, from, next)=>{
           <div class="multilineField">
             <div class="inlineFlex">
               <label>{{$t("sceneView.leftSection.sceneTriggers.label")}}</label>
-              <button-view :text="$t('sceneView.leftSection.sceneTriggers.addLabelButton')" icon="/icons/add.svg" @click="editor.scene.addNewTrigger()"></button-view>
+              <button-view :text="$t('sceneView.leftSection.sceneTriggers.addTriggerButton')" icon="/icons/add.svg" @click="editor.scene.addNewTrigger()"></button-view>
             </div>
 
             <div id="triggerList">
                 <trigger-item v-for="(trigger, index) in editor.scene.triggerManager.getTriggers.value"
-                            class="sceneItem"
+                              class="sceneItem"
                             :index="index"
                             :active="trigger.isSelected.value"
+                            :hideInViewer="trigger.hideInViewer.value"
+                            :loading="trigger.isLoading.value"
+                            :error="trigger.hasError.value"
                             :actionIn="trigger.actionIn"
                             :actionOut="trigger.actionOut"
-                            :hide-in-viewer="trigger.hideInViewer.value"
                             @click="editor.scene.setSelected(trigger)"
                             @delete="editor.scene.removeTrigger(trigger)"
-                            @hide-in-viewer="()=>{trigger.switchViewerDisplayStatus(); saved = false}"
+                            @hideInViewer="()=>{trigger.switchViewerDisplayStatus(); saved = false}"
                             @advanced-edit="()=>{lastClickedTrigger = trigger; showTriggerEditModal=true;}"
                 />
-                <div v-if="!editor.scene.triggerManager.hasTriggers.value">{{$t('sceneView.leftSection.sceneTriggers.noLabelInfo')}}</div>
+                <div v-if="!editor.scene.triggerManager.hasTriggers.value">{{$t('sceneView.leftSection.sceneTriggers.noTriggerInfo')}}</div>
             </div>
           </div>
 
@@ -478,6 +543,10 @@ onBeforeRouteUpdate((to, from, next)=>{
                 :show="showTriggerEditModal && lastClickedTrigger!=null"
                 :trigger="lastClickedTrigger"
                 :assets="editor.scene.assetManager.getAssets.value"
+                :sounds="editor.scene.soundManager.getSounds.value"
+                :project="scene.project"
+                :token="token"
+                :userData="userData"
                 @close="showTriggerEditModal = false"
                 @confirm="(trigger)=>{
                   editor.scene.triggerManager.getSelectedTrigger.value.copyFromAnotherTrigger(trigger);
@@ -507,7 +576,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                             :active-animation="asset.activeAnimation"
                             :download-url="getResource(asset.sourceUrl)"
                             :hide-in-viewer="asset.hideInViewer.value"
-                              :active="asset.isSelected.value"
+                            :active="asset.isSelected.value"
                             :error="asset.hasError.value"
                             :loading="asset.isLoading.value"
                             :asset="asset"
@@ -516,7 +585,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                             @duplicate="editor.scene.duplicateAsset(asset)"
                             @animationChanged="(val)=>{asset.activeAnimation = val}"
                             @hide-in-viewer="()=>{asset.switchViewerDisplayStatus(); saved = false}"/>
-                <div v-if="scene.assets.length==0">{{$t("sceneView.leftSection.sceneAssets.noAssetsInfo")}}</div>
+                <div v-if="scene.assets.length === 0">{{$t("sceneView.leftSection.sceneAssets.noAssetsInfo")}}</div>
               </div>
             </div>
 

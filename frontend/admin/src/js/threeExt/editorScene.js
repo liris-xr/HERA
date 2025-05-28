@@ -9,12 +9,15 @@ import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
 import {TriggerManager} from "@/js/threeExt/triggerManagement/triggerManager.js";
+import {SoundManager} from "@/js/soundManagement/soundManager.js";
+import {Sound} from "@/js/soundManagement/sound.js";
 
 
 export class EditorScene extends THREE.Scene {
     assetManager;
     labelManager;
     triggerManager;
+    soundManager;
     #errors;
     #gridPlane;
     #lightSet;
@@ -31,6 +34,7 @@ export class EditorScene extends THREE.Scene {
         this.labelManager = new LabelManager();
         this.assetManager = new AssetManager();
         this.triggerManager = new TriggerManager();
+        this.soundManager = new SoundManager();
         this.#errors = ref([]);
         this.#lightSet = new LightSet(shadowMapSize);
         this.#lightSet.pushToScene(this);
@@ -71,6 +75,11 @@ export class EditorScene extends THREE.Scene {
 
         for (let triggerData of sceneData.triggers){
             this.triggerManager.addToScene(this,triggerData);
+        }
+
+        for (let soundData of sceneData.sounds) {
+            const sound = new Sound(soundData);
+            this.soundManager.addToScene(this,sound);
         }
 
         this.#gridPlane = new GridPlane();
@@ -189,6 +198,40 @@ export class EditorScene extends THREE.Scene {
         this.triggerManager.removeFromScene(this, trigger);
     }
 
+    addNewSound(soundFile){
+        const soundData = {
+            id:null,
+            url: null,
+            uploadData: soundFile,
+            name: soundFile.name,
+        };
+
+        const sound = new Sound(soundData);
+        this.soundManager.addToScene(this,sound);
+    }
+
+    removeSound(sound){
+        this.setSelected(null);
+        this.soundManager.removeFromScene(this, sound);
+    }
+
+    duplicateSound(sound){
+        this.setSelected(null);
+
+        const soundData = {
+            id:null,
+            url: sound.sourceUrl,
+            name: sound.name,
+            copiedUrl: sound.sourceUrl,
+            playOnStartup: sound.playOnStartup.value,
+            isLoopingEnabled: sound.isLoopingEnabled.value,
+        };
+
+        const newSound = new Sound(soundData);
+        this.soundManager.addToScene(this,newSound);
+    }
+
+
 
     addNewLabel(){
         const label = this.labelManager.addToScene(this);
@@ -241,8 +284,6 @@ export class EditorScene extends THREE.Scene {
         const newAsset = new Asset(assetData);
 
         this.assetManager.addToScene(this,newAsset,(newAsset)=>this.setSelected(newAsset));
-
-        // this.assetManager.duplicateFromScene(this,asset);
     }
 
     removeSelected(){

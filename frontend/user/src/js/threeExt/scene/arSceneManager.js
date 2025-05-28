@@ -2,6 +2,7 @@ import {ArScene} from "@/js/threeExt/scene/arScene.js";
 import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.js";
 import {computed, ref, watch} from "vue";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
+import {ActionManager} from "@/js/threeExt/TriggerManagement/actionManager.js";
 
 export class ArSceneManager{
     scenes;
@@ -11,10 +12,9 @@ export class ArSceneManager{
     #lightEstimate;
     isArRunning;
 
-    onSceneChanged
+    onSceneChanged;
 
-
-
+    actionManager;
 
     constructor(scenes, shadowMapSize) {
         this.isArRunning = ref(false);
@@ -25,8 +25,10 @@ export class ArSceneManager{
         for (let sceneData of scenes) {
             this.scenes.push(new ArScene(sceneData));
         }
+
         if(this.scenes.length === 0)
-            this.scenes.push(new ArScene({id:0, title:"None", assets:[]}));
+            this.scenes.push(new ArScene({id:0, title:"None",
+                assets:[], triggers:[], sounds: []}));
 
         this.activeSceneId = ref(this.scenes[0].sceneId);
 
@@ -39,6 +41,14 @@ export class ArSceneManager{
                 this.onSceneChanged();
         })
 
+        const scene = this.scenes[0];
+        this.actionManager = new ActionManager({
+            triggers :scene.getTriggers(),
+            sounds: scene.getSounds()  ,
+            assets: scene.getAssets(),
+            scenes: this.scenes,
+            changeScene: (scene)=>{this.setScene(this.getScene(scene))},
+        });
     }
 
     activeSceneIndex = computed(()=>{
@@ -145,11 +155,17 @@ export class ArSceneManager{
                 else{
                     trigger.userOut();
                 }
+
                 if (trigger.thereIsUser !== trigger.userInside){
-                    trigger.doAction();
+                    if(trigger.userInside){
+                        this.actionManager.doAction(trigger.actionIn, trigger.objectIn);
+                    }
+                    else{
+                        this.actionManager.doAction(trigger.actionOut, trigger.objectOut);
+                    }
+
                     trigger.thereIsUser = !trigger.thereIsUser;
                 }
-
             }
         }
     }
@@ -164,7 +180,7 @@ export class ArSceneManager{
         const Y = (cameraPosition.y - triggerPosition.y);
         const Z = (cameraPosition.z - triggerPosition.z);
 
-        const distance = Math.sqrt(X * X + Y * Y + Z * Z);
+        const distance = Math.sqrt((X * X) + (Y * Y )+ (Z * Z));
 
         return distance.toFixed(2);
     }
@@ -176,5 +192,41 @@ export class ArSceneManager{
                 return scene;
             }
         }
+    }
+
+    setScene(scene){
+        if (scene !== null){
+            if (this.activeSceneId.value === scene.sceneId) { return; }
+
+            this.activeSceneId.value = scene.sceneId;
+            this.#changeActionManager(scene);
+            scene.stopAllSounds();
+
+            return 0;
+        }
+        else{
+            console.error("Impossible to change scene is null");
+            return 1;
+        }
+    }
+
+    getScene(sceneTitle){
+        for (let scene of this.scenes) {
+            if (scene.title === sceneTitle){
+                return scene;
+            }
+        }
+
+        console.error("No scene found with that title! " +  sceneTitle);
+        return null;
+    }
+
+
+    #changeActionManager(scene){
+        this.actionManager.changeParameters({
+            triggers :scene.getTriggers(),
+            sounds: scene.getSounds()  ,
+            assets: scene.getAssets(),
+        });
     }
 }

@@ -34,8 +34,10 @@ defineEmits(['select','delete', 'hideInViewer', 'advanced-edit']);
     </div>
     <div class="inlineFlex">
       <tag text="3D/THREEJS" icon="/icons/info.svg"/>
-      <icon-svg v-if="hideInViewer" url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer',true)})"/>
+
+      <icon-svg v-if="hideInViewer" url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer', true)})"/>
       <icon-svg v-else url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer', false)})"/>
+
       <icon-svg url="/icons/scale.svg" theme="text" class="iconAction" :hover-effect="true" @click="$emit('advanced-edit')"/>
       <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="$emit('delete')"/>
     </div>

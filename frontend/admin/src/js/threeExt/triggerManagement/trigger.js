@@ -119,15 +119,8 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
         })
     }
 
-    pushToScene(scene){
-        console.log("pushToScene", scene)
-        if(!this.label) return false;
-        scene.add(this.label);
-        return true;
-    }
-
-    switchViewerDisplayStatus(){
-        this.hideInViewer.value = !this.hideInViewer.value;
+    switchViewerDisplayStatus(status){
+        this.hideInViewer.value = status;
     }
 
     setSelected(selected){

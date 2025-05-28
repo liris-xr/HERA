@@ -7,20 +7,43 @@ import FilledButtonView from "@/components/button/filledButtonView.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import {actions} from "@/js/threeExt/triggerManagement/actionList.js";
 import {Trigger} from "@/js/threeExt/triggerManagement/trigger.js";
+import {ENDPOINT} from "@/js/endpoints.js";
 
 const props = defineProps({
   show: {type: Boolean, default: false},
-  trigger: {type: Trigger, required: true},
+  trigger: {type: Trigger, required: false},
   assets: {type: Object, required: true},
+  sounds: {type: Object, required: true},
+  project: {type: Object, required: true},
+  token: {type: String, required: true},
+  userData: {type: Object, required: true},
+});
 
-})
-
-const actionIn = ref(null);
-const actionOut = ref(null);
-const radius = ref(null);
+const actionIn = ref("none");
+const actionOut = ref("none");
+const radius = ref(1);
 
 const objectIn = ref("none");
 const objectOut = ref("none");
+
+async function fetchProject(projectId, userId, token) {
+  try {
+    const res = await fetch(`${ENDPOINT}users/${userId}/project/${projectId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+
+        });
+    if(res.ok){
+      return await res.json();
+    }
+    throw new Error("ko");
+  } catch (e) {
+    console.error(e);
+  }
+}
 
 let listObject = {};
 
@@ -28,32 +51,48 @@ watch(() =>props.show,async (value) => {
   if (value) {
     await nextTick();
 
+    let arrayScenesName = [];
+    await fetchProject(props.project.id, props.userData.id, props.token).then(rep =>{
+      rep.scenes.forEach(scene => {
+        arrayScenesName.push(scene.title);
+      });
+    });
 
-    let arrayAssetsName = []
+    let arrayAssetsName = [];
     props.assets.forEach((asset) => {
-      arrayAssetsName.push(asset.name);
+      const assetName = asset.name;
+      arrayAssetsName.push(assetName);
     })
 
-    let arrayAssetsAnimation = []
+    let arrayAssetsAnimation = [];
     props.assets.forEach((asset) => {
       asset.animations.forEach((animation) => {
-        arrayAssetsAnimation.push(asset.name + " " + animation);
+        const text = (asset.name + " " + animation);
+        arrayAssetsAnimation.push(text);
       })
 
     })
 
+    let arraySoundsName = [];
+    props.sounds.forEach((sound) => {
+      const soundName = sound.name;
+      arraySoundsName.push(soundName);
+    });
+
     listObject ={
       'none' : {},
       'displayAsset' : arrayAssetsName,
-      'playSound' : {},
-      'changeScene' : {},
-      'animation' : {arrayAssetsName},
+      'playSound' : arraySoundsName,
+      'changeScene' : arrayScenesName,
+      'animation' : arrayAssetsName,
       'startDialogue' : {},
     };
 
-    actionIn.value = actions[props.trigger.actionIn];
-    actionOut.value = actions[props.trigger.actionOut]
-    radius.value = props.trigger.radius;
+    if(props.trigger) {
+      actionIn.value = actions[props.trigger.actionIn];
+      actionOut.value = actions[props.trigger.actionOut];
+      radius.value = props.trigger.radius;
+    }
   }
 })
 
@@ -108,8 +147,8 @@ function getActionKeyByLabel(label) {
               <select v-model="objectIn" v-if="getActionKeyByLabel(actionIn) !== 'none'
               && Array.isArray(listObject[getActionKeyByLabel(actionIn)])
               && listObject[getActionKeyByLabel(actionIn)].length > 0">
-                <option v-for="(name) in listObject[getActionKeyByLabel(actionIn)]" :key="name" :value="name">
-                  {{name}}
+                <option v-for="(key, name) in listObject[getActionKeyByLabel(actionIn)]" :key="key" :value="key">
+                  {{key}}
                 </option>
               </select>
             </div>

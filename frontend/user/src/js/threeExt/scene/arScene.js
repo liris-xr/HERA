@@ -9,6 +9,7 @@ import {LabelPlayer} from "@/js/threeExt/postProcessing/labelPlayer.js";
 import {EmptyAsset} from "@/js/threeExt/modelManagement/emptyAsset.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
+import {Sound} from "@/js/threeExt/SoundManagement/sound.js";
 
 export class ArScene extends AbstractScene {
     sceneId
@@ -16,12 +17,17 @@ export class ArScene extends AbstractScene {
     description;
     #assets
     #triggers
+    #sounds
     labelPlayer;
     #shadowPlane
     #errors;
     #boundingSphere
     #boundingBox;
     clock
+
+    #audioLoader;
+    #listener;
+    #activeSounds;
 
     constructor(sceneData) {
         super();
@@ -37,6 +43,12 @@ export class ArScene extends AbstractScene {
         for (let triggerData of sceneData.triggers) {
             this.#triggers.push(new Trigger(triggerData));
         }
+
+        this.#sounds = [];
+        for (let soundData of sceneData.sounds) {
+            this.#sounds.push(new Sound(soundData));
+        }
+
 
         if(this.#assets.length == 0) this.#assets.push(new EmptyAsset())
 
@@ -59,6 +71,9 @@ export class ArScene extends AbstractScene {
 
         this.clock = new THREE.Clock();
 
+        this.#audioLoader = new THREE.AudioLoader();
+        this.#listener = new THREE.AudioListener();
+        this.#activeSounds = [];
     }
 
     async init(){
@@ -78,6 +93,19 @@ export class ArScene extends AbstractScene {
 
         }
 
+        for (let soundData of this.#sounds) {
+            if(soundData.playOnStartup){
+                const audio = new THREE.Audio(this.#listener);
+                this.#audioLoader.load(getResource(soundData.url), (buffer) => {
+                    audio.setBuffer(buffer);
+                    audio.setLoop(soundData.isLoopingEnabled);
+                    audio.setVolume(1);
+                    audio.play();
+                    soundData.play();
+                    this.#activeSounds.push([soundData, audio]);
+                });
+            }
+        }
 
         this.computeBoundingSphere(true);
         this.#shadowPlane = new ShadowPlane(this.computeBoundingBox(false));
@@ -141,5 +169,23 @@ export class ArScene extends AbstractScene {
 
     getTriggers(){
         return this.#triggers;
+    }
+
+    getAssets(){
+        return this.#assets;
+    }
+
+    getSounds(){
+        return this.#sounds;
+    }
+
+    stopAllSounds() {
+        this.#activeSounds.forEach(sound => {
+            if (sound[0].isPlaying()) {
+                sound[1].stop();
+                sound[0].stop();
+            }
+        });
+        this.#activeSounds.length = [];
     }
 }

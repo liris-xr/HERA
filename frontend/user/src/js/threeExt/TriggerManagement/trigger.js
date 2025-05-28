@@ -1,13 +1,9 @@
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import * as THREE from "three";
-import {actions} from "./actions.js";
-
 
 export class Trigger extends SceneElementInterface{
 
     mesh;
-    #geometry;
-    #material;
 
     hideInViewer
 
@@ -58,7 +54,7 @@ export class Trigger extends SceneElementInterface{
             this.actionIn = triggerData.actionIn;
         }
         else{
-            this.actionIn = actions.none;
+            this.actionIn = "none";
         }
 
         if(triggerData.actionOut){
@@ -90,9 +86,13 @@ export class Trigger extends SceneElementInterface{
 
 
     async load(){
-        this.#geometry = new THREE.SphereGeometry( this.radius/10, 32, 16 );
-        this.#material = new THREE.MeshBasicMaterial( { color: 0xeeebe3 } );
-        this.mesh = new THREE.Mesh( this.#geometry, this.#material );
+        const geometry = new THREE.SphereGeometry(this.radius, 32, 16);
+        //const material = new THREE.MeshBasicMaterial( { color: 0x000000 } );
+        //this.mesh = new THREE.Mesh( geometry, this );
+        const wireframe = new THREE.WireframeGeometry(geometry);
+        this.mesh = new THREE.LineSegments(wireframe, new THREE.LineBasicMaterial({ color: 0xeeebe3 }));
+
+
         this.mesh.position.set(this.position.x, this.position.y, this.position.z);
         this.mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
     }
@@ -106,21 +106,6 @@ export class Trigger extends SceneElementInterface{
 
     getRadius(){
         return this.radius;
-    }
-
-    getAction(){
-        return this.actionIn;
-    }
-
-
-    doAction(){
-        if(this.userInside){
-            actions[this.actionIn](this.objectIn);
-        }
-        else{
-            actions[this.actionOut](this.objectOut);
-        }
-
     }
 
     userIn(){

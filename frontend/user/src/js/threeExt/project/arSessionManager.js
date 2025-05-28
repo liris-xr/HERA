@@ -130,8 +130,11 @@ export class ArSessionManager {
 
 
     async stop(){
-        if(this.arSession != null)
+        if(this.arSession != null) {
             await this.arSession.end();
+            this.sceneManager.actionManager.stopAllSounds() ;
+            this.sceneManager.getActiveScene().stopAllSounds() ;
+        }
     }
 
     onSessionEnded() {

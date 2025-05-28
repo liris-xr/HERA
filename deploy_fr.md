@@ -6,7 +6,7 @@ Ce document décrit la procédure de déploiement sur un serveur linux (debian) 
 Vous aurez besoin d'un serveur linux qui répond aux exigences suivantes :
 - Node.js est installé avec le gestionnaire de packages npm
 - Un serveur web Apache est installé
-- Vous disposez d'un certificat SSL présent sous la forme de deux fichiers : `certificate.crt` et `privatekey.key`
+- Mkcert est installé ou vous disposez d'un certificat SSL présent sous la forme de deux fichiers : `certificate.crt` et `privatekey.key`
 
 Dans la suite, nous considérerons qu'il existe un utilisateur 'webadmin' sur le serveur linux. 
 
@@ -16,6 +16,19 @@ Dans la suite, nous considérerons qu'il existe un utilisateur 'webadmin' sur le
 ### Téléchargement des fichiers sur le serveur
 Clonez les fichiers sur le serveur en utilisant la commande `git clone`
 Ici, nous considérerons que les fichiers ont été clonés dans `/home/webadmin/hera`
+
+
+
+### Création d’un certificat SSL
+**NB** : cette étape n’est nécessaire que si vous ne disposez pas encore d’un certificat SSL. Comme le certificat sera auto-signé, l’utilisateur devra l’accepter manuellement lors de l’avertissement affiché par son navigateur.
+
+Le certificat SSL peut être généré facilement avec **mkcert**. Une fois **mkcert** installé, il vous suffira d’exécuter les commandes suivantes :
+```shell
+mkcert -install
+cd hera/backend/api
+mkcert -cert-file certificate.crt -key-file privatekey.key localhost
+```
+
 
 
 ### Configuration des fichiers

@@ -70,7 +70,6 @@ watch(() =>props.show,async (value) => {
         const text = (asset.name + " " + animation);
         arrayAssetsAnimation.push(text);
       })
-
     })
 
     let arraySoundsName = [];

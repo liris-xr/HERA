@@ -65,8 +65,13 @@
     "selectedFile": {
       "notAnImageError": "Le fichier sélectionné n'est pas une image.",
       "notAnExrError": "Le fichier sélectionné n'est pas un fichier EXR valide.",
+      "notAnMP3Error": "Le fichier sélectionné n'est pas un fichier MP3 valide",
       "sizeError": {
         "part1": "L'image sélectionnée est trop volumineuse",
+        "part2": "Veuillez choisir un fichier"
+      },
+      "sizeErrorMP3": {
+        "part1": "L'audio sélectionnée est trop volumineuse",
         "part2": "Veuillez choisir un fichier"
       }
     },
@@ -187,11 +192,18 @@
         "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
         "assetLoadFailed": "Impossible de charger ce modèle 3D"
       },
+      "sceneSounds":{
+        "label": "Son :",
+        "addSoundButton": "Ajouter",
+        "addSoundButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .MP3",
+        "noSoundInfo": "Cette scène ne contient aucun son",
+        "assetLoadFailed": "Impossible de charger le son"
+      },
       "sceneTriggers": {
-        "label": "Triggers :",
-        "addLabelButton": "Ajouter",
-        "noLabelInfo": "Cette scène ne contient aucun trigger",
-        "assetNotDisplayed": "Ce trigger ne sera pas affiché lors de la visualisation",
+        "label": "Déclencheur :",
+        "addTriggerButton": "Ajouter",
+        "noTriggerInfo": "Cette scène ne contient aucun déclencheur",
+        "assetNotDisplayed": "Ce déclencheur ne sera pas affiché lors de la visualisation",
         "actionIn" : "Entrant",
         "actionOut": "Sortant",
         "actions": {

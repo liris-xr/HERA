@@ -22,6 +22,7 @@ const onClick = (cb) => {
 <template>
   <div class="item">
     <div class="inlineFlex">
+      <span :class="{textStrike: error}"></span>
       <span>{{index+1}}</span>
       <span>{{text}}</span>
     </div>
@@ -81,12 +82,6 @@ const onClick = (cb) => {
 
 .textStrike{
   text-decoration: line-through;
-}
-
-.notDisplayedInfo{
-  font-size: 10pt;
-  font-style: italic;
-  color: var(--textImportantColor);
 }
 
 .item {

@@ -189,7 +189,7 @@ function getEnvmapsDirectory(projectId){
 
 function isUploadedFilePath(pathFromServerRoot){
     const splitPath = pathFromServerRoot.split(path.sep);
-    return !(splitPath[1] != "files" || splitPath.length < 2);
+    return !(splitPath[1] !== "files" || splitPath.length < 2);
 
 }
 

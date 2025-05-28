@@ -1,11 +1,10 @@
-
 export class Sound {
     name;
     url;
     playOnStartup;
     isLoopingEnabled;
 
-    isPlay
+    isPlay;
 
     constructor(soundData){
         this.name = soundData.name;

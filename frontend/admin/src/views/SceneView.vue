@@ -519,7 +519,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                             :actionOut="trigger.actionOut"
                             @click="editor.scene.setSelected(trigger)"
                             @delete="editor.scene.removeTrigger(trigger)"
-                            @hideInViewer="()=>{trigger.switchViewerDisplayStatus(); saved = false}"
+                            @hideInViewer="(status)=>{trigger.switchViewerDisplayStatus(status); saved = false}"
                             @advanced-edit="()=>{lastClickedTrigger = trigger; showTriggerEditModal=true;}"
                 />
                 <div v-if="!editor.scene.triggerManager.hasTriggers.value">{{$t('sceneView.leftSection.sceneTriggers.noTriggerInfo')}}</div>

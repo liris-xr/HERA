@@ -50,7 +50,7 @@ export class ArScene extends AbstractScene {
         }
 
 
-        if(this.#assets.length == 0) this.#assets.push(new EmptyAsset())
+        if(this.#assets.length === 0) this.#assets.push(new EmptyAsset())
 
         this.labelPlayer = new LabelPlayer();
         for (let labelData of sceneData.labels) {

@@ -145,7 +145,7 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
         if (project == null)
             return res.status(404).send({error: 'Project not found'})
 
-        if (project.userId != token.id)
+        if (project.userId !== token.id)
             return res.status(403).send({error: "User not granted"})
 
 
@@ -244,7 +244,7 @@ router.delete(baseUrl+'project/:projectId', authMiddleware, async (req, res) => 
             return res.status(404).send({error: 'Project not found'})
         }
 
-        if(project.owner.id != token.id)
+        if(project.owner.id !== token.id)
             return res.status(403).send({error: 'User not granted'})
 
 
@@ -313,7 +313,7 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        if(project.owner.id != token.id){
+        if(project.owner.id !== token.id){
             return res.status(403).send({error: 'User not granted'});
         }
 

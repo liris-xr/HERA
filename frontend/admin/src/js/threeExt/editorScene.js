@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
-import {computed, nextTick, ref, toRaw, watch} from "vue";
+import {computed, ref, toRaw, watch} from "vue";
 import {GridPlane} from "@/js/threeExt/lighting/gridPlane.js";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {LabelManager} from "@/js/threeExt/postprocessing/labelManager.js";

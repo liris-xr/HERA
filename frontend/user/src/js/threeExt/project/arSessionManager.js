@@ -175,7 +175,7 @@ export class ArSessionManager {
         }
 
         if(this.enable3dUI) {
-            this.xr3dUi = new Xr3dUi(this.arRenderer, this.arCamera, this.arSession, this.sceneManager, this.referenceSpace, this.applyVrCameraPosition.bind(this))
+            this.xr3dUi = new Xr3dUi(this.arRenderer, this.arCamera, this.arSession, this.sceneManager, this.referenceSpace, this.applyVrCameraPosition.bind(this), this.xrMode)
             this.xr3dUi.init()
 
             this.xr3dUi.addToScene(this.sceneManager.active.value)
@@ -183,7 +183,7 @@ export class ArSessionManager {
 
         if(this.xrMode === "vr" && this.sceneManager.active.value.vrStartPosition) {
             // timeout nécessaire car le apple vision pro réhausse la scène lors du premier tick sans qu'on lui demande
-            setTimeout(() => this.applyVrCameraPosition(), 0)
+            setTimeout(() => this.applyVrCameraPosition(), 100)
         }
 
         this.sceneManager.isArRunning.value = true;
@@ -224,9 +224,9 @@ export class ArSessionManager {
 
         // appliquer la nouvelle transformation
         const translation = new THREE.Matrix4().makeTranslation(
-            - scene.vrStartPosition.position.x + position.x,
-            - scene.vrStartPosition.position.y + position.y,
-            - scene.vrStartPosition.position.z + position.z
+            - scene.vrStartPosition.position.x,
+            - scene.vrStartPosition.position.y,
+            - scene.vrStartPosition.position.z
         )
 
         const rot = new THREE.Matrix4().makeRotationFromQuaternion(extractYawQuaternion(rotation))
@@ -239,11 +239,15 @@ export class ArSessionManager {
         ))
 
         const transformation = new THREE.Matrix4()
-            .premultiply(translation)
-            .premultiply(rot)
+            .multiply(rot)
+            .multiply(translation)
 
         group.applyMatrix4(transformation)
-        group.updateMatrixWorld(true)
+        group.position.x += position.x
+        group.position.y += position.y
+        group.position.z += position.z
+
+        group.updateMatrixWorld()
 
     }
 

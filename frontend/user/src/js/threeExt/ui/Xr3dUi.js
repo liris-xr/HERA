@@ -16,6 +16,7 @@ export class Xr3dUi {
     sceneManager
     referenceSpace
     recalibrate
+    xrMode
 
     rayCaster
     hittables
@@ -31,13 +32,14 @@ export class Xr3dUi {
 
     needsForceVisibility
 
-    constructor(renderer, camera, xrSession, sceneManager, referenceSpace, recalibrate) {
+    constructor(renderer, camera, xrSession, sceneManager, referenceSpace, recalibrate, xrMode) {
         this.renderer = renderer
         this.camera = camera
         this.xrSession = xrSession
         this.sceneManager = sceneManager
         this.referenceSpace = referenceSpace
         this.recalibrate = recalibrate
+        this.xrMode = xrMode
 
         this.hittables = []
         this.pointers = []
@@ -190,7 +192,10 @@ export class Xr3dUi {
         this.hittables.push(buttonRecalibrate)
 
         buttonRecalibrate.onClick = () => {
-            this.recalibrate()
+            if(this.xrMode === "vr")
+                this.recalibrate()
+            else
+                this.sceneManager.scenePlacementManager.reset()
         }
 
         this.notificationsContainer = new ThreeMeshUI.Block( {

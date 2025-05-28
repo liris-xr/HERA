@@ -121,6 +121,7 @@ dist
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+.vscode
 
 # yarn v2
 .yarn/cache
@@ -135,6 +136,7 @@ issues.txt
 # Textures
 frontend/admin/public/textures/lpvParameters.json
 frontend/admin/public/textures/distanceFromGeometry.csv
+frontend/admin/public/textures/directionOfGeometry.csv
 frontend/admin/public/textures/sh*
 
 # gkit2light

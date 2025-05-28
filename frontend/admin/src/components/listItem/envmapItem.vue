@@ -26,7 +26,7 @@ const onClick = (cb) => {
   if(!(props.error || props.loading)) cb()
 }
 
-const fileLabel = computed(() => props.text.replaceAll("/", "\\").split("\\")[props.text.replaceAll("/", "\\").split("\\").length - 1] || t("none"));
+const fileLabel = computed(() => props.text && props.text.replaceAll("/", "\\").split("\\")[props.text.replaceAll("/", "\\").split("\\").length - 1] || t("none"));
 
 </script>
 

@@ -165,10 +165,12 @@ export class ArSessionManager {
         this.referenceSpace = await this.arRenderer.xr.getReferenceSpace();
         this.viewerSpace = await this.arSession.requestReferenceSpace('viewer');
 
-
         try {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
             this.arSession.addEventListener('select', this.sceneManager.onSceneClick.bind(this.sceneManager));
+            this.arSession.addEventListener('select', (event) => {
+                console.log(this.sceneManager.active.value)
+            });
         } catch(e) {
             // pas supporté
             this.sceneManager.scenePlacementManager.disable()

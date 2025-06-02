@@ -14,6 +14,9 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
     #pointerUrl;
     hitTestSource;
 
+    arrow
+    arrow2
+
     #shadowPlane
     #foundPlane;
     #isEnabled;
@@ -104,13 +107,46 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
             this.pointerObject.matrix.fromArray( hitPose.transform.matrix );
             this.pointerObject.updateWorldMatrix(true);
 
-
             this.#shadowPlane.visible = true
             this.#shadowPlane.matrixAutoUpdate = false;
             this.#shadowPlane.matrix.fromArray( hitPose.transform.matrix );
             this.#shadowPlane.updateWorldMatrix(true);
 
             this.#foundPlane.value = true;
+
+            const direction = new THREE.Vector3(0, 1, 0).applyQuaternion(
+                new THREE.Quaternion(hitPose.transform.orientation.x, hitPose.transform.orientation.y, hitPose.transform.orientation.z, hitPose.transform.orientation.w)
+            );
+            const direction2 = new THREE.Vector3(0, 0, 1).applyQuaternion(
+                new THREE.Quaternion(hitPose.transform.orientation.x, hitPose.transform.orientation.y, hitPose.transform.orientation.z, hitPose.transform.orientation.w)
+            );
+            const position = new THREE.Vector3(hitPose.transform.position.x, hitPose.transform.position.y, hitPose.transform.position.z);
+
+            if(!this.arrow) {
+                this.arrow = new THREE.ArrowHelper(direction, new THREE.Vector3(0,0,0), 1, 0x00ff00);
+                this.arrow.position.copy(position);
+                this.add(this.arrow);
+            } else {
+                this.arrow.position.copy(position);
+                this.arrow.setDirection(direction);
+            }
+
+            if(!this.arrow2) {
+                this.arrow2 = new THREE.ArrowHelper(direction2, new THREE.Vector3(0,0,0), 1, 0xff0000);
+                this.arrow2.position.copy(position);
+                this.add(this.arrow2);
+            } else {
+                this.arrow2.position.copy(position);
+                this.arrow2.setDirection(direction2);
+            }
+
+
+
+
+
+
+
+
         }else{
             this.#foundPlane.value = false;
             this.pointerObject.visible = false;

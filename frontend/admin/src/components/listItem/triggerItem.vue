@@ -1,6 +1,5 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
-import Tag from "@/components/tag.vue";
 
 const props = defineProps({
   index: {type: Number, default: 0},

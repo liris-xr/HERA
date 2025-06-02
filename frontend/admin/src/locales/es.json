@@ -2,7 +2,8 @@
   "locale": "es-ES",
   "header": {
     "home": "Mis proyectos",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "administration": "panel de administración"
   },
 
   "none": "Ninguno",
@@ -15,6 +16,7 @@
     "login": "Iniciar sesión",
     "loginIn": "Iniciando sesión",
     "noAccount": "¿No tienes cuenta?",
+    "register": "Pour vous inscrire, contacter un administrateur :",
     "createAccount": "Crear uno"
   },
   "register": {
@@ -218,6 +220,104 @@
       }
     }
   },
+
+  "admin": {
+    "title": "panel de administración",
+    "loading": "Chargement des données",
+    "loadingError": "Erreur dans le chargement des données",
+    "required": "Ce champ est requis",
+    "research": "Recherche",
+    "noResult": "Aucun résultat",
+    "deleteConfirm": "Vous-vous vraiment supprimer",
+    "irreversibleAction": "Cette action est irréversible",
+    "sections": {
+      "accounts": {
+        "h1": "Cuentas",
+        "edit": "Modifier l'utilisateur",
+        "delete": "Supprimer l'utilisateur",
+        "create": "Créer un utilisateur",
+        "username": "Nom d'utilisateur",
+        "email": "Adresse mail",
+        "password": "Mot de passe",
+        "admin": "Administrateur",
+        "actions": "Actions"
+      },
+      "projects": {
+        "h1": "Proyectos",
+        "cautionMessage": "La suppression d'un projet entrainera la suppression de toutes ses scènes, assets et labels",
+        "edit": "Modifier le projet",
+        "delete": "Supprimer le projet",
+        "create": "Créer un projet",
+        "import": "Importer un projet",
+        "zip": "Archive zip",
+        "title": "Titre",
+        "scenes": "Scènes",
+        "published": "Public",
+        "description": "Description",
+        "calibrationMessage": "Message de calibration",
+        "unit": "Nom du paramètre"
+      },
+      "scenes": {
+        "h1": "Escenas",
+        "cautionMessage": "La suppression d'une scène entrainera la suppression de tous ses assets et labels",
+        "edit": "Modifier la scène",
+        "delete": "Supprimer la scène",
+        "create": "Créer une scène",
+        "title": "Titre",
+        "description": "Description",
+        "assets": "Assets",
+        "labels": "Labels",
+        "project": {
+          "title": "Projet"
+        }
+      },
+      "assets": {
+        "h1": "Recursos",
+        "edit": "Modifier l'asset",
+        "delete": "Supprimer l'asset",
+        "create": "Créer un asset",
+        "name": "Nom",
+        "asset": "Fichier",
+        "hideInViewer": "Masqué",
+        "scene": {
+          "project": {
+            "title": "Projet"
+          }
+        }
+      },
+      "labels": {
+        "h1": "Etiquetas",
+        "edit": "Modifier le label",
+        "delete": "Supprimer le label",
+        "create": "Créer un label",
+        "text": "Contenu",
+        "timestampStart": "Timestamp d'apparition",
+        "timestampEnd": "Timestamp de disparition",
+        "scene": {
+          "project": {
+            "title": "Projet"
+          }
+        }
+      }
+    }
+  },
+
+  "account": {
+    "confirm": "Confirmer",
+    "cancel":  "Annuler",
+    "required": "Ce champ est requis",
+    "password": {
+      "title": "Changement du mot de passe",
+      "warning": "Attention : Pensez à utiliser un mot de passe unique et sécurisé. Ne partagez jamais vos identifiants",
+      "button": "Modifier mon mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "lengthMessage": "Le mot de passe doit être de longueur >= 8",
+      "notMatching": "Les mots de passes ne correspondent pas",
+      "success": "Mot de passe modifié avec succès"
+    }
+  },
+
   "textInputModal": {
     "confirmButton": "Crear",
     "cancelButton": "Cancelar"

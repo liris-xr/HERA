@@ -2,7 +2,23 @@
   "locale": "en-Us",
   "header": {
     "home": "Home",
+    "login": "Login",
+    "logout": "Logout",
     "allProjects": "All projects"
+  },
+
+  "none": "None",
+
+  "login": {
+    "emailLabel": "Email",
+    "emailPlaceholder": "Your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Your password",
+    "login": "Login",
+    "loginIn": "Login in",
+    "noAccount": "Don't have an account?",
+    "register": "To sign up, please contact an administrator :",
+    "createAccount": "Create one"
   },
   "homeView": {
     "title": "Recent projects",
@@ -49,11 +65,80 @@
       "updatedOn": "Updated on : ",
       "sceneCount": "Scene count : ",
       "at": "at"
+    },
+    "startPresentation": "Start a new presentation",
+    "presentationState": "Presentation state",
+    "terminated": "The presentation is now over, thank you for your attention",
+    "seeProject": "See the project"
+  },
+
+  "account": {
+    "confirm": "Confirm",
+    "cancel":  "Cancel",
+    "required": "This field is required",
+    "password": {
+      "title": "Password change",
+      "warning": "Warning: Make sure to use a unique and secure password. Never share your credentials",
+      "button": "Change my password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm the new password",
+      "lengthMessage": "Your password's length must be >= 8",
+      "notMatching": "Passwords do not match",
+      "success": "Password successfully modified"
     }
   },
 
-
-
+  "presentation": {
+    "sceneTitle": "Scene",
+    "controls": {
+      "title": "Controls",
+      "connected": {
+        "true": "Connected",
+        "false": "Disconnected"
+      },
+      "showQrcode": "Show the QR code",
+      "reset": "Reset the scene",
+      "showAll": "Show all",
+      "hideAll": "Hide all",
+      "terminate": "Conclude the presentation"
+    },
+    "sections": {
+      "presets": {
+        "title": "Presets",
+        "manageButton": "Manage",
+        "managementTitle": "Presets management",
+        "save": "Save",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "removeTitle": "Remove the preset",
+        "removeWarning": "Do you really want to remove this preset ? This action can't be undone",
+        "editTitle": "Edit the preset",
+        "icon": "Icon",
+        "text": "Text",
+        "redefineLabel": "Redefine the actions",
+        "redefine": "Redefine",
+        "createTitle": "Create a preset",
+        "define": "Define",
+        "defineLabel": "Define the actions",
+        "recording": "Recording actions..."
+      },
+      "assets": {
+        "title": "Assets"
+      },
+      "labels": {
+        "title": "Labels"
+      }
+    },
+    "quitQr": "Tap anywhere to make the QR code disappear",
+    "unpublishedWarning": "Unable to display the QR code : your project is private",
+    "brightnessTip": "To make scanning the QR code easier, increase your screen brightness",
+    "viewers": "viewers",
+    "currentScene": "Current scene",
+    "terminated": "Presentation ended",
+    "restart": "Restart a presentation",
+    "seeProject": "View the project",
+    "validateTerminate": "Do you really want to end this presentation ?"
+  },
 
   "projectCard": {
     "scene": "scene | scenes",

@@ -1,25 +1,44 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger, ArSound} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger, ArSound} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
-import authMiddleware from "../middlewares/auth.js";
+import authMiddleware, {optionnalAuthMiddleware} from "../middlewares/auth.js";
 import {
     deleteFile,
     deleteFolder,
     duplicateFolder,
-    getProjectDirectory,
+    getProjectDirectory, getTempDirectory,
     getUpdatedPath,
-    uploadCover
+    uploadCover, uploadProject
 } from "../utils/fileUpload.js";
+import {Op} from "sequelize";
+import * as path from "node:path";
+import * as fs from "node:fs";
+import {DIRNAME} from "../../app.js";
+import decompress from "decompress"
+import {updateUrl} from "../utils/updateUrl.js";
 
 
 const router = express.Router()
 
 const PAGE_LENGTH = 20;
 
-router.get(baseUrl+'projects/:page', async (req, res) => {
+router.get(baseUrl+'projects/:page', optionnalAuthMiddleware, async (req, res) => {
     const page = parseInt(req.params.page);
     try{
+        let where = {}
+        if(req.user)
+            where = {
+                [Op.or]: {
+                    published: true,
+                    userId: req.user.id,
+                }
+            }
+        else
+            where = {published:true}
+
+        console.log("user", req.user)
+
         let projects = (await ArProject.findAll({
             subQuery: false,
             attributes: [
@@ -41,7 +60,7 @@ router.get(baseUrl+'projects/:page', async (req, res) => {
                     attributes: ["username"],
                 }
             ],
-            where: {published:true},
+            where,
             group: ['ArProject.id'],
             limit: PAGE_LENGTH,
             offset: page * PAGE_LENGTH,
@@ -69,9 +88,26 @@ router.get(baseUrl+'projects/:page', async (req, res) => {
 
 
 
-router.get(baseUrl+'project/:projectId', async (req, res) => {
-    let project = (await ArProject.findOne({
-            where: { published: true, id: req.params.projectId },
+router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, res) => {
+    let where = {}
+    if(req.user)
+        where = {
+            id: req.params.projectId,
+            [Op.or]: {
+                published: true,
+                userId: req.user.id,
+            }
+        }
+    else
+        where = {published:true, id: req.params.projectId}
+
+    let attributes = {}
+    if(!req.user)
+        attributes.exclude = ['presets']
+
+    let project = await ArProject.findOne({
+            where,
+            attributes,
             include:[
                 {
                     model: ArScene,
@@ -79,6 +115,10 @@ router.get(baseUrl+'project/:projectId', async (req, res) => {
                     separate: true,
                     order: [['index', 'ASC']],
                     include:[
+                        {
+                            model:ArMesh,
+                            as:"meshes"
+                        },
                         {
                             model: ArAsset,
                             as: "assets",
@@ -110,7 +150,7 @@ router.get(baseUrl+'project/:projectId', async (req, res) => {
 
             ],
         })
-    )
+
     res.set({
         'Content-Type': 'application/json'
     })

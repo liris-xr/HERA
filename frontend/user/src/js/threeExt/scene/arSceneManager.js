@@ -175,6 +175,10 @@ export class ArSceneManager{
             this.scenePlacementManager.disable();
     }
 
+    getScenes() {
+        return this.scenes
+    }
+
     calculateDistanceTriggers(cameraPosition, triggerPosition) {
         const X = (cameraPosition.x - triggerPosition.x);
         const Y = (cameraPosition.y - triggerPosition.y);

@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import arAsset from "../orm/models/arAsset.js";
 import {Op} from "sequelize";
 import arSound from "../orm/models/arSound.js";
+import {ArAsset, ArMesh, ArProject, ArScene} from "../orm/index.js";
 
 
 
@@ -52,19 +53,9 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
                 }
 
                 cb(null, uploadDirectory);
-            }
-            else if (file.fieldname === "soundToUploads") {
-                const uploadDirectory = path.join(DIRNAME, getSoundsDirectory(projectId))
-                if (!fs.existsSync(uploadDirectory)) {
-                    fs.mkdirSync(uploadDirectory, { recursive: true });
-                }
-
-                cb(null, uploadDirectory);
-            }
-            else cb(null, "")
+            } else cb(null, "")
         },
         filename: (req, file, cb) => {
-
             const projectId = req.projectId;
             const ext = path.extname(file.originalname);
             if(file.fieldname === 'uploadedEnvmap') {
@@ -84,21 +75,7 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
                 req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
 
                 cb(null, filename);
-            }
-            else if (file.fieldname === "soundToUploads") {
-                if(!req.currentSoundCount){
-                    req.currentSoundCount = 0
-                }
-                const filename = "sounds" + Date.now() + req.currentSoundCount + ext
-                req.currentSoundCount++;
-
-                if(!req.uploadedFilenames)
-                    req.uploadedFilenames = [];
-                req.uploadedFilenames.push(path.join(getSoundsDirectory(req.projectId), filename));
-
-                cb(null, filename);
-            }
-            else cb(null, "")
+            } else cb(null, "")
         }
     })})
 
@@ -109,6 +86,50 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
 export const uploadAsset = multer({ storage: multer.diskStorage({
         destination: (req, file, cb) => {
             const projectId = req.projectId;
+            if(!projectId) throw new Error('Project Id is missing');
+
+            const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId))
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory, { recursive: true });
+            }
+
+            cb(null, uploadDirectory);
+        },
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname);
+
+            if(!req.currentAssetCount){
+                req.currentAssetCount = 0
+            }
+            const filename = "asset" + Date.now() + req.currentAssetCount + ext
+            req.currentAssetCount++;
+
+            if(!req.uploadedFilenames)
+                req.uploadedFilenames = [];
+            req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
+
+            cb(null, filename);
+        }
+    })});
+
+
+export const adminUploadAsset = multer({ storage: multer.diskStorage({
+        destination: async (req, file, cb) => {
+            const sceneId = req.body.sceneId
+
+            let scene = await ArScene.findOne({
+                include: [
+                    {
+                        model: ArProject,
+                        as: "project",
+                        attributes: ["id"],
+                    }
+                ],
+                where: {id: sceneId},
+            })
+
+            const projectId = scene.project.id;
+            req.projectId = projectId;
             if(!projectId) throw new Error('Project Id is missing');
 
             const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId))
@@ -165,6 +186,31 @@ export const uploadSound = multer({ storage: multer.diskStorage({
     })});
 
 
+export const uploadProject = multer({ storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+
+            const uploadDirectory = path.join(DIRNAME, 'public', 'files', 'temp')
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory, { recursive: true })
+            }
+
+            cb(null, uploadDirectory)
+        },
+
+        filename: (req, file, cb) => {
+
+            const filename = Date.now() + "-" + file.originalname
+
+            req.uploadedFilePath = path.join(DIRNAME, 'public', 'files', 'temp',  filename)
+
+            cb(null, filename)
+        }
+    })})
+
+
+export function getTempDirectory() {
+    return path.join('public', 'files', 'temp')
+}
 
 export function getProjectDirectory(projectId){
     return path.join('public','files',projectId);

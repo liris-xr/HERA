@@ -27,6 +27,7 @@ import {bytesToMBytes} from "@/js/projectPicture.js";
 import EnvmapItem from "@/components/listItem/envmapItem.vue";
 import {useI18n} from "vue-i18n";
 import {EXRLoader} from "three/addons";
+import * as THREE from "three"
 import TriggerItem from "@/components/listItem/triggerItem.vue";
 import TriggerEditModal from "@/components/modal/triggerEditModal.vue";
 import SoundItem from "@/components/listItem/soundItem.vue";
@@ -274,8 +275,14 @@ async function updateEnvmap(event){
 
       // vérifier que l'exr uploadé est valide
       try {
-        const buffer = await file.arrayBuffer()
-        new EXRLoader().parse(buffer)
+        const url = URL.createObjectURL(file)
+
+        editor.scene.environment = await (new EXRLoader()).load(url, (texture) => {
+          texture.mapping = THREE.EquirectangularReflectionMapping
+
+          // this.background = texture
+        })
+
       } catch(error) {
         alert(t('projectView.selectedFile.notAnExrError'))
         uploadedEnvmap.value.rawData = null;
@@ -370,6 +377,9 @@ function beforeRedirect(to, from, next){
 
 function removeEnvmap() {
   scene.value.envmapUrl = "";
+
+  if (uploadedEnvmap.value.rawData === null)
+    editor.scene.environment = null
 }
 
 onBeforeRouteLeave( (to, from, next)=>{
@@ -583,7 +593,7 @@ onBeforeRouteUpdate((to, from, next)=>{
                             @select="editor.scene.setSelected(asset)"
                             @delete="editor.scene.removeAsset(asset)"
                             @duplicate="editor.scene.duplicateAsset(asset)"
-                            @animationChanged="(val)=>{asset.activeAnimation = val}"
+                            @animationChanged="(val)=>{asset.activeAnimation = val; saved = false}"
                             @hide-in-viewer="()=>{asset.switchViewerDisplayStatus(); saved = false}"/>
                 <div v-if="scene.assets.length === 0">{{$t("sceneView.leftSection.sceneAssets.noAssetsInfo")}}</div>
               </div>
@@ -630,15 +640,15 @@ onBeforeRouteUpdate((to, from, next)=>{
               <button-tool :current-active="editor.scene.getTransformMode.value" name="translate" @click="editor.scene.setTransformMode('translate')"></button-tool>
               <button-tool :current-active="editor.scene.getTransformMode.value" name="rotate" @click="editor.scene.setTransformMode('rotate')"></button-tool>
               <button-tool :current-active="editor.scene.getTransformMode.value" name="scale" @click="editor.scene.setTransformMode('scale')"></button-tool>
-              <button-tool :current-active="showMaterialMenu ? '3d' : 'false' " name="3d" @click="showMaterialMenu = !showMaterialMenu"></button-tool>
+              <button-tool :current-active="showMaterialMenu ? '3d' : 'false' " name="3d" @click="() => { showMaterialMenu = !showMaterialMenu; editor.scene.setMaterialMenu(showMaterialMenu)}" ></button-tool>
 
               <div id="valuesGroup">
                 <label for="transformX">x:</label>
-                <input type="number" autocomplete="false" id="transformX" name="transformX" v-model="editor.scene.currentSelectedValues.value.x" step="any">
+                <input type="number" autocomplete="false" id="transformX" name="transformX" v-model="editor.scene.currentSelectedTransformValues.value.x" step="any">
                 <label for="transformY">y:</label>
-                <input type="number" autocomplete="false" id="transformX" name="transformY" v-model="editor.scene.currentSelectedValues.value.y" step="any">
+                <input type="number" autocomplete="false" id="transformY" name="transformY" v-model="editor.scene.currentSelectedTransformValues.value.y" step="any">
                 <label for="transformZ">z:</label>
-                <input type="number" autocomplete="false" id="transformZ" name="transformZ" v-model="editor.scene.currentSelectedValues.value.z" step="any">
+                <input type="number" autocomplete="false" id="transformZ" name="transformZ" v-model="editor.scene.currentSelectedTransformValues.value.z" step="any">
 
               </div>
             </div>
@@ -650,7 +660,7 @@ onBeforeRouteUpdate((to, from, next)=>{
         
         <section v-if=showMaterialMenu id="materials"> 
           <h2>{{$t("sceneView.materialSection.title")}}</h2> 
-          <material-view> </material-view>
+          <material-view :material-data="editor.scene.currentSelectedMaterialValues.value"> </material-view>
         </section>
 
       </section>

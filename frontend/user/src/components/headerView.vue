@@ -2,6 +2,20 @@
 
 import {RouterLink} from "vue-router";
 import LocaleChanger from "@/components/localeChanger.vue";
+import {useAuthStore} from "@/store/auth.js";
+import ButtonView from "@/components/button/buttonView.vue";
+import router from "@/router/index.js";
+
+const {isAuthenticated, userData, logout } = useAuthStore()
+
+function logoutAndRedirect(){
+  logout()
+  if(router.currentRoute.value.name === "home") {
+    router.go(0)
+  }else
+    router.push({ name: "home" });
+}
+
 </script>
 
 <template>
@@ -9,7 +23,19 @@ import LocaleChanger from "@/components/localeChanger.vue";
     <nav>
       <RouterLink :to="{name: 'home'}">{{$t("header.home")}}</RouterLink>
       <RouterLink :to="{name:'projects'}">{{$t("header.allProjects")}}</RouterLink>
-      <locale-changer></locale-changer>
+
+      <div>
+        <locale-changer></locale-changer>
+
+
+        <RouterLink :to="{name:'account'}" v-if="isAuthenticated">
+          <span>{{userData.username}}</span>
+        </RouterLink>
+
+        <button-view v-if="isAuthenticated" :text="$t('header.logout')" @click="logoutAndRedirect()"/>
+
+        <button-view v-else :text="$t('header.login')" @click="router.push({ name: 'login' })"/>
+      </div>
     </nav>
   </header>
 </template>
@@ -45,8 +71,11 @@ nav>a.router-link-exact-active {
   color: var(--accentColor);
 }
 
-.locale-changer{
+nav > div {
+  display: flex;
   flex-grow: 1;
   justify-content: flex-end;
+  gap: 10px
 }
+
 </style>

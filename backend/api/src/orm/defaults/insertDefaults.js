@@ -10,8 +10,18 @@ export async function insertDefaults() {
         id: '3e6d3402-8a53-4354-bc63-647ee1b6a59b',
         username: 'admin',
         email: 'admin@gmail.com',
-        password: 'admin',
+        admin: true,
+        password: passwordHash('admin'),
     });
+
+    for(let i = 0; i < 200; i++) {
+        const user = ArUser.create({
+            username: 'user'+i,
+            email: 'user'+i+'@gmail.com',
+            admin: false,
+            password: passwordHash('user'+i),
+        })
+    }
 
 
 

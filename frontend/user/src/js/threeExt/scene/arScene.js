@@ -1,15 +1,17 @@
 import * as THREE from "three";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
+import {computed, shallowReactive} from "vue";
 import {Trigger} from "@/js/threeExt/TriggerManagement/trigger.js";
-import {computed} from "vue";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
 import {LabelPlayer} from "@/js/threeExt/postProcessing/labelPlayer.js";
+import {Vector3} from "three";
 import {EmptyAsset} from "@/js/threeExt/modelManagement/emptyAsset.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
 import {Sound} from "@/js/threeExt/SoundManagement/sound.js";
+import { MeshManager } from "../modelManagement/meshManager";
 
 export class ArScene extends AbstractScene {
     sceneId
@@ -18,6 +20,7 @@ export class ArScene extends AbstractScene {
     #assets
     #triggers
     #sounds
+    meshDataMap // Mesh data from the database
     labelPlayer;
     #shadowPlane
     #errors;
@@ -35,6 +38,9 @@ export class ArScene extends AbstractScene {
         this.title = sceneData.title;
         this.description = sceneData.description;
         this.#assets = [];
+        this.meshDataMap = new Map();
+        this.meshManager = new MeshManager()
+
         for (let assetData of sceneData.assets) {
             this.#assets.push(new Asset(assetData));
         }
@@ -51,6 +57,9 @@ export class ArScene extends AbstractScene {
 
 
         if(this.#assets.length === 0) this.#assets.push(new EmptyAsset())
+        for (let meshData of sceneData.meshes) {
+            this.meshDataMap.set(meshData.name,meshData)
+        }
 
         this.labelPlayer = new LabelPlayer();
         for (let labelData of sceneData.labels) {
@@ -76,13 +85,66 @@ export class ArScene extends AbstractScene {
         this.#activeSounds = [];
     }
 
+    getAssetSubMeshes(assetData) {
+        let subMeshes = []
+
+        console.log(assetData);
+
+
+        const step = (child,transform) => {
+            for(let children of child.children) {
+                if ("material" in children) {
+                    children.applyMatrix4(transform)
+                    subMeshes.push(children)
+                } else {
+                    let newTransform = new THREE.Matrix4()
+                    step(children,newTransform.multiplyMatrices(transform,children.matrix))
+                }
+
+            }
+        }
+        if(assetData.object) {
+            step(assetData.object,new THREE.Matrix4())
+        } else {
+            subMeshes.push(assetData.mesh)
+        }
+
+        return subMeshes
+    }
+
+    updateAssetSubMeshes(assetData) {
+        const step = (child,transform) => {
+            for(let children of child.children) {
+                if ("material" in children) {
+                    children.applyMatrix4(transform)
+                    const subMeshData = this.meshDataMap.get(children.name)
+                    this.meshManager.updateSubMesh(children,subMeshData)
+                    children.updateMatrixWorld()
+                    children.geometry.computeVertexNormals()
+                } else {
+                    let newTransform = new THREE.Matrix4()
+                    step(children,newTransform.multiplyMatrices(transform,children.matrix))
+                }
+            }
+        }
+        if(assetData.object) {
+            step(assetData.object,new THREE.Matrix4())
+        }
+    }
+
     async init(){
         for (let assetData of this.#assets) {
             await assetData.load();
             if(assetData.hasError()){
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
             }
-            assetData.pushToScene(this);
+
+            this.updateAssetSubMeshes(assetData);
+            if(assetData.object) {
+                this.add(assetData.object);
+            } else {
+                this.add(assetData.mesh);
+            }
         }
 
         for (let triggerData of this.#triggers) {
@@ -110,6 +172,7 @@ export class ArScene extends AbstractScene {
         this.computeBoundingSphere(true);
         this.#shadowPlane = new ShadowPlane(this.computeBoundingBox(false));
         this.#shadowPlane.pushToScene(this);
+
     }
 
     getErrors = computed(()=>{
@@ -137,7 +200,7 @@ export class ArScene extends AbstractScene {
         if(forceCompute || this.#boundingBox==null){
             const group = new THREE.Group();
             for (let asset of this.#assets) {
-                group.add(asset.mesh.clone());
+                group.add(asset.object.clone());
             }
             this.#boundingBox = new THREE.Box3().setFromObject(group);
         }
@@ -171,10 +234,6 @@ export class ArScene extends AbstractScene {
         return this.#triggers;
     }
 
-    getAssets(){
-        return this.#assets;
-    }
-
     getSounds(){
         return this.#sounds;
     }
@@ -187,5 +246,20 @@ export class ArScene extends AbstractScene {
             }
         });
         this.#activeSounds.length = [];
+    }
+
+    hasAssets() {
+        return !(this.#assets.length === 0 || this.#assets[0] instanceof EmptyAsset)
+    }
+
+    getAssets() {
+        return shallowReactive(this.#assets)
+    }
+
+    findAssetById(id) {
+        for(const asset of this.#assets)
+            if(asset.id === id)
+                return asset
+        return null
     }
 }

@@ -3,8 +3,8 @@ import {baseUrl} from "./baseUrl.js";
 import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger, ArSound} from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
-import {Sequelize} from "sequelize";
-import {updateListById} from "../utils/updateListById.js";
+import {Op, Sequelize} from "sequelize";
+import {updateListByCompositeId, updateListById} from "../utils/updateListById.js";
 import {deleteAsset, deleteFile, deleteSound, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
 
 const router = express.Router()
@@ -55,7 +55,7 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
         if (scene == null)
             return res.status(404).send({error: 'Scene not found'})
 
-        if (scene.project.owner.id !== token.id)
+        if (scene.project.owner.id !== token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
         res.status(200);
@@ -172,13 +172,13 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         if (scene == null)
             return res.status(404).send({error: 'Scene not found'})
 
-        if (scene.project.owner.id !== token.id)
+        if (scene.project.owner.id !== token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
 
         const knownLabelsIds = scene.labels.map( (label) => label.id )
         const knownAssetsIds = scene.assets.map( (asset) => asset.id )
-        const knonwMeshesIds = scene.meshes.map( (mesh) => mesh.id )
+        const knownMeshesIds = scene.meshes.map( (mesh) => { return {id: mesh.id, assetId: mesh.assetId} } )
         const knownTriggersIds = scene.triggers.map( (trigger) => trigger.id )
         const knownSoundsIds = scene.sounds.map( (sound) => sound.id )
 
@@ -188,8 +188,9 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
         let insertedCount = 0;
         if(!req.uploadedFilenames) req.uploadedFilenames = [];
+
         await sequelize.transaction(async (t) => {
-            await updateListById(knownLabelsIds, JSON.parse(req.body.labels),
+            await updateListById(knownLabelsIds, typeof req.body.labels === "object" ? req.body.labels : JSON.parse(req.body.labels),
                 async (label)=>{
                     await ArLabel.update({
                         text:label.text,
@@ -220,7 +221,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 }
             );
 
-            await updateListById(knownAssetsIds, JSON.parse(req.body.assets),
+            await updateListById(knownAssetsIds, typeof req.body.assets === "object" ? req.body.assets : JSON.parse(req.body.assets),
                 async (asset)=>{
                     await ArAsset.update({
                         position:asset.position,
@@ -272,7 +273,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 }
             );
 
-            await updateListById(knonwMeshesIds, JSON.parse(req.body.meshes),
+            await updateListByCompositeId(knownMeshesIds, ['id', 'assetId'], typeof req.body.meshes === "object" ? req.body.meshes : JSON.parse(req.body.meshes),
                 async (mesh) => {
                     await ArMesh.update({
                         position:mesh.position,

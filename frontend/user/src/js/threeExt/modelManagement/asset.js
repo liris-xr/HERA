@@ -61,6 +61,29 @@ export class Asset extends SceneElementInterface{
         return this.#error;
     }
 
+    playAnimation(name) {
+        if(!this.animationMixer) return;
+
+        if(this.playingAction) {
+            this.playingAction.stop()
+            this.playingAction = null
+            this.activeAnimation = null
+        }
+
+        if(name) {
+            const anim = THREE.AnimationClip.findByName(this.object.animations, name)
+
+            if(!anim) return
+
+            const action = this.animationMixer.clipAction(anim)
+            action.play()
+            this.activeAnimation = name
+
+            this.playingAction = action
+
+        }
+    }
+
     async load(){
         const manager = ObjectManager.getInstance();
         let object = await manager.load(this.sourceUrl);

@@ -61,6 +61,9 @@ export class SocketActionManager {
 
         if(!asset) return
 
+        asset.playAnimation(data.value)
+        return
+
         if(asset.playingAction) {
             asset.playingAction.stop()
             asset.playingAction = null

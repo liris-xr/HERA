@@ -14,6 +14,7 @@ import {SoundManager} from "@/js/soundManagement/soundManager.js";
 import {Sound} from "@/js/soundManagement/sound.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
+import {Trigger} from "@/js/threeExt/triggerManagement/trigger.js";
 
 const transformModeKeys = {
     "translate":"position",
@@ -447,7 +448,8 @@ export class EditorScene extends THREE.Scene {
 
     #updateSelectedTransformValues(){
 
-        if(this.selected.value instanceof Asset) {
+        if(this.selected.value instanceof Asset ||
+            this.selected.value instanceof Label || this.selected.value instanceof Trigger) {
 
             if(this.getTransformMode.value === "translate"){
                 this.currentSelectedTransformValues.value = this.selected.value.getResultPosition();

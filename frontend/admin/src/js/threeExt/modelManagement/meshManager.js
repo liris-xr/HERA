@@ -45,6 +45,7 @@ void main() {
 	#include <clipping_planes_vertex>
 	vViewPosition = - mvPosition.xyz;
 	wNormal = vec3(objectNormal.x,-objectNormal.z,objectNormal.y); 
+	wNormal = objectNormal;
 
 	#include <worldpos_vertex>
 	#include <shadowmap_vertex>
@@ -66,6 +67,7 @@ uniform vec3 emissive;
 uniform float roughness;
 uniform float metalness;
 uniform float opacity;
+
 uniform sampler3D sh0;
 uniform sampler3D sh1;
 uniform sampler3D sh2;
@@ -77,6 +79,18 @@ uniform sampler3D sh5;
 uniform sampler3D sh6;
 uniform sampler3D sh7;
 uniform sampler3D sh8;
+
+uniform sampler3D shDist0;
+uniform sampler3D shDist1;
+uniform sampler3D shDist2;
+
+uniform sampler3D shDist3;
+uniform sampler3D shDist4;
+uniform sampler3D shDist5;
+
+uniform sampler3D shDist6;
+uniform sampler3D shDist7;
+uniform sampler3D shDist8;
 
 uniform sampler3D distanceFromGeometry;
 uniform sampler3D directionOfGeometry;
@@ -168,6 +182,44 @@ varying vec3 vViewPosition;
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
 
+
+// get the irradiance (radiance convolved with cosine lobe) at the point 'normal' on the unit sphere
+// source: https://graphics.stanford.edu/papers/envmap/envmap.pdf
+float shGetIrradianceAt( in vec3 normal, in float shCoefficients[ 9 ] ) {
+
+	// normal is assumed to have unit length
+
+	float x = normal.x, y = normal.y, z = normal.z;
+
+	// band 0
+	float result = shCoefficients[ 0 ] * 0.886227;
+
+	// band 1
+	result += shCoefficients[ 1 ] * 2.0 * 0.511664 * y;
+	result += shCoefficients[ 2 ] * 2.0 * 0.511664 * z;
+	result += shCoefficients[ 3 ] * 2.0 * 0.511664 * x;
+
+	// band 2
+	result += shCoefficients[ 4 ] * 2.0 * 0.429043 * x * y;
+	result += shCoefficients[ 5 ] * 2.0 * 0.429043 * y * z;
+	result += shCoefficients[ 6 ] * ( 0.743125 * z * z - 0.247708 );
+	result += shCoefficients[ 7 ] * 2.0 * 0.429043 * x * z;
+	result += shCoefficients[ 8 ] * 0.429043 * ( x * x - y * y );
+
+	return result;
+
+}
+
+float getLightProbeIrradiance( const in float lightProbe[ 9 ], const in vec3 normal ) {
+
+	vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
+
+	float irradiance = shGetIrradianceAt( worldNormal, lightProbe );
+
+	return irradiance;
+
+}
+
 // Considering a point in a cube,
 //    7 -----  6	
 //   / |     / |
@@ -251,6 +303,19 @@ void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
 				  );
 }
 
+void getProbeDistSH(int i,vec3 texcoord, inout float[9] probeDistSH) {
+	probeDistSH = float[9]( texture(shDist0,getITexcoord(i,texcoord)).r,
+					texture(shDist1,getITexcoord(i,texcoord)).r,
+					texture(shDist2,getITexcoord(i,texcoord)).r,
+					texture(shDist3,getITexcoord(i,texcoord)).r,
+					texture(shDist4,getITexcoord(i,texcoord)).r,
+					texture(shDist5,getITexcoord(i,texcoord)).r,
+					texture(shDist6,getITexcoord(i,texcoord)).r,
+					texture(shDist7,getITexcoord(i,texcoord)).r,
+					texture(shDist8,getITexcoord(i,texcoord)).r
+				  );
+}
+
 void linearProbeInterpolation(vec3[9] a, vec3[9] b, float v, inout vec3[9] probeSH) {
 	for(int i = 0;i<9;i++) {
 		probeSH[i] = mix(a[i],b[i],v);
@@ -287,14 +352,15 @@ void getProbeInterpolation(vec3[9] a, vec3[9] b,float v,inout vec3[9] probeSH) {
 
 void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n) {
 	for(int i = 0;i<8;i++) {
+		float[9] distSH;
+		getProbeDistSH(i,texcoord,distSH);
+
 		vec3 probeWorldTexcoord = getIProbeWorldPosition(i,texcoord);
 		vec3 pProbe = p - probeWorldTexcoord;
 
-		vec3 dirOfGeo = getProbeDirectionOfGeometry(i,texcoord);
-		// vec3 projectionOnDirOfGeo = dot(dirOfGeo,pProbe)*dirOfGeo;
-
-		interpolationMask[i] = dot(n,-pProbe) > -0.01;
-		// interpolationMask[i] = dot(dirOfGeo,pProbe)-0.05 < getProbeDistanceFromGeometry(i,texcoord);
+		interpolationMask[i] = length(pProbe) < getLightProbeIrradiance(distSH,normalize(pProbe))+0.2;
+		// interpolationMask[i] = dot(n,-pProbe) > -0.01;
+		// interpolationMask[i] = dot(dirOfGeo,pProbe) < getProbeDistanceFromGeometry(i,texcoord)+0.07;
 	}
 }
 
@@ -419,6 +485,7 @@ export class MeshManager {
     #meshes
 	textureLoader
 	shTextures;
+	shDistTextures;
 	distFromGeometryTexture;
 	directionOfGeometryTexture;
 	lpvParameters;
@@ -428,6 +495,7 @@ export class MeshManager {
 		this.textureLoader = new THREE.TextureLoader();
 
 		this.shTextures = [];
+		this.shDistTextures = [];
 		for(let i = 0;i<9;i++) {
 			fetch(BASE_URL+'textures/sh'+i+'.csv')
 			.then((res) => res.text())
@@ -435,6 +503,15 @@ export class MeshManager {
 				const values = text.split(',').map(Number);
 				
 				this.shTextures.push(new Float32Array(values));
+			})
+			.catch((e) => console.error(e));
+
+			fetch(BASE_URL+'textures/shDist'+i+'.csv')
+			.then((res) => res.text())
+			.then((text) => {
+				const values = text.split(',').map(Number);
+				
+				this.shDistTextures.push(new Float32Array(values));
 			})
 			.catch((e) => console.error(e));
 		}
@@ -506,6 +583,22 @@ export class MeshManager {
 					sh3DTexture.needsUpdate = true;
 					
 					shader.uniforms["sh"+i] = {value: sh3DTexture};
+
+					const shDist3DTexture = new THREE.Data3DTexture(this.shDistTextures[i], 
+						this.lpvParameters.width*this.lpvParameters.density,
+						this.lpvParameters.depth*this.lpvParameters.density,
+						this.lpvParameters.height*this.lpvParameters.density);
+						
+					shDist3DTexture.format = THREE.RedFormat;
+					shDist3DTexture.magFilter = THREE.NearestFilter;
+					shDist3DTexture.minFilter = THREE.NearestFilter;
+					shDist3DTexture.type = THREE.FloatType;
+					shDist3DTexture.wrapS = THREE.ClampToEdgeWrapping
+					shDist3DTexture.wrapT = THREE.ClampToEdgeWrapping
+					shDist3DTexture.wrapR = THREE.ClampToEdgeWrapping
+					shDist3DTexture.needsUpdate = true;
+
+					shader.uniforms["shDist"+i] = {value: shDist3DTexture};
 				}
 
 				const distanceTexture = new THREE.Data3DTexture(this.distFromGeometryTexture,
@@ -550,6 +643,7 @@ export class MeshManager {
 				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.height*this.lpvParameters.density)};
 				shader.uniforms.freqZ = {value:1.0/(this.lpvParameters.depth*this.lpvParameters.density)};
 				shader.uniforms.worldFreq = {value:1.0/this.lpvParameters.density};
+				
 			}
         }
 

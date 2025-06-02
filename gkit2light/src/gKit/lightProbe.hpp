@@ -13,6 +13,9 @@ class LightProbe {
         Vector directCoefficients[9];
         Vector indirectCoefficients[9];
 
+        float distanceCoefficients[9];
+        
+
         Vector directionOfGeometry;
         unsigned int id;
         

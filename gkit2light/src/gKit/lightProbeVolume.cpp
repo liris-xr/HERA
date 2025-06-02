@@ -85,11 +85,10 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
 
     for(int i = 0;i<9;i++) {
         this->shTextures[i].resize(nbProbe*4);
+        this->distanceFromGeometryTexture[i].resize(nbProbe);
     }
-    this->directionFromGeometryTexture.resize(nbProbe*4);
 
     this->invalidityTexture = std::vector<float>(nbProbe,0);
-    this->distanceFromGeometryTexture = std::vector<float>(nbProbe,0);
 }
 
 LightProbeVolume::~LightProbeVolume() {
@@ -293,11 +292,17 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
         Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
 
         if(hit) {
+            nbIntersection++;
+            float * shBasis = getBasis(sphereDirection);
+            for (unsigned int j = 0;j<9;j++) {
+                probe.distanceCoefficients[j] += shBasis[j]*hit.t;
+            }
+
             if(hit.t < distanceFromGeometry) {
                 distanceFromGeometry = hit.t;
                 directionOfGeometry = sphereDirection;
             }
-            nbIntersection++;
+
             if(isBackFaceTouched(hit.triangle_id, sphereDirection)) {
                 this->invalidityTexture[probe.id]++;
 
@@ -338,11 +343,6 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
             }
         }
     }
-    this->distanceFromGeometryTexture[probe.id] = distanceFromGeometry;
-    this->directionFromGeometryTexture[(probe.id*4)] = directionOfGeometry.x;
-    this->directionFromGeometryTexture[(probe.id*4)+1] = directionOfGeometry.y;
-    this->directionFromGeometryTexture[(probe.id*4)+2] = directionOfGeometry.z;
-    this->directionFromGeometryTexture[(probe.id*4)+3] = 0;
     
     if(this->invalidityTexture[probe.id]) {
         this->invalidityTexture[probe.id] /= float(nbIntersection);
@@ -377,6 +377,8 @@ void LightProbeVolume::bake() {
             probe.indirectCoefficients[j].y = (probe.indirectCoefficients[j].y * 4*M_PI) / float(this->nbIndirectSamples);
             probe.indirectCoefficients[j].z = (probe.indirectCoefficients[j].z * 4*M_PI) / float(this->nbIndirectSamples);
 
+            probe.distanceCoefficients[j] = (probe.distanceCoefficients[j] * 4*M_PI) / float(this->nbIndirectSamples);
+
             probe.coefficients[j].x = probe.directCoefficients[j].x + probe.indirectCoefficients[j].x;
             probe.coefficients[j].y = probe.directCoefficients[j].y + probe.indirectCoefficients[j].y;
             probe.coefficients[j].z = probe.directCoefficients[j].z + probe.indirectCoefficients[j].z;
@@ -389,8 +391,8 @@ void LightProbeVolume::bake() {
     this->updateBasedOnInvalidity();
 
     for(LightProbe & probe : this->probes) {
-
         for(unsigned int coef = 0;coef<9;coef++) {
+            this->distanceFromGeometryTexture[coef][probe.id] = probe.distanceCoefficients[coef];
             for(unsigned int color = 0;color<4;color++) {
                 float value = color == 0 ? probe.coefficients[coef].x : color == 1 ? probe.coefficients[coef].y : color == 2 ? probe.coefficients[coef].z : 0;
                 this->shTextures[coef][(probe.id*4)+color] = value;
@@ -401,7 +403,7 @@ void LightProbeVolume::bake() {
 
 void LightProbeVolume::writeLPV() {
     
-    // Write spherical harmonics textures
+    // Write light spherical harmonics textures
     #pragma omp parallel for
     for(int coef=0;coef<9;coef++) {
         std::fstream shFile;
@@ -413,27 +415,38 @@ void LightProbeVolume::writeLPV() {
         shFile<<shTextures[coef][this->shTextures[coef].size()-1];
 
         shFile.close();
+
+        // Write distance spherical harmonics textures
+        // std::fstream shDistFile;
+        // shDistFile.open("../frontend/admin/public/textures/shDist"+std::to_string(coef)+".csv",std::ios_base::out);
+        
+        // for(unsigned int i=0;i<this->distanceFromGeometryTexture[coef].size();i++) {
+        //     shDistFile<<this->distanceFromGeometryTexture[coef][i]<<',';
+        // }
+        // shDistFile<<distanceFromGeometryTexture[coef][this->distanceFromGeometryTexture[coef].size()-1];
+    
+        // shDistFile.close();
     } 
 
-    std::fstream distanceFile;
-    distanceFile.open("../frontend/admin/public/textures/distanceFromGeometry.csv",std::ios_base::out);
+    // std::fstream distanceFile;
+    // distanceFile.open("../frontend/admin/public/textures/distanceFromGeometry.csv",std::ios_base::out);
     
-    for(unsigned int i=0;i<this->distanceFromGeometryTexture.size()-1;i++) {
-        distanceFile<<distanceFromGeometryTexture[i]<<',';
-    }
-    distanceFile<<distanceFromGeometryTexture[this->distanceFromGeometryTexture.size()-1];
+    // for(unsigned int i=0;i<this->distanceFromGeometryTexture.size()-1;i++) {
+    //     distanceFile<<distanceFromGeometryTexture[i]<<',';
+    // }
+    // distanceFile<<distanceFromGeometryTexture[this->distanceFromGeometryTexture.size()-1];
 
-    distanceFile.close();
+    // distanceFile.close();
 
-    std::fstream directionFile;
-    directionFile.open("../frontend/admin/public/textures/directionOfGeometry.csv",std::ios_base::out);
+    // std::fstream directionFile;
+    // directionFile.open("../frontend/admin/public/textures/directionOfGeometry.csv",std::ios_base::out);
     
-    for(unsigned int i=0;i<this->directionFromGeometryTexture.size()-1;i++) {
-        directionFile<<directionFromGeometryTexture[i]<<',';
-    }
-    directionFile<<directionFromGeometryTexture[this->directionFromGeometryTexture.size()-1];
+    // for(unsigned int i=0;i<this->directionFromGeometryTexture.size()-1;i++) {
+    //     directionFile<<directionFromGeometryTexture[i]<<',';
+    // }
+    // directionFile<<directionFromGeometryTexture[this->directionFromGeometryTexture.size()-1];
 
-    directionFile.close();
+    // directionFile.close();
 }
 
 void LightProbeVolume::writeParameters(float density,float width,float depth,float height,const Point & center) {

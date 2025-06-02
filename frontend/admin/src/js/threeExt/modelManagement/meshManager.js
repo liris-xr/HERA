@@ -358,7 +358,7 @@ void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,v
 		vec3 probeWorldTexcoord = getIProbeWorldPosition(i,texcoord);
 		vec3 pProbe = p - probeWorldTexcoord;
 
-		interpolationMask[i] = length(pProbe) < getLightProbeIrradiance(distSH,normalize(pProbe))+0.2;
+		interpolationMask[i] = length(pProbe) < getLightProbeIrradiance(distSH,normalize(pProbe))+0.01;
 		// interpolationMask[i] = dot(n,-pProbe) > -0.01;
 		// interpolationMask[i] = dot(dirOfGeo,pProbe) < getProbeDistanceFromGeometry(i,texcoord)+0.07;
 	}
@@ -467,6 +467,11 @@ void main() {
 	// outgoingLight = getITexcoord(0,texcoord);
 	// outgoingLight = getITexcoord(0,texcoord)-texcoord;
 	// outgoingLight = wNormal;
+	float[9] distSH;
+	getProbeDistSH(0,texcoord,distSH);
+	vec3 probeWorldTexcoord = getIProbeWorldPosition(0,texcoord);
+	vec3 pProbe = wPosition.xyz - probeWorldTexcoord;
+	outgoingLight = vec3(getLightProbeIrradiance(distSH,wNormal));
 
 	// vec3 probeWorldTexcoord = getIProbeWorldPosition(0,texcoord);
 	// vec3 pProbe = (wPosition.xyz - probeWorldTexcoord)*1000.;

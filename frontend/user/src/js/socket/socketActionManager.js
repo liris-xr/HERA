@@ -62,26 +62,6 @@ export class SocketActionManager {
         if(!asset) return
 
         asset.playAnimation(data.value)
-        return
-
-        if(asset.playingAction) {
-            asset.playingAction.stop()
-            asset.playingAction = null
-            asset.activeAnimation = null
-        }
-
-        if(data.value) {
-            const anim = THREE.AnimationClip.findByName(asset.object.animations, data.value)
-
-            if(!anim) return
-
-            const action = asset.animationMixer.clipAction(anim)
-            action.play()
-            asset.activeAnimation = data.value
-
-            asset.playingAction = action
-
-        }
     }
 
     toggleLabel(data) {

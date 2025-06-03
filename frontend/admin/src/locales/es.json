@@ -16,8 +16,8 @@
     "login": "Iniciar sesión",
     "loginIn": "Iniciando sesión",
     "noAccount": "¿No tienes cuenta?",
-    "register": "Pour vous inscrire, contacter un administrateur :",
-    "createAccount": "Crear uno"
+    "register": "Para inscribirse, póngase en contacto con un administrador :",
+    "createAccount": "Crear una cuenta"
   },
   "register": {
     "title": "Registrarse",
@@ -33,7 +33,7 @@
     "login": "Iniciar sesión"
   },
   "defaultProjectSettings": {
-    "unit": "Escena",
+    "unit": "scenario",
     "calibrationMessage": "Toca en cualquier lugar para colocar tu objeto"
   },
   "projectsView": {
@@ -48,7 +48,7 @@
     },
     "title": "Tus proyectos",
     "projectCard": {
-      "scene": "escena | escenas",
+      "scene": "escenario | escenarios",
       "pictureAlt": "Imagen del proyecto",
       "updatedOn": "Actualizado el ",
       "projectPublished": "Publicado",
@@ -111,7 +111,7 @@
       "delete": {
         "title": "Eliminar proyecto",
         "body": {
-          "part1": "Estás a punto de eliminar el proyecto ",
+          "part1": "Estás a punto de eliminar el proyecto",
           "part2": "Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?"
         }
       },
@@ -123,7 +123,7 @@
       "deleteScene": {
         "title": "Eliminar escena",
         "body": {
-          "part1": "Estás a punto de eliminar la escena ",
+          "part1": "Estás a punto de eliminar la escena",
           "part2": "Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?"
         }
       }
@@ -180,9 +180,32 @@
         "label": "Modelos 3D:",
         "addAssetButton": "Subir",
         "addAssetButtonErrorFileNotSupported": "Este formato de archivo no es compatible.\nPor favor, usa .glb o .gltf",
-        "noAssetsInfo": "Esta escena no tiene ningún modelo 3D",
+        "noAssetsInfo": "Este escenario no tiene ningún modelo 3D",
         "assetNotDisplayed": "Este objeto no se mostrará en el visor",
         "assetLoadFailed": "No se pudo cargar este modelo 3D"
+      },
+      "sceneSounds":{
+        "label": "Sonido :",
+        "addSoundButton": "Añadir",
+        "addSoundButtonErrorFileNotSupported": "Este formato de archivo no es compatible.\nPor favor, utilice .MP3.",
+        "noSoundInfo": "Este escenario no contiene sonido.",
+        "assetLoadFailed": "No se pudo cargar el sonido."
+      },
+      "sceneTriggers": {
+        "label": "Activador  :",
+        "addTriggerButton": "Añadir",
+        "noTriggerInfo": "Este escenario no contiene activador",
+        "assetNotDisplayed": "Este activador no se mostrará durante la visualización.",
+        "actionIn": "Al entrar",
+        "actionOut": "Al salir",
+        "actions": {
+          "none": "Ninguna",
+          "playSound": "Reproducir un sonido",
+          "changeScene": "Cambiar de escenario",
+          "animation": "Activar una animación",
+          "startDialogue": "Diálogo",
+          "displayAsset": "Mostrar/ocultar un asset"
+        }
       },
       "buttons": {
         "duplicate": "Duplicar escena",
@@ -222,49 +245,49 @@
   },
 
   "admin": {
-    "title": "panel de administración",
-    "loading": "Chargement des données",
-    "loadingError": "Erreur dans le chargement des données",
-    "required": "Ce champ est requis",
-    "research": "Recherche",
-    "noResult": "Aucun résultat",
-    "deleteConfirm": "Vous-vous vraiment supprimer",
-    "irreversibleAction": "Cette action est irréversible",
+    "title": "Panel de administración",
+    "loading": "Cargando los datos",
+    "loadingError": "Error al cargar los datos",
+    "required": "Este campo es obligatorio",
+    "research": "Buscar",
+    "noResult": "Ningún resultado",
+    "deleteConfirm": "¿Seguro que quieres borrar lo?",
+    "irreversibleAction": "Esta acción es irreversible",
     "sections": {
       "accounts": {
         "h1": "Cuentas",
-        "edit": "Modifier l'utilisateur",
-        "delete": "Supprimer l'utilisateur",
-        "create": "Créer un utilisateur",
-        "username": "Nom d'utilisateur",
-        "email": "Adresse mail",
-        "password": "Mot de passe",
-        "admin": "Administrateur",
-        "actions": "Actions"
+        "edit": "Modificar usuario",
+        "delete": "Borrar usuario",
+        "create": "Crear usuario",
+        "username": "Nombre del usuario",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "admin": "Administrador",
+        "actions": "Acciones"
       },
       "projects": {
         "h1": "Proyectos",
-        "cautionMessage": "La suppression d'un projet entrainera la suppression de toutes ses scènes, assets et labels",
-        "edit": "Modifier le projet",
-        "delete": "Supprimer le projet",
-        "create": "Créer un projet",
-        "import": "Importer un projet",
-        "zip": "Archive zip",
-        "title": "Titre",
-        "scenes": "Scènes",
-        "published": "Public",
-        "description": "Description",
-        "calibrationMessage": "Message de calibration",
-        "unit": "Nom du paramètre"
+        "cautionMessage": "Al eliminar un proyecto se borrarán todas sus escenas, assets y etiquetas, etc...",
+        "edit": "Modificar el proyecto",
+        "delete": "Borrar el proyecto",
+        "create": "Crear un proyecto",
+        "import": "Importar un proyecto",
+        "zip": "Archivo Zip",
+        "title": "Título",
+        "scenes": "Escenario",
+        "published": "Publico",
+        "description": "Descripción",
+        "calibrationMessage": "Mensaje de calibración",
+        "unit": "Nombre del parámetro"
       },
       "scenes": {
         "h1": "Escenas",
-        "cautionMessage": "La suppression d'une scène entrainera la suppression de tous ses assets et labels",
-        "edit": "Modifier la scène",
-        "delete": "Supprimer la scène",
-        "create": "Créer une scène",
-        "title": "Titre",
-        "description": "Description",
+        "cautionMessage": "Al eliminar un escenario se borrarán todas sus assets y etiquetas, etc...",
+        "edit": "modificar el escenario",
+        "delete": "borra el escenario",
+        "create": "crear un escenario",
+        "title": "Título",
+        "description": "Descripción",
         "assets": "Assets",
         "labels": "Labels",
         "project": {
@@ -273,29 +296,29 @@
       },
       "assets": {
         "h1": "Recursos",
-        "edit": "Modifier l'asset",
-        "delete": "Supprimer l'asset",
-        "create": "Créer un asset",
-        "name": "Nom",
-        "asset": "Fichier",
-        "hideInViewer": "Masqué",
+        "edit": "Cambiar el asset",
+        "delete": "Borrar el asset",
+        "create": "Crear un asset",
+        "name": "Nombre",
+        "asset": "Archivo",
+        "hideInViewer": "Escondido",
         "scene": {
           "project": {
-            "title": "Projet"
+            "title": "Proyecto"
           }
         }
       },
       "labels": {
         "h1": "Etiquetas",
-        "edit": "Modifier le label",
-        "delete": "Supprimer le label",
-        "create": "Créer un label",
-        "text": "Contenu",
-        "timestampStart": "Timestamp d'apparition",
-        "timestampEnd": "Timestamp de disparition",
+        "edit": "Cambiar el label",
+        "delete": "Borrar el label",
+        "create": "Crear un label",
+        "text": "Contenido",
+        "timestampStart": "Marca de tiempo de aparición",
+        "timestampEnd": "Marca de tiempo de la desaparición",
         "scene": {
           "project": {
-            "title": "Projet"
+            "title": "Proyecto"
           }
         }
       }
@@ -303,18 +326,18 @@
   },
 
   "account": {
-    "confirm": "Confirmer",
-    "cancel":  "Annuler",
-    "required": "Ce champ est requis",
+    "confirm": "Confirmar",
+    "cancel":  "Cancelar",
+    "required": "Este campo es obligatorio",
     "password": {
-      "title": "Changement du mot de passe",
-      "warning": "Attention : Pensez à utiliser un mot de passe unique et sécurisé. Ne partagez jamais vos identifiants",
-      "button": "Modifier mon mot de passe",
-      "newPassword": "Nouveau mot de passe",
-      "confirmPassword": "Confirmer le nouveau mot de passe",
-      "lengthMessage": "Le mot de passe doit être de longueur >= 8",
-      "notMatching": "Les mots de passes ne correspondent pas",
-      "success": "Mot de passe modifié avec succès"
+      "title": "Cambiar contraseña",
+      "warning": "Atención : Recuerde utilizar una contraseña única y segura. No comparta nunca sus datos de acceso",
+      "button": "Cambiar mi contraseña",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Confirmar la nueva contraseña",
+      "lengthMessage": "La contraseña debe tener 8 caracteres como mínimo",
+      "notMatching": "Las contraseñas no coinciden",
+      "success": "Contraseña modificada correctamente"
     }
   },
 
@@ -363,8 +386,18 @@
       }
     },
     "buttons": {
-      "cancel": "Cancelar",
-      "confirm": "Confirmar"
+      "cancel": "Annuler",
+      "confirm": "Valider"
     }
+  },
+  "triggerEditModal": {
+    "title": "Edición avanzada",
+    "actionIn": "Acción entrante",
+    "actionOut": "Acción de salida",
+    "radius": "Radio",
+    "objet": "Elige un objeto con el que interactuar",
+    "son": "Sonido",
+    "scene": "Escenario:",
+    "dialogue": "Diálogo"
   }
 }

@@ -75,7 +75,9 @@ export class EditorScene extends THREE.Scene {
         watch(() =>this.currentSelectedTransformValues, (value) => {
             if(this.selected.value == null) return;
 
-            if(this.selected.value instanceof Asset) {
+            if(this.selected.value instanceof Asset
+               || this.selected.value instanceof Label
+               || this.selected.value instanceof Trigger) {
 
                 this.selected.value.getObject()[transformModeKeys[this.getTransformMode.value]].set(value.value.x, value.value.y, value.value.z)
 

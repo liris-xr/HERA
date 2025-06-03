@@ -122,6 +122,10 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
     {
         name: "uploads",
         maxCount: 16
+    },
+    {
+        name: "soundToUploads",
+        maxCount: 16
     }]
     ), async (req, res) => {
     let token = req.user
@@ -182,7 +186,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         const knownTriggersIds = scene.triggers.map( (trigger) => trigger.id )
         const knownSoundsIds = scene.sounds.map( (sound) => sound.id )
 
-
         let assetsIdMatching = []
         let soundsIdMatching = []
 
@@ -237,8 +240,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 },
 
                 async (asset)=>{
-                    console.log("abcd " + JSON.stringify(asset))
-
                     let data = {
                         position:asset.position,
                         rotation:asset.rotation,
@@ -276,32 +277,44 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
             await updateListByCompositeId(knownMeshesIds, ['id', 'assetId'], typeof req.body.meshes === "object" ? req.body.meshes : JSON.parse(req.body.meshes),
                 async (mesh) => {
                     await ArMesh.update({
+                        id:mesh.id,
                         position:mesh.position,
                         rotation:mesh.rotation,
                         scale: mesh.scale,
+                        color:mesh.color,
                         emissiveIntensity: mesh.emissiveIntensity,
-                        emissiveColor: mesh.emissiveColor,
-                        roughenss: mesh.roughness,
+                        emissive: mesh.emissive,
+                        roughness: mesh.roughness,
                         metalness: mesh.metalness,
                         opacity: mesh.opacity
                     }, {
-                        where: {id: mesh.id},
+                        where: {id: mesh.id, assetId: mesh.assetId},
                         returning: true,
                         transaction:t
                     })
                 },
 
                 async (mesh)=>{
+                    let assetId = null
+                    for(let ids of assetsIdMatching) {
+                        if(ids.tempId === mesh.assetId) {
+                            assetId = ids.newId
+                            break
+                        }
+                    }
+
                     await ArMesh.create({
+                        id:mesh.id,
                         position:mesh.position,
                         rotation:mesh.rotation,
                         scale: mesh.scale,
                         sceneId:scene.id,
-                        assetId:mesh.assetId,
+                        assetId:assetId ?? mesh.assetId,
+                        color:mesh.color,
                         name: mesh.name,
                         emissiveIntensity: mesh.emissiveIntensity,
-                        emissiveColor: mesh.emissiveColor,
-                        roughenss: mesh.roughness,
+                        emissive: mesh.emissive,
+                        roughness: mesh.roughness,
                         metalness: mesh.metalness,
                         opacity: mesh.opacity
                     },{
@@ -310,7 +323,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 },
                 
                 async (knownId)=>{
-                    await ArMesh.destroy({where: {id: knownId},transaction:t});
+                    await ArMesh.destroy({where: {id: knownId.id, assetId: knownId.assetId},transaction:t});
                 }
         
             );
@@ -399,7 +412,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
             );
 
             let updatedUrl = req.uploadedUrl;
-            if(uploadedUrl && scene.envmapUrl !== ""){
+            if(uploadedUrl && scene.envmapUrl !== "" && scene.envmapUrl != null){
                 deleteFile(scene.envmapUrl);
                 updatedUrl = uploadedUrl
             }
@@ -418,8 +431,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
 
         scene = await fetchScene()
-
-
 
         res.status(200).send({
             scene:scene,
@@ -451,7 +462,7 @@ router.post(baseUrl+'scenes', authMiddleware, async (req, res) => {
             }]
         })
 
-        if (project.owner.id !== token.id)
+        if (project.owner.id !== token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
 
@@ -471,6 +482,7 @@ router.post(baseUrl+'scenes', authMiddleware, async (req, res) => {
 
         let newScene = await ArScene.create({
             title: req.body.title,
+            description: req.body?.description,
             projectId: req.body.projectId,
             index: newIndex
         });
@@ -527,7 +539,7 @@ router.delete(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
             return res.status(404).send({error: 'Scene not found'})
         }
 
-        if(scene.project.owner.id !== token.id)
+        if(scene.project.owner.id !== token.id && !req.user.admin)
             return res.status(403).send({error: 'User not granted'})
 
 
@@ -561,6 +573,10 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
         const scene = await ArScene.findOne({
             where: { id: sceneId },
             include: [
+                {
+                    model:ArMesh,
+                    as:'meshes'
+                },
                 {
                     model: ArAsset,
                     as: 'assets'
@@ -600,7 +616,7 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Scene not found' });
         }
 
-        if(scene.project.owner.id !== token.id){
+        if(scene.project.owner.id !== token.id && !req.user.admin){
             return res.status(403).send({error: 'User not granted'});
         }
 
@@ -614,6 +630,17 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             },{
                 transaction: t
             });
+
+            //copy all meshes related to scene
+            const newMeshes = await Promise.all(scene.meshes.map(async mesh => {
+                return ArMesh.create({
+                    ...mesh.get({ plain: true }),
+                    id: "project-"+newScene.projectId+"-scene-"+req.body.newTitle+"-mesh-"+mesh.name, // générer un nouvel id
+                    sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
+                },{
+                    transaction:t
+                });
+            }));
 
             //copy all assets related to scene
             const newAssets = await Promise.all(scene.assets.map(async asset => {
@@ -667,6 +694,93 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
         res.status(400).json({ error: 'Unable to duplicate scene' });
     }
 })
+
+// routes pour le mode admin
+
+const SCENES_PAGE_LENGTH = 10;
+
+router.get(baseUrl+'admin/scenes/:page?', authMiddleware, async (req, res) => {
+    const sceneId = req.params.sceneId;
+    const token = req.user
+    const page = parseInt(req.params.page) || 1
+
+    if (!token.admin)
+        return res.status(403).send({error: "User not granted"})
+
+    try{
+        const where = {}
+        const whereProject = {}
+
+        if(req.query?.title)
+            where.title = {
+                [Op.like]: `%${req.query?.title}%`
+            }
+        if(req.query["project.title"])
+            whereProject.title = {
+                [Op.like]: `%${req.query["project.title"]}%`
+            }
+
+        console.log(whereProject)
+
+        let rows = (await ArScene.findAll({
+            subQuery: false,
+            include: [
+                {
+                    model: ArMesh,
+                    separate: true,
+                    as: "meshes"
+                },
+                {
+                    model: ArAsset,
+                    separate: true,
+                    as: "assets",
+                },
+                {
+                    model: ArLabel,
+                    separate: true,
+                    as: "labels",
+                },
+                {
+                    model: ArProject,
+                    as: "project",
+                    attributes: ["id","title", "unit"],
+                    where: whereProject,
+                    include:[{
+                        model: ArUser,
+                        as:"owner",
+                        attributes:["id", "username"]
+                    }]
+                }
+            ],
+            order: [['createdAt', 'ASC']],
+            limit: SCENES_PAGE_LENGTH,
+            offset: (page - 1) * SCENES_PAGE_LENGTH,
+            where
+        }));
+
+        let count = await ArScene.count({
+            where
+        })
+
+        res.set({
+            'Content-Type': 'application/json'
+        });
+
+        res.status(200);
+        return res.send({
+            scenes: rows,
+            totalPages: Math.ceil(count / SCENES_PAGE_LENGTH),
+            currentPage: page,
+        });
+
+    }catch (e){
+        console.log(e);
+        res.status(400);
+        return res.send({ error: 'Unable to fetch scene'});
+    }
+
+})
+
 
 
 

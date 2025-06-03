@@ -42,8 +42,8 @@ app.use(errorHandler)
 
 async function main () {
     await initializeDatabase({force: false});
+    //await insertDefaults({force: false});
         // await resetDatabase();
-        // await insertDefaults();
 
     app.use(project);
     app.use(auth);

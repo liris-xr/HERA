@@ -3,9 +3,9 @@ import {DIRNAME} from "../../app.js";
 import * as path from "node:path";
 import * as fs from "node:fs";
 import arAsset from "../orm/models/arAsset.js";
-import {Op} from "sequelize";
 import arSound from "../orm/models/arSound.js";
-import {ArAsset, ArMesh, ArProject, ArScene} from "../orm/index.js";
+import {Op} from "sequelize";
+import {ArMesh, ArProject, ArScene} from "../orm/index.js";
 
 
 
@@ -49,11 +49,22 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
             } else if (file.fieldname === "uploads") {
                 const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId))
                 if (!fs.existsSync(uploadDirectory)) {
+                    fs.mkdirSync(uploadDirectory, {recursive: true});
+                }
+
+                cb(null, uploadDirectory);
+            } else if (file.fieldname === "soundToUploads") {
+                const uploadDirectory = path.join(DIRNAME, getSoundsDirectory(projectId))
+                console.log("uploadDirectory 58");
+                console.log(uploadDirectory);
+                if (!fs.existsSync(uploadDirectory)) {
+                    console.log("create folder")
                     fs.mkdirSync(uploadDirectory, { recursive: true });
                 }
 
                 cb(null, uploadDirectory);
-            } else cb(null, "")
+            }
+            else cb(null, "")
         },
         filename: (req, file, cb) => {
             const projectId = req.projectId;
@@ -64,18 +75,32 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
 
                 cb(null, filename);
             } else if (file.fieldname === "uploads") {
-                if(!req.currentAssetCount){
+                if (!req.currentAssetCount) {
                     req.currentAssetCount = 0
                 }
                 const filename = "asset" + Date.now() + req.currentAssetCount + ext
                 req.currentAssetCount++;
 
-                if(!req.uploadedFilenames)
+                if (!req.uploadedFilenames)
                     req.uploadedFilenames = [];
                 req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
 
                 cb(null, filename);
-            } else cb(null, "")
+            } else if (file.fieldname === "soundToUploads") {
+                if (!req.currentSoundCount) {
+                    req.currentSoundCount = 0
+                }
+                const filename = "sound" + Date.now() + req.currentSoundCount + ext
+                req.currentSoundCount++;
+
+                if (!req.uploadedFilenames)
+                    req.uploadedFilenames = [];
+                req.uploadedFilenames.push(path.join(getSoundsDirectory(req.projectId), filename));
+
+                cb(null, filename);
+            }
+
+            else cb(null, "")
         }
     })})
 
@@ -160,6 +185,54 @@ export const uploadSound = multer({ storage: multer.diskStorage({
         destination: (req, file, cb) => {
             const projectId = req.projectId;
             if(!projectId) throw new Error('Project Id is missing');
+            console.log("uploadSound fileUpload");
+            const uploadDirectory = path.join(DIRNAME, getSoundsDirectory(projectId))
+            console.log(uploadDirectory);
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory, { recursive: true });
+            }
+
+            cb(null, uploadDirectory);
+        },
+        filename: (req, file, cb) => {
+            console.log("uploadSound")
+            const ext = path.extname(file.originalname);
+            console.log("uploadSound")
+            if(!req.currentSoundCount){
+                req.currentSoundCount = 0
+            }
+            console.log("ok")
+            const filename = "sound" + Date.now() + req.currentSoundCount + ext
+            req.currentSoundCount++;
+
+            console.log("req.uploadedFilenames: ", req.uploadedFilenames)
+
+            if(!req.uploadedFilenames)
+                req.uploadedFilenames = [];
+            req.uploadedFilenames.push(path.join(getSoundsDirectory(req.projectId), filename));
+
+            cb(null, filename);
+        }
+    })});
+
+export const adminUploadSound = multer({ storage: multer.diskStorage({
+        destination: async (req, file, cb) => {
+            const sceneId = req.body.sceneId
+
+            let scene = await ArScene.findOne({
+                include: [
+                    {
+                        model: ArProject,
+                        as: "project",
+                        attributes: ["id"],
+                    }
+                ],
+                where: {id: sceneId},
+            })
+
+            const projectId = scene.project.id;
+            req.projectId = projectId;
+            if(!projectId) throw new Error('Project Id is missing');
 
             const uploadDirectory = path.join(DIRNAME, getSoundsDirectory(projectId))
             if (!fs.existsSync(uploadDirectory)) {
@@ -179,12 +252,11 @@ export const uploadSound = multer({ storage: multer.diskStorage({
 
             if(!req.uploadedFilenames)
                 req.uploadedFilenames = [];
-            req.uploadedFilenames.push(path.join(getSoundsDirectory(req.projectId), filename));
+            req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
 
             cb(null, filename);
         }
     })});
-
 
 export const uploadProject = multer({ storage: multer.diskStorage({
         destination: (req, file, cb) => {

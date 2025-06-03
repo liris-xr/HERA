@@ -14,19 +14,25 @@ export class ActionManager {
     #audioLoader;
     #listener;
 
-    constructor(arrays) {
-        console.log(arrays);
+    #assetAnimate;
 
-        this.#triggers = arrays.triggers;
-        this.#assets = arrays.assets;
-        this.#sounds = arrays.sounds;
+    #labelPlayer
+
+    constructor(parameters) {
+        this.#triggers = parameters.triggers;
+        this.#assets = parameters.assets;
+        this.#sounds = parameters.sounds;
 
         this.#activeSounds = [];
         this.#audioLoader = new THREE.AudioLoader();
         this.#listener = new THREE.AudioListener();
 
-        this.#scenes = arrays.scenes;
-        this.#changeScene = arrays.changeScene;
+        this.#scenes = parameters.scenes;
+        this.#changeScene = parameters.changeScene;
+
+        this.#assetAnimate = [];
+
+        this.#labelPlayer = parameters.labelPlayer;
 
         this.#initActions();
     }
@@ -37,7 +43,7 @@ export class ActionManager {
 
     #initActions(){
         this.actions = {
-            none : (object) => {
+            none : () => {
                 // DON'T DO ANYTHING
             },
             playSound: (soundName) => {
@@ -62,26 +68,40 @@ export class ActionManager {
                 });
             },
             changeScene: (object) => {
-                this.stopAllSounds()
                 this.#changeScene(object);
             },
             animation: (object) => {
-                // Code pour activer une animation
-                console.log("Animation déclenchée !");
-                console.log(object);
+                object = object.split(" : ")
+                const animation = object[1];
+
+                let assetToAnimate;
+                this.#assets.forEach(asset => {
+                    if (asset.name === object[0]){
+                        assetToAnimate = asset;
+                    }
+                })
+
+                assetToAnimate.playAnimation(animation)
             },
-            startDialogue: (object) => {
-                // Code pour commencer un dialogue
-                console.log("Commencer un dialogue");
-                console.log(object);
+            startDialogue: () => {
+                if (this.#labelPlayer.labelPlayerFinish()){
+                    this.#labelPlayer.reset();
+                    this.#labelPlayer.togglePlaying();
+                }
+
+                this.#labelPlayer.togglePlaying();
             },
             displayAsset: (object) => {
-                // Code pour afficher un asset
-                console.log("afficher un asset");
-                console.log(object);
+                let assetToAnimate;
+                this.#assets.forEach(asset => {
+                    if (asset.name === object){
+                        assetToAnimate = asset;
+                    }
+                })
+
+                assetToAnimate.hide()
             }
         };
-
     }
 
     stopAllSounds() {
@@ -94,9 +114,10 @@ export class ActionManager {
         this.#activeSounds.length = [];
     }
 
-    changeParameters(newArrays){
-        this.#triggers = newArrays.triggers;
-        this.#assets = newArrays.assets;
-        this.#sounds = newArrays.sounds;
+    changeParameters(parameters){
+        this.#triggers = parameters.triggers;
+        this.#assets = parameters.assets;
+        this.#sounds = parameters.sounds;
+        this.#labelPlayer = parameters.labelPlayer;
     }
 }

@@ -94,4 +94,8 @@ export class LabelPlayer extends RenderLoopInterface{
                 return label
         return null
     }
+
+    labelPlayerFinish(){
+        return ((this.#currentTime - this.#startOffset) >= this.#maxTimestamp);
+    }
 }

@@ -1,5 +1,4 @@
 <script setup>
-
 import Modal from "@/components/modal/modal.vue";
 import {computed, nextTick, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
@@ -51,39 +50,20 @@ watch(() =>props.show,async (value) => {
   if (value) {
     await nextTick();
 
-    let arrayScenesName = [];
-    await fetchProject(props.project.id, props.userData.id, props.token).then(rep =>{
-      rep.scenes.forEach(scene => {
-        arrayScenesName.push(scene.title);
-      });
-    });
+    let arrayScenesName = initArrayScene();
 
-    let arrayAssetsName = [];
-    props.assets.forEach((asset) => {
-      const assetName = asset.name;
-      arrayAssetsName.push(assetName);
-    })
+    let arrayAssetsName = initArrayAssets();
 
-    let arrayAssetsAnimation = [];
-    props.assets.forEach((asset) => {
-      asset.animations.forEach((animation) => {
-        const text = (asset.name + " " + animation);
-        arrayAssetsAnimation.push(text);
-      })
-    })
+    let arrayAssetsAnimation = initArrayAssetsAnimation();
 
-    let arraySoundsName = [];
-    props.sounds.forEach((sound) => {
-      const soundName = sound.name;
-      arraySoundsName.push(soundName);
-    });
+    let arraySoundsName = initArraySound();
 
     listObject ={
       'none' : {},
       'displayAsset' : arrayAssetsName,
       'playSound' : arraySoundsName,
       'changeScene' : arrayScenesName,
-      'animation' : arrayAssetsName,
+      'animation' : arrayAssetsAnimation,
       'startDialogue' : {},
     };
 
@@ -117,6 +97,48 @@ function getActionKeyByLabel(label) {
 }
 
 
+async function initArrayScene() {
+  const array = [];
+  await fetchProject(props.project.id, props.userData.id, props.token).then(rep => {
+    rep.scenes.forEach(scene => {
+      array.push(scene.title);
+    });
+  });
+
+  return array;
+}
+
+function initArrayAssets(){
+  const array = []
+  props.assets.forEach((asset) => {
+    const assetName = asset.name;
+    array.push(assetName);
+  })
+
+  return array;
+}
+
+function initArrayAssetsAnimation() {
+  let array = [];
+  props.assets.forEach((asset) => {
+    asset.animations.forEach((animation) => {
+      const text = (asset.name + " : " + animation.name);
+      array.push(text);
+    })
+  })
+
+  return array;
+}
+
+function initArraySound(){
+  let array = [];
+  props.sounds.forEach((sound) => {
+    const soundName = sound.name;
+    array.push(soundName);
+  });
+
+  return array;
+}
 
 </script>
 

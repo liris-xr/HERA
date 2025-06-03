@@ -105,9 +105,6 @@ export class Asset extends SceneElementInterface{
                 this.animations.push(animation.name)
             }
 
-            this.animationMixer = new THREE.AnimationMixer(this.mesh)
-            this.animationMixer.clipAction(this.mesh?.animations[0])
-            let action = this.animationMixer.clipAction(THREE.AnimationClip.findByName(this.mesh?.animations, this.activeAnimation))
 
             if(!baseAnimation) {
                 if(this.activeAnimation)
@@ -124,4 +121,14 @@ export class Asset extends SceneElementInterface{
         scene.add(this.object);
         return true;
     }
+
+    hide(){
+
+        console.log(!this.hidden.value)
+        this.object.visible = !this.hidden.value;
+        this.hidden.value = !this.hidden.value;
+
+    }
+
+
 }

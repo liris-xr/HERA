@@ -48,6 +48,7 @@ export class ArSceneManager{
             assets: scene.getAssets(),
             scenes: this.scenes,
             changeScene: (scene)=>{this.setScene(this.getScene(scene))},
+            labelPlayer: this.active.value.labelPlayer,
         });
     }
 
@@ -231,6 +232,7 @@ export class ArSceneManager{
             triggers :scene.getTriggers(),
             sounds: scene.getSounds()  ,
             assets: scene.getAssets(),
+            labelPlayer: scene.labelPlayer,
         });
     }
 }

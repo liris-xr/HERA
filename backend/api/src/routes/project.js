@@ -637,6 +637,7 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         const data = fs.readFileSync(projectFilePath)
 
         const projectObj = JSON.parse(data)
+        projectObj.userId = token.id
 
         const project = await ArProject.create(projectObj, {
             include: [

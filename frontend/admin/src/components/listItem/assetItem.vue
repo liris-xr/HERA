@@ -11,7 +11,7 @@ import object3DNode from "three/addons/nodes/accessors/Object3DNode.js";
 const props = defineProps({
   index: {type: Number, default: 0},
   text: {type: String, required: true},
-  downloadUrl: {type: String, required: true},
+  downloadUrl: {type: String, required: false},
   hideInViewer: {type: Boolean, required: true, default: false},
   active: {type: Boolean, default: false},
   error: {type: Boolean, default: false},

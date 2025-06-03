@@ -2,7 +2,8 @@
   "locale": "fr-Fr",
   "header": {
     "home": "Mes projets",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "administration": "Administration"
   },
 
   "none": "Aucun",
@@ -15,6 +16,7 @@
     "login": "Se connecter",
     "loginIn": "Connexion en cours",
     "noAccount": "Pas de compte ?",
+    "register": "Pour vous inscrire, contacter un administrateur :",
     "createAccount": "Créer un compte"
   },
 

@@ -1,5 +1,6 @@
 import {ArUser, ArProject, ArScene, ArAsset} from "../index.js";
 import ArLabel from "../models/arLabel.js";
+import {passwordHash} from "../../utils/passwordHash.js";
 
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 const demo_images_host = "https://172.22.69.22:8080/public/files/bee2728b-b74c-4501-90c1-e387294a86fb/images/";

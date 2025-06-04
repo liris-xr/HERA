@@ -383,6 +383,9 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
             }
         }
     }
+    // Note : pour retrouver le pixel sur la texture, tu peux lancer un rayon sur le triangle 
+    // Choisi le triangle en fonction de la direction (juste x > 0...)
+    // Puis tu calcules les coordonnées barycentriques du triangles
 }
 
 void LightProbeVolume::bake() {

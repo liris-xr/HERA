@@ -3,6 +3,7 @@ import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.j
 import {computed, ref, watch} from "vue";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {ActionManager} from "@/js/threeExt/TriggerManagement/actionManager.js";
+import * as THREE from "three";
 
 export class ArSceneManager{
     scenes;
@@ -148,20 +149,21 @@ export class ArSceneManager{
 
 
             for (let trigger of triggers) {
-                const distance = this.calculateDistanceTriggers(cameraPosition, trigger.position);
+                const triggerWordlPosition = new THREE.Vector3();
+                trigger.mesh.getWorldPosition(triggerWordlPosition);
 
-                if (distance < trigger.getRadius()){
+                const distanceWorld = this.calculateDistanceTriggers(cameraPosition, triggerWordlPosition);
+
+                if (distanceWorld < trigger.getRadius()) {
                     trigger.userIn();
-                }
-                else{
+                } else{
                     trigger.userOut();
                 }
 
-                if (trigger.thereIsUser !== trigger.userInside){
-                    if(trigger.userInside){
+                if (trigger.thereIsUser !== trigger.userInside) {
+                    if (trigger.userInside) {
                         this.actionManager.doAction(trigger.actionIn, trigger.objectIn);
-                    }
-                    else{
+                    } else {
                         this.actionManager.doAction(trigger.actionOut, trigger.objectOut);
                     }
 
@@ -235,4 +237,6 @@ export class ArSceneManager{
             labelPlayer: scene.labelPlayer,
         });
     }
+
+
 }

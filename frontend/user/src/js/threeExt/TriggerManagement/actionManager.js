@@ -86,10 +86,11 @@ export class ActionManager {
 
                 if (assetToAnimate === undefined){return;}
 
-                if (assetToAnimate.animation === object.animation)
+                if (assetToAnimate.playingAction) {
                     assetToAnimate.playAnimation(null);
-                else
+                } else {
                     assetToAnimate.playAnimation(object.animation);
+                }
             },
             startDialogue: () => {
                 if (this.#labelPlayer.labelPlayerFinish()){
@@ -100,16 +101,16 @@ export class ActionManager {
                 this.#labelPlayer.togglePlaying();
             },
             displayAsset: (object) => {
-                let assetToAnimate;
+                let assetToDisplay;
                 this.#assets.forEach(asset => {
                     if (asset.id === object.id){
-                        assetToAnimate = asset;
+                        assetToDisplay = asset;
                     }
                 })
 
-                if (assetToAnimate === undefined){return;}
+                if (assetToDisplay === undefined){return;}
 
-                assetToAnimate.hide()
+                assetToDisplay.hide()
             }
         };
     }

@@ -209,12 +209,12 @@
         "actionIn" : "Entrant",
         "actionOut": "Sortant",
         "actions": {
-          "none":  "Aucun",
-          "playSound": "Joue un son",
+          "none":  "Aucune",
+          "playSound": "Jouer un son",
           "changeScene":  "Changer de scène",
-          "animation": "Déclenché une animation",
-          "startDialogue": "Dialogue",
-          "displayAsset": "Affiché/Caché un asset"
+          "animation": "Déclencher une animation",
+          "startDialogue": "Afficher/Cacher les labels",
+          "displayAsset": "Afficher/Cacher un modèle 3D"
         }
       },
       "buttons": {

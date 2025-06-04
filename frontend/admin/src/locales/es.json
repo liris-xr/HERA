@@ -203,8 +203,8 @@
           "playSound": "Reproducir un sonido",
           "changeScene": "Cambiar de escenario",
           "animation": "Activar una animación",
-          "startDialogue": "Diálogo",
-          "displayAsset": "Mostrar/ocultar un asset"
+          "startDialogue": "Mostrar/Ocultar etiquetas",
+          "displayAsset": "Mostrar/ocultar un modelo 3D"
         }
       },
       "buttons": {

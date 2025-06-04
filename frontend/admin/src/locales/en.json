@@ -187,6 +187,29 @@
         "assetNotDisplayed": "This object will not be displayed in viewer",
         "assetLoadFailed": "Unable to load this 3D model"
       },
+      "sceneSounds": {
+        "label": "Sound:",
+        "addSoundButton": "Add",
+        "addSoundButtonErrorFileNotSupported": "This file format is not supported.\nPlease use .MP3.",
+        "noSoundInfo": "This scene contains no sound.",
+        "assetLoadFailed": "Failed to load the sound."
+      },
+      "sceneTriggers": {
+        "label": "Trigger:",
+        "addTriggerButton": "Add",
+        "noTriggerInfo": "This scene contains no trigger.",
+        "assetNotDisplayed": "This trigger will not be displayed during the preview.",
+        "actionIn": "On enter",
+        "actionOut": "On exit",
+        "actions": {
+          "none": "None",
+          "playSound": "Play a sound",
+          "changeScene": "Change scene",
+          "animation": "Trigger an animation",
+          "startDialogue": "Show/hide labels",
+          "displayAsset": "Show/hide a 3D model"
+          }
+        },
       "buttons": {
         "duplicate": "Duplicate scene",
         "delete": "Delete scene"

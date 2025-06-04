@@ -22,8 +22,8 @@ const actionIn = ref("none");
 const actionOut = ref("none");
 const radius = ref(1);
 
-const objectIn = ref("none");
-const objectOut = ref("none");
+const objectIn = ref({id: 0, label:"none"});
+const objectOut = ref({id: 0, label:"none"});
 
 async function fetchProject(projectId, userId, token) {
   try {
@@ -50,7 +50,7 @@ watch(() =>props.show,async (value) => {
   if (value) {
     await nextTick();
 
-    let arrayScenesName = initArrayScene();
+    let arrayScenesName = await initArrayScene();
 
     let arrayAssetsName = initArrayAssets();
 
@@ -71,6 +71,9 @@ watch(() =>props.show,async (value) => {
       actionIn.value = actions[props.trigger.actionIn];
       actionOut.value = actions[props.trigger.actionOut];
       radius.value = props.trigger.radius;
+      objectIn.value = listObject[props.trigger.actionIn]?.find(o => o.label === props.trigger.objectIn.label) || {id: 0, label: "none"};
+      objectOut.value = listObject[props.trigger.actionOut]?.find(o => o.label === props.trigger.objectOut.label) || {id: 0, label: "none"};
+
     }
   }
 })
@@ -80,8 +83,19 @@ const getEditedTrigger = computed(()=>{
     radius.value = 1;
   }
 
-  return {actionIn : getActionKeyByLabel(actionIn.value),
-          actionOut : getActionKeyByLabel(actionOut.value),
+  actionIn.value = getActionKeyByLabel(actionIn.value);
+  actionOut.value = getActionKeyByLabel(actionOut.value);
+
+  if (actionIn === "none"){
+    objectIn.value = {id:"0", label:"none"};
+  }
+
+  if (actionOut === "none"){
+    objectOut.value = {id:"0", label:"none"};
+  }
+
+  return {actionIn : actionIn.value,
+          actionOut : actionOut.value,
           radius : radius.value,
           objectIn : objectIn.value,
           objectOut : objectOut.value,
@@ -97,47 +111,56 @@ function getActionKeyByLabel(label) {
 }
 
 
+/*
+*
+* Initializes arrays containing the various objects
+* that can be triggered when the user enters a trigger zone.
+*
+* Each array element must be an object with a `label` attribute
+* (used for displaying to the user) and an `id` attribute
+* (used internally to uniquely identify the object).
+*
+* */
+
 async function initArrayScene() {
-  const array = [];
+  let scenes;
   await fetchProject(props.project.id, props.userData.id, props.token).then(rep => {
-    rep.scenes.forEach(scene => {
-      array.push(scene.title);
+    scenes = rep.scenes.map(scene => ({
+      id: scene.id,
+      label: scene.title
+    }));
+  });
+  return scenes;
+}
+
+function initArrayAssets(){
+  return props.assets.map(asset => ({
+    id: asset.id,
+    label: asset.name
+  }));
+}
+
+function initArrayAssetsAnimation() {
+  const array = [];
+  props.assets.forEach((asset) => {
+    asset.animations.forEach((animation) => {
+      array.push({
+        id: asset.id,
+        label: `${asset.name} : ${animation.name}`,
+        animation: animation.name
+      });
     });
   });
 
   return array;
 }
 
-function initArrayAssets(){
-  const array = []
-  props.assets.forEach((asset) => {
-    const assetName = asset.name;
-    array.push(assetName);
-  })
-
-  return array;
-}
-
-function initArrayAssetsAnimation() {
-  let array = [];
-  props.assets.forEach((asset) => {
-    asset.animations.forEach((animation) => {
-      const text = (asset.name + " : " + animation.name);
-      array.push(text);
-    })
-  })
-
-  return array;
-}
-
 function initArraySound(){
-  let array = [];
-  props.sounds.forEach((sound) => {
-    const soundName = sound.name;
-    array.push(soundName);
-  });
-
-  return array;
+  return props.sounds.map(sound => ({
+    id: sound.id,
+    label: sound.name,
+    url: sound.url
+  }))
 }
 
 </script>
@@ -158,18 +181,19 @@ function initArraySound(){
               <icon-svg url="/icons/in.svg" theme="textImportant"></icon-svg>
             </span>
 
-            <select v-model="actionIn"  @change="objectIn= 'none'">
+            <select v-model="actionIn"  @change="objectIn.label= 'none'">
               <option v-for="(key, name) in actions" :key="name" :value="key">
                 {{key}}
               </option>
             </select>
 
             <div>
-              <select v-model="objectIn" v-if="getActionKeyByLabel(actionIn) !== 'none'
-              && Array.isArray(listObject[getActionKeyByLabel(actionIn)])
-              && listObject[getActionKeyByLabel(actionIn)].length > 0">
-                <option v-for="(key, name) in listObject[getActionKeyByLabel(actionIn)]" :key="key" :value="key">
-                  {{key}}
+              <select v-model="objectIn"
+                      v-if="getActionKeyByLabel(actionIn) !== 'none'
+                      && Array.isArray(listObject[getActionKeyByLabel(actionIn)])
+                      && listObject[getActionKeyByLabel(actionIn)].length > 0">
+                <option v-for="obj in listObject[getActionKeyByLabel(actionIn)]" :key="obj" :value="obj">
+                  {{ obj.label }}
                 </option>
               </select>
             </div>
@@ -191,14 +215,16 @@ function initArraySound(){
             </select>
 
             <div>
-              <select v-model="objectOut" v-if="getActionKeyByLabel(actionOut) !== 'none'
-                && Array.isArray(listObject[getActionKeyByLabel(actionOut)])
-                && listObject[getActionKeyByLabel(actionOut)].length > 0
-                ">
-                <option v-for="(name) in listObject[getActionKeyByLabel(actionOut)]" :key="name" :value="name">
-                  {{name}}
-                </option>
-              </select>
+              <div>
+                <select v-model="objectOut"
+                        v-if="getActionKeyByLabel(actionOut) !== 'none'
+                      && Array.isArray(listObject[getActionKeyByLabel(actionOut)])
+                      && listObject[getActionKeyByLabel(actionOut)].length > 0">
+                  <option v-for="obj in listObject[getActionKeyByLabel(actionOut)]" :key="obj" :value="obj">
+                    {{ obj.label }}
+                  </option>
+                </select>
+              </div>
             </div>
 
           </div>

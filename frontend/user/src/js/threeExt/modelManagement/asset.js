@@ -25,9 +25,6 @@ export class Asset extends SceneElementInterface{
     highlight;
     hidden;
 
-
-
-
     constructor(assetData) {
         super();
 
@@ -35,9 +32,9 @@ export class Asset extends SceneElementInterface{
         this.sourceUrl = assetData.url;
         this.name = assetData.name != null ? assetData.name : assetData.url;
         this.activeAnimation = assetData.activeAnimation || null;
-        this.highlight = ref(false)
-        this.hidden = ref(false)
-        this.animations = reactive([])
+        this.highlight = ref(false);
+        this.hidden = ref(assetData.hideInViewer);
+        this.animations = reactive([]);
 
         if(assetData.position)
             this.position = assetData.position;
@@ -94,6 +91,7 @@ export class Asset extends SceneElementInterface{
         this.object.scale.set(this.scale.x, this.scale.y, this.scale.z);
         this.object.castShadow = true;
         this.object.receiveShadow = true;
+        this.object.visible = !this.hidden.value
 
         if(this.object?.animations?.length > 0) {
             this.animationMixer = new THREE.AnimationMixer(this.object)
@@ -123,11 +121,8 @@ export class Asset extends SceneElementInterface{
     }
 
     hide(){
-
-        console.log(!this.hidden.value)
         this.object.visible = !this.hidden.value;
         this.hidden.value = !this.hidden.value;
-
     }
 
 

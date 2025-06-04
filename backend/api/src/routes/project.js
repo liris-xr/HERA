@@ -122,10 +122,6 @@ router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, re
                         {
                             model: ArAsset,
                             as: "assets",
-                            where:{
-                                hideInViewer: false
-                            },
-                            required:false
                         },
                         {
                             model: ArLabel,

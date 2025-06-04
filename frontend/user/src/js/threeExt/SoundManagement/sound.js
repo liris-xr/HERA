@@ -1,4 +1,5 @@
 export class Sound {
+    id;
     name;
     url;
     playOnStartup;
@@ -7,6 +8,7 @@ export class Sound {
     isPlay;
 
     constructor(soundData){
+        this.id = soundData.id;
         this.name = soundData.name;
         this.url = soundData.url;
         this.playOnStartup = soundData.playOnStartup;

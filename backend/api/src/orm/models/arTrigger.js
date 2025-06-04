@@ -8,8 +8,8 @@ import { sequelize } from '../database.js'
  * @property {boolean} hideInViewer
  * @property {string} actionIn
  * @property {string} actionOut
- * @property {string} objectIn
- * @property {string} objectOut
+ * @property {Object} objectIn
+ * @property {Object} objectOut
  * @property {Object} position
  * @property {Object} scale
  */
@@ -42,14 +42,14 @@ export default sequelize.define('ArTrigger', {
         defaultValue: "none",
     },
     objectIn: {
-        type: DataTypes.STRING,
+        type: DataTypes.JSON,
         allowNull: false,
-        defaultValue: "none",
+        defaultValue: {id:0, label:""},
     },
     objectOut: {
-        type: DataTypes.STRING,
+        type: DataTypes.JSON,
         allowNull: false,
-        defaultValue: "none",
+        defaultValue: {id:0, label:""},
     },
     position:{
         type: DataTypes.JSON,

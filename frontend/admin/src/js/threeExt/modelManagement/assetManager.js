@@ -97,28 +97,15 @@ export class AssetManager {
             asset.id = 'new-asset'+currentAssetId++;
         }
         
-        this.meshManagerMap.set(asset.id,new MeshManager())
-
+        this.meshManagerMap.set(asset.id,new MeshManager());
 
         asset.load().then((mesh)=>{
             const meshManager = this.meshManagerMap.get(asset.id)
             this.updateAssetSubMeshes(asset, meshManager, scene);
 
-            scene.add(mesh)
+            scene.add(mesh);
 
-            // this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-
-                // const subMeshData = this.meshDataMap.get(asset.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name]
-                //
-                // if(subMeshData) {
-                //     subMeshData.assetId = asset.id
-                // }
-                //
-                // this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
-                // asset.addSubMesh(subMesh);
-            // })
-
-            this.setMeshMapWithData(this.getResultMeshes())
+            this.setMeshMapWithData(this.getResultMeshes());
             
             if(onAdd)
                 onAdd(asset)

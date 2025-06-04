@@ -46,42 +46,50 @@ export class ActionManager {
             none : () => {
                 // DON'T DO ANYTHING
             },
-            playSound: (soundName) => {
-                let sound;
-                this.#sounds.forEach((s) => {
-                    if (soundName === s.name){
-                        sound = s;
+            playSound: (object) => {
+                let soundToPlay;
+                this.#sounds.forEach((sound) => {
+                    if (object.url === sound.url){
+                        soundToPlay = sound;
                     }
                 })
 
-                if (sound === undefined){return;}
-                if (sound.isPlaying()){return;}
+                if (soundToPlay === undefined){return;}
+                if (soundToPlay.isPlaying()){
+                    this.stopSounds(soundToPlay);
+                    return;
+                }
 
                 const audio = new THREE.Audio(this.#listener);
-                this.#audioLoader.load(getResource(sound.url), (buffer) => {
+                this.#audioLoader.load(getResource(soundToPlay.url), (buffer) => {
                     audio.setBuffer(buffer);
-                    audio.setLoop(sound.isLoopingEnabled);
+                    audio.setLoop(soundToPlay.isLoopingEnabled);
                     audio.setVolume(1);
                     audio.play();
-                    sound.play();
-                    this.#activeSounds.push([sound, audio]);
+                    soundToPlay.play();
+                    this.#activeSounds.push([soundToPlay, audio]);
                 });
             },
             changeScene: (object) => {
-                this.#changeScene(object);
+                if (object.label === undefined){return;}
+                this.#changeScene(object.label);
             },
             animation: (object) => {
-                object = object.split(" : ")
-                const animation = object[1];
+                if (object.animation === "none"){return;}
 
                 let assetToAnimate;
                 this.#assets.forEach(asset => {
-                    if (asset.name === object[0]){
+                    if (asset.id === object.id){
                         assetToAnimate = asset;
                     }
                 })
 
-                assetToAnimate.playAnimation(animation)
+                if (assetToAnimate === undefined){return;}
+
+                if (assetToAnimate.animation === object.animation)
+                    assetToAnimate.playAnimation(null);
+                else
+                    assetToAnimate.playAnimation(object.animation);
             },
             startDialogue: () => {
                 if (this.#labelPlayer.labelPlayerFinish()){
@@ -94,10 +102,12 @@ export class ActionManager {
             displayAsset: (object) => {
                 let assetToAnimate;
                 this.#assets.forEach(asset => {
-                    if (asset.name === object){
+                    if (asset.id === object.id){
                         assetToAnimate = asset;
                     }
                 })
+
+                if (assetToAnimate === undefined){return;}
 
                 assetToAnimate.hide()
             }
@@ -107,6 +117,16 @@ export class ActionManager {
     stopAllSounds() {
         this.#activeSounds.forEach(sound => {
             if (sound[0].isPlaying()) {
+                sound[1].stop();
+                sound[0].stop();
+            }
+        });
+        this.#activeSounds.length = [];
+    }
+
+    stopSounds(soundCurrentlyPlaying) { // sound[0] : object Sound - sound[1]; object Audio
+        this.#activeSounds.forEach(sound => {
+            if (sound[0].url === soundCurrentlyPlaying.url) {
                 sound[1].stop();
                 sound[0].stop();
             }

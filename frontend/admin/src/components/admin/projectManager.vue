@@ -208,15 +208,23 @@ async function exportProject(project) {
 
   showSpinner.value = true
 
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => {
+    controller.abort()
+  }, 120000)
+
   try {
     await fetch(`${ENDPOINT}project/${project.id}/export`,
         {
           headers: {
             'Authorization': `Bearer ${props.token}`,
-          }
+          },
+          signal: controller.signal,
         })
         .then(resp => resp.blob())
         .then(blob => window.location.assign(window.URL.createObjectURL(blob)))
+
+    clearTimeout(timeoutId)
   } catch(e) {} finally {
     showSpinner.value = false
   }

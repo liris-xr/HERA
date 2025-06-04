@@ -6,7 +6,6 @@ const vertexShader = `
 #define STANDARD
 varying vec3 vViewPosition;
 out vec4 wPosition; 
-out vec3 wNormal;
 #ifdef USE_TRANSMISSION
 	varying vec3 vWorldPosition;
 #endif
@@ -44,8 +43,6 @@ void main() {
 	#include <logdepthbuf_vertex>
 	#include <clipping_planes_vertex>
 	vViewPosition = - mvPosition.xyz;
-	wNormal = vec3(objectNormal.x,-objectNormal.z,objectNormal.y); 
-	wNormal = objectNormal;
 
 	#include <worldpos_vertex>
 	#include <shadowmap_vertex>
@@ -110,7 +107,6 @@ uniform float worldFreq;
 
 
 in vec4 wPosition;
-in vec3 wNormal;
 #ifdef IOR
 	uniform float ior;
 #endif
@@ -418,6 +414,7 @@ void main() {
 	#include <lights_fragment_end>
 	#include <aomap_fragment>
 	
+	vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
 	
 	vec3 texcoord = vec3(
 		(2.0*((wPosition.x-lpvCenter.x) / lpvWidth) + 1.) / 2.,
@@ -426,7 +423,7 @@ void main() {
 		);
 		
 	vec3 interpolatedLightProbe[9];
-	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,wNormal);
+	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,worldNormal);
 		
 	
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
@@ -466,12 +463,11 @@ void main() {
 	// outgoingLight = getIProbeWorldPosition(0,texcoord)-wPosition.xyz;
 	// outgoingLight = getITexcoord(0,texcoord);
 	// outgoingLight = getITexcoord(0,texcoord)-texcoord;
-	// outgoingLight = wNormal;
-	float[9] distSH;
-	getProbeDistSH(0,texcoord,distSH);
-	vec3 probeWorldTexcoord = getIProbeWorldPosition(0,texcoord);
-	vec3 pProbe = wPosition.xyz - probeWorldTexcoord;
-	outgoingLight = vec3(getLightProbeIrradiance(distSH,wNormal));
+	// float[9] distSH;
+	// getProbeDistSH(0,texcoord,distSH);
+	// vec3 probeWorldTexcoord = getIProbeWorldPosition(0,texcoord);
+	// vec3 pProbe = wPosition.xyz - probeWorldTexcoord;
+	// outgoingLight = vec3(0.1);
 
 	// vec3 probeWorldTexcoord = getIProbeWorldPosition(0,texcoord);
 	// vec3 pProbe = (wPosition.xyz - probeWorldTexcoord)*1000.;

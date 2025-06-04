@@ -105,7 +105,6 @@ class LightProbeVolume {
                                           // A pixel of a texture is a component of a spherical harmonic
         std::vector<float> invalidityTexture; // A single texture telling us how much a probe is invalid
                                               // The more a probe sees back-face, the more invalid it is
-        std::vector<float> distanceFromGeometryTexture[9]; // For each probe, the shortest distance from the geometry
 
         LightSources * lightSources;
         Mesh mesh;
@@ -117,6 +116,8 @@ class LightProbeVolume {
         unsigned int nbDirectSamples;
         unsigned int nbIndirectSamples;
         unsigned int nbDirectIndirectSamples;
+
+        unsigned int depthMapSize;
 
         float indirectWeight; 
 
@@ -139,6 +140,7 @@ class LightProbeVolume {
 
         void updateDirectLighting(LightProbe & probe);
         void updateIndirectLighting(LightProbe & probe);
+        void updateDepthMap(LightProbe & probe);
         
     public:
         LightProbeVolume(   const Mesh & mesh,
@@ -150,7 +152,8 @@ class LightProbeVolume {
                             const float height,
                             const unsigned int nbDirectSamples,
                             const unsigned int nbIndirectSamples,
-                            const unsigned int nbDirectIndirectSamples);
+                            const unsigned int nbDirectIndirectSamples,
+                            const unsigned int depthMapSize);
         ~LightProbeVolume();
 
         void bake();

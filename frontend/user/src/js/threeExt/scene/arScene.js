@@ -88,9 +88,6 @@ export class ArScene extends AbstractScene {
     getAssetSubMeshes(assetData) {
         let subMeshes = []
 
-        console.log(assetData);
-
-
         const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
@@ -135,12 +132,12 @@ export class ArScene extends AbstractScene {
     async init(){
         for (let assetData of this.#assets) {
             await assetData.load();
-            if(assetData.hasError()){
+            if (assetData.hasError()) {
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
             }
 
             this.updateAssetSubMeshes(assetData);
-            if(assetData.object) {
+            if (assetData.object) {
                 this.add(assetData.object);
             } else {
                 this.add(assetData.mesh);
@@ -153,20 +150,6 @@ export class ArScene extends AbstractScene {
                 triggerData.pushToScene(this);
             }
 
-        }
-
-        for (let soundData of this.#sounds) {
-            if(soundData.playOnStartup){
-                const audio = new THREE.Audio(this.#listener);
-                this.#audioLoader.load(getResource(soundData.url), (buffer) => {
-                    audio.setBuffer(buffer);
-                    audio.setLoop(soundData.isLoopingEnabled);
-                    audio.setVolume(1);
-                    audio.play();
-                    soundData.play();
-                    this.#activeSounds.push([soundData, audio]);
-                });
-            }
         }
 
         this.computeBoundingSphere(true);
@@ -238,8 +221,26 @@ export class ArScene extends AbstractScene {
         return this.#sounds;
     }
 
+    startSounds(){
+        for (let soundData of this.#sounds) {
+            if(soundData.playOnStartup){
+                const audio = new THREE.Audio(this.#listener);
+                this.#listener.context.resume()
+                this.#audioLoader.load(getResource(soundData.url), (buffer) => {
+                    audio.setBuffer(buffer);
+                    audio.setLoop(soundData.isLoopingEnabled);
+                    audio.setVolume(1);
+                    audio.play();
+                    soundData.play();
+                    this.#activeSounds.push([soundData, audio]);
+                });
+            }
+        }
+    }
+
     stopAllSounds() {
         this.#activeSounds.forEach(sound => {
+            console.log(sound);
             if (sound[0].isPlaying()) {
                 sound[1].stop();
                 sound[0].stop();

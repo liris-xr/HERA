@@ -173,9 +173,11 @@ export class ArSceneManager{
         }
     }
 
-    onSceneClick(event){
-        if(this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value)
+    onSceneClick(event) {
+        if (this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value){
             this.scenePlacementManager.disable();
+            this.startSounds();
+        }
     }
 
     getScenes() {
@@ -204,11 +206,11 @@ export class ArSceneManager{
     setScene(scene){
         if (scene !== null){
             if (this.activeSceneId.value === scene.sceneId) { return; }
-
+            this.getActiveScene().stopAllSounds();
             this.activeSceneId.value = scene.sceneId;
             this.#changeActionManager(scene);
-            scene.stopAllSounds();
 
+            scene.startSounds();
             return 0;
         }
         else{
@@ -236,6 +238,10 @@ export class ArSceneManager{
             assets: scene.getAssets(),
             labelPlayer: scene.labelPlayer,
         });
+    }
+
+    startSounds(){
+        this.getActiveScene().startSounds();
     }
 
 

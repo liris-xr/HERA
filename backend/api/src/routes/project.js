@@ -530,8 +530,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    req.setTimeout(5 * 60 * 1000);
-    res.setTimeout(5 * 60 * 1000);
+    res.setHeader("Keep-Alive", "timeout=300")
 
     try {
 

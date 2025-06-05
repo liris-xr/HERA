@@ -586,6 +586,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
             await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
 
 
+
             res.zip({
                 files: [
 

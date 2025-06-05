@@ -575,8 +575,6 @@ router.get(baseUrl+'admin/scenes/:page?', authMiddleware, async (req, res) => {
                 [Op.like]: `%${req.query["project.title"]}%`
             }
 
-        console.log(whereProject)
-
         let rows = (await ArScene.findAll({
             subQuery: false,
             include: [

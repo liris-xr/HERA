@@ -35,11 +35,9 @@ export async function updateListByCompositeId(knownIds, fields, list, onUpdate, 
 
             for(let f of fields)
                 if(id[f] !== element[f]) {
-                    console.log(id[f], "!=", element[f], id, element, f)
                     ok = false
                     break
-                } else
-                    console.log(id[f], "==", element[f], id, element, f)
+                }
 
 
             if(ok) {

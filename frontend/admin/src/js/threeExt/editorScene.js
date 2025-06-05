@@ -359,7 +359,6 @@ export class EditorScene extends THREE.Scene {
             copiedUrl: asset.sourceUrl ?? asset.copiedUrl,
         }
         const newAsset = new Asset(assetData);
-        console.log(newAsset)
 
         this.assetManager.addToScene(this,newAsset,(newAsset)=>this.setSelected(newAsset));
 

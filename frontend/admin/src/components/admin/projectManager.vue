@@ -213,7 +213,8 @@ async function exportProject(project) {
         {
           headers: {
             'Authorization': `Bearer ${props.token}`,
-          }
+          },
+          mode: "cors",
         })
         .then(resp => resp.blob())
         .then(blob => window.location.assign(window.URL.createObjectURL(blob)))

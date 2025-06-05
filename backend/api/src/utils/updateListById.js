@@ -48,8 +48,6 @@ export async function updateListByCompositeId(knownIds, fields, list, onUpdate, 
             }
         }
 
-        console.log("datatest", element, key, index, list)
-
         if (index > -1) { //if the id is known : update
             await onUpdate(element);
             knownIds.splice(index, 1); //the id was used, so we remove it from the array

@@ -38,9 +38,6 @@ router.get(baseUrl+'projects/:page', optionnalAuthMiddleware, async (req, res) =
         else
             where = {published:true}
 
-        console.log("user", req.user)
-
-
         let projects = (await ArProject.findAll({
             subQuery: false,
             attributes: [
@@ -589,7 +586,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
             await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
 
 
-            res.status(200).zip({
+            res.zip({
                 files: [
 
                     {
@@ -604,7 +601,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
                 ],
                 filename: `project-${projectId}.zip`
-            })
+            }).status(200)
 
         } else
             return res.status(404).send({error: 'Project not found'})

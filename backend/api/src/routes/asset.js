@@ -141,8 +141,6 @@ router.post(baseUrl+"admin/assets", authMiddleware, adminUploadAsset.single("ass
     try {
         const fileUrl = req.uploadedFilenames[0]
 
-        console.log(req.body)
-
         const newAsset = await ArAsset.create({
             name: req.body.name,
             hideInViewer: req.body?.hideInViewer,

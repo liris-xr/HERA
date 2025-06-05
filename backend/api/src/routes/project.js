@@ -601,7 +601,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
                 ],
                 filename: `project-${projectId}.zip`
-            }).status(200)
+            })
 
         } else
             return res.status(404).send({error: 'Project not found'})

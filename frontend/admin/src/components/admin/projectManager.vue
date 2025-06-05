@@ -209,29 +209,15 @@ async function exportProject(project) {
   showSpinner.value = true
 
   try {
-    const resp = await fetch(`${ENDPOINT}project/${project.id}/export`,
+    await fetch(`${ENDPOINT}project/${project.id}/export`,
         {
           headers: {
             'Authorization': `Bearer ${props.token}`,
           },
           signal: AbortSignal.timeout(5*60*1000),
         })
-
-    if (!resp.ok) throw new Error('Export failed');
-
-    const blob = await resp.blob();
-    const url = window.URL.createObjectURL(blob);
-
-    // 🆕 Crée un lien temporaire pour déclencher le téléchargement
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `project-${project.id}.zip`;
-    document.body.appendChild(a);
-    a.click();
-
-    // 🧼 Nettoyage
-    a.remove();
-    window.URL.revokeObjectURL(url);
+        .then(resp => resp.blob())
+        .then(blob => window.location.assign(window.URL.createObjectURL(blob)))
 
     clearTimeout(timeoutId)
   } catch(e) {} finally {

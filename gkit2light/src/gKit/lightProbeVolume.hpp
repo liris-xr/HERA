@@ -8,6 +8,7 @@
 #include "lightProbe.hpp"
 #include "lightSources.hpp"
 #include "mesh.h"
+#include "octahedron.hpp"
 #include "vec.h"
 
 
@@ -106,6 +107,12 @@ class LightProbeVolume {
         std::vector<float> invalidityTexture; // A single texture telling us how much a probe is invalid
                                               // The more a probe sees back-face, the more invalid it is
 
+        Octahedron * octahedron;
+        std::vector<float> depthMapAtlas;
+
+        unsigned int depthMapSize;
+        float depthMapAtlasWidth, depthMapAtlasDepth,depthMapAtlasHeight;
+
         LightSources * lightSources;
         Mesh mesh;
         std::vector<GLTFMaterial> materials;
@@ -117,7 +124,6 @@ class LightProbeVolume {
         unsigned int nbIndirectSamples;
         unsigned int nbDirectIndirectSamples;
 
-        unsigned int depthMapSize;
 
         float indirectWeight; 
 

@@ -2,6 +2,7 @@
 #include "gltf.h"
 #include "lightProbe.hpp"
 #include "lightSources.hpp"
+#include "octahedron.hpp"
 #include "vec.h"
 #include "mesh.h"
 #include <random>
@@ -9,13 +10,6 @@
 #include <fstream>
 #include <vector>
 #include <omp.h>
-
-const Vector UP(0,1,0);
-const Vector BACKWARD(0,0,-1);
-const Vector FORWARD(0,0,1);
-const Vector RIGHT(1,0,0);
-const Vector LEFT(-1,0,0);
-const Vector DOWN(0,-1,0);
 
 std::random_device hwseed;
 std::default_random_engine rng(hwseed());
@@ -49,6 +43,8 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->materials = materials;
     this->lightSources = new LightSources(mesh,materials);
 
+    this->octahedron = new Octahedron(depthMapSize);
+
     this->texturesWidth = width*density; 
     this->texturesDepth = depth*density; 
     this->texturesHeight = height*density; 
@@ -58,6 +54,9 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->nbDirectIndirectSamples = nbDirectIndirectSamples;
 
     this->depthMapSize = depthMapSize;
+    this->depthMapAtlasWidth = this->texturesWidth * (depthMapSize+2)*(depthMapSize+2);
+    this->depthMapAtlasDepth = this->texturesDepth * (depthMapSize+2)*(depthMapSize+2);
+    this->depthMapAtlasHeight = this->texturesHeight;
 
     this->indirectWeight = (1.0/float(nbIndirectSamples));
 
@@ -98,6 +97,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     }
 
     this->invalidityTexture = std::vector<float>(nbProbe,0);
+    this->depthMapAtlas = std::vector<float>(nbProbe*(depthMapSize+2)*(depthMapSize+2),0);
 }
 
 LightProbeVolume::~LightProbeVolume() {
@@ -368,21 +368,27 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
     }
 }
 
-// ----> i
-// |
-// |
+// ^ 
 // | j
-// v
+// |
+// |    i
+// |----->
 
 void LightProbeVolume::updateDepthMap(LightProbe & probe) {
     for(unsigned int i = 0;i<depthMapSize;i++) {
         for(unsigned int j = 0;j<depthMapSize;j++) {
-            // Up-left triangle 
-            if(i > 0 && i <depthMapSize/2 && j > 0 && j < depthMapSize/2 && (i+j) < depthMapSize/2) {
-                // Interpolation between DOWN (up left corner), FORWARD (up right) and LEFT (down left)
-            }
+            Vector sphereDirection = octahedron->getVector(i,j);
+
+            Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
+
+            unsigned int xOffset = ((probe.id*(depthMapSize+2))+i+1);
+            unsigned int yOffset = (j+1+(depthMapSize+2)*(probe.id/this->texturesWidth))*this->depthMapAtlasWidth;
+            this->depthMapAtlas[xOffset + yOffset] = hit.t;
         }
     }
+    // Stiching à faire en dehors de la boucle for ?
+
+
     // Note : pour retrouver le pixel sur la texture, tu peux lancer un rayon sur le triangle 
     // Choisi le triangle en fonction de la direction (juste x > 0...)
     // Puis tu calcules les coordonnées barycentriques du triangles

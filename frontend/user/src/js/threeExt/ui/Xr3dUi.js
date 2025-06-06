@@ -300,7 +300,7 @@ export class Xr3dUi {
     }
 
     handleSelect(event) {
-        if(!this.container.parent) return
+        if(!this.scene) return
 
         if(!this.container.visible)
             this.show()
@@ -331,8 +331,6 @@ export class Xr3dUi {
         this.container.visible = true
         for(let pointer of this.pointers)
             pointer.visible = true
-
-        console.log(JSON.stringify(this.scene.matrixWorld))
 
     }
 

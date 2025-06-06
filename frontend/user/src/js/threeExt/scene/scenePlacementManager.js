@@ -101,6 +101,7 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
         const hitTestResults = frame.getHitTestResults(this.hitTestSource);
         if (hitTestResults.length > 0) {
             this.pointerObject.visible = true;
+
             const hitPose = hitTestResults[0].getPose(localReferenceSpace);
 
             // Le hittest ne donnant pas la bonne orientation sur meta quest, on la recalcule à la main

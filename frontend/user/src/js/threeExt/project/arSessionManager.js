@@ -9,6 +9,7 @@ import {CustomBlending, Vector2} from "three";
 import {Xr3dUi} from "@/js/threeExt/ui/Xr3dUi.js";
 import * as THREE from "three";
 import {extractYawQuaternion} from "@/js/utils/extractYawQuaternion.js";
+import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.js";
 
 export class ArSessionManager {
     sceneManager;
@@ -168,9 +169,6 @@ export class ArSessionManager {
         try {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
             this.arSession.addEventListener('select', this.sceneManager.onSceneClick.bind(this.sceneManager));
-            this.arSession.addEventListener('select', (event) => {
-                console.log(this.sceneManager.active.value)
-            });
         } catch(e) {
             // pas supporté
             this.sceneManager.scenePlacementManager.disable()
@@ -180,7 +178,8 @@ export class ArSessionManager {
             this.xr3dUi = new Xr3dUi(this.arRenderer, this.arCamera, this.arSession, this.sceneManager, this.referenceSpace, this.applyVrCameraPosition.bind(this), this.xrMode)
             this.xr3dUi.init()
 
-            this.xr3dUi.addToScene(this.sceneManager.active.value)
+            if(!(this.sceneManager.active.value instanceof ScenePlacementManager))
+                this.xr3dUi.addToScene(this.sceneManager.active.value)
         }
 
         if(this.xrMode === "vr" && this.sceneManager.active.value.vrStartPosition) {

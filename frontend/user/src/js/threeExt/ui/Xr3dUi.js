@@ -248,7 +248,10 @@ export class Xr3dUi {
 
             this.container.traverse(child => {
                 child?.updateLayout?.()
+                child?.updateInner?.()
             })
+            this.container.updateLayout()
+            this.container.updateInner()
 
             const index = this.hittables.indexOf(hideButton)
             if(index !== -1)
@@ -263,7 +266,17 @@ export class Xr3dUi {
             text,
         )
 
+
+
         this.notificationsContainer.add(notification)
+
+        this.container.traverse(child => {
+            child?.updateLayout?.()
+            child?.updateInner?.()
+        })
+        this.container.updateLayout()
+        this.container.updateInner()
+        
         this.needsForceVisibility = true
     }
 
@@ -316,9 +329,23 @@ export class Xr3dUi {
         for(let pointer of this.pointers)
             pointer.visible = true
 
+        console.log(this.container)
+
+    }
+
+    hide() {
+        this.container.visible = false
+        for(let pointer of this.pointers)
+            pointer.visible = false
     }
 
     updatePosition() {
+        // annuler la transformation de la scène
+        this.container.parent.updateMatrixWorld(true)
+
+        const parentInv = new THREE.Matrix4().copy(this.container.parent.matrixWorld).invert()
+        this.container.applyMatrix4(parentInv)
+
         const distance = 2
 
         const direction = new THREE.Vector3()
@@ -332,11 +359,7 @@ export class Xr3dUi {
         this.container.lookAt(this.camera.position)
     }
 
-    hide() {
-        this.container.visible = false
-        for(let pointer of this.pointers)
-            pointer.visible = false
-    }
+
 
     loop(frame) {
         ThreeMeshUI.update()

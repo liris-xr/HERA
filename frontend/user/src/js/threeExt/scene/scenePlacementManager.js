@@ -6,6 +6,7 @@ import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {ToggleableInterface} from "@/js/threeExt/interfaces/ToggleableInterface.js";
 import {classes} from "@/js/utils/extender.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
+import {extractYawQuaternion} from "@/js/utils/extractYawQuaternion.js";
 
 
 export class ScenePlacementManager extends classes(AbstractScene, ToggleableInterface){
@@ -13,9 +14,6 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
     pointerObject;
     #pointerUrl;
     hitTestSource;
-
-    arrow
-    arrow2
 
     #shadowPlane
     #foundPlane;
@@ -74,7 +72,7 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
         this.pointerObject.rotation.set(0, 0, 0);
         this.pointerObject.updateMatrix();
         this.#foundPlane.value = false;
-        this.pointerObject.visisble = false;
+        this.pointerObject.visible = false;
         if(reenable)
             this.enable();
     }
@@ -98,54 +96,39 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
     }
     isStabilized = computed(() => this.#foundPlane.value);
 
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix){
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera){
         if(!this.isEnabled.value) return;
         const hitTestResults = frame.getHitTestResults(this.hitTestSource);
         if (hitTestResults.length > 0) {
             this.pointerObject.visible = true;
             const hitPose = hitTestResults[0].getPose(localReferenceSpace);
-            this.pointerObject.matrix.fromArray( hitPose.transform.matrix );
+
+            // Le hittest ne donnant pas la bonne orientation sur meta quest, on la recalcule à la main
+            const position = new THREE.Vector3(
+                hitPose.transform.position.x,
+                hitPose.transform.position.y,
+                hitPose.transform.position.z
+            );
+            const unit = new THREE.Vector3().subVectors(position, camera.position).normalize()
+            const direction = extractYawQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), unit))
+
+            const matrix = new THREE.Matrix4().fromArray( hitPose.transform.matrix )
+            const scale = new THREE.Vector3()
+
+            matrix.decompose(position, new THREE.Quaternion(), scale)
+            matrix.compose(position, direction, scale)
+
+
+            this.pointerObject.matrix.copy( matrix );
             this.pointerObject.updateWorldMatrix(true);
 
             this.#shadowPlane.visible = true
             this.#shadowPlane.matrixAutoUpdate = false;
-            this.#shadowPlane.matrix.fromArray( hitPose.transform.matrix );
+            this.#shadowPlane.matrix.copy( matrix );
+            this.#shadowPlane.applyQuaternion(direction);
             this.#shadowPlane.updateWorldMatrix(true);
 
             this.#foundPlane.value = true;
-
-            const direction = new THREE.Vector3(0, 1, 0).applyQuaternion(
-                new THREE.Quaternion(hitPose.transform.orientation.x, hitPose.transform.orientation.y, hitPose.transform.orientation.z, hitPose.transform.orientation.w)
-            );
-            const direction2 = new THREE.Vector3(0, 0, 1).applyQuaternion(
-                new THREE.Quaternion(hitPose.transform.orientation.x, hitPose.transform.orientation.y, hitPose.transform.orientation.z, hitPose.transform.orientation.w)
-            );
-            const position = new THREE.Vector3(hitPose.transform.position.x, hitPose.transform.position.y, hitPose.transform.position.z);
-
-            if(!this.arrow) {
-                this.arrow = new THREE.ArrowHelper(direction, new THREE.Vector3(0,0,0), 1, 0x00ff00);
-                this.arrow.position.copy(position);
-                this.add(this.arrow);
-            } else {
-                this.arrow.position.copy(position);
-                this.arrow.setDirection(direction);
-            }
-
-            if(!this.arrow2) {
-                this.arrow2 = new THREE.ArrowHelper(direction2, new THREE.Vector3(0,0,0), 1, 0xff0000);
-                this.arrow2.position.copy(position);
-                this.add(this.arrow2);
-            } else {
-                this.arrow2.position.copy(position);
-                this.arrow2.setDirection(direction2);
-            }
-
-
-
-
-
-
-
 
         }else{
             this.#foundPlane.value = false;

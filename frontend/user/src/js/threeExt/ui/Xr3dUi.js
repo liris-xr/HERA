@@ -27,6 +27,7 @@ export class Xr3dUi {
     sceneText
     notificationsContainer
     pointers
+    scene
 
     lastHittable
 
@@ -276,7 +277,7 @@ export class Xr3dUi {
         })
         this.container.updateLayout()
         this.container.updateInner()
-        
+
         this.needsForceVisibility = true
     }
 
@@ -299,6 +300,8 @@ export class Xr3dUi {
     }
 
     handleSelect(event) {
+        if(!this.container.parent) return
+
         if(!this.container.visible)
             this.show()
         else
@@ -329,7 +332,7 @@ export class Xr3dUi {
         for(let pointer of this.pointers)
             pointer.visible = true
 
-        console.log(this.container)
+        console.log(JSON.stringify(this.scene.matrixWorld))
 
     }
 
@@ -340,22 +343,18 @@ export class Xr3dUi {
     }
 
     updatePosition() {
-        // annuler la transformation de la scène
-        this.container.parent.updateMatrixWorld(true)
-
-        const parentInv = new THREE.Matrix4().copy(this.container.parent.matrixWorld).invert()
-        this.container.applyMatrix4(parentInv)
 
         const distance = 2
 
         const direction = new THREE.Vector3()
         this.camera.getWorldDirection(direction)
 
-
         const newPos = new THREE.Vector3()
         newPos.copy(this.camera.position).add(direction.multiplyScalar(distance))
 
         this.container.position.copy(newPos)
+
+        this.container.applyMatrix4(new THREE.Matrix4().copy(this.scene.matrixWorld).invert())
         this.container.lookAt(this.camera.position)
     }
 
@@ -372,13 +371,14 @@ export class Xr3dUi {
     }
 
     addToScene(scene) {
-        if(scene instanceof  ScenePlacementManager)
+        if(scene instanceof ScenePlacementManager)
             return
 
         scene.add(this.container)
         for(let pointer of this.pointers)
             scene.add(pointer)
 
+        this.scene = scene
         this.needsForceVisibility = true
     }
 
@@ -466,6 +466,10 @@ export class Xr3dUi {
             const {origin, direction, pointerPosition} = this.getRaycastParams(pose)
 
             pointer.position.copy(pointerPosition);
+
+            const inverseMatrix = new THREE.Matrix4().copy(this.scene.matrixWorld).invert();
+            pointer.applyMatrix4(inverseMatrix);
+
             this.rayCaster.set(origin, direction)
 
             for (const btn of this.hittables) {

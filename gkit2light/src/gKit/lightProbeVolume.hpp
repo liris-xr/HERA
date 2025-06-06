@@ -147,6 +147,7 @@ class LightProbeVolume {
         void updateDirectLighting(LightProbe & probe);
         void updateIndirectLighting(LightProbe & probe);
         void updateDepthMap(LightProbe & probe);
+        void stitchDepthMapSide(unsigned int start, unsigned int end, const char side);
         
     public:
         LightProbeVolume(   const Mesh & mesh,

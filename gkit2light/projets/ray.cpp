@@ -22,63 +22,60 @@ int main( const int argc, const char **argv )
     if(argc > 1)
         scene_filename= argv[1];
         
-    const char *orbiter_filename= "data/cornell_orbiter.txt";
-    if(argc > 2)
-        orbiter_filename= argv[2];
-    
     float centerX = 0;
-    if(argc > 3) {
-        centerX = atof(argv[3]);
+    if(argc > 2) {
+        centerX = atof(argv[2]);
     }
 
     float centerY = 0;
-    if(argc > 4) {
-        centerY = atof(argv[4]);
+    if(argc > 3) {
+        centerY = atof(argv[3]);
     }
 
     float centerZ = 0;
-    if(argc > 5) {
-        centerZ = atof(argv[5]);
+    if(argc > 4) {
+        centerZ = atof(argv[4]);
     }
 
     float density = 8;
-    if(argc > 6) {
-        density = atof(argv[6]);
+    if(argc > 5) {
+        density = atof(argv[5]);
     }
 
     float width = 2;
-    if(argc > 7) {
-        width = atof(argv[7]);
+    if(argc > 6) {
+        width = atof(argv[6]);
     }
 
     float depth = 2;
-    if(argc > 8) {
-        depth = atof(argv[8]);
+    if(argc > 7) {
+        depth = atof(argv[7]);
     }
 
     float height = 2;
-    if(argc > 9) {
-        height = atof(argv[9]);
+    if(argc > 8) {
+        height = atof(argv[8]);
     }
 
     unsigned int nbDirectSamples = 16;
-    if(argc > 10) {
-        nbDirectSamples = atoi(argv[10]);
+    if(argc > 9) {
+        nbDirectSamples = atoi(argv[9]);
     }
 
     unsigned int nbIndirectSamples = 32;
-    if(argc > 11) {
-        nbIndirectSamples = atoi(argv[11]);
+    if(argc > 10) {
+        nbIndirectSamples = atoi(argv[10]);
     }
 
     unsigned int nbDirectIndirectSamples = 16;
-    if(argc > 12) {
-        nbDirectIndirectSamples = atoi(argv[12]);
+    if(argc > 11) {
+        nbDirectIndirectSamples = atoi(argv[11]);
     }
 
-    Orbiter camera;
-    if(camera.read_orbiter(orbiter_filename) < 0)
-        return 1;
+    unsigned int depthMapSize = 16;
+    if(argc > 12) {
+        depthMapSize = atoi(argv[12]);
+    }
 
     Mesh mesh= read_gltf_mesh(scene_filename);
     std::vector<GLTFMaterial> materials = read_gltf_materials(scene_filename);
@@ -89,7 +86,8 @@ int main( const int argc, const char **argv )
     LightProbeVolume lpv(mesh,materials,
             Point(centerX,centerY,centerZ),
             density,width,depth,height,
-            nbDirectSamples,nbIndirectSamples,nbDirectIndirectSamples);
+            nbDirectSamples,nbIndirectSamples,nbDirectIndirectSamples,
+            depthMapSize);
 
     lpv.bake();
     lpv.writeLPV();

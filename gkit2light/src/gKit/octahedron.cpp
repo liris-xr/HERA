@@ -57,7 +57,7 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
             a2 /= aTotal;
             a3 /= aTotal;
     
-            return LEFT*a1 + DOWN*a2 + BACKWARD*a3; 
+            return normalize(LEFT*a1 + DOWN*a2 + BACKWARD*a3); 
         } else {
             // Interpolation between BACKWARD, UP and LEFT
             a1 = cross(p-octahedronPoints["B"],triangleVectors["up"]).z; // Left coef
@@ -69,7 +69,7 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
             a2 /= aTotal;
             a3 /= aTotal;
 
-            return LEFT*a1 + BACKWARD*a2 + UP*a3; 
+            return normalize(LEFT*a1 + BACKWARD*a2 + UP*a3); 
         }
     }
 
@@ -86,7 +86,7 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
             a2 /= aTotal;
             a3 /= aTotal;
 
-            return DOWN*a1 + LEFT*a2 + FORWARD*a3; 
+            return normalize(DOWN*a1 + LEFT*a2 + FORWARD*a3); 
         } else {
             // Interpolation between UP, FORWARD and LEFT
             a1 = cross(p-octahedronPoints["D"],triangleVectors["right"]).z; // Forward coef
@@ -98,7 +98,7 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
             a2 /= aTotal;
             a3 /= aTotal;
 
-            return FORWARD*a1 + LEFT*a2 + UP*a3; 
+            return normalize(FORWARD*a1 + LEFT*a2 + UP*a3); 
         }
     }
 
@@ -115,7 +115,7 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
             a2 /= aTotal;
             a3 /= aTotal;
 
-            return RIGHT*a1 + BACKWARD*a2 + DOWN*a3; 
+            return normalize(RIGHT*a1 + BACKWARD*a2 + DOWN*a3); 
         } else {
             // Interpolation between BACKWARD, RIGHT and UP
             a1 = cross(p-octahedronPoints["B"],triangleVectors["up-left"]).z; // Up coef
@@ -127,7 +127,7 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
             a2 /= aTotal;
             a3 /= aTotal;
 
-            return UP*a1 + BACKWARD*a2 + RIGHT*a3; 
+            return normalize(UP*a1 + BACKWARD*a2 + RIGHT*a3); 
         }
     }
 
@@ -143,7 +143,7 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
             a2 /= aTotal;
             a3 /= aTotal;
     
-            return FORWARD*a1 + UP*a2 + RIGHT*a3; 
+            return normalize(FORWARD*a1 + UP*a2 + RIGHT*a3); 
         } else {
             // Interpolation between DOWN, FORWARD, RIGHT
             a1 = cross(p-octahedronPoints["F"],triangleVectors["up"]).z; // Forward coef 
@@ -155,7 +155,7 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
             a2 /= aTotal;
             a3 /= aTotal;
 
-            return FORWARD*a1 + RIGHT*a2 + DOWN*a3; 
+            return normalize(FORWARD*a1 + RIGHT*a2 + DOWN*a3); 
         }
     }
 }

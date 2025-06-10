@@ -10,6 +10,7 @@ import {EmptyAsset} from "@/js/threeExt/modelManagement/emptyAsset.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
 import { MeshManager } from "../modelManagement/meshManager";
+import scene from "three/addons/offscreen/scene.js";
 
 export class ArScene extends AbstractScene {
     sceneId
@@ -23,6 +24,7 @@ export class ArScene extends AbstractScene {
     #boundingSphere
     #boundingBox;
     clock
+    vrStartPosition
 
     constructor(sceneData) {
         super();
@@ -32,6 +34,7 @@ export class ArScene extends AbstractScene {
         this.#assets = [];
         this.meshDataMap = new Map();
         this.meshManager = new MeshManager()
+        this.vrStartPosition = sceneData?.vrStartPosition
 
         for (let assetData of sceneData.assets) {
             this.#assets.push(new Asset(assetData));
@@ -173,7 +176,7 @@ export class ArScene extends AbstractScene {
     }
 
 
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition){
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer){
         worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
 
         // animation
@@ -183,7 +186,7 @@ export class ArScene extends AbstractScene {
                 asset.animationMixer.update(delta)
 
 
-        this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition);
+        this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer);
     }
 
     hasAssets() {

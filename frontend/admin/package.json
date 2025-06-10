@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "jwt-decode": "^4.0.0",
+    "primevue": "^4.3.4",
+    "quill": "^2.0.3",
     "three": "^0.163.0",
     "vite-plugin-mkcert": "^1.17.5",
     "vue": "^3.4.21",

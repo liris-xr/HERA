@@ -92,7 +92,7 @@ export class AssetManager {
         }
     }
 
-    addToScene(scene,asset,onAdd){
+    addToScene(scene,asset,onAdd,decomposeMesh=true){
         if(asset.id == null){
             asset.id = 'new-asset'+currentAssetId++;
         }
@@ -101,29 +101,17 @@ export class AssetManager {
 
 
         asset.load().then((mesh)=>{
+
             const meshManager = this.meshManagerMap.get(asset.id)
-            this.updateAssetSubMeshes(asset, meshManager, scene);
-
+            if(decomposeMesh)
+                this.updateAssetSubMeshes(asset, meshManager, scene);
             scene.add(mesh)
-
-            // this.getAssetSubMeshes(mesh).forEach( (subMesh) => {
-
-                // const subMeshData = this.meshDataMap.get(asset.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+subMesh.name]
-                //
-                // if(subMeshData) {
-                //     subMeshData.assetId = asset.id
-                // }
-                //
-                // this.meshManagerMap.get(asset.id).addSubMesh(scene,subMesh,subMeshData)
-                // asset.addSubMesh(subMesh);
-            // })
 
             this.setMeshMapWithData(this.getResultMeshes())
             
             if(onAdd)
                 onAdd(asset)
         }).catch((e)=>{
-            console.log(e)
             scene.appendError(new MeshLoadError(asset.sourceUrl))
             }
         );
@@ -157,16 +145,17 @@ export class AssetManager {
     getResultAssets(){
         const result = []
         for (let asset of this.#assets) {
-            result.push({
-                id: asset.id,
-                name:asset.name,
-                position:asset.getResultPosition(),
-                rotation: asset.getResultRotation(),
-                scale: asset.getResultScale(),
-                hideInViewer: asset.hideInViewer.value,
-                copiedUrl: asset?.copiedUrl,
-                activeAnimation: asset.activeAnimation
-            });
+            if(asset.id !== "vrCamera")
+                result.push({
+                    id: asset.id,
+                    name:asset.name,
+                    position:asset.getResultPosition(),
+                    rotation: asset.getResultRotation(),
+                    scale: asset.getResultScale(),
+                    hideInViewer: asset.hideInViewer.value,
+                    copiedUrl: asset?.copiedUrl,
+                    activeAnimation: asset.activeAnimation
+                });
         }
         
         return result;

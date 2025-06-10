@@ -39,7 +39,6 @@ export class MeshManager {
             mesh.material.roughness = meshData.roughness
             mesh.material.metalness = meshData.metalness
 
-            console.log(mesh.material)
             mesh.material.needsUpdate = true
         }
     }

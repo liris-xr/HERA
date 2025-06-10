@@ -63,6 +63,7 @@ export class Label extends classes(SelectableInterface, LoadableInterface){
         this.#htmlContent.style.textAlign = "justify";
         this.#htmlContent.style.fontSize = "14px";
         this.#htmlContent.style.pointerEvents = 'auto';
+        this.#htmlContent.classList.add("label-content")
         this.#htmlContent.id = this.id;
 
         let connector = document.createElement("div");

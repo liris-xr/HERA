@@ -209,17 +209,23 @@ async function exportProject(project) {
   showSpinner.value = true
 
   try {
-    await fetch(`${ENDPOINT}project/${project.id}/export`,
-        {
-          headers: {
-            'Authorization': `Bearer ${props.token}`,
-          },
-          signal: AbortSignal.timeout(5*60*1000),
-        })
-        .then(resp => resp.blob())
-        .then(blob => window.location.assign(window.URL.createObjectURL(blob)))
+    const resp = await fetch(`${ENDPOINT}project/${project.id}/export`, {
+      headers: {
+        'Authorization': `Bearer ${props.token}`,
+      },
+      mode: "cors",
+    })
 
-    clearTimeout(timeoutId)
+    const blob = await resp.blob()
+
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${project.title || 'exported_project'}.zip`  // adapte l'extension si besoin
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
   } catch(e) {} finally {
     showSpinner.value = false
   }

@@ -14,14 +14,14 @@ export class ArSceneManager{
     onSceneChanged
 
 
-    constructor(scenes, shadowMapSize) {
+    constructor(scenes, shadowMapSize, xr=false) {
         this.isArRunning = ref(false);
         this.#lightEstimate = new LightSet(shadowMapSize);
         this.scenePlacementManager = new ScenePlacementManager();
 
         this.scenes = [];
         for (let sceneData of scenes) {
-            this.scenes.push(new ArScene(sceneData));
+            this.scenes.push(new ArScene(sceneData, xr));
         }
         if(this.scenes.length === 0)
             this.scenes.push(new ArScene({id:0, title:"None", assets:[]}));
@@ -92,13 +92,13 @@ export class ArSceneManager{
 
 
     setPreviousActive(){
-        if(this.hasPrevious){
+        if(this.hasPrevious.value){
             this.activeSceneId.value = this.previous.value.sceneId;
         }
     }
 
     setNextActive(){
-        if(this.hasNext){
+        if(this.hasNext.value){
             this.activeSceneId.value = this.next.value.sceneId;
         }
     }
@@ -125,17 +125,24 @@ export class ArSceneManager{
     })
 
 
-    onXrFrame(time, frame, localSpace, cameraPosition){
+    onXrFrame(time, frame, localSpace, camera, renderer){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
-        this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), cameraPosition);
+        
+        this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), camera, renderer);
     }
 
     onSceneClick(event){
-        if(this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value)
+        if(this.scenePlacementManager.isStabilized.value && this.scenePlacementManager.isEnabled.value) {
             this.scenePlacementManager.disable();
+        }
     }
 
     getScenes() {
         return this.scenes
+    }
+
+    setXr(xr) {
+        for(let scene of this.scenes)
+            scene.labelPlayer.setXr(xr)
     }
 }

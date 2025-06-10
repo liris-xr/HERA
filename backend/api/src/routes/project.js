@@ -190,6 +190,7 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             description: req.body?.description,
             pictureUrl: updatedUrl,
             unit: req.body?.unit,
+            displayMode: req.body.displayMode,
             calibrationMessage: req.body?.calibrationMessage,
         }, {
             returning: true
@@ -584,8 +585,6 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
             await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
 
-
-
             res.zip({
                 files: [
 
@@ -636,6 +635,7 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         const data = fs.readFileSync(projectFilePath)
 
         const projectObj = JSON.parse(data)
+        projectObj.userId = token.id
 
         const project = await ArProject.create(projectObj, {
             include: [

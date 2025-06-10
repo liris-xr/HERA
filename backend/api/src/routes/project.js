@@ -38,9 +38,6 @@ router.get(baseUrl+'projects/:page', optionnalAuthMiddleware, async (req, res) =
         else
             where = {published:true}
 
-        console.log("user", req.user)
-
-
         let projects = (await ArProject.findAll({
             subQuery: false,
             attributes: [
@@ -534,6 +531,8 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
+    res.setHeader("Keep-Alive", "timeout=300")
+
     try {
 
         const project = await ArProject.findOne({
@@ -586,7 +585,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
             await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
 
-            res.status(200).zip({
+            res.zip({
                 files: [
 
                     {

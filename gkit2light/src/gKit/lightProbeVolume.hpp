@@ -111,7 +111,7 @@ class LightProbeVolume {
         std::vector<float> depthMapAtlas;
 
         unsigned int depthMapSize;
-        unsigned int depthMapProbeSize;
+        unsigned int depthMapNbPixel;
         float depthMapAtlasWidth, depthMapAtlasDepth,depthMapAtlasHeight;
 
         LightSources * lightSources;

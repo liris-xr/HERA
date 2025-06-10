@@ -91,6 +91,7 @@ int main( const int argc, const char **argv )
 
     lpv.bake();
     lpv.writeLPV();
+    lpv.writeDepthMap();
 
     auto stop= std::chrono::high_resolution_clock::now();
     int cpu= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();

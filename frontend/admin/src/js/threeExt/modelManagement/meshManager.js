@@ -77,21 +77,6 @@ uniform sampler3D sh6;
 uniform sampler3D sh7;
 uniform sampler3D sh8;
 
-uniform sampler3D shDist0;
-uniform sampler3D shDist1;
-uniform sampler3D shDist2;
-
-uniform sampler3D shDist3;
-uniform sampler3D shDist4;
-uniform sampler3D shDist5;
-
-uniform sampler3D shDist6;
-uniform sampler3D shDist7;
-uniform sampler3D shDist8;
-
-uniform sampler3D distanceFromGeometry;
-uniform sampler3D directionOfGeometry;
-
 uniform vec3 lpvCenter;
 uniform float lpvWidth;
 uniform float lpvDepth;
@@ -178,44 +163,6 @@ varying vec3 vViewPosition;
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
 
-
-// get the irradiance (radiance convolved with cosine lobe) at the point 'normal' on the unit sphere
-// source: https://graphics.stanford.edu/papers/envmap/envmap.pdf
-float shGetIrradianceAt( in vec3 normal, in float shCoefficients[ 9 ] ) {
-
-	// normal is assumed to have unit length
-
-	float x = normal.x, y = normal.y, z = normal.z;
-
-	// band 0
-	float result = shCoefficients[ 0 ] * 0.886227;
-
-	// band 1
-	result += shCoefficients[ 1 ] * 2.0 * 0.511664 * y;
-	result += shCoefficients[ 2 ] * 2.0 * 0.511664 * z;
-	result += shCoefficients[ 3 ] * 2.0 * 0.511664 * x;
-
-	// band 2
-	result += shCoefficients[ 4 ] * 2.0 * 0.429043 * x * y;
-	result += shCoefficients[ 5 ] * 2.0 * 0.429043 * y * z;
-	result += shCoefficients[ 6 ] * ( 0.743125 * z * z - 0.247708 );
-	result += shCoefficients[ 7 ] * 2.0 * 0.429043 * x * z;
-	result += shCoefficients[ 8 ] * 0.429043 * ( x * x - y * y );
-
-	return result;
-
-}
-
-float getLightProbeIrradiance( const in float lightProbe[ 9 ], const in vec3 normal ) {
-
-	vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
-
-	float irradiance = shGetIrradianceAt( worldNormal, lightProbe );
-
-	return irradiance;
-
-}
-
 // Considering a point in a cube,
 //    7 -----  6	
 //   / |     / |
@@ -277,15 +224,6 @@ vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
 	}
 }
 
-
-float getProbeDistanceFromGeometry(int i,vec3 texcoord) {
-	return texture(distanceFromGeometry,getITexcoord(i,texcoord)).r;
-}
-
-vec3 getProbeDirectionOfGeometry(int i,vec3 texcoord) {
-	return texture(directionOfGeometry,getITexcoord(i,texcoord)).xyz;
-}
-
 void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
 	probeSH = vec3[9]( texture(sh0,getITexcoord(i,texcoord)).rgb,
 					texture(sh1,getITexcoord(i,texcoord)).rgb,
@@ -296,19 +234,6 @@ void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
 					texture(sh6,getITexcoord(i,texcoord)).rgb,
 					texture(sh7,getITexcoord(i,texcoord)).rgb,
 					texture(sh8,getITexcoord(i,texcoord)).rgb
-				  );
-}
-
-void getProbeDistSH(int i,vec3 texcoord, inout float[9] probeDistSH) {
-	probeDistSH = float[9]( texture(shDist0,getITexcoord(i,texcoord)).r,
-					texture(shDist1,getITexcoord(i,texcoord)).r,
-					texture(shDist2,getITexcoord(i,texcoord)).r,
-					texture(shDist3,getITexcoord(i,texcoord)).r,
-					texture(shDist4,getITexcoord(i,texcoord)).r,
-					texture(shDist5,getITexcoord(i,texcoord)).r,
-					texture(shDist6,getITexcoord(i,texcoord)).r,
-					texture(shDist7,getITexcoord(i,texcoord)).r,
-					texture(shDist8,getITexcoord(i,texcoord)).r
 				  );
 }
 
@@ -486,17 +411,16 @@ export class MeshManager {
     #meshes
 	textureLoader
 	shTextures;
-	shDistTextures;
-	distFromGeometryTexture;
-	directionOfGeometryTexture;
+	depthMapTexture;
 	lpvParameters;
+	atlasParameters;
 
     constructor() {
         this.#meshes = shallowReactive([]);
 		this.textureLoader = new THREE.TextureLoader();
 
 		this.shTextures = [];
-		this.shDistTextures = [];
+		this.depthMapTexture = [];
 		for(let i = 0;i<9;i++) {
 			fetch(BASE_URL+'textures/sh'+i+'.csv')
 			.then((res) => res.text())
@@ -506,39 +430,28 @@ export class MeshManager {
 				this.shTextures.push(new Float32Array(values));
 			})
 			.catch((e) => console.error(e));
-
-			fetch(BASE_URL+'textures/shDist'+i+'.csv')
-			.then((res) => res.text())
-			.then((text) => {
-				const values = text.split(',').map(Number);
-				
-				this.shDistTextures.push(new Float32Array(values));
-			})
-			.catch((e) => console.error(e));
 		}
-
-		fetch(BASE_URL+'textures/distanceFromGeometry.csv')
-			.then((res) => res.text())
-			.then((text) => {
-				const values = text.split(',').map(Number);
-				
-				this.distFromGeometryTexture = new Float32Array(values);
-			})
-			.catch((e) => console.error(e));
-
-		fetch(BASE_URL+'textures/directionOfGeometry.csv')
-			.then((res) => res.text())
-			.then((text) => {
-				const values = text.split(',').map(Number);
-				
-				this.directionOfGeometryTexture = new Float32Array(values);
-			})
-			.catch((e) => console.error(e));
 		
 		fetch(BASE_URL+"textures/lpvParameters.json")
 		.then((res) => res.json())
 		.then((json) => {
 			this.lpvParameters = json;
+		})
+		.catch((e) => console.error(e));
+
+		fetch(BASE_URL+'textures/depthMapAtlas.csv')
+		.then((res) => res.text())
+		.then((text) => {
+			const values = text.split(',').map(Number);
+			
+			this.depthMapTexture.push(new Float32Array(values));
+		})
+		.catch((e) => console.error(e));
+		
+		fetch(BASE_URL+"textures/atlasParameters.json")
+		.then((res) => res.json())
+		.then((json) => {
+			this.atlasParameters = json;
 		})
 		.catch((e) => console.error(e));
     }
@@ -584,51 +497,22 @@ export class MeshManager {
 					sh3DTexture.needsUpdate = true;
 					
 					shader.uniforms["sh"+i] = {value: sh3DTexture};
-
-					const shDist3DTexture = new THREE.Data3DTexture(this.shDistTextures[i], 
-						this.lpvParameters.width*this.lpvParameters.density,
-						this.lpvParameters.depth*this.lpvParameters.density,
-						this.lpvParameters.height*this.lpvParameters.density);
-						
-					shDist3DTexture.format = THREE.RedFormat;
-					shDist3DTexture.magFilter = THREE.NearestFilter;
-					shDist3DTexture.minFilter = THREE.NearestFilter;
-					shDist3DTexture.type = THREE.FloatType;
-					shDist3DTexture.wrapS = THREE.ClampToEdgeWrapping
-					shDist3DTexture.wrapT = THREE.ClampToEdgeWrapping
-					shDist3DTexture.wrapR = THREE.ClampToEdgeWrapping
-					shDist3DTexture.needsUpdate = true;
-
-					shader.uniforms["shDist"+i] = {value: shDist3DTexture};
 				}
 
-				const distanceTexture = new THREE.Data3DTexture(this.distFromGeometryTexture,
-																this.lpvParameters.width*this.lpvParameters.density,
-																this.lpvParameters.depth*this.lpvParameters.density,
-																this.lpvParameters.height*this.lpvParameters.density);
-				distanceTexture.format = THREE.RedFormat;
-				distanceTexture.type = THREE.FloatType;
-				distanceTexture.magFilter = THREE.NearestFilter;
-				distanceTexture.minFilter = THREE.NearestFilter;
-				distanceTexture.wrapS = THREE.ClampToEdgeWrapping;
-				distanceTexture.wrapT = THREE.ClampToEdgeWrapping;
-				distanceTexture.wrapR = THREE.ClampToEdgeWrapping;
-				distanceTexture.needsUpdate = true;
-				shader.uniforms["distanceFromGeometry"] = { value:distanceTexture };
+				const atlasTexture = new THREE.Data3DTexture(this.shTextures[i], 
+					this.atlasParameters.width,
+					this.atlasParameters.depth,
+					this.atlasParameters.height);
+				atlasTexture.magFilter = THREE.LinearFilter;
+				atlasTexture.minFilter = THREE.LinearFilter;
+				atlasTexture.type = THREE.FloatType;
+				atlasTexture.wrapS = THREE.ClampToEdgeWrapping
+				atlasTexture.wrapT = THREE.ClampToEdgeWrapping
+				atlasTexture.wrapR = THREE.ClampToEdgeWrapping
+				atlasTexture.needsUpdate = true;
 
-				const directionOfGeometryTexture = new THREE.Data3DTexture(this.directionOfGeometryTexture, 
-															this.lpvParameters.width*this.lpvParameters.density,
-															this.lpvParameters.depth*this.lpvParameters.density,
-															this.lpvParameters.height*this.lpvParameters.density);
-				directionOfGeometryTexture.magFilter = THREE.NearestFilter;
-				directionOfGeometryTexture.minFilter = THREE.NearestFilter;
-				directionOfGeometryTexture.type = THREE.FloatType;
-				directionOfGeometryTexture.wrapS = THREE.ClampToEdgeWrapping
-				directionOfGeometryTexture.wrapT = THREE.ClampToEdgeWrapping
-				directionOfGeometryTexture.wrapR = THREE.ClampToEdgeWrapping
-				directionOfGeometryTexture.needsUpdate = true;
+				shader.uniforms["depthMapAtlas"] = {value: atlasTexture};
 
-				shader.uniforms["directionOfGeometry"] = { value:directionOfGeometryTexture};
 
 
 				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParameters.center.x,this.lpvParameters.center.y,this.lpvParameters.center.z)};
@@ -639,6 +523,11 @@ export class MeshManager {
 				shader.uniforms.lpvTextureDepth = {value : this.lpvParameters.depth*this.lpvParameters.density};
 				shader.uniforms.lpvTextureHeight = {value : this.lpvParameters.height*this.lpvParameters.density};
 				shader.uniforms.lpvDensity = {value : this.lpvParameters.density};
+
+				shader.uniforms.atlasWidth = {value : this.atlasParameters.width};
+				shader.uniforms.atlasDepth = {value : this.atlasParameters.depth};
+				shader.uniforms.atlasHeight = {value : this.atlasParameters.height};
+
 
 				shader.uniforms.freqX = {value:1.0/(this.lpvParameters.width*this.lpvParameters.density)};
 				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.height*this.lpvParameters.density)};

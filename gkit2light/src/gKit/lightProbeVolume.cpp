@@ -1,5 +1,7 @@
 #include "lightProbeVolume.hpp"
 #include "gltf.h"
+#include "image.h"
+#include "image_io.h"
 #include "lightProbe.hpp"
 #include "lightSources.hpp"
 #include "octahedron.hpp"
@@ -8,6 +10,7 @@
 #include <random>
 #include <math.h>
 #include <fstream>
+#include <string>
 #include <vector>
 #include <omp.h>
 
@@ -58,8 +61,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
 
     this->indirectWeight = (1.0/float(nbIndirectSamples));
 
-    this->writeParameters(density,width,depth,height,center);
-
+    
     int n= mesh.triangle_count();
     for(int i= 0; i < n; i++) {
         TriangleData td = mesh.triangle(i);
@@ -69,7 +71,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     
     float freq = 1.0/density;
     unsigned int nbProbe = 0;
-
+    
     for(unsigned int i = 0;i<texturesHeight;i++) {
         for(unsigned int j = 0; j<texturesDepth; j++) {
             for(unsigned int k = 0;k<texturesWidth;k++) {
@@ -78,21 +80,22 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
                     ( (float(i)/texturesHeight) * height ) - height/2.0,
                     ( (float(j)/texturesDepth) * depth ) - depth/2.0
                 );
-
+                
                 pos = pos + center;
                 
                 probes.push_back(LightProbe(pos,nbProbe));
                 nbProbe++;
-
+                
             }
         }
     }
-
+    
     std::cout<<nbProbe<<std::endl;
-    this->depthMapProbeSize = int(sqrt(nbProbe));
-    this->depthMapAtlasWidth = this->depthMapProbeSize * (depthMapSize+2);
-    this->depthMapAtlasDepth = this->depthMapProbeSize * (depthMapSize+2);
+    this->depthMapNbPixel = (this->depthMapSize+2)*(this->depthMapSize+2);
+    this->depthMapAtlasWidth = this->texturesWidth * (depthMapSize+2);
+    this->depthMapAtlasDepth = this->texturesDepth * (depthMapSize+2);
     this->depthMapAtlasHeight = this->texturesHeight;
+    this->writeParameters(density,width,depth,height,center);
 
 
     for(int i = 0;i<9;i++) {
@@ -100,7 +103,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     }
 
     this->invalidityTexture = std::vector<float>(nbProbe,0);
-    this->depthMapAtlas = std::vector<float>(nbProbe*(depthMapSize+2)*(depthMapSize+2),0);
+    this->depthMapAtlas = std::vector<float>(nbProbe*depthMapNbPixel,0);
 }
 
 LightProbeVolume::~LightProbeVolume() {
@@ -376,17 +379,17 @@ void LightProbeVolume::stitchDepthMapSide(unsigned int start, unsigned int end,c
     unsigned int incr;
     switch(side) {
         case 'd': //down
-            offset = -this->depthMapAtlasWidth;
+            offset = -(this->depthMapSize+2);
             incr = 1;
         case 'u': //up
-            offset = -this->depthMapAtlasWidth;
+            offset = -(this->depthMapSize+2);
             incr = 1;
         case 'l': //left
             offset = -1;
-            incr = this->depthMapAtlasWidth;
+            incr = this->depthMapSize+2;
         case 'r': //right
             offset = 1;
-            incr = this->depthMapAtlasWidth;
+            incr = this->depthMapSize+2;
     }
 
     unsigned int backwardOffset = 0;
@@ -410,27 +413,33 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
 
             Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
 
-            unsigned int xOffset = (((probe.id%unsigned(this->depthMapProbeSize))*(depthMapSize+2))+i+1);
-            unsigned int yOffset = (j+1+(depthMapSize+2)*(probe.id/unsigned(this->depthMapProbeSize)))*this->depthMapAtlasWidth;
-            this->depthMapAtlas[xOffset + yOffset] = hit.t;
+            unsigned int start = probe.id*this->depthMapNbPixel;
+            unsigned int offset = (i+1) + ((j+1)*this->depthMapSize+2);
+            this->depthMapAtlas[start+offset] = hit.t;
         }
     }
 
-    unsigned int i0xOffset = (((probe.id%unsigned(this->depthMapProbeSize))*(depthMapSize+2))+1);
-    unsigned int i0yOffset = (1+(depthMapSize+2)*(probe.id/unsigned(this->depthMapProbeSize)))*this->depthMapAtlasWidth;
-    unsigned int i0 = i0xOffset + i0yOffset; //Down left pixel of the texture
+    unsigned int i0 = probe.id*this->depthMapNbPixel + 1 + this->depthMapSize+2; //Down left pixel of the texture
     
     // Down stiching 
-    stitchDepthMapSide(i0,i0+depthMapSize,'d');
+    unsigned int start = i0;
+    unsigned int end = i0+depthMapSize;
+    stitchDepthMapSide(start,end,'d');
     
     // Up stiching
-    stitchDepthMapSide(i0+(depthMapSize-1)*this->depthMapAtlasWidth,i0+((depthMapSize-1)*this->depthMapAtlasWidth)+depthMapSize,'u');
+    start = i0 + (depthMapSize+2)*(depthMapSize-1);
+    end = start+depthMapSize;
+    stitchDepthMapSide(start,end,'u');
 
     // Left stiching
-    stitchDepthMapSide(i0,i0+depthMapSize*this->depthMapAtlasWidth,'l');
+    start = i0;
+    end = i0+((depthMapSize+2)*depthMapSize);
+    stitchDepthMapSide(start,end,'l');
 
     // Right stiching
-    stitchDepthMapSide(i0+depthMapSize-1,i0+depthMapSize-1+(depthMapSize*this->depthMapAtlasWidth),'r');
+    start = i0+depthMapSize-1;
+    end = i0+((depthMapSize+2)*depthMapSize);
+    stitchDepthMapSide(start,end,'r');
 
 
     // Note : pour retrouver le pixel sur la texture, tu peux lancer un rayon sur le triangle 
@@ -514,10 +523,23 @@ void LightProbeVolume::writeParameters(float density,float width,float depth,flo
      file.open("../frontend/admin/public/textures/lpvParameters.json",std::ios_base::out);
      file<<json;
      file.close();
+
+     json = "{\n\"width\":"+std::to_string(this->depthMapAtlasWidth)+",\n\"depth\":"+std::to_string(this->depthMapAtlasDepth)+",\n\"height\":"+std::to_string(this->texturesHeight)+"\n}";
+     file.open("../frontend/admin/public/textures/atlasParameters.json",std::ios_base::out);
+     file<<json;
+     file.close();
 }
 
 void LightProbeVolume::writeDepthMap() {
-    // for(int i = 0;i<this->texturesWidth*this->depthMapSize;i++) {
-    //     for(int j = 0;i<this->texturesDepth)
-    // }
+    unsigned int size = sqrt(this->probes.size()) * (this->depthMapSize+2);
+    Image atlas(size,size);
+
+    for(unsigned int i = 0;i<size;i++) {
+        for(unsigned int j = 0;j<size;j++) {
+            atlas(i,j) = Color(this->depthMapAtlas[i + j*size]);
+        }
+    }
+
+    write_image(atlas, "../frontend/admin/public/textures/atlas.png");
 }
+

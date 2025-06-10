@@ -4,10 +4,10 @@
 
 const Vector UP(0,1,0);
 const Vector BACKWARD(0,0,1);
-const Vector FORWARD(0,0,-1);
+const Vector FORWARD(0,0,1);
 const Vector RIGHT(1,0,0);
-const Vector LEFT(-1,0,0);
-const Vector DOWN(0,-1,0);
+const Vector LEFT(1,0,0);
+const Vector DOWN(0,1,0);
 
 Octahedron::Octahedron(unsigned int size) {
     this->size = size;
@@ -48,15 +48,18 @@ Vector Octahedron::getVector(unsigned int i, unsigned int j) {
     if(i <halfSize && j < halfSize) {
         if((i+j) < halfSize) {
             // Interpolation between DOWN (down left corner), BACKWARD and LEFT
-            a1 = cross(p-octahedronPoints["A"],triangleVectors["right"]).z; // Left coef
-            a2 = cross(p-octahedronPoints["B"],triangleVectors["up-left"]).z; // Down coef
-            a3 = cross(p-octahedronPoints["D"],triangleVectors["down"]).z; // Backward coef
+            a1 = std::abs(cross(p-octahedronPoints["A"],triangleVectors["right"]).z); // Left coef
+            a2 = std::abs(cross(p-octahedronPoints["B"],triangleVectors["up-left"]).z); // Down coef
+            a3 = std::abs(cross(p-octahedronPoints["D"],triangleVectors["down"]).z); // Backward coef
+
+            Vector pb = p-octahedronPoints["B"];
+            Vector ul = triangleVectors["up-left"];
     
             float aTotal = a1 + a2 + a3;
             a1 /= aTotal;
             a2 /= aTotal;
             a3 /= aTotal;
-    
+            
             return normalize(LEFT*a1 + DOWN*a2 + BACKWARD*a3); 
         } else {
             // Interpolation between BACKWARD, UP and LEFT

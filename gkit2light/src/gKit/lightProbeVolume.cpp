@@ -57,6 +57,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->nbDirectIndirectSamples = nbDirectIndirectSamples;
 
     this->depthMapSize = depthMapSize;
+    this->depthMapSizeWithBorders = depthMapSize+2;
     
 
     this->indirectWeight = (1.0/float(nbIndirectSamples));
@@ -91,9 +92,9 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     }
     
     std::cout<<nbProbe<<std::endl;
-    this->depthMapNbPixel = (this->depthMapSize+2)*(this->depthMapSize+2);
-    this->depthMapAtlasWidth = this->texturesWidth * (depthMapSize+2);
-    this->depthMapAtlasDepth = this->texturesDepth * (depthMapSize+2);
+    this->depthMapNbPixel = (depthMapSizeWithBorders)*(depthMapSizeWithBorders);
+    this->depthMapAtlasWidth = this->texturesWidth * (depthMapSizeWithBorders);
+    this->depthMapAtlasDepth = this->texturesDepth * (depthMapSizeWithBorders);
     this->depthMapAtlasHeight = this->texturesHeight;
     this->writeParameters(density,width,depth,height,center);
 
@@ -103,7 +104,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     }
 
     this->invalidityTexture = std::vector<float>(nbProbe,0);
-    this->depthMapAtlas = std::vector<float>(nbProbe*depthMapNbPixel,0);
+    this->depthMapAtlas = std::vector<Vector>(nbProbe*depthMapNbPixel,Vector());
 }
 
 LightProbeVolume::~LightProbeVolume() {
@@ -379,17 +380,17 @@ void LightProbeVolume::stitchDepthMapSide(unsigned int start, unsigned int end,c
     unsigned int incr;
     switch(side) {
         case 'd': //down
-            offset = -(this->depthMapSize+2);
+            offset = -depthMapSizeWithBorders;
             incr = 1;
         case 'u': //up
-            offset = -(this->depthMapSize+2);
+            offset = -depthMapSizeWithBorders;
             incr = 1;
         case 'l': //left
             offset = -1;
-            incr = this->depthMapSize+2;
+            incr = depthMapSizeWithBorders;
         case 'r': //right
             offset = 1;
-            incr = this->depthMapSize+2;
+            incr = depthMapSizeWithBorders;
     }
 
     unsigned int backwardOffset = 0;
@@ -414,32 +415,33 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
             Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
 
             unsigned int start = probe.id*this->depthMapNbPixel;
-            unsigned int offset = (i+1) + ((j+1)*this->depthMapSize+2);
-            this->depthMapAtlas[start+offset] = hit.t;
+            unsigned int offset = (i+1) + ((j+1)*depthMapSizeWithBorders);
+            // this->depthMapAtlas[start+offset] = hit.t;
+            this->depthMapAtlas[start+offset] = sphereDirection;
         }
     }
 
-    unsigned int i0 = probe.id*this->depthMapNbPixel + 1 + this->depthMapSize+2; //Down left pixel of the texture
+    unsigned int i0 = probe.id*this->depthMapNbPixel + 1 + depthMapSizeWithBorders; //Down left pixel of the texture
     
-    // Down stiching 
-    unsigned int start = i0;
-    unsigned int end = i0+depthMapSize;
-    stitchDepthMapSide(start,end,'d');
+    // // Down stiching 
+    // unsigned int start = i0;
+    // unsigned int end = i0+depthMapSize;
+    // stitchDepthMapSide(start,end,'d');
     
-    // Up stiching
-    start = i0 + (depthMapSize+2)*(depthMapSize-1);
-    end = start+depthMapSize;
-    stitchDepthMapSide(start,end,'u');
+    // // Up stiching
+    // start = i0 + (depthMapSizeWithBorders)*(depthMapSize-1);
+    // end = start+depthMapSize;
+    // stitchDepthMapSide(start,end,'u');
 
-    // Left stiching
-    start = i0;
-    end = i0+((depthMapSize+2)*depthMapSize);
-    stitchDepthMapSide(start,end,'l');
+    // // Left stiching
+    // start = i0;
+    // end = i0+((depthMapSizeWithBorders)*depthMapSize);
+    // stitchDepthMapSide(start,end,'l');
 
-    // Right stiching
-    start = i0+depthMapSize-1;
-    end = i0+((depthMapSize+2)*depthMapSize);
-    stitchDepthMapSide(start,end,'r');
+    // // Right stiching
+    // start = i0+depthMapSize-1;
+    // end = i0+((depthMapSizeWithBorders)*depthMapSize);
+    // stitchDepthMapSide(start,end,'r');
 
 
     // Note : pour retrouver le pixel sur la texture, tu peux lancer un rayon sur le triangle 
@@ -531,13 +533,14 @@ void LightProbeVolume::writeParameters(float density,float width,float depth,flo
 }
 
 void LightProbeVolume::writeDepthMap() {
-    unsigned int size = sqrt(this->probes.size()) * (this->depthMapSize+2);
+    // unsigned int sizeX = this->texturesWidth*(depthMapSizeWithBorders);
+    // unsigned int sizeY = this->texturesDepth*(depthMapSizeWithBorders);
+    unsigned int size = depthMapSizeWithBorders;
     Image atlas(size,size);
 
-    for(unsigned int i = 0;i<size;i++) {
-        for(unsigned int j = 0;j<size;j++) {
-            atlas(i,j) = Color(this->depthMapAtlas[i + j*size]);
-        }
+    for(unsigned int i = 0;i<size*size;i++) {
+        Vector value = this->depthMapAtlas[i];
+        atlas(i) = Color(value.x,value.y,value.z);
     }
 
     write_image(atlas, "../frontend/admin/public/textures/atlas.png");

@@ -31,7 +31,7 @@ export class SocketActionManager {
                     const material = child.material.clone()
                     material.roughness = 1
                     material.metalness = 1
-                    material.emissive.set(0.3, 0.3, 0.2)
+                    material.emissive.set(0.3, 0.3, 0.0)
                     child.material = material // new THREE.MeshStandardMaterial({ color: 0xff0000 })
                 } else
                     child.material = child.oldMaterial

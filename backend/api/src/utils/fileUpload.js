@@ -76,7 +76,9 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
                 cb(null, filename);
             } else cb(null, "")
         }
-    })})
+    }),
+    limits: {fieldSize: 500 * 1024 * 1024}
+})
 
 
 

@@ -138,6 +138,7 @@ frontend/admin/public/textures/lpvParameters.json
 frontend/admin/public/textures/distanceFromGeometry.csv
 frontend/admin/public/textures/directionOfGeometry.csv
 frontend/admin/public/textures/sh*
+frontend/admin/public/textures/depthMapAtlas.csv
 
 # gkit2light
 gkit2light/bin

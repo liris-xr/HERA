@@ -54,9 +54,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->nbDirectIndirectSamples = nbDirectIndirectSamples;
 
     this->depthMapSize = depthMapSize;
-    this->depthMapAtlasWidth = this->texturesWidth * (depthMapSize+2);
-    this->depthMapAtlasDepth = this->texturesDepth * (depthMapSize+2);
-    this->depthMapAtlasHeight = this->texturesHeight;
+    
 
     this->indirectWeight = (1.0/float(nbIndirectSamples));
 
@@ -91,6 +89,11 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     }
 
     std::cout<<nbProbe<<std::endl;
+    this->depthMapProbeSize = int(sqrt(nbProbe));
+    this->depthMapAtlasWidth = this->depthMapProbeSize * (depthMapSize+2);
+    this->depthMapAtlasDepth = this->depthMapProbeSize * (depthMapSize+2);
+    this->depthMapAtlasHeight = this->texturesHeight;
+
 
     for(int i = 0;i<9;i++) {
         this->shTextures[i].resize(nbProbe*4);
@@ -407,14 +410,14 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
 
             Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
 
-            unsigned int xOffset = (((probe.id%unsigned(this->texturesWidth))*(depthMapSize+2))+i+1);
-            unsigned int yOffset = (j+1+(depthMapSize+2)*(probe.id/unsigned(this->texturesWidth)))*this->depthMapAtlasWidth;
+            unsigned int xOffset = (((probe.id%unsigned(this->depthMapProbeSize))*(depthMapSize+2))+i+1);
+            unsigned int yOffset = (j+1+(depthMapSize+2)*(probe.id/unsigned(this->depthMapProbeSize)))*this->depthMapAtlasWidth;
             this->depthMapAtlas[xOffset + yOffset] = hit.t;
         }
     }
 
-    unsigned int i0xOffset = (((probe.id%unsigned(this->texturesWidth))*(depthMapSize+2))+1);
-    unsigned int i0yOffset = (1+(depthMapSize+2)*(probe.id/unsigned(this->texturesWidth)))*this->depthMapAtlasWidth;
+    unsigned int i0xOffset = (((probe.id%unsigned(this->depthMapProbeSize))*(depthMapSize+2))+1);
+    unsigned int i0yOffset = (1+(depthMapSize+2)*(probe.id/unsigned(this->depthMapProbeSize)))*this->depthMapAtlasWidth;
     unsigned int i0 = i0xOffset + i0yOffset; //Down left pixel of the texture
     
     // Down stiching 
@@ -511,4 +514,10 @@ void LightProbeVolume::writeParameters(float density,float width,float depth,flo
      file.open("../frontend/admin/public/textures/lpvParameters.json",std::ios_base::out);
      file<<json;
      file.close();
+}
+
+void LightProbeVolume::writeDepthMap() {
+    // for(int i = 0;i<this->texturesWidth*this->depthMapSize;i++) {
+    //     for(int j = 0;i<this->texturesDepth)
+    // }
 }

@@ -111,6 +111,7 @@ class LightProbeVolume {
         std::vector<float> depthMapAtlas;
 
         unsigned int depthMapSize;
+        unsigned int depthMapProbeSize;
         float depthMapAtlasWidth, depthMapAtlasDepth,depthMapAtlasHeight;
 
         LightSources * lightSources;
@@ -146,6 +147,7 @@ class LightProbeVolume {
 
         void updateDirectLighting(LightProbe & probe);
         void updateIndirectLighting(LightProbe & probe);
+
         void updateDepthMap(LightProbe & probe);
         void stitchDepthMapSide(unsigned int start, unsigned int end, const char side);
         
@@ -170,7 +172,8 @@ class LightProbeVolume {
                              const float depth,
                              const float height,
                              const Point & center );
-        
+                             
+        void writeDepthMap();
         
 };
 

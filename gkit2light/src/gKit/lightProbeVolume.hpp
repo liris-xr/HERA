@@ -151,6 +151,7 @@ class LightProbeVolume {
 
         void updateDepthMap(LightProbe & probe);
         void stitchDepthMapSide(unsigned int start, unsigned int end, const char side);
+        void stitchDepthMapCorners(unsigned int i0);
         
     public:
         LightProbeVolume(   const Mesh & mesh,
@@ -174,6 +175,7 @@ class LightProbeVolume {
                              const float height,
                              const Point & center );
                              
+        void writeDepthMap();
         void writeDepthMapLayer(unsigned int stage);
         
 };

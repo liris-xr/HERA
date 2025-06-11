@@ -375,22 +375,52 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
     }
 }
 
+void LightProbeVolume::stitchDepthMapCorners(unsigned int i0) {
+    // Down left pixel (taking up right pixel)
+    this->depthMapAtlas[i0-1-this->depthMapSizeWithBorders] = this->depthMapAtlas[
+        i0+depthMapSize-1+
+        (depthMapSizeWithBorders*(depthMapSize-1))
+    ];
+    // Down right pixel
+    this->depthMapAtlas[i0-2] = this->depthMapAtlas[
+        i0+
+        (depthMapSizeWithBorders*(depthMapSize-1))
+    ];
+
+    // Up left pixel
+    this->depthMapAtlas[
+        i0-1+
+        (depthMapSizeWithBorders*depthMapSize)
+    ] = this->depthMapAtlas[i0+depthMapSize-1];
+
+    // Up right pixel 
+    this->depthMapAtlas[
+        i0+depthMapSize+
+        depthMapSizeWithBorders*depthMapSize
+    ] = this->depthMapAtlas[i0-1-depthMapSizeWithBorders];
+}
+
+
 void LightProbeVolume::stitchDepthMapSide(unsigned int start, unsigned int end,const char side) {
-    unsigned int offset;
-    unsigned int incr;
+    int offset;
+    int incr;
     switch(side) {
         case 'd': //down
             offset = -depthMapSizeWithBorders;
             incr = 1;
+            break;
         case 'u': //up
-            offset = -depthMapSizeWithBorders;
+            offset = depthMapSizeWithBorders;
             incr = 1;
+            break;
         case 'l': //left
             offset = -1;
             incr = depthMapSizeWithBorders;
+            break;
         case 'r': //right
             offset = 1;
             incr = depthMapSizeWithBorders;
+            break;
     }
 
     unsigned int backwardOffset = 0;
@@ -440,8 +470,10 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
 
     // Right stiching
     start = i0+depthMapSize-1;
-    end = i0+((depthMapSizeWithBorders)*depthMapSize);
+    end = start+(depthMapSizeWithBorders*depthMapSize);
     stitchDepthMapSide(start,end,'r');
+
+    stitchDepthMapCorners(i0);
 
 
     // Note : pour retrouver le pixel sur la texture, tu peux lancer un rayon sur le triangle 
@@ -530,6 +562,18 @@ void LightProbeVolume::writeParameters(float density,float width,float depth,flo
      file.open("../frontend/admin/public/textures/atlasParameters.json",std::ios_base::out);
      file<<json;
      file.close();
+}
+
+void LightProbeVolume::writeDepthMap() {
+    unsigned int size = this->depthMapSizeWithBorders;
+    Image depthMap(size,size);
+
+    for(unsigned i = 0;i<this->depthMapNbPixel;i++) {
+        float value = this->depthMapAtlas[i];
+        depthMap(i) = Color(value);
+    }
+    write_image(depthMap, "../frontend/admin/public/textures/depthMapS.png");
+
 }
 
 void LightProbeVolume::writeDepthMapLayer(unsigned int stage) {

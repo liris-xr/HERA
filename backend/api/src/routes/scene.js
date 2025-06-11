@@ -158,9 +158,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
         let assetsIdMatching = []
 
-        console.log("known ids")
-        console.log(knownAssetsIds)
-
         let insertedCount = 0;
         if(!req.uploadedFilenames) req.uploadedFilenames = [];
 

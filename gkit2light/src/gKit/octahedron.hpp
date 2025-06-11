@@ -16,7 +16,7 @@ class Octahedron {
         std::map<std::string, Vector> octahedronPoints;
         std::map<std::string, Vector> triangleVectors;
         unsigned int size;
-        unsigned int halfSize;
+        int halfSize;
 
     public:
         Octahedron(unsigned int size);

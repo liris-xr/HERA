@@ -108,7 +108,7 @@ class LightProbeVolume {
                                               // The more a probe sees back-face, the more invalid it is
 
         Octahedron * octahedron;
-        std::vector<Vector> depthMapAtlas;
+        std::vector<float> depthMapAtlas;
 
         unsigned int depthMapSize;
         unsigned int depthMapSizeWithBorders;
@@ -174,7 +174,7 @@ class LightProbeVolume {
                              const float height,
                              const Point & center );
                              
-        void writeDepthMap();
+        void writeDepthMapLayer(unsigned int stage);
         
 };
 

@@ -12,6 +12,7 @@ import { sequelize } from '../database.js'
  * @property {Object} objectOut
  * @property {Object} position
  * @property {Object} scale
+ * @property {Array} chainedActions
  */
 
 export default sequelize.define('ArTrigger', {
@@ -61,6 +62,12 @@ export default sequelize.define('ArTrigger', {
         allowNull: false,
         defaultValue: {x:1, y:1, z:1},
     },
+    chainedActions:{
+        type: DataTypes.JSON,
+        allowNull: false,
+        defaultValue: {},
+    },
+
     sceneId:{
         type: DataTypes.UUID,
         allowNull: false,

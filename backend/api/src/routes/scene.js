@@ -339,6 +339,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                         objectOut: trigger.objectOut,
                         position: trigger.position,
                         scale: trigger.scale,
+                        chainedActions: trigger.chainedActions,
                     }, {
                         where: {id: trigger.id},
                         returning: true,
@@ -357,6 +358,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                         objectOut: trigger.objectOut,
                         position: trigger.position,
                         scale: trigger.scale,
+                        chainedActions: trigger.chainedActions,
                     },{
                         transaction:t
                     })

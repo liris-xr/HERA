@@ -69,6 +69,7 @@ export class TriggerManager {
                 actionOut: trigger.actionOut,
                 objectIn: trigger.objectIn,
                 objectOut: trigger.objectOut,
+                chainedActions: trigger.chainedActions, // CALL FUNCTION TO SORT
             });
         }
         return result;

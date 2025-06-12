@@ -3,6 +3,7 @@ import {SelectableInterface} from "@/js/threeExt/interfaces/selectableInterface.
 import {LoadableInterface} from "@/js/threeExt/interfaces/loadableInterface.js";
 import {computed, ref} from "vue";
 import * as THREE from "three";
+import {TriggerAction} from "@/js/threeExt/triggerManagement/triggerAction.js";
 
 export class Trigger extends classes(SelectableInterface, LoadableInterface){
     id;
@@ -22,6 +23,8 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
     #isSelected;
     #hasError;
     #isLoading;
+
+    chainedActions
 
     constructor(triggerData) {
         super();
@@ -84,6 +87,13 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
             this.objectOut = "none";
         }
 
+        this.chainedActions = [];
+        if (triggerData.chainedActions){
+            triggerData.chainedActions.forEach(action => {
+                this.chainedActions.push(new TriggerAction(action));
+            })
+        }
+
         this.#hasError = ref(false);
         this.#isLoading = ref(true);
 
@@ -127,6 +137,13 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
         this.#isSelected.value = selected;
     }
 
+    setChainedActions(newChainedActions){
+        this.chainedActions = newChainedActions;
+    }
+
+    getChainedActions(){
+        return this.chainedActions;
+    }
 
     getObject(){
         return this.mesh;
@@ -162,5 +179,6 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
         this.radius = otherTrigger.radius;
         this.objectIn = otherTrigger.objectIn;
         this.objectOut = otherTrigger.objectOut;
+        this.chainedActions = otherTrigger.chainedActions;
     }
 }

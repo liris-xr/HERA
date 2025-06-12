@@ -7,6 +7,8 @@ import IconSvg from "@/components/icons/IconSvg.vue";
 import {actions} from "@/js/threeExt/triggerManagement/actionList.js";
 import {Trigger} from "@/js/threeExt/triggerManagement/trigger.js";
 import {ENDPOINT} from "@/js/endpoints.js";
+import ActionItem from "@/components/listItem/actionItem.vue";
+import {TriggerAction} from "@/js/threeExt/triggerManagement/triggerAction.js";
 
 const props = defineProps({
   show: {type: Boolean, default: false},
@@ -20,10 +22,14 @@ const props = defineProps({
 
 const actionIn = ref("none");
 const actionOut = ref("none");
-const radius = ref(1);
 
 const objectIn = ref({id: 0, label:"none"});
 const objectOut = ref({id: 0, label:"none"});
+
+const radius = ref(1);
+
+let listActions = ref([]);
+let listObject = {};
 
 async function fetchProject(projectId, userId, token) {
   try {
@@ -44,36 +50,42 @@ async function fetchProject(projectId, userId, token) {
   }
 }
 
-let listObject = {};
 
 watch(() =>props.show,async (value) => {
   if (value) {
     await nextTick();
 
-    let arrayScenesName = await initArrayScene();
+    try {
+      let arrayScenesName = await initArrayScene();
 
-    let arrayAssetsName = initArrayAssets();
+      let arrayAssetsName = initArrayAssets();
 
-    let arrayAssetsAnimation = initArrayAssetsAnimation();
+      let arrayAssetsAnimation = initArrayAssetsAnimation();
 
-    let arraySoundsName = initArraySound();
+      let arraySoundsName = initArraySound();
 
-    listObject ={
-      'none' : {},
-      'displayAsset' : arrayAssetsName,
-      'playSound' : arraySoundsName,
-      'changeScene' : arrayScenesName,
-      'animation' : arrayAssetsAnimation,
-      'startDialogue' : {},
-    };
+      listObject ={
+        'none' : [],
+        'displayAsset' : arrayAssetsName,
+        'playSound' : arraySoundsName,
+        'changeScene' : arrayScenesName,
+        'animation' : arrayAssetsAnimation,
+        'startDialogue' : [],
+      };
 
-    if(props.trigger) {
-      actionIn.value = actions[props.trigger.actionIn];
-      actionOut.value = actions[props.trigger.actionOut];
-      radius.value = props.trigger.radius;
-      objectIn.value = listObject[props.trigger.actionIn]?.find(o => o.label === props.trigger.objectIn.label) || {id: 0, label: "none"};
-      objectOut.value = listObject[props.trigger.actionOut]?.find(o => o.label === props.trigger.objectOut.label) || {id: 0, label: "none"};
+      if(props.trigger) {
+        actionIn.value = actions[props.trigger.actionIn] || null;
+        actionOut.value = actions[props.trigger.actionOut] || null;
+        radius.value = props.trigger.radius ?? 1;
 
+        objectIn.value = getObjectFromList(props.trigger.actionIn, props.trigger.objectIn);
+        objectOut.value = getObjectFromList(props.trigger.actionOut, props.trigger.objectOut);
+
+        listActions.value = props.trigger.getChainedActions().slice();
+      }
+    }
+    catch (e) {
+      console.error(e);
     }
   }
 })
@@ -99,6 +111,7 @@ const getEditedTrigger = computed(()=>{
           radius : radius.value,
           objectIn : objectIn.value,
           objectOut : objectOut.value,
+          chainedActions : listActions.value,
   };
 })
 
@@ -110,6 +123,28 @@ function getActionKeyByLabel(label) {
   return Object.keys(actions).find(key => actions[key] === label);
 }
 
+const getObjectFromList = (actionKey, object) => {
+  const list = listObject[actionKey];
+  const label = object?.label;
+
+  if (Array.isArray(list)) {
+    return list.find(o => o.label === label) || { id: 0, label: "none" };
+  }
+
+  return { id: 0, label: "none" };
+};
+
+function addAction(){
+  listActions.value.push(new TriggerAction({action: "none", object: "none", timestampStart: 0}));
+}
+
+function removeAction(action){
+  listActions.value.splice(listActions.value.indexOf(action),1);
+}
+
+function getListObject() {
+  return listObject
+}
 
 /*
 *
@@ -162,7 +197,6 @@ function initArraySound(){
     url: sound.url
   }))
 }
-
 </script>
 
 <template>
@@ -175,6 +209,21 @@ function initArraySound(){
     <template #body>
       <div class="inlineFlex advancedEditBody">
         <section id="advancedEditSettingsArea">
+
+          <div class="inlineFlex">
+            <button-view :text="$t('sceneView.leftSection.sceneTriggers.addTriggerButton')" icon="/icons/add.svg" @click="addAction()"></button-view>
+          </div>
+
+          <div class="action-items-container">
+            <action-item v-for="(action, index) in listActions"
+                         :index="index"
+                         :triggerAction="action"
+                         :listObject="getListObject()"
+                         :show="props.show"
+                         @delete="removeAction(action)"
+            />
+          </div>
+
           <div class="multilineField">
             <span class="inlineFlex">
               <h4>{{$t("triggerEditModal.actionIn")}}</h4>
@@ -275,7 +324,7 @@ label{
   width: fit-content;
 }
 
-input{
+input, select{
   width: auto;
   flex-grow: 1;
 
@@ -330,7 +379,9 @@ textarea{
   display: block;
 }
 
-#advancedEditSettingsArea{
-  flex-grow: 1;
+.action-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 </style>

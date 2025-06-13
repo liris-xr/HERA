@@ -527,7 +527,7 @@ void LightProbeVolume::writeLPV() {
         std::fstream shFile;
         shFile.open("../frontend/admin/public/textures/sh"+std::to_string(coef)+".csv",std::ios_base::out);
         
-        for(unsigned int i=0;i<this->shTextures[coef].size();i++) {
+        for(unsigned int i=0;i<this->shTextures[coef].size()-1;i++) {
             shFile<<shTextures[coef][i]<<',';
         }
         shFile<<shTextures[coef][this->shTextures[coef].size()-1];
@@ -541,7 +541,7 @@ void LightProbeVolume::writeLPV() {
         std::fstream atlasFile;
         atlasFile.open("../frontend/admin/public/textures/depthMapAtlas.csv",std::ios_base::out);
         
-        for(unsigned int i=0;i<this->depthMapAtlas.size();i++) {
+        for(unsigned int i=0;i<this->depthMapAtlas.size()-1;i++) {
             atlasFile<<depthMapAtlas[i]<<',';
         }
         atlasFile<<depthMapAtlas[this->depthMapAtlas.size()-1];
@@ -558,7 +558,7 @@ void LightProbeVolume::writeParameters(float density,float width,float depth,flo
      file<<json;
      file.close();
 
-     json = "{\n\"width\":"+std::to_string(this->depthMapAtlasWidth)+",\n\"depth\":"+std::to_string(this->depthMapAtlasDepth)+",\n\"height\":"+std::to_string(this->texturesHeight)+"\n}";
+     json = "{\n\"width\":"+std::to_string(this->depthMapAtlasWidth)+",\n\"depth\":"+std::to_string(this->depthMapAtlasDepth)+",\n\"depthMapSize\":"+std::to_string(this->depthMapSize)+"\n}";
      file.open("../frontend/admin/public/textures/atlasParameters.json",std::ios_base::out);
      file<<json;
      file.close();

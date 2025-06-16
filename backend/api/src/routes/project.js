@@ -37,8 +37,6 @@ router.get(baseUrl+'projects/:page', optionnalAuthMiddleware, async (req, res) =
         else
             where = {published:true}
 
-        console.log("user", req.user)
-
         let projects = (await ArProject.findAll({
             subQuery: false,
             attributes: [
@@ -195,6 +193,7 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             description: req.body?.description,
             pictureUrl: updatedUrl,
             unit: req.body?.unit,
+            displayMode: req.body.displayMode,
             calibrationMessage: req.body?.calibrationMessage,
         }, {
             returning: true
@@ -565,6 +564,8 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
+    res.setHeader("Keep-Alive", "timeout=300")
+
     try {
 
         const project = await ArProject.findOne({
@@ -617,8 +618,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
             await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
 
-
-            res.status(200).zip({
+            res.zip({
                 files: [
 
                     {
@@ -668,6 +668,7 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         const data = fs.readFileSync(projectFilePath)
 
         const projectObj = JSON.parse(data)
+        projectObj.userId = token.id
 
         const project = await ArProject.create(projectObj, {
             include: [

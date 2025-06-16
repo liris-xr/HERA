@@ -91,6 +91,7 @@ export class Asset extends SceneElementInterface{
         this.object.scale.set(this.scale.x, this.scale.y, this.scale.z);
         this.object.castShadow = true;
         this.object.receiveShadow = true;
+        this.object.isAsset = true;
         this.object.visible = !this.hidden.value
 
         if(this.object?.animations?.length > 0) {

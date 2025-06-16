@@ -82,6 +82,9 @@
         "true": "Public",
         "false":"Private"
       },
+      "mode": {
+        "label": "Display mode"
+      },
       "projectTitle": {
         "label": "Title:",
         "placeholder": "Your project title's"
@@ -96,7 +99,8 @@
       },
       "projectEnvmap": {
         "label": "Envmap:",
-        "current": "Envmap actuelle:"
+        "current": "Current envmap:",
+        "uploadButton": "Upload"
       },
       "buttons": {
         "duplicate": "Duplicate project",
@@ -210,6 +214,10 @@
           "displayAsset": "Show/hide a 3D model"
           }
         },
+      "sceneCamera": {
+        "label": "VR Camera",
+        "basePosition": "Base position"
+      },
       "buttons": {
         "duplicate": "Duplicate scene",
         "delete": "Delete scene"

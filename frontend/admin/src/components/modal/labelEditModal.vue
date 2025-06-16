@@ -6,6 +6,8 @@ import ButtonView from "@/components/button/buttonView.vue";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
 import IconSvg from "@/components/icons/IconSvg.vue";
+import Editor from "primevue/editor"
+
 const props = defineProps({
   show: {type: Boolean, default: false},
   label: {type: Label},
@@ -45,7 +47,6 @@ const getEditedLabel = computed(()=>{
   return new Label(data)
 })
 
-
 </script>
 
 <template>
@@ -64,8 +65,8 @@ const getEditedLabel = computed(()=>{
               <icon-svg url="/icons/text.svg" theme="textImportant"></icon-svg>
             </span>
 
-
-            <textarea v-model="text" rows="8" :placeholder="$t('labelEditModal.content.placeholder')"></textarea>
+            <Editor class="editor" v-model="text" />
+            <!-- <textarea v-model="text" rows="8" :placeholder="$t('labelEditModal.content.placeholder')"></textarea> -->
           </div>
 
 
@@ -187,5 +188,18 @@ textarea{
 
 #advancedEditSettingsArea{
   flex-grow: 1;
+}
+
+.editor {
+  --p-editor-toolbar-border-color: var(--darkerBackgroundColor);
+  --p-editor-toolbar-item-color: var(--textColor);
+  --p-editor-toolbar-item-hover-color: var(--textImportantColor);
+  --p-editor-toolbar-item-active-color: var(--textImportantColor);
+  --p-editor-content-border-color: var(--darkerBackgroundColor);
+
+  --p-editor-overlay-background: var(--backgroundColor);
+  --p-editor-overlay-option-focus-background: var(--darkerBackgroundColor);
+
+
 }
 </style>

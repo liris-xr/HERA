@@ -24,8 +24,9 @@ export class LabelPlayer extends RenderLoopInterface{
     init(){}
 
 
-    addToScene(scene,labelData){
+    async addToScene(scene,labelData){
         const newLabel = new Label(labelData);
+        await newLabel.init()
         if(newLabel.timestampStart > this.#maxTimestamp) this.#maxTimestamp = newLabel.timestampStart;
         if(newLabel.timestampEnd > this.#maxTimestamp) this.#maxTimestamp = newLabel.timestampEnd;
         this.#labels.push(newLabel);
@@ -48,6 +49,7 @@ export class LabelPlayer extends RenderLoopInterface{
     pause(){
         this.#isPlaying.value = false;
     }
+
     reset(){
         this.pause();
         this.#startOffset = this.#currentTime
@@ -66,8 +68,9 @@ export class LabelPlayer extends RenderLoopInterface{
         }
     }
 
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition) {
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer) {
         if (!this.hasLabels.value) return;
+
         const delta = time - this.#currentTime;
 
         this.#currentTime += delta;
@@ -78,7 +81,9 @@ export class LabelPlayer extends RenderLoopInterface{
 
         const t = this.#currentTime - this.#startOffset
         for (let label of this.#labels) {
-            label.setVisible(label.shouldBeVisible(t));
+            if(label.label) {
+                label.setVisible(label.shouldBeVisible(t));
+            }
         }
 
         if(t>=this.#maxTimestamp) this.pause();
@@ -97,5 +102,15 @@ export class LabelPlayer extends RenderLoopInterface{
 
     labelPlayerFinish(){
         return ((this.#currentTime - this.#startOffset) >= this.#maxTimestamp);
+    }
+
+    setXr(xr) {
+        for(const label of this.#labels)
+            label.setXr(xr);
+    }
+
+    stop() {
+        for(const label of this.#labels)
+            label.remove()
     }
 }

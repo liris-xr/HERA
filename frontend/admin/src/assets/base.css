@@ -55,3 +55,7 @@ p{
 a{
   text-decoration: none;
 }
+
+.label-content * {
+  max-width: 100%;
+}

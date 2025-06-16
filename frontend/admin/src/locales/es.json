@@ -84,6 +84,9 @@
         "label": "Título:",
         "placeholder": "El título de tu proyecto"
       },
+      "mode": {
+        "label": "Display mode"
+      },
       "projectDescription": {
         "label": "Descripción:",
         "placeholder": "La descripción de tu proyecto"
@@ -94,7 +97,8 @@
       },
       "projectEnvmap": {
         "label": "Envmap:",
-        "current": "Envmap actuelle:"
+        "current": "Envmap actuelle:",
+        "uploadButton": "Añadir"
       },
       "buttons": {
         "duplicate": "Duplicar proyecto",
@@ -206,6 +210,10 @@
           "startDialogue": "Mostrar/Ocultar etiquetas",
           "displayAsset": "Mostrar/ocultar un modelo 3D"
         }
+      },
+      "sceneCamera": {
+        "label": "Caméra VR",
+        "basePosition": "Position de base"
       },
       "buttons": {
         "duplicate": "Duplicar escena",

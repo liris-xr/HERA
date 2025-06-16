@@ -10,6 +10,7 @@ import { sequelize } from '../database.js'
  * @property {string} pictureUrl
  * @property {string} unit
  * @property {string} calibrationMessage
+ * @property { "ar" | "vr" } displayMode
  * @property {string} presets
  * @property {string} userId
  */
@@ -59,6 +60,11 @@ export default sequelize.define('ArProject', {
         validate:{
             notEmpty: true
         }
+    },
+    displayMode:{
+        type: DataTypes.ENUM("ar", "vr"),
+        allowNull: false,
+        defaultValue: "ar"
     },
     presets:{
         type: DataTypes.JSON,

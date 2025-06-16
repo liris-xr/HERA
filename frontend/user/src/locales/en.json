@@ -45,6 +45,9 @@
         "loading": "Loading",
         "incompatibleDevice": "Incompatible device !"
       },
+      "startVr": {
+        "button": "See in VR"
+      },
       "arOverlay": {
         "contextMenu": {
           "reset": "Reset",

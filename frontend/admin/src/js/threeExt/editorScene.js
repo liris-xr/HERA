@@ -14,6 +14,7 @@ import {SoundManager} from "@/js/soundManagement/soundManager.js";
 import {Sound} from "@/js/soundManagement/sound.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
+import {ModelLoader} from "@/js/threeExt/modelManagement/modelLoader.js";
 import {Trigger} from "@/js/threeExt/triggerManagement/trigger.js";
 
 const transformModeKeys = {
@@ -34,6 +35,8 @@ export class EditorScene extends THREE.Scene {
     #gridPlane;
     #lightSet;
     #transformControls;
+    vrStartPosition;
+    vrCamera;
 
     selected;
     onChanged;
@@ -80,6 +83,18 @@ export class EditorScene extends THREE.Scene {
                || this.selected.value instanceof Trigger) {
 
                 this.selected.value.getObject()[transformModeKeys[this.getTransformMode.value]].set(value.value.x, value.value.y, value.value.z)
+
+                if(this.selected.value.id === "vrCamera") {
+                    if(this.getTransformMode.value === "translate") {
+                        this.vrStartPosition.position.x = this.selected.value.mesh.position.x
+                        this.vrStartPosition.position.y = this.selected.value.mesh.position.y
+                        this.vrStartPosition.position.z = this.selected.value.mesh.position.z
+                    } else if (this.getTransformMode.value === "rotate") {
+                        this.vrStartPosition.rotation.x = this.selected.value.mesh.rotation.x
+                        this.vrStartPosition.rotation.y = this.selected.value.mesh.rotation.y
+                        this.vrStartPosition.rotation.z = this.selected.value.mesh.rotation.z
+                    }
+                }
 
             } else {
 
@@ -162,6 +177,23 @@ export class EditorScene extends THREE.Scene {
 
                     // this.background = texture
                 })
+
+        this.vrStartPosition = sceneData.vrStartPosition;
+
+        if (sceneData.project.displayMode === "vr") {
+            const camera = new Asset({
+                id: "vrCamera",
+                name: "VR Origin",
+                url: "public/common/camera.glb"
+            })
+            this.assetManager.addToScene(this, camera, () => {
+                camera.mesh.position.set(this.vrStartPosition.position.x, this.vrStartPosition.position.y, this.vrStartPosition.position.z)
+                camera.mesh.rotation.set(this.vrStartPosition.rotation.x, this.vrStartPosition.rotation.y, this.vrStartPosition.rotation.z)
+            }, false)
+
+            this.vrCamera = camera;
+        }
+
     }
 
     setupControls(controls){
@@ -169,9 +201,23 @@ export class EditorScene extends THREE.Scene {
         this.add(this.#transformControls);
         this.setTransformMode("translate");
 
-
         this.#transformControls.addEventListener('mouseUp', (event) => {
             this.#updateSelectedTransformValues();
+
+            if(this.selected.value.id === "vrCamera") {
+                if(this.getTransformMode.value === "translate") {
+                    this.vrStartPosition.position.x = this.selected.value.mesh.position.x
+                    this.vrStartPosition.position.y = this.selected.value.mesh.position.y
+                    this.vrStartPosition.position.z = this.selected.value.mesh.position.z
+                } else if (this.getTransformMode.value === "rotate") {
+                    this.vrStartPosition.rotation.x = this.selected.value.mesh.rotation.x
+                    this.vrStartPosition.rotation.y = this.selected.value.mesh.rotation.y
+                    this.vrStartPosition.rotation.z = this.selected.value.mesh.rotation.z
+                }
+
+                console.log(this.vrStartPosition)
+                console.log(this.selected.value)
+            }
         });
     }
 
@@ -226,7 +272,6 @@ export class EditorScene extends THREE.Scene {
                         object = asset;
                     }
                 }
-
             }
 
             for (let trigger of this.triggerManager.getTriggers.value) {
@@ -451,7 +496,8 @@ export class EditorScene extends THREE.Scene {
     #updateSelectedTransformValues(){
 
         if(this.selected.value instanceof Asset ||
-            this.selected.value instanceof Label || this.selected.value instanceof Trigger) {
+            this.selected.value instanceof Label ||
+            this.selected.value instanceof Trigger) {
 
             if(this.getTransformMode.value === "translate"){
                 this.currentSelectedTransformValues.value = this.selected.value.getResultPosition();

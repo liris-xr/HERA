@@ -16,7 +16,7 @@
     "login": "Se connecter",
     "loginIn": "Connexion en cours",
     "noAccount": "Pas de compte ?",
-    "register": "Pour vous inscrire, contacter un administrateur :",
+    "register": "Pour vous inscrire, contactez un administrateur :",
     "createAccount": "Créer un compte"
   },
 
@@ -89,6 +89,9 @@
         "true": "Public",
         "false":"Privé"
       },
+      "mode": {
+        "label": "Mode d'affichage"
+      },
       "projectTitle": {
         "label": "Titre :",
         "placeholder": "Titre de votre projet"
@@ -103,7 +106,8 @@
       },
       "projectEnvmap": {
         "label": "Envmap:",
-        "current": "Envmap actuelle:"
+        "current": "Envmap actuelle:",
+        "uploadButton": "Ajouter"
       },
       "buttons": {
         "duplicate": "Dupliquer le projet",
@@ -216,6 +220,10 @@
           "startDialogue": "Afficher/Cacher les labels",
           "displayAsset": "Afficher/Cacher un modèle 3D"
         }
+      },
+      "sceneCamera": {
+        "label": "Caméra VR",
+        "basePosition": "Position de base"
       },
       "buttons": {
         "duplicate": "Dupliquer la scène",

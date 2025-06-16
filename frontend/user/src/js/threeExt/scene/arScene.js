@@ -12,6 +12,7 @@ import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
 import {Sound} from "@/js/threeExt/SoundManagement/sound.js";
 import { MeshManager } from "../modelManagement/meshManager";
+import scene from "three/addons/offscreen/scene.js";
 
 export class ArScene extends AbstractScene {
     sceneId
@@ -27,6 +28,7 @@ export class ArScene extends AbstractScene {
     #boundingSphere
     #boundingBox;
     clock
+    vrStartPosition
 
     #audioLoader;
     #listener;
@@ -40,6 +42,7 @@ export class ArScene extends AbstractScene {
         this.#assets = [];
         this.meshDataMap = new Map();
         this.meshManager = new MeshManager()
+        this.vrStartPosition = sceneData?.vrStartPosition
 
         for (let assetData of sceneData.assets) {
             this.#assets.push(new Asset(assetData));
@@ -60,6 +63,8 @@ export class ArScene extends AbstractScene {
         for (let meshData of sceneData.meshes) {
             this.meshDataMap.set(meshData.name,meshData)
         }
+
+        if(this.#assets.length == 0) this.#assets.push(new EmptyAsset())
 
         this.labelPlayer = new LabelPlayer();
         for (let labelData of sceneData.labels) {
@@ -132,7 +137,7 @@ export class ArScene extends AbstractScene {
     async init(){
         for (let assetData of this.#assets) {
             await assetData.load();
-            if (assetData.hasError()) {
+            if(assetData.hasError()){
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
             }
 
@@ -235,8 +240,8 @@ export class ArScene extends AbstractScene {
     }
 
 
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition, isArRunning){
-        worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer, isArRunning){
+            worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
 
         // animation
         const delta = this.clock.getDelta()
@@ -244,7 +249,7 @@ export class ArScene extends AbstractScene {
             if (asset.animationMixer)
                 asset.animationMixer.update(delta)
 
-        this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition);
+        this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer);
 
         for (let trigger of this.#triggers){
             trigger.onXrFrame(time,  isArRunning);

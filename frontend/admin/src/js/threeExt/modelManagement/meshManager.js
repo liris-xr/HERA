@@ -287,7 +287,7 @@ vec2 intersectTriangle(vec3 triangleOrigin, vec3 e1, vec3 e2, vec3 origin, vec3 
 	float det= dot(e1, pvec);
 	
 	float inv_det= 1.0 / det;
-	vec3 tvec = triangleOrigin - origin;
+	vec3 tvec = origin - triangleOrigin;
 	
 	float u= dot(tvec, pvec) * inv_det;
 	
@@ -503,10 +503,27 @@ void main() {
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
 
-	// vec3 pProbe = getIProbeWorldPosition(1,texcoord);
-	// outgoingLight = vec3(length(wPosition.xyz - pProbe));
-	// outgoingLight = getIProbeWorldPosition(1,texcoord);
+	// vec3 pProbe = getIProbeWorldPosition(0,texcoord);
+	// vec3 direction = wPosition.xyz - pProbe;
+	// float probeZ = getProbeZBuffer(vec3(1,0,0),texcoord);
 
+	// vec2 uv = intersectTriangle(vec3(0,0,-1),vec3(1,0,1),vec3(0,-1,1),vec3(0,0,0),direction);
+	
+	// vec2 texcoordTriangleE1 = vec2(atlasFreqX,-atlasFreqZ);
+	// vec2 texcoordTriangleE2 = vec2(atlasFreqX,0);
+	
+	// vec3 t = getITexcoord(2,texcoord);
+	// vec2 texcoordTriangleOrigin = vec2(	t.x + depthMapHalfSizeX + atlasFreqX,
+	// 									t.y + (depthMapHalfSizeZ*2.0) + atlasFreqZ);
+	// vec2 depthTexcoord = vec2(texcoordTriangleOrigin.x, texcoordTriangleOrigin.y)
+	// + texcoordTriangleE1*uv.x
+	// + texcoordTriangleE2*uv.y;
+	
+	// float z = texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,texcoord.z)).r;
+	// outgoingLight = vec3(texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,t.z)).r);
+
+	// outgoingLight = vec3(abs(uv.x),uv.y,0);
+	
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
@@ -654,8 +671,10 @@ export class MeshManager {
 				shader.uniforms.atlasFreqX = { value : (1.0/this.atlasParameters.width)};
 				shader.uniforms.atlasFreqZ = { value : (1.0/this.atlasParameters.depth)};
 
-				shader.uniforms.depthMapHalfSizeX = { value : (this.depthMapSize/2.0)*(1.0/this.atlasParameters.width)};
-				shader.uniforms.depthMapHalfSizeZ = { value : (this.depthMapSize/2.0)*(1.0/this.atlasParameters.depth)};
+				shader.uniforms.depthMapHalfSizeX = { value : (this.atlasParameters.depthMapSize/2.0)*(1.0/this.atlasParameters.width)};
+				console.log(1.0/this.atlasParameters.width);
+				
+				shader.uniforms.depthMapHalfSizeZ = { value : (this.atlasParameters.depthMapSize/2.0)*(1.0/this.atlasParameters.depth)};
 
 				shader.uniforms.freqX = {value:1.0/(this.lpvParameters.width*this.lpvParameters.density)};
 				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.height*this.lpvParameters.density)};

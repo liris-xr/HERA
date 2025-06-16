@@ -446,7 +446,7 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
 
             unsigned int start = probe.id*this->depthMapNbPixel;
             unsigned int offset = (i+1) + ((j+1)*depthMapSizeWithBorders);
-            this->depthMapAtlas[start+offset] = 0.1;
+            this->depthMapAtlas[start+offset] = hit.t;
             // this->depthMapAtlas[start+offset] = sphereDirection;
         }
     }

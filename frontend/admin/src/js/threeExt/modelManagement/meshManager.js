@@ -65,7 +65,7 @@ uniform float roughness;
 uniform float metalness;
 uniform float opacity;
 
-uniform sampler3D atlasTexture;
+uniform sampler3D depthMapAtlas;
 
 uniform sampler3D sh0;
 uniform sampler3D sh1;
@@ -213,23 +213,24 @@ vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
 	float y = ((lpvHeight * ((2.0*itexcoord.z)-1.0)) / 2.0) + lpvCenter.y;
 	float z = ((lpvDepth * ((2.0*itexcoord.y)-1.0)) / 2.0) + lpvCenter.z;
 
-	if(i == 0) {
-		return vec3(x,y,z);
-	} else if(i == 1) {
-		return vec3(x+worldFreq,y,z);
-	} else if(i == 2) {
-		return vec3(x+worldFreq,y,z+worldFreq);
-	} else if(i == 3) {
-		return vec3(x,y,z+worldFreq); 
-	} else if(i == 4) {
-		return vec3(x,y+worldFreq,z); 
-	} else if(i == 5) {
-	 	return vec3(x+worldFreq,y+worldFreq,z);
-	} else if(i == 6) {
-		return vec3(x+worldFreq,y+worldFreq,z+worldFreq); 
-	} else if(i == 7) {
-		return vec3(x,y+worldFreq,z+worldFreq); 
-	}
+	return vec3(x,y,z);
+	// if(i == 0) {
+	// 	return vec3(x,y,z);
+	// } else if(i == 1) {
+	// 	return vec3(x+worldFreq,y,z);
+	// } else if(i == 2) {
+	// 	return vec3(x+worldFreq,y,z+worldFreq);
+	// } else if(i == 3) {
+	// 	return vec3(x,y,z+worldFreq); 
+	// } else if(i == 4) {
+	// 	return vec3(x,y+worldFreq,z); 
+	// } else if(i == 5) {
+	//  	return vec3(x+worldFreq,y+worldFreq,z);
+	// } else if(i == 6) {
+	// 	return vec3(x+worldFreq,y+worldFreq,z+worldFreq); 
+	// } else if(i == 7) {
+	// 	return vec3(x,y+worldFreq,z+worldFreq); 
+	// }
 }
 
 void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
@@ -383,7 +384,7 @@ float getProbeZBuffer(vec3 direction, vec3 texcoord) {
 								+ texcoordTriangleE1*uv.x
 								+ texcoordTriangleE2*uv.y;
 
-	return texture(atlasTexture,vec3(depthTexcoord.x,depthTexcoord.y,texcoord.z)).r;
+	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,texcoord.z)).r;
 	
 	// Etape 1 : Choper les points et les directions d'arêtes utilisées au dessus, dans le repère texcoord /
 	// ATTENTION FAUT BIEN SE DECALER DE 1 DANS POUR L'ORIGINE DU TRIANGLE EN TEXCOORD /
@@ -400,8 +401,10 @@ void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,v
 
 		float probeZ = getProbeZBuffer(normalize(direction),getITexcoord(i,texcoord));
 
-		interpolationMask[i] = distanceFromProbe-0.05 < probeZ;
+		interpolationMask[i] = (distanceFromProbe-0.01) < probeZ;
+		// interpolationMask[i] = 0.09 < probeZ;
 	}
+	// interpolationMask[0] = false;
 }
 
 void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3 n ) {
@@ -500,7 +503,10 @@ void main() {
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
 
-	outgoingLight = texelFetch(atlasTexture,ivec3(27,0,0),1).xyz;
+	// vec3 pProbe = getIProbeWorldPosition(1,texcoord);
+	// outgoingLight = vec3(length(wPosition.xyz - pProbe));
+	// outgoingLight = getIProbeWorldPosition(1,texcoord);
+
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
@@ -602,13 +608,23 @@ export class MeshManager {
 					
 					shader.uniforms["sh"+i] = {value: sh3DTexture};
 				}
+				
+				// this.depthMapTexture[0] = 1.0;
+				// this.depthMapTexture[1] = 0.5;
+				// this.depthMapTexture[2] = 0.5;
+				// this.depthMapTexture[3] = 0.5;
+				// this.depthMapTexture[4] = 0.5;
+				// this.depthMapTexture[5] = 0.5;
+				// this.depthMapTexture[6] = 0.;
+				// this.depthMapTexture[7] = 10.;
 				console.log(this.depthMapTexture);
+
 				
 				
 				const atlasTexture = new THREE.Data3DTexture(this.depthMapTexture, 
 					this.atlasParameters.width,
 					this.atlasParameters.depth,
-					this.lpvParameters.height*this.lpvParameters.density);
+					(this.lpvParameters.height*this.lpvParameters.density));
 				atlasTexture.format = THREE.RedFormat;
 				atlasTexture.magFilter = THREE.LinearFilter;
 				atlasTexture.minFilter = THREE.LinearFilter;
@@ -618,7 +634,7 @@ export class MeshManager {
 				atlasTexture.wrapR = THREE.ClampToEdgeWrapping
 				atlasTexture.needsUpdate = true;
 				
-				shader.uniforms["depthMapAtlas"] = {value: atlasTexture};
+				shader.uniforms.depthMapAtlas = {value: atlasTexture};
 
 
 
@@ -635,8 +651,8 @@ export class MeshManager {
 				shader.uniforms.atlasDepth = {value : this.atlasParameters.depth};
 				shader.uniforms.atlasHeight = {value : this.atlasParameters.height};
 
-				shader.uniforms.atlasFreqX = { value : 1.0/this.atlasParameters.width};
-				shader.uniforms.atlasFreqZ = { value : 1.0/this.atlasParameters.depth};
+				shader.uniforms.atlasFreqX = { value : (1.0/this.atlasParameters.width)};
+				shader.uniforms.atlasFreqZ = { value : (1.0/this.atlasParameters.depth)};
 
 				shader.uniforms.depthMapHalfSizeX = { value : (this.depthMapSize/2.0)*(1.0/this.atlasParameters.width)};
 				shader.uniforms.depthMapHalfSizeZ = { value : (this.depthMapSize/2.0)*(1.0/this.atlasParameters.depth)};

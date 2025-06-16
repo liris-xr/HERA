@@ -35,7 +35,7 @@ struct Hit
     float u, v;         // p(u, v), position du point d'intersection sur le triangle
     int triangle_id;    // indice du triangle dans le mesh
     
-    Hit( ) : t(FLT_MAX), u(), v(), triangle_id(-1) {}
+    Hit( ) : t(500), u(), v(), triangle_id(-1) {}
     Hit( const float _t, const float _u, const float _v, const int _id ) : t(_t), u(_u), v(_v), triangle_id(_id) {}
     
     // renvoie vrai si intersection

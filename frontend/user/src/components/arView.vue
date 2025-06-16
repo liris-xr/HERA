@@ -115,7 +115,7 @@ function toggleContextMenuStatus(){
 
           <action-bubble
               icon="/icons/restart.svg"
-              @click="arSessionManager.sceneManager.active.value.labelPlayer.reset()"
+              @click="arSessionManager.sceneManager.resetScene()"
           />
 
         </div>

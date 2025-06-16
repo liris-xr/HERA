@@ -36,7 +36,6 @@ const onClick = (cb) => {
       </a>
 
       <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete'); })"/>
-      <icon-svg v-if="downloadUrl" url="/icons/duplicate.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('duplicate')})"/>
 
       <icon-svg v-if="isLoopingEnabled" url="/icons/looping.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('loopingEnabled',false)})"/>
       <icon-svg v-else url="/icons/notLooping.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('loopingEnabled', true)})"/>

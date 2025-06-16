@@ -185,9 +185,8 @@ export const uploadSound = multer({ storage: multer.diskStorage({
         destination: (req, file, cb) => {
             const projectId = req.projectId;
             if(!projectId) throw new Error('Project Id is missing');
-            console.log("uploadSound fileUpload");
             const uploadDirectory = path.join(DIRNAME, getSoundsDirectory(projectId))
-            console.log(uploadDirectory);
+
             if (!fs.existsSync(uploadDirectory)) {
                 fs.mkdirSync(uploadDirectory, { recursive: true });
             }
@@ -195,17 +194,13 @@ export const uploadSound = multer({ storage: multer.diskStorage({
             cb(null, uploadDirectory);
         },
         filename: (req, file, cb) => {
-            console.log("uploadSound")
             const ext = path.extname(file.originalname);
-            console.log("uploadSound")
             if(!req.currentSoundCount){
                 req.currentSoundCount = 0
             }
-            console.log("ok")
+
             const filename = "sound" + Date.now() + req.currentSoundCount + ext
             req.currentSoundCount++;
-
-            console.log("req.uploadedFilenames: ", req.uploadedFilenames)
 
             if(!req.uploadedFilenames)
                 req.uploadedFilenames = [];

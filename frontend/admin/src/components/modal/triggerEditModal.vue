@@ -224,37 +224,9 @@ function initArraySound(){
             />
           </div>
 
-          <div class="multilineField">
-            <span class="inlineFlex">
-              <h4>{{$t("triggerEditModal.actionIn")}}</h4>
-              <icon-svg url="/icons/in.svg" theme="textImportant"></icon-svg>
-            </span>
-
-            <select v-model="actionIn"  @change="objectIn.label= 'none'">
-              <option v-for="(key, name) in actions" :key="name" :value="key">
-                {{key}}
-              </option>
-            </select>
-
-            <div>
-              <select v-model="objectIn"
-                      v-if="getActionKeyByLabel(actionIn) !== 'none'
-                      && Array.isArray(listObject[getActionKeyByLabel(actionIn)])
-                      && listObject[getActionKeyByLabel(actionIn)].length > 0">
-                <option v-for="obj in listObject[getActionKeyByLabel(actionIn)]" :key="obj" :value="obj">
-                  {{ obj.label }}
-                </option>
-              </select>
-            </div>
-
-          </div>
-
-
-
           <div class="multilineField" id="advancedEditTimestampArea">
             <span class="inlineFlex">
               <h4>{{$t("triggerEditModal.actionOut")}}</h4>
-              <icon-svg url="/icons/out.svg" theme="textImportant"></icon-svg>
             </span>
 
             <select v-model="actionOut" @change="objectOut= 'none'">
@@ -283,7 +255,6 @@ function initArraySound(){
           <div id="advancedEditTimestampArea">
             <span class="inlineFlex">
               <h4>{{$t("triggerEditModal.radius")}}</h4>
-              <icon-svg url="/icons/animation.svg" theme="textImportant"></icon-svg>
               <input type="number" id="AdvancedEditTimestampStart" :placeholder="1" v-model="radius" min="0">
             </span>
           </div>

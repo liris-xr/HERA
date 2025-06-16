@@ -18,7 +18,13 @@ export class ActionManager {
 
     #labelPlayer
 
+    static #instance;
+
     constructor(parameters) {
+        if (ActionManager.#instance) {
+            return ActionManager.#instance;
+        }
+
         this.#triggers = parameters.triggers;
         this.#assets = parameters.assets;
         this.#sounds = parameters.sounds;
@@ -35,6 +41,8 @@ export class ActionManager {
         this.#labelPlayer = parameters.labelPlayer;
 
         this.#initActions();
+
+        ActionManager.#instance = this;
     }
 
     doAction(action, object) {
@@ -95,7 +103,6 @@ export class ActionManager {
             startDialogue: () => {
                 if (this.#labelPlayer.labelPlayerFinish()){
                     this.#labelPlayer.reset();
-                    this.#labelPlayer.togglePlaying();
                 }
 
                 this.#labelPlayer.togglePlaying();

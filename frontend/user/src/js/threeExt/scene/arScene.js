@@ -178,6 +178,41 @@ export class ArScene extends AbstractScene {
         this.labelPlayer.reset();
     }
 
+    resetTriggers = ()=>{
+        for (let trigger of this.#triggers) {
+            trigger.reset();
+        }
+    }
+
+    resetScene(){
+        this.stopAllSounds();
+
+        while (this.children.length > 0) {
+            const child = this.children[0];
+            this.remove(child);
+
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(m => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+            if (child.texture) child.texture.dispose();
+        }
+
+        this.init();
+
+        this.resetLabels();
+        this.resetTriggers();
+
+
+        for (let label of this.labelPlayer.getLabels()) {
+            label.pushToScene(this);
+        }
+    }
+
 
     computeBoundingBox(forceCompute = false){
         if(forceCompute || this.#boundingBox==null){
@@ -200,7 +235,7 @@ export class ArScene extends AbstractScene {
     }
 
 
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition){
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition, isArRunning){
         worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
 
         // animation
@@ -209,8 +244,11 @@ export class ArScene extends AbstractScene {
             if (asset.animationMixer)
                 asset.animationMixer.update(delta)
 
-
         this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, cameraPosition);
+
+        for (let trigger of this.#triggers){
+            trigger.onXrFrame(time,  isArRunning);
+        }
     }
 
     getTriggers(){

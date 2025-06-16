@@ -57,6 +57,8 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
 
     resetLabels(){}
 
+    resetTriggers(){}
+
     enable(){
         this.#isEnabled.value = true;
     }

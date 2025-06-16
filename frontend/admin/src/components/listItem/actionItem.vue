@@ -39,8 +39,6 @@ function updateObject(newObject) {
 }
 
 function updateTimestampStart(newTimestampStart) {
-  console.log("function");
-  console.log(newTimestampStart);
   props.triggerAction.setTimestampStart(newTimestampStart);
 }
 

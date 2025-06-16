@@ -38,6 +38,7 @@ export class ArSceneManager{
         watch(this.active, (value) => {
             this.#updateLighting();
             this.active.value.resetLabels();
+            this.active.value.resetTriggers();
             if(this.onSceneChanged != null)
                 this.onSceneChanged();
         })
@@ -77,6 +78,14 @@ export class ArSceneManager{
         this.scenePlacementManager.reset();
         this.setFirstActive();
     }
+
+    resetScene(){
+        console.log("ArSceneManager Reset")
+
+        this.active.value.resetScene()
+        this.#updateLighting();
+    }
+
 
     getBoundingSphere(){
         return this.active.value.computeBoundingSphere();
@@ -141,7 +150,7 @@ export class ArSceneManager{
 
     onXrFrame(time, frame, localSpace, cameraPosition){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
-        this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), cameraPosition);
+        this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), cameraPosition, this.isArRunning.value);
 
         if (this.isArRunning.value && !this.scenePlacementManager.isEnabled.value){
             const activeScene = this.getActiveScene();
@@ -156,19 +165,12 @@ export class ArSceneManager{
 
                 if (distanceWorld < trigger.getRadius()) {
                     trigger.userIn();
+                    trigger.play();
                 } else{
                     trigger.userOut();
+                    trigger.pause();
                 }
 
-                if (trigger.thereIsUser !== trigger.userInside) {
-                    if (trigger.userInside) {
-                        this.actionManager.doAction(trigger.actionIn, trigger.objectIn);
-                    } else {
-                        this.actionManager.doAction(trigger.actionOut, trigger.objectOut);
-                    }
-
-                    trigger.thereIsUser = !trigger.thereIsUser;
-                }
             }
         }
     }

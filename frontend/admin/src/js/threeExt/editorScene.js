@@ -305,8 +305,6 @@ export class EditorScene extends THREE.Scene {
     }
 
     addNewSound(soundFile){
-        console.log("addNewSound");
-        console.log(soundFile);
         const soundData = {
             id:null,
             url: null,
@@ -325,8 +323,7 @@ export class EditorScene extends THREE.Scene {
 
     duplicateSound(sound){
         this.setSelected(null);
-        console.log("attentio,")
-        console.log(sound);
+
         const soundData = {
             id:sound.id,
             url: sound.sourceUrl,

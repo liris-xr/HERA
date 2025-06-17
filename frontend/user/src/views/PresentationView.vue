@@ -62,7 +62,7 @@ const removingPreset = ref(null)
 const editingPreset = ref(null)
 const creatingPreset = ref(null)
 
-const recordTarget = null
+let recordTarget = null
 
 const showTerminate = ref(false)
 const terminated = ref(false)

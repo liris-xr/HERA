@@ -263,7 +263,6 @@ const projectUrl = computed(() => {
           <div class="qrButtonWrapper">
             <filled-button-view
                 v-if="isAuthenticated"
-                :disabled="!project.published"
 
                 icon="/icons/qrcode.svg"
                 :text="$t('presentation.controls.showQrcode')"
@@ -330,8 +329,6 @@ const projectUrl = computed(() => {
           </section>
 
           <filled-button-view
-              :disabled="!project.published"
-
               icon="/icons/restart.svg"
               :text="$t('presentation.controls.reset')"
               @click="resetScene" />

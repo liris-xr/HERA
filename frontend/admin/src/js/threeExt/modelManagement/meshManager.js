@@ -532,6 +532,7 @@ void main() {
 
 	// outgoingLight = vec3(uv.x,uv.y,0);
 
+	outgoingLight = vec3(texture(depthMapAtlas,texcoord).r);
 	
 
 	#include <opaque_fragment>
@@ -652,8 +653,8 @@ export class MeshManager {
 					this.atlasParameters.depth,
 					(this.lpvParameters.height*this.lpvParameters.density));
 				atlasTexture.format = THREE.RedFormat;
-				atlasTexture.magFilter = THREE.LinearFilter;
-				atlasTexture.minFilter = THREE.LinearFilter;
+				atlasTexture.magFilter = THREE.NearestFilter;
+				atlasTexture.minFilter = THREE.NearestFilter;
 				atlasTexture.type = THREE.FloatType;
 				atlasTexture.wrapS = THREE.ClampToEdgeWrapping
 				atlasTexture.wrapT = THREE.ClampToEdgeWrapping

@@ -3,8 +3,8 @@
 #include <map>
 
 const Vector UP(0,1,0);
-const Vector BACKWARD(0,0,1);
-const Vector FORWARD(0,0,-1);
+const Vector BACKWARD(0,0,-1);
+const Vector FORWARD(0,0,1);
 const Vector RIGHT(1,0,0);
 const Vector LEFT(-1,0,0);
 const Vector DOWN(0,-1,0);

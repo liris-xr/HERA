@@ -113,7 +113,7 @@ class LightProbeVolume {
         unsigned int depthMapSize;
         unsigned int depthMapSizeWithBorders;
         unsigned int depthMapNbPixel;
-        float depthMapAtlasWidth, depthMapAtlasDepth,depthMapAtlasHeight;
+        unsigned int depthMapAtlasWidth, depthMapAtlasDepth,depthMapAtlasHeight;
 
         LightSources * lightSources;
         Mesh mesh;

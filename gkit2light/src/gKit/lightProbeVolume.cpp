@@ -377,49 +377,50 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
 
 void LightProbeVolume::stitchDepthMapCorners(unsigned int i0) {
     // Down left pixel (taking up right pixel)
-    this->depthMapAtlas[i0-1-this->depthMapSizeWithBorders] = this->depthMapAtlas[
+    this->depthMapAtlas[ i0 - 1 - depthMapAtlasWidth ] = this->depthMapAtlas[
         i0+depthMapSize-1+
-        (depthMapSizeWithBorders*(depthMapSize-1))
+        (depthMapAtlasWidth*(depthMapSize-1))
     ];
     // Down right pixel
-    this->depthMapAtlas[i0-2] = this->depthMapAtlas[
+    this->depthMapAtlas[ i0 - depthMapAtlasWidth + depthMapSize] = this->depthMapAtlas[
         i0+
-        (depthMapSizeWithBorders*(depthMapSize-1))
+        (depthMapAtlasWidth*(depthMapSize-1))
     ];
 
     // Up left pixel
     this->depthMapAtlas[
         i0-1+
-        (depthMapSizeWithBorders*depthMapSize)
+        (depthMapAtlasWidth*depthMapSize)
     ] = this->depthMapAtlas[i0+depthMapSize-1];
 
     // Up right pixel 
     this->depthMapAtlas[
         i0+depthMapSize+
-        depthMapSizeWithBorders*depthMapSize
-    ] = this->depthMapAtlas[i0-1-depthMapSizeWithBorders];
+        depthMapAtlasWidth*depthMapSize
+    ] = this->depthMapAtlas[i0];
 }
 
 
 void LightProbeVolume::stitchDepthMapSide(unsigned int start, unsigned int end,const char side) {
     int offset;
     int incr;
+
     switch(side) {
         case 'd': //down
-            offset = -depthMapSizeWithBorders;
+            offset = -depthMapAtlasWidth;
             incr = 1;
             break;
         case 'u': //up
-            offset = depthMapSizeWithBorders;
+            offset = depthMapAtlasWidth;
             incr = 1;
             break;
         case 'l': //left
             offset = -1;
-            incr = depthMapSizeWithBorders;
+            incr = depthMapAtlasWidth;
             break;
         case 'r': //right
             offset = 1;
-            incr = depthMapSizeWithBorders;
+            incr = depthMapAtlasWidth;
             break;
     }
 
@@ -438,58 +439,58 @@ void LightProbeVolume::stitchDepthMapSide(unsigned int start, unsigned int end,c
 // |----->
 
 void LightProbeVolume::updateDepthMap(LightProbe & probe) {
+    unsigned int nbProbeOnLayer = unsigned(texturesWidth)*unsigned(texturesDepth);
+
+    unsigned int probeLayerId = probe.id % nbProbeOnLayer;
+
+    unsigned int startDepth = ( probeLayerId / unsigned(texturesWidth) ) * (depthMapNbPixel * unsigned(texturesWidth));
+    unsigned int startWidth = ( probeLayerId % unsigned(texturesWidth) ) * depthMapSizeWithBorders;
+    unsigned int startHeight = ( probe.id / nbProbeOnLayer ) * ( depthMapNbPixel * nbProbeOnLayer );
+
     for(unsigned int i = 0;i<depthMapSize;i++) {
         for(unsigned int j = 0;j<depthMapSize;j++) {
             Vector sphereDirection = octahedron->getVector(i,j);
 
             Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
 
-            unsigned int nbProbeOnLayer = unsigned(texturesWidth)*unsigned(texturesDepth);
-        
-            unsigned int probeLayerId = probe.id % nbProbeOnLayer;
-
-            unsigned int startDepth = ( probeLayerId / unsigned(texturesWidth) ) * (depthMapNbPixel * unsigned(texturesWidth));
-            unsigned int startWidth = ( probeLayerId % unsigned(texturesWidth) ) * depthMapSizeWithBorders;
-            unsigned int startHeight = ( probe.id / nbProbeOnLayer ) * ( depthMapNbPixel * nbProbeOnLayer );
-
             unsigned int index =  startDepth
                                 + startWidth
                                 + startHeight
-                                + (j+1) * ( depthMapSizeWithBorders * unsigned(texturesWidth) )
+                                + (j+1) * depthMapAtlasWidth
                                 + (i+1);
 
-            this->depthMapAtlas[i];
-
-            // unsigned int start = probe.id*this->depthMapNbPixel; 
-            // unsigned int offset = (i+1) + ((j+1)*depthMapSizeWithBorders);
-            // this->depthMapAtlas[start+offset] = hit.t;
-            // this->depthMapAtlas[start+offset] = sphereDirection;
+            this->depthMapAtlas[index] = hit.t;
+            // this->depthMapAtlas[index] = uniform(rng);
         }
     }
 
-    unsigned int i0 = probe.id*this->depthMapNbPixel + 1 + depthMapSizeWithBorders; //Down left pixel of the texture
+    unsigned int i0 = startDepth
+                    + startWidth
+                    + startHeight
+                    + depthMapAtlasWidth
+                    + 1; //Down left pixel of the texture
     
     // Down stiching 
-    // unsigned int start = i0;
-    // unsigned int end = i0+depthMapSize;
-    // stitchDepthMapSide(start,end,'d');
+    unsigned int start = i0;
+    unsigned int end = i0+depthMapSize;
+    stitchDepthMapSide(start,end,'d');
     
-    // // Up stiching
-    // start = i0 + (depthMapSizeWithBorders)*(depthMapSize-1);
-    // end = start+depthMapSize;
-    // stitchDepthMapSide(start,end,'u');
+    // Up stiching
+    start = i0 + depthMapAtlasWidth*(depthMapSize-1);
+    end = start + depthMapSize;
+    stitchDepthMapSide(start,end,'u');
 
     // // Left stiching
-    // start = i0;
-    // end = i0+((depthMapSizeWithBorders)*depthMapSize);
-    // stitchDepthMapSide(start,end,'l');
+    start = i0;
+    end = i0 + ( depthMapAtlasWidth * depthMapSize );
+    stitchDepthMapSide(start,end,'l');
 
     // // Right stiching
-    // start = i0+depthMapSize-1;
-    // end = start+(depthMapSizeWithBorders*depthMapSize);
-    // stitchDepthMapSide(start,end,'r');
+    start = i0 + depthMapSize - 1;
+    end = start + ( depthMapAtlasWidth * depthMapSize ) ;
+    stitchDepthMapSide(start,end,'r');
 
-    // stitchDepthMapCorners(i0);
+    stitchDepthMapCorners(i0);
 }
 
 void LightProbeVolume::bake() {
@@ -614,10 +615,16 @@ void LightProbeVolume::writeDepthMapLayer(unsigned int stage) {
     unsigned int sizeZ = this->depthMapSizeWithBorders*this->texturesDepth;
     Image atlas(sizeX,sizeZ);
 
-    unsigned int start = texturesWidth*texturesDepth * (stage % unsigned(texturesHeight));
-    unsigned int end = texturesWidth*texturesDepth * ((stage+1) % unsigned(texturesHeight));
+    unsigned int start = (stage % unsigned(texturesHeight)) 
+                            * texturesWidth * texturesDepth * depthMapNbPixel;
+
+    unsigned int end = ((stage+1) % unsigned(texturesHeight)) 
+                            * texturesWidth * texturesDepth * depthMapNbPixel;
+
+    int imageIndex = 0;
     for(unsigned int i = start;i<end;i++) {
-        atlas(i) = Color(this->depthMapAtlas[i]);
+        atlas(imageIndex) = Color(this->depthMapAtlas[i]);
+        imageIndex++;
     }
 
     write_image(atlas, "../frontend/admin/public/textures/atlas.png");

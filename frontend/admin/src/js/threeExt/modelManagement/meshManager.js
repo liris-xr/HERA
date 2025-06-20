@@ -214,23 +214,6 @@ vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
 	float z = ((lpvDepth * ((2.0*itexcoord.y)-1.0)) / 2.0) + lpvCenter.z;
 
 	return vec3(x,y,z);
-	// if(i == 0) {
-	// 	return vec3(x,y,z);
-	// } else if(i == 1) {
-	// 	return vec3(x+worldFreq,y,z);
-	// } else if(i == 2) {
-	// 	return vec3(x+worldFreq,y,z+worldFreq);
-	// } else if(i == 3) {
-	// 	return vec3(x,y,z+worldFreq); 
-	// } else if(i == 4) {
-	// 	return vec3(x,y+worldFreq,z); 
-	// } else if(i == 5) {
-	//  	return vec3(x+worldFreq,y+worldFreq,z);
-	// } else if(i == 6) {
-	// 	return vec3(x+worldFreq,y+worldFreq,z+worldFreq); 
-	// } else if(i == 7) {
-	// 	return vec3(x,y+worldFreq,z+worldFreq); 
-	// }
 }
 
 void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
@@ -299,25 +282,9 @@ vec2 intersectTriangle(vec3 triangleOrigin, vec3 e1, vec3 e2, vec3 origin, vec3 
 
 void intersectOctMap(in vec3 direction, in vec3 texcoord, inout vec2 uv, inout vec2 texcoordTriangleOrigin, inout vec2 texcoordTriangleE1, inout vec2 texcoordTriangleE2) {
 	if(direction.x > 0.0) { // Right side of the depthmap 
-		if(direction.z > 0.0) { // Bottom side of the depthmap
-			texcoordTriangleOrigin = vec2(	texcoord.x + depthMapHalfSizeX + atlasFreqX,
-											texcoord.y + atlasFreqZ);
-			if(direction.y > 0.0) { // Top triangle
-				uv = intersectTriangle(vec3(0,0,1),vec3(1,0,-1),vec3(0,1,-1),vec3(0,0,0),direction);
-				
-				texcoordTriangleE1 = vec2(depthMapHalfSizeX,depthMapHalfSizeZ);
-				texcoordTriangleE2 = vec2(0,depthMapHalfSizeZ);
-
-			} else { // Bottom triangle
-				uv = intersectTriangle(vec3(0,0,1),vec3(0,-1,-1),vec3(1,0,-1),vec3(0,0,0),direction);
-
-				texcoordTriangleE1 = vec2(depthMapHalfSizeX,0);
-				texcoordTriangleE2 = vec2(depthMapHalfSizeX,depthMapHalfSizeZ);
-
-			}
-		} else { // Upper side of the depthmap
+		if(direction.z > 0.0) { // Upper side of the depthmap
 			if(direction.y > 0.0) { // Bottom triangle
-				uv = intersectTriangle(vec3(0,1,0),vec3(1,-1,0),vec3(0,-1,-1),vec3(0,0,0),direction);
+				uv = intersectTriangle(vec3(0,1,0),vec3(1,-1,0),vec3(0,-1,1),vec3(0,0,0),direction);
 
 				texcoordTriangleOrigin = vec2(	texcoord.x + depthMapHalfSizeX + atlasFreqX,
 												texcoord.y + depthMapHalfSizeZ + atlasFreqZ);
@@ -326,7 +293,7 @@ void intersectOctMap(in vec3 direction, in vec3 texcoord, inout vec2 uv, inout v
 				texcoordTriangleE2 = vec2(0,depthMapHalfSizeZ);
 
 			} else { // Upper triangle
-				uv = intersectTriangle(vec3(0,0,-1),vec3(1,0,1),vec3(0,-1,1),vec3(0,0,0),direction);
+				uv = intersectTriangle(vec3(0,0,1),vec3(1,0,-1),vec3(0,-1,-1),vec3(0,0,0),direction);
 
 				texcoordTriangleOrigin = vec2(	texcoord.x + depthMapHalfSizeX + atlasFreqX,
 												texcoord.y + (depthMapHalfSizeZ*2.0) + atlasFreqZ);
@@ -335,11 +302,44 @@ void intersectOctMap(in vec3 direction, in vec3 texcoord, inout vec2 uv, inout v
 				texcoordTriangleE2 = vec2(depthMapHalfSizeX,0);
 
 			}
+			
+		} else { // Bottom side of the depthmap
+			texcoordTriangleOrigin = vec2(	texcoord.x + depthMapHalfSizeX + atlasFreqX,
+											texcoord.y + atlasFreqZ);
+			if(direction.y > 0.0) { // Top triangle
+				uv = intersectTriangle(vec3(0,0,-1),vec3(1,0,1),vec3(0,1,1),vec3(0,0,0),direction);
+				
+				texcoordTriangleE1 = vec2(depthMapHalfSizeX,depthMapHalfSizeZ);
+				texcoordTriangleE2 = vec2(0,depthMapHalfSizeZ);
+
+			} else { // Bottom triangle
+				uv = intersectTriangle(vec3(0,0,-1),vec3(0,-1,1),vec3(1,0,1),vec3(0,0,0),direction);
+
+				texcoordTriangleE1 = vec2(depthMapHalfSizeX,0);
+				texcoordTriangleE2 = vec2(depthMapHalfSizeX,depthMapHalfSizeZ);
+
+			}
 		}
 	} else { // Left side of the depthmap 
-	 	if(direction.z > 0.0) { // Bottom side of the depthmap
-			if(direction.y > 0.0) { // Top triangle
-				uv = intersectTriangle(vec3(-1,0,0),vec3(1,0,1),vec3(1,1,0),vec3(0,0,0),direction);
+	 	if(direction.z > 0.0) { // Upper side of the depthmap
+			texcoordTriangleOrigin = vec2(	texcoord.x + atlasFreqX,
+											texcoord.y + depthMapHalfSizeZ + atlasFreqZ);
+
+			if(direction.y > 0.0) { // Bottom triangle
+				uv = intersectTriangle(vec3(-1,0,0),vec3(1,1,0),vec3(1,0,1),vec3(0,0,0),direction);
+
+				texcoordTriangleE1 = vec2(depthMapHalfSizeX,0);
+				texcoordTriangleE2 = vec2(depthMapHalfSizeX,depthMapHalfSizeZ);
+
+			} else { // Upper triangle
+				uv = intersectTriangle(vec3(-1,0,0),vec3(1,0,1),vec3(1,-1,0),vec3(0,0,0),direction);
+
+				texcoordTriangleE1 = vec2(depthMapHalfSizeX,depthMapHalfSizeZ);
+				texcoordTriangleE2 = vec2(0,depthMapHalfSizeZ);
+			}
+		} else { // Bottom side of the depthmap
+		 	if(direction.y > 0.0) { // Top triangle
+				uv = intersectTriangle(vec3(-1,0,0),vec3(1,0,-1),vec3(1,1,0),vec3(0,0,0),direction);
 
 				texcoordTriangleOrigin = vec2(	texcoord.x + atlasFreqX,
 												texcoord.y + depthMapHalfSizeZ + atlasFreqZ);
@@ -348,28 +348,12 @@ void intersectOctMap(in vec3 direction, in vec3 texcoord, inout vec2 uv, inout v
 				texcoordTriangleE2 = vec2(depthMapHalfSizeX,0);
 
 			} else { // Bottom triangle
-				uv = intersectTriangle(vec3(0,-1,0),vec3(0,1,1),vec3(-1,1,0),vec3(0,0,0),direction);
+				uv = intersectTriangle(vec3(0,-1,0),vec3(0,1,-1),vec3(-1,1,0),vec3(0,0,0),direction);
 
 				texcoordTriangleOrigin = vec2(	texcoord.x + atlasFreqX,
 												texcoord.y + atlasFreqZ);
 
 				texcoordTriangleE1 = vec2(depthMapHalfSizeX,0);
-				texcoordTriangleE2 = vec2(0,depthMapHalfSizeZ);
-			}
-		} else { // Upper side of the depthmap
-		 	texcoordTriangleOrigin = vec2(	texcoord.x + atlasFreqX,
-											texcoord.y + depthMapHalfSizeZ + atlasFreqZ);
-
-			if(direction.y > 0.0) { // Bottom triangle
-				uv = intersectTriangle(vec3(-1,0,0),vec3(1,1,0),vec3(1,0,-1),vec3(0,0,0),direction);
-
-				texcoordTriangleE1 = vec2(depthMapHalfSizeX,0);
-				texcoordTriangleE2 = vec2(depthMapHalfSizeX,depthMapHalfSizeZ);
-
-			} else { // Upper triangle
-				uv = intersectTriangle(vec3(-1,0,0),vec3(1,0,-1),vec3(1,-1,0),vec3(0,0,0),direction);
-
-				texcoordTriangleE1 = vec2(depthMapHalfSizeX,depthMapHalfSizeZ);
 				texcoordTriangleE2 = vec2(0,depthMapHalfSizeZ);
 			}
 		}
@@ -400,10 +384,10 @@ void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,v
 
 		float probeZ = getProbeZBuffer(normalize(direction),getITexcoord(i,texcoord));
 
-		interpolationMask[i] = (distanceFromProbe-0.01) < probeZ;
+		interpolationMask[i] = (distanceFromProbe-0.01) <= probeZ;
+		// interpolationMask[i] = true;
 		// interpolationMask[i] = 0.09 < probeZ;
 	}
-	// interpolationMask[0] = false;
 }
 
 void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3 n ) {
@@ -506,14 +490,14 @@ void main() {
 	// vec3 direction = wPosition.xyz - pProbe;
 	// float probeZ = getProbeZBuffer(vec3(1,0,0),texcoord);
 
-	// vec2 uv = intersectTriangle(vec3(0,0,-1),vec3(1,0,1),vec3(0,-1,1),vec3(0,0,0),direction);
+	// vec2 uv = intersectTriangle(vec3(0,0,-1),vec3(1,0,1),vec3(0,-1,1),vec3(0,0,0),vec3(0,-1,0));
 	
 	// vec2 texcoordTriangleE1 = vec2(depthMapHalfSizeX,-depthMapHalfSizeZ);
 	// vec2 texcoordTriangleE2 = vec2(depthMapHalfSizeX,0);
 	
-	// vec3 t = getITexcoord(2,texcoord);
+	// vec3 t = getITexcoord(0,texcoord);
 	// vec2 texcoordTriangleOrigin = vec2(	t.x + depthMapHalfSizeX + atlasFreqX,
-	// 									t.y + (depthMapHalfSizeZ*2.0) + atlasFreqZ);
+	// 										t.y + (depthMapHalfSizeZ*2.0) + atlasFreqZ);
 	// vec2 depthTexcoord = vec2(texcoordTriangleOrigin.x, texcoordTriangleOrigin.y)
 	// + texcoordTriangleE1*uv.x
 	// + texcoordTriangleE2*uv.y;
@@ -532,9 +516,11 @@ void main() {
 
 	// outgoingLight = vec3(uv.x,uv.y,0);
 
-	outgoingLight = vec3(texture(depthMapAtlas,texcoord).r);
+	// outgoingLight = vec3(texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,texcoord.z)).r);
+	// outgoingLight = vec3(getProbeZBuffer(vec3(0,0,1),getITexcoord(0,texcoord)));
+	// outgoingLight = getIProbeWorldPosition(3,texcoord);
+	// outgoingLight = getITexcoord(3,texcoord);
 	
-
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>

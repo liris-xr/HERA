@@ -359,7 +359,7 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
     
     if(this->invalidityTexture[probe.id]) {
         this->invalidityTexture[probe.id] /= float(nbIntersection);
-        if(this->invalidityTexture[probe.id] > 0.5 && probe.nbDisplacement < 3) {
+        if(this->invalidityTexture[probe.id] > 0.1 && probe.nbDisplacement < 3) {
             probe.position = probe.position + directionOfGeometry*distanceFromGeometry*1.01;
             probe.nbDisplacement++;
             

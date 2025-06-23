@@ -21,7 +21,7 @@ class Octahedron {
     public:
         Octahedron(unsigned int size);
 
-        Vector getVector(unsigned int i, unsigned int j);
+        Vector getVector(int i, int j);
 };
 
 #endif

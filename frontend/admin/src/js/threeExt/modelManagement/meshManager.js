@@ -524,21 +524,21 @@ float getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
 	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,iTexcoord.z)).r;
 }
 
-bool isProbeVisible(vec3 p, vec3 texcoord,int i) {
+bool isProbeVisible(vec3 p, vec3 texcoord,int i,vec3 n) {
 	vec3 pProbe = getIProbeWorldPosition(i,texcoord);
-	vec3 direction = (p) - pProbe;
+	vec3 direction = (p+n*0.01) - pProbe;
 
 	float distanceFromProbe = length(direction);
 
 	float probeZ = getProbeZBuffer(normalize(direction),texcoord,i);
 
-	return (distanceFromProbe-0.001) < probeZ;
+	return distanceFromProbe < probeZ;
 }
 
 void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n) {
 	for(int i = 0;i<8;i++) {
 		
-		interpolationMask[i] = isProbeVisible(p, texcoord,i);
+		interpolationMask[i] = isProbeVisible(p, texcoord,i,n);
 		// interpolationMask[i] = true;
 		// interpolationMask[i] = 0.09 < probeZ;
 	}
@@ -641,7 +641,7 @@ void main() {
 	#endif
 
 	vec3 c;
-	if(isProbeVisible(wPosition.xyz,texcoord,0)) {
+	if(isProbeVisible(wPosition.xyz,texcoord,0,worldNormal)) {
 		c = vec3(1,0,0);
 	} else {
 		c = vec3(0,0,0); 

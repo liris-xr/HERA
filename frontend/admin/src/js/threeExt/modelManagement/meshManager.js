@@ -532,7 +532,7 @@ bool isProbeVisible(vec3 p, vec3 texcoord,int i) {
 
 	float probeZ = getProbeZBuffer(normalize(direction),texcoord,i);
 
-	return (distanceFromProbe-0.03) < probeZ;
+	return (distanceFromProbe-0.001) < probeZ;
 }
 
 void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n) {
@@ -641,7 +641,7 @@ void main() {
 	#endif
 
 	vec3 c;
-	if(isProbeVisible(wPosition.xyz,texcoord,7)) {
+	if(isProbeVisible(wPosition.xyz,texcoord,0)) {
 		c = vec3(1,0,0);
 	} else {
 		c = vec3(0,0,0); 
@@ -649,7 +649,11 @@ void main() {
 	outgoingLight = c;
 
 	// outgoingLight = vec3(length(wPosition.xyz - getIProbeWorldPosition(4,texcoord)));
-	outgoingLight = vec3(getProbeZBuffer(wPosition.xyz - getIProbeWorldPosition(7,texcoord),texcoord,6));
+	// outgoingLight = vec3(getProbeZBuffer(wPosition.xyz - getIProbeWorldPosition(7,texcoord),texcoord,6));
+
+	// outgoingLight = getIProbeWorldPosition(0,texcoord);
+
+	// outgoingLight = vec3(getProbeZBuffer(getOctVector(texcoord),texcoord,0));
 	
 
 	#include <opaque_fragment>
@@ -743,8 +747,8 @@ export class MeshManager {
 																this.lpvParameters.width*this.lpvParameters.density,
 																this.lpvParameters.depth*this.lpvParameters.density,
 																this.lpvParameters.height*this.lpvParameters.density);
-					sh3DTexture.magFilter = THREE.NearestFilter;
-					sh3DTexture.minFilter = THREE.NearestFilter;
+					sh3DTexture.magFilter = THREE.LinearFilter;
+					sh3DTexture.minFilter = THREE.LinearFilter;
 					sh3DTexture.type = THREE.FloatType;
 					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
 					sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
@@ -797,7 +801,6 @@ export class MeshManager {
 				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.height*this.lpvParameters.density)};
 				shader.uniforms.freqZ = {value:1.0/(this.lpvParameters.depth*this.lpvParameters.density)};
 				shader.uniforms.worldFreq = {value:1.0/this.lpvParameters.density};
-				console.log(shader.uniforms.freqX,shader.uniforms.atlasFreqX.value*34.);
 				
 			}
         }

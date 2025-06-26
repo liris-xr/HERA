@@ -93,9 +93,10 @@ int main( const int argc, const char **argv )
     lpv.writeLPV();
     lpv.writeDepthMapLayer(1);
 
-    std::cout << lpv.probes[6].getDepth(15,8) - lpv.probes[7].getDepth(15,8) << std::endl;
-    std::cout <<  lpv.probes[7].getDepth(15,8) - lpv.probes[8].getDepth(15,8) << std::endl;
-    // std::cout << lpv.probes[8].getDepth(15,8) << std::endl;
+    // std::cout << lpv.probes[0].getDepth(15,8) - lpv.probes[1].getDepth(15,8) << std::endl;
+    // std::cout <<  lpv.probes[7].getDepth(15,8) - lpv.probes[8].getDepth(15,8) << std::endl;
+    std::cout << lpv.probes[1].getDepth(11,8) << std::endl;
+    std::cout << lpv.probes[17].getDepth(11,8) << std::endl;
 
     auto stop= std::chrono::high_resolution_clock::now();
     int cpu= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();

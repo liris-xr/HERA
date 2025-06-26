@@ -100,7 +100,6 @@ struct Triangle
 
 class LightProbeVolume {
     private:
-        std::vector<LightProbe> probes;
 
         std::vector<float> shTextures[9]; // 9 textures
                                           // A pixel of a texture is a component of a spherical harmonic
@@ -154,6 +153,9 @@ class LightProbeVolume {
         void stitchDepthMapCorners(unsigned int i0);
         
     public:
+        std::vector<LightProbe> probes;
+
+
         LightProbeVolume(   const Mesh & mesh,
                             const std::vector<GLTFMaterial> & materials,
                             const Point & center,

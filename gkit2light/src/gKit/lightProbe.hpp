@@ -2,6 +2,7 @@
 #define _LIGHT_PROBE_H
 
 #include "vec.h"
+#include <vector>
 
 float * getBasis(Vector direction);
 
@@ -13,8 +14,8 @@ class LightProbe {
         Vector directCoefficients[9];
         Vector indirectCoefficients[9];
 
-        float distanceCoefficients[9];
-        
+        std::vector<std::vector<float>> octMap;
+
 
         Vector directionOfGeometry;
         unsigned int id;
@@ -30,6 +31,8 @@ class LightProbe {
         void addScaled(const LightProbe & lp,const float s);
 
         void scale(const float s);
+
+        float getDepth(unsigned int i, unsigned int j);
 };
 
 #endif

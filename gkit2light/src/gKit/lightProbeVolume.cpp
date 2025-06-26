@@ -447,8 +447,10 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
     unsigned int startWidth = ( probeLayerId % unsigned(texturesWidth) ) * depthMapSizeWithBorders;
     unsigned int startHeight = ( probe.id / nbProbeOnLayer ) * ( depthMapNbPixel * nbProbeOnLayer );
 
-    for(unsigned int i = 0;i<depthMapSize;i++) {
-        for(unsigned int j = 0;j<depthMapSize;j++) {
+    for(unsigned int j = 0;j<depthMapSize;j++) {
+        std::vector<float> line;
+
+        for(unsigned int i = 0;i<depthMapSize;i++) {
             Vector sphereDirection = octahedron->getVector(i,j);
 
             Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
@@ -458,10 +460,12 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
                                 + startHeight
                                 + (j+1) * depthMapAtlasWidth
                                 + (i+1);
-
+            
+            line.push_back(hit.t);
             this->depthMapAtlas[index] = hit.t;
-            // this->depthMapAtlas[index] = uniform(rng);
         }
+
+        probe.octMap.push_back(line);
     }
 
     unsigned int i0 = startDepth

@@ -95,6 +95,8 @@ uniform float worldFreq;
 uniform float atlasFreqX;
 uniform float atlasFreqZ;
 
+uniform float depthMapSize;
+uniform float halfDepthMapSize;
 uniform float depthMapHalfSizeX;
 uniform float depthMapHalfSizeZ;
 
@@ -364,42 +366,179 @@ float getProbeDepthMap(vec3 texcoord) {
 	return texture(depthMapAtlas,vec3(texcoord.x,texcoord.y,0.)).r;
 }
 
-// ptdrrr
 vec2 getIJ(vec3 texcoord) {
 	return vec2 ( 
-				(mod(texcoord.x , freqX)) * lpvTextureWidth * (depthMapHalfSizeX*2. + 2.),
-				(mod(texcoord.y , freqY)) * lpvTextureDepth * (depthMapHalfSizeZ*2. + 2.)
+				(mod(texcoord.x , freqX)) * lpvTextureWidth * (depthMapSize + 2.),
+				(mod(texcoord.y , freqY)) * lpvTextureDepth * (depthMapSize + 2.)
 			);	
 } 
 
-float getProbeZBuffer(vec3 direction, vec3 texcoord) {
+vec3 getOctVector(vec3 texcoord) {
+	vec2 ij = getIJ(texcoord);
+
+	
+	
+	float i = ij.x;
+	float j = ij.y;
+	if(i < 1. || i > 17. || j < 1. || j > 17.) {
+		return vec3(0,3.0,0);	
+	} else {
+		i -= 1.; 
+		j -= 1.; 
+	}
+	vec3 p = vec3(i,j,0);
+
+	float a1, a2, a3;
+    // Down Left Square
+    if(i <halfDepthMapSize && j < halfDepthMapSize) {
+        if((i+j) < halfDepthMapSize) {
+            // Interpolation between DOWN (down left corner), BACKWARD and LEFT
+            a1 = abs(cross(p-vec3(0,0,0),vec3(halfDepthMapSize,0,0)).z); // Left coef
+            a2 = abs(cross(p-vec3(halfDepthMapSize,0,0),vec3(-halfDepthMapSize,halfDepthMapSize,0)).z); // Down coef
+            a3 = abs(cross(p-vec3(0,halfDepthMapSize,0),vec3(0,-halfDepthMapSize,0)).z); // Backward coef
+
+            vec3 pb = p-vec3(halfDepthMapSize,0,0);
+            vec3 ul = vec3(-halfDepthMapSize,halfDepthMapSize,0);
+    
+            float aTotal = a1 + a2 + a3;
+            a1 /= aTotal;
+            a2 /= aTotal;
+            a3 /= aTotal;
+            
+            return normalize(vec3(-1,0,0)*a1 + vec3(0,-1,0)*a2 + vec3(0,0,-1)*a3); 
+        } else {
+            // Interpolation between BACKWARD, UP and LEFT
+            a1 = abs(cross(p-vec3(halfDepthMapSize,0,0),vec3(0,halfDepthMapSize,0)).z); // Left coef
+            a2 = abs(cross(p-vec3(halfDepthMapSize,halfDepthMapSize,0),vec3(-halfDepthMapSize,0,0)).z); // Backward coef
+            a3 = abs(cross(p-vec3(0,halfDepthMapSize,0),vec3(halfDepthMapSize,-halfDepthMapSize,0)).z); // Up coef
+
+            float aTotal = a1 + a2 + a3;
+            a1 /= aTotal;
+            a2 /= aTotal;
+            a3 /= aTotal;
+
+            return normalize(vec3(-1,0,0)*a1 + vec3(0,0,-1)*a2 + vec3(0,1,0)*a3); 
+        }
+    }
+
+    // Up Left Square
+    if(i < halfDepthMapSize && j >= halfDepthMapSize) {
+        if((j-i) >= halfDepthMapSize) {
+            // Interpolation between LEFT, FORWARD and DOWN
+            a1 = cross(p-vec3(0,halfDepthMapSize,0),vec3(halfDepthMapSize,halfDepthMapSize,0)).z; // Down coef
+            a2 = cross(p-vec3(halfDepthMapSize,halfDepthMapSize*2.,0),vec3(-halfDepthMapSize,0,0)).z; // Left coef
+            a3 = cross(p-vec3(0,halfDepthMapSize*2.,0),vec3(0,-halfDepthMapSize,0)).z; // Forward coef
+
+            float aTotal = a1 + a2 + a3;
+            a1 /= aTotal;
+            a2 /= aTotal;
+            a3 /= aTotal;
+
+            return normalize(vec3(0,-1,0)*a1 + vec3(-1,0,0)*a2 + vec3(0,0,1)*a3); 
+        } else {
+            // Interpolation between UP, FORWARD and LEFT
+            a1 = cross(p-vec3(0,halfDepthMapSize,0),vec3(halfDepthMapSize,0,0)).z; // Forward coef
+            a2 = cross(p-vec3(halfDepthMapSize,halfDepthMapSize,0),vec3(0,halfDepthMapSize,0)).z; // Left coef
+            a3 = cross(p-vec3(halfDepthMapSize,halfDepthMapSize*2.,0),vec3(-halfDepthMapSize,-halfDepthMapSize,0)).z; // Up coef
+
+            float aTotal = a1 + a2 + a3;
+            a1 /= aTotal;
+            a2 /= aTotal;
+            a3 /= aTotal;
+
+            return normalize(vec3(0,0,1)*a1 + vec3(-1,0,0)*a2 + vec3(0,1,0)*a3); 
+        }
+    }
+
+    // Down right square
+    if(i >= halfDepthMapSize && j < halfDepthMapSize) {
+        if((i-j) >= halfDepthMapSize) {
+            // Interpolation between BACKWARD, DOWN and RIGHT
+            a1 = cross(p-vec3(halfDepthMapSize,0,0),vec3(halfDepthMapSize,0,0)).z; // Right coef
+            a2 = cross(p-vec3(halfDepthMapSize*2.,0,0),vec3(0,halfDepthMapSize,0)).z; // Backward coef
+            a3 = cross(p-vec3(halfDepthMapSize*2.,halfDepthMapSize,0),vec3(-halfDepthMapSize,-halfDepthMapSize,0)).z; // Down coef
+
+            float aTotal = a1 + a2 + a3;
+            a1 /= aTotal;
+            a2 /= aTotal;
+            a3 /= aTotal;
+
+            return normalize(vec3(1,0,0)*a1 + vec3(0,0,-1)*a2 + vec3(0,-1,0)*a3); 
+        } else {
+            // Interpolation between BACKWARD, RIGHT and UP
+            a1 = cross(p-vec3(halfDepthMapSize,0,0),vec3(halfDepthMapSize,halfDepthMapSize,0)).z; // Up coef
+            a2 = cross(p-vec3(halfDepthMapSize*2.,halfDepthMapSize,0),vec3(-halfDepthMapSize,0,0)).z; // Backward coef
+            a3 = cross(p-vec3(halfDepthMapSize,halfDepthMapSize,0),vec3(0,-halfDepthMapSize,0)).z; // Right coef
+
+            float aTotal = a1 + a2 + a3;
+            a1 /= aTotal;
+            a2 /= aTotal;
+            a3 /= aTotal;
+
+            return normalize(vec3(0,1,0)*a1 + vec3(0,0,-1)*a2 + vec3(1,0,0)*a3); 
+        }
+    }
+    // Up right square
+    if(i>=halfDepthMapSize && j>=halfDepthMapSize) {
+        if((i+j) < halfDepthMapSize*3.) {
+            // Interpolation between UP, RIGHT and FORWARD
+            a1 = cross(p-vec3(halfDepthMapSize,halfDepthMapSize,0),vec3(halfDepthMapSize,0,0)).z; // Forward coef
+            a2 = cross(p-vec3(halfDepthMapSize*2.,halfDepthMapSize,0),vec3(-halfDepthMapSize,halfDepthMapSize,0)).z; // Up coef
+            a3 = cross(p-vec3(halfDepthMapSize,halfDepthMapSize*2.,0),vec3(0,-halfDepthMapSize,0)).z; // Right coef
+    
+            float aTotal = a1 + a2 + a3;
+            a1 /= aTotal;
+            a2 /= aTotal;
+            a3 /= aTotal;
+    
+            return normalize(vec3(0,0,1)*a1 + vec3(0,1,0)*a2 + vec3(1,0,0)*a3); 
+        } else {
+            // Interpolation between DOWN, FORWARD, RIGHT
+            a1 = cross(p-vec3(halfDepthMapSize*2.,halfDepthMapSize,0),vec3(0,halfDepthMapSize,0)).z; // Forward coef 
+            a2 = cross(p-vec3(halfDepthMapSize*2.,halfDepthMapSize*2.,0),vec3(-halfDepthMapSize,0,0)).z; // Right coef
+            a3 = cross(p-vec3(halfDepthMapSize,halfDepthMapSize*2.,0),vec3(halfDepthMapSize,-halfDepthMapSize,0)).z; // Down coef
+
+            float aTotal = a1 + a2 + a3;
+            a1 /= aTotal;
+            a2 /= aTotal;
+            a3 /= aTotal;
+
+            return normalize(vec3(0,0,1)*a1 + vec3(1,0,0)*a2 + vec3(0,-1,0)*a3); 
+        }
+    }
+}
+
+float getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
+	vec3 iTexcoord = getITexcoord(i,texcoord); 
 	vec2 uv;
 	vec2 texcoordTriangleOrigin;
 	vec2 texcoordTriangleE1;
 	vec2 texcoordTriangleE2;
 
-	intersectOctMap(direction,texcoord,uv,texcoordTriangleOrigin,texcoordTriangleE1,texcoordTriangleE2);
+	intersectOctMap(direction,iTexcoord,uv,texcoordTriangleOrigin,texcoordTriangleE1,texcoordTriangleE2);
 
 	vec2 depthTexcoord = vec2(texcoordTriangleOrigin.x, texcoordTriangleOrigin.y)
 								+ texcoordTriangleE1*uv.x
 								+ texcoordTriangleE2*uv.y;
 
-	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,texcoord.z)).r;
+	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,iTexcoord.z)).r;
 }
 
+bool isProbeVisible(vec3 p, vec3 texcoord,int i) {
+	vec3 pProbe = getIProbeWorldPosition(i,texcoord);
+	vec3 direction = (p) - pProbe;
 
+	float distanceFromProbe = length(direction);
+
+	float probeZ = getProbeZBuffer(normalize(direction),texcoord,i);
+
+	return (distanceFromProbe-0.03) < probeZ;
+}
 
 void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n) {
 	for(int i = 0;i<8;i++) {
-		vec3 pProbe = getIProbeWorldPosition(i,texcoord);
-		vec3 direction = p - pProbe;
-
-		float distanceFromProbe = length(direction);
-
-		float probeZ = getProbeZBuffer(normalize(direction),getITexcoord(i,texcoord));
-
-		interpolationMask[i] = (distanceFromProbe-0.01) <= probeZ;
-
+		
+		interpolationMask[i] = isProbeVisible(p, texcoord,i);
 		// interpolationMask[i] = true;
 		// interpolationMask[i] = 0.09 < probeZ;
 	}
@@ -501,7 +640,17 @@ void main() {
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
 
-	outgoingLight = vec3(getProbeDepthMap(texcoord));
+	vec3 c;
+	if(isProbeVisible(wPosition.xyz,texcoord,7)) {
+		c = vec3(1,0,0);
+	} else {
+		c = vec3(0,0,0); 
+	}
+	outgoingLight = c;
+
+	// outgoingLight = vec3(length(wPosition.xyz - getIProbeWorldPosition(4,texcoord)));
+	outgoingLight = vec3(getProbeZBuffer(wPosition.xyz - getIProbeWorldPosition(7,texcoord),texcoord,6));
+	
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>
@@ -576,6 +725,7 @@ export class MeshManager {
 							this.atlasParameters.depth *
 							this.lpvParameters.height*this.lpvParameters.density;
 			}
+			
 
 			
 			return this.lpvParameters && this.shTextures.length == 9 && this.atlasParameters && this.depthMapTexture.length == textSize ? '1' : '0';
@@ -609,8 +759,8 @@ export class MeshManager {
 					this.atlasParameters.depth,
 					(this.lpvParameters.height*this.lpvParameters.density));
 				atlasTexture.format = THREE.RedFormat;
-				atlasTexture.magFilter = THREE.NearestFilter;
-				atlasTexture.minFilter = THREE.NearestFilter;
+				atlasTexture.magFilter = THREE.LinearFilter;
+				atlasTexture.minFilter = THREE.LinearFilter;
 				atlasTexture.type = THREE.FloatType;
 				atlasTexture.wrapS = THREE.ClampToEdgeWrapping
 				atlasTexture.wrapT = THREE.ClampToEdgeWrapping
@@ -630,24 +780,24 @@ export class MeshManager {
 				shader.uniforms.lpvTextureHeight = {value : this.lpvParameters.height*this.lpvParameters.density};
 				shader.uniforms.lpvDensity = {value : this.lpvParameters.density};
 
-				
-				
-				// shader.uniforms.atlasWidth = {value : this.atlasParameters.width};
-				// shader.uniforms.atlasDepth = {value : this.atlasParameters.depth};
-				// shader.uniforms.atlasHeight = {value : this.atlasParameters.height};
 
 				shader.uniforms.atlasFreqX = { value : (1.0/this.atlasParameters.width)};
 				shader.uniforms.atlasFreqZ = { value : (1.0/this.atlasParameters.depth)};
 
 				shader.uniforms.depthMapHalfSizeX = { value : (this.atlasParameters.depthMapSize/2.0)*(1.0/this.atlasParameters.width)};
 				shader.uniforms.depthMapHalfSizeZ = { value : (this.atlasParameters.depthMapSize/2.0)*(1.0/this.atlasParameters.depth)};
+
+				shader.uniforms.depthMapSize = { value : this.atlasParameters.depthMapSize };
+				shader.uniforms.halfDepthMapSize = { value : this.atlasParameters.depthMapSize/2.0 };
+
+				
 				
 				
 				shader.uniforms.freqX = {value:1.0/(this.lpvParameters.width*this.lpvParameters.density)};
 				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.height*this.lpvParameters.density)};
 				shader.uniforms.freqZ = {value:1.0/(this.lpvParameters.depth*this.lpvParameters.density)};
-				console.log(shader.uniforms.freqX);
 				shader.uniforms.worldFreq = {value:1.0/this.lpvParameters.density};
+				console.log(shader.uniforms.freqX,shader.uniforms.atlasFreqX.value*34.);
 				
 			}
         }

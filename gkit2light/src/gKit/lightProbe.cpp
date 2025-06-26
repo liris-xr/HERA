@@ -47,3 +47,7 @@ void LightProbe::scale(const float s) {
         this->coefficients[ i ] = this->coefficients[ i ] * s;
     }
 }
+
+float LightProbe::getDepth(unsigned int i, unsigned int j) {
+    return this->octMap[j][i];
+}

@@ -114,6 +114,8 @@ class LightProbeVolume {
         unsigned int depthMapNbPixel;
         unsigned int depthMapAtlasWidth, depthMapAtlasDepth,depthMapAtlasHeight;
 
+        unsigned int nbRayPerAis;
+
         LightSources * lightSources;
         Mesh mesh;
         std::vector<GLTFMaterial> materials;
@@ -166,7 +168,8 @@ class LightProbeVolume {
                             const unsigned int nbDirectSamples,
                             const unsigned int nbIndirectSamples,
                             const unsigned int nbDirectIndirectSamples,
-                            const unsigned int depthMapSize);
+                            const unsigned int depthMapSize,
+                            const unsigned int nbRayPerAis);
         ~LightProbeVolume();
 
         void bake();

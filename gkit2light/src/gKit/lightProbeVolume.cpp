@@ -41,7 +41,8 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
                                    const unsigned int nbDirectSamples,
                                    const unsigned int nbIndirectSamples,
                                    const unsigned int nbDirectIndirectSamples,
-                                   const unsigned int depthMapSize) {
+                                   const unsigned int depthMapSize,
+                                   const unsigned int nbRayPerAis) {
     this->mesh = mesh;
     this->materials = materials;
     this->lightSources = new LightSources(mesh,materials);
@@ -57,6 +58,8 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->nbDirectIndirectSamples = nbDirectIndirectSamples;
 
     this->depthMapSize = depthMapSize;
+    this->nbRayPerAis = nbRayPerAis;
+
     this->depthMapSizeWithBorders = depthMapSize+2;
     
 
@@ -451,18 +454,31 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
         std::vector<float> line;
 
         for(unsigned int i = 0;i<depthMapSize;i++) {
-            Vector sphereDirection = octahedron->getVector(i,j);
 
-            Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
+            float mean = 0;
 
+            for(float y = float(j);y<float(j)+1;y += float(1)/this->nbRayPerAis) {
+                for(float x = float(i);x<float(i)+1;x += float(1)/this->nbRayPerAis) {
+                    Vector sphereDirection = octahedron->getVector(x,y);
+        
+        
+                    Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
+                    
+                    mean += hit.t;
+                }
+            }
             unsigned int index =  startDepth
                                 + startWidth
                                 + startHeight
                                 + (j+1) * depthMapAtlasWidth
                                 + (i+1);
+
+            mean /= this->nbRayPerAis*this->nbRayPerAis;
             
-            line.push_back(hit.t);
-            this->depthMapAtlas[index] = hit.t;
+            line.push_back(mean);
+            this->depthMapAtlas[index] = mean;
+
+
         }
 
         probe.octMap.push_back(line);

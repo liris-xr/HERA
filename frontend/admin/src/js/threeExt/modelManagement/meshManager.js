@@ -524,29 +524,30 @@ float getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
 	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,iTexcoord.z)).r;
 }
 
-bool isProbeVisible(vec3 p, vec3 texcoord,int i,vec3 n) {
+bool isProbeVisible(vec3 p, vec3 texcoord,int i,vec3 n,vec3 viewDir) {
 	vec3 pProbe = getIProbeWorldPosition(i,texcoord);
-	vec3 direction = (p+n*0.01) - pProbe;
+	// vec3 direction = (p+n+(normalize(viewDir)*3.0)) - pProbe;
+	vec3 direction = p - pProbe + (n) * 0.05;
 
 	float distanceFromProbe = length(direction);
 
 	float probeZ = getProbeZBuffer(normalize(direction),texcoord,i);
 
-	return distanceFromProbe < probeZ;
+	return distanceFromProbe <= probeZ;
 }
 
-void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n) {
+void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n,vec3 viewDir) {
 	for(int i = 0;i<8;i++) {
 		
-		interpolationMask[i] = isProbeVisible(p, texcoord,i,n);
+		interpolationMask[i] = isProbeVisible(p, texcoord,i,n,viewDir);
 		// interpolationMask[i] = true;
 		// interpolationMask[i] = 0.09 < probeZ;
 	}
 }
 
-void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3 n ) {
+void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3 n, vec3 viewDir ) {
 	bool interpolationMask[8];
-	getInterpolationMask(texcoord,p,interpolationMask,n);
+	getInterpolationMask(texcoord,p,interpolationMask,n,viewDir);
 
 	float x = (texcoord.x - float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth) * lpvTextureWidth;
 	float z = (texcoord.y - float(int(texcoord.y*lpvTextureDepth))/lpvTextureDepth) * lpvTextureDepth;
@@ -607,7 +608,7 @@ void main() {
 		);
 		
 	vec3 interpolatedLightProbe[9];
-	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,worldNormal);
+	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,worldNormal,geometryViewDir);
 		
 	
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
@@ -641,12 +642,12 @@ void main() {
 	#endif
 
 	vec3 c;
-	if(isProbeVisible(wPosition.xyz,texcoord,0,worldNormal)) {
+	if(isProbeVisible(wPosition.xyz,texcoord,7,worldNormal,geometryViewDir)) {
 		c = vec3(1,0,0);
 	} else {
 		c = vec3(0,0,0); 
 	}
-	outgoingLight = c;
+	// outgoingLight = c;
 
 	// outgoingLight = vec3(length(wPosition.xyz - getIProbeWorldPosition(4,texcoord)));
 	// outgoingLight = vec3(getProbeZBuffer(wPosition.xyz - getIProbeWorldPosition(7,texcoord),texcoord,6));
@@ -747,8 +748,8 @@ export class MeshManager {
 																this.lpvParameters.width*this.lpvParameters.density,
 																this.lpvParameters.depth*this.lpvParameters.density,
 																this.lpvParameters.height*this.lpvParameters.density);
-					sh3DTexture.magFilter = THREE.LinearFilter;
-					sh3DTexture.minFilter = THREE.LinearFilter;
+					sh3DTexture.magFilter = THREE.NearestFilter;
+					sh3DTexture.minFilter = THREE.NearestFilter;
 					sh3DTexture.type = THREE.FloatType;
 					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
 					sh3DTexture.wrapT = THREE.ClampToEdgeWrapping

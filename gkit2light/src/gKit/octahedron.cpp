@@ -41,7 +41,7 @@ Octahedron::Octahedron(unsigned int size) {
     };
 }
 
-Vector Octahedron::getVector(int i, int j) {
+Vector Octahedron::getVector(float i, float j) {
     Vector p(i,j,0);
     float a1, a2, a3;
     // Down Left Square

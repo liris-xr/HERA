@@ -77,6 +77,11 @@ int main( const int argc, const char **argv )
         depthMapSize = atoi(argv[12]);
     }
 
+    unsigned int nbRayPerAis = 16;
+    if(argc > 13) {
+        nbRayPerAis = atoi(argv[13]);
+    }
+
     Mesh mesh= read_gltf_mesh(scene_filename);
     std::vector<GLTFMaterial> materials = read_gltf_materials(scene_filename);
 
@@ -87,7 +92,7 @@ int main( const int argc, const char **argv )
             Point(centerX,centerY,centerZ),
             density,width,depth,height,
             nbDirectSamples,nbIndirectSamples,nbDirectIndirectSamples,
-            depthMapSize);
+            depthMapSize,nbRayPerAis);
 
     lpv.bake();
     lpv.writeLPV();
@@ -95,8 +100,8 @@ int main( const int argc, const char **argv )
 
     // std::cout << lpv.probes[0].getDepth(15,8) - lpv.probes[1].getDepth(15,8) << std::endl;
     // std::cout <<  lpv.probes[7].getDepth(15,8) - lpv.probes[8].getDepth(15,8) << std::endl;
-    std::cout << lpv.probes[1].getDepth(11,8) << std::endl;
-    std::cout << lpv.probes[17].getDepth(11,8) << std::endl;
+    // std::cout << lpv.probes[1].getDepth(11,8) << std::endl;
+    // std::cout << lpv.probes[17].getDepth(11,8) << std::endl;
 
     auto stop= std::chrono::high_resolution_clock::now();
     int cpu= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();

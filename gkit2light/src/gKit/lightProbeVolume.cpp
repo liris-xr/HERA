@@ -7,6 +7,7 @@
 #include "octahedron.hpp"
 #include "vec.h"
 #include "mesh.h"
+#include <cmath>
 #include <random>
 #include <math.h>
 #include <fstream>
@@ -107,7 +108,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     }
 
     this->invalidityTexture = std::vector<float>(nbProbe,0);
-    this->depthMapAtlas = std::vector<float>(nbProbe*depthMapNbPixel,0);
+    this->depthMapAtlas = std::vector<vec2>(nbProbe*depthMapNbPixel,vec2());
 }
 
 LightProbeVolume::~LightProbeVolume() {
@@ -457,6 +458,8 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
 
             float mean = 0;
 
+            std::vector<float> hits;
+
             for(float y = float(j);y<float(j)+1;y += float(1)/this->nbRayPerAis) {
                 for(float x = float(i);x<float(i)+1;x += float(1)/this->nbRayPerAis) {
                     Vector sphereDirection = octahedron->getVector(x,y);
@@ -464,6 +467,7 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
         
                     Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
                     
+                    hits.push_back(hit.t);
                     mean += hit.t;
                 }
             }
@@ -476,9 +480,17 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
             mean /= this->nbRayPerAis*this->nbRayPerAis;
             
             line.push_back(mean);
-            this->depthMapAtlas[index] = mean;
+            this->depthMapAtlas[index].x = mean;
 
+            float variance = 0;
+            for(float hit : hits) {
+                float diff = hit - mean;
+                variance += diff*diff;
+            }
+            variance /= (this->nbRayPerAis*this->nbRayPerAis) - 1;
+            variance = sqrt(variance);
 
+            this->depthMapAtlas[index].y = variance;
         }
 
         probe.octMap.push_back(line);
@@ -574,9 +586,12 @@ void LightProbeVolume::writeLPV() {
         atlasFile.open("../frontend/admin/public/textures/depthMapAtlas.csv",std::ios_base::out);
         
         for(unsigned int i=0;i<this->depthMapAtlas.size()-1;i++) {
-            atlasFile<<depthMapAtlas[i]<<',';
+            atlasFile<<depthMapAtlas[i].x<<',';
+            // Rajouter la variance ici
         }
-        atlasFile<<depthMapAtlas[this->depthMapAtlas.size()-1];
+        atlasFile<<depthMapAtlas[this->depthMapAtlas.size()-1].x;
+        // Rajouter la variance ici
+
 
         atlasFile.close();
     } 
@@ -601,7 +616,7 @@ void LightProbeVolume::writeDepthMap() {
     Image depthMap(size,size);
 
     for(unsigned i = 0;i<this->depthMapNbPixel;i++) {
-        float value = this->depthMapAtlas[i];
+        float value = this->depthMapAtlas[i].x;
         depthMap(i) = Color(value);
     }
     write_image(depthMap, "../frontend/admin/public/textures/depthMapS.png");
@@ -609,28 +624,6 @@ void LightProbeVolume::writeDepthMap() {
 }
 
 void LightProbeVolume::writeDepthMapLayer(unsigned int stage) {
-    // unsigned int size = this->depthMapSizeWithBorders*this->texturesWidth;
-    // Image atlas(size,size);
-
-    // for(unsigned int i = 0;i<this->texturesWidth;i++) {
-    //     for(unsigned int j = 0;j<this->texturesDepth;j++) {
-    //         unsigned int probeId = i + j*this->texturesWidth + stage*this->texturesWidth*this->texturesDepth; 
-
-    //         for(unsigned int k = probeId*this->depthMapNbPixel;k<(probeId+1)*this->depthMapNbPixel;k++) {
-    //             float value = this->depthMapAtlas[k];
-
-    //             unsigned int kInDepthMap = k%this->depthMapNbPixel;
-
-    //             unsigned int probeIdInStage = probeId%(unsigned(this->texturesWidth)*unsigned(this->texturesDepth));
-                
-    //             unsigned int x = (probeId%unsigned(this->texturesWidth))*this->depthMapSizeWithBorders + kInDepthMap%this->depthMapSizeWithBorders;
-    //             unsigned int y = (probeIdInStage/unsigned(this->texturesWidth))*this->depthMapSizeWithBorders + kInDepthMap/this->depthMapSizeWithBorders;
-                
-    //             atlas(x,y) = Color(value);
-    //         }
-    //     }
-    // }
-
     unsigned int sizeX = this->depthMapSizeWithBorders*this->texturesWidth;
     unsigned int sizeZ = this->depthMapSizeWithBorders*this->texturesDepth;
     Image atlas(sizeX,sizeZ);
@@ -643,7 +636,7 @@ void LightProbeVolume::writeDepthMapLayer(unsigned int stage) {
 
     int imageIndex = 0;
     for(unsigned int i = start;i<end;i++) {
-        atlas(imageIndex) = Color(this->depthMapAtlas[i]);
+        atlas(imageIndex) = Color(this->depthMapAtlas[i].x);
         imageIndex++;
     }
 

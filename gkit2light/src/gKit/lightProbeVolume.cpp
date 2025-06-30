@@ -587,10 +587,10 @@ void LightProbeVolume::writeLPV() {
         
         for(unsigned int i=0;i<this->depthMapAtlas.size()-1;i++) {
             atlasFile<<depthMapAtlas[i].x<<',';
-            // Rajouter la variance ici
+            atlasFile<<depthMapAtlas[i].y<<',';
         }
-        atlasFile<<depthMapAtlas[this->depthMapAtlas.size()-1].x;
-        // Rajouter la variance ici
+        atlasFile<<depthMapAtlas[this->depthMapAtlas.size()-1].x<<',';
+        atlasFile<<depthMapAtlas[this->depthMapAtlas.size()-1].y;
 
 
         atlasFile.close();

@@ -731,15 +731,13 @@ export class MeshManager {
 							this.lpvParameters.height*this.lpvParameters.density;
 			}
 			
-
-			
-			return this.lpvParameters && this.shTextures.length == 9 && this.atlasParameters && this.depthMapTexture.length == textSize ? '1' : '0';
+			return this.lpvParameters && this.shTextures.length == 9 && this.atlasParameters && this.depthMapTexture.length == textSize*2 ? '1' : '0';
 		}
         
         mesh.material.onBeforeCompile = (shader) => {
 			
 			if(this.lpvParameters && this.shTextures.length == 9 
-				&& this.atlasParameters && this.depthMapTexture.length == textSize) {
+				&& this.atlasParameters && this.depthMapTexture.length  == textSize*2) {
 				shader.vertexShader = vertexShader;
 				shader.fragmentShader = fragShader;
 				
@@ -763,7 +761,7 @@ export class MeshManager {
 					this.atlasParameters.width,
 					this.atlasParameters.depth,
 					(this.lpvParameters.height*this.lpvParameters.density));
-				atlasTexture.format = THREE.RedFormat;
+				atlasTexture.format = THREE.RGFormat;
 				atlasTexture.magFilter = THREE.LinearFilter;
 				atlasTexture.minFilter = THREE.LinearFilter;
 				atlasTexture.type = THREE.FloatType;

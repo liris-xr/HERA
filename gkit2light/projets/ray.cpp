@@ -77,9 +77,9 @@ int main( const int argc, const char **argv )
         depthMapSize = atoi(argv[12]);
     }
 
-    unsigned int nbRayPerAis = 16;
+    unsigned int nbRayPerAxis = 16;
     if(argc > 13) {
-        nbRayPerAis = atoi(argv[13]);
+        nbRayPerAxis = atoi(argv[13]);
     }
 
     Mesh mesh= read_gltf_mesh(scene_filename);
@@ -92,7 +92,7 @@ int main( const int argc, const char **argv )
             Point(centerX,centerY,centerZ),
             density,width,depth,height,
             nbDirectSamples,nbIndirectSamples,nbDirectIndirectSamples,
-            depthMapSize,nbRayPerAis);
+            depthMapSize,nbRayPerAxis);
 
     lpv.bake();
     lpv.writeLPV();

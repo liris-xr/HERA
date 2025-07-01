@@ -159,10 +159,10 @@ export class LightProbeVolume extends classes(THREE.Group,SceneElementInterface)
                     newProbe.position.copy(pos);
                     this.probes.push(newProbe)
                     nbProbe++;
-                    // if(y >= -freq*2 && y <= freq*2 && z >= -freq*2 && z <= freq*2 && x >= -freq*2 && x <= freq*2) {
+                    if(y >= -freq*2 && y <= freq*2 && z >= -freq*2 && z <= freq*2 && x >= -freq*2 && x <= freq*2) {
                         newProbe.color = new THREE.Color(1,1,1);
                         newProbe.addSphereToScene(this.scene);
-                    // }
+                    }
                 }
             }
         }

@@ -43,7 +43,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
                                    const unsigned int nbIndirectSamples,
                                    const unsigned int nbDirectIndirectSamples,
                                    const unsigned int depthMapSize,
-                                   const unsigned int nbRayPerAis) {
+                                   const unsigned int nbRayPerAxis) {
     this->mesh = mesh;
     this->materials = materials;
     this->lightSources = new LightSources(mesh,materials);
@@ -59,7 +59,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->nbDirectIndirectSamples = nbDirectIndirectSamples;
 
     this->depthMapSize = depthMapSize;
-    this->nbRayPerAis = nbRayPerAis;
+    this->nbRayPerAxis = nbRayPerAxis;
 
     this->depthMapSizeWithBorders = depthMapSize+2;
     
@@ -459,9 +459,9 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
             float mean = 0;
 
             std::vector<float> hits;
-
-            for(float y = float(j);y<float(j)+1;y += float(1)/this->nbRayPerAis) {
-                for(float x = float(i);x<float(i)+1;x += float(1)/this->nbRayPerAis) {
+            
+            for(float y = float(j);y<float(j)+1;y += float(1)/this->nbRayPerAxis) {
+                for(float x = float(i);x<float(i)+1;x += float(1)/this->nbRayPerAxis) {
                     Vector sphereDirection = octahedron->getVector(x,y);
         
         
@@ -477,7 +477,7 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
                                 + (j+1) * depthMapAtlasWidth
                                 + (i+1);
 
-            mean /= this->nbRayPerAis*this->nbRayPerAis;
+            mean /= this->nbRayPerAxis*this->nbRayPerAxis;
             
             line.push_back(mean);
             this->depthMapAtlas[index].x = mean;
@@ -487,8 +487,8 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
                 float diff = hit - mean;
                 variance += diff*diff;
             }
-            variance /= (this->nbRayPerAis*this->nbRayPerAis) - 1;
-            variance = sqrt(variance);
+            variance /= (this->nbRayPerAxis*this->nbRayPerAxis) - 1;
+            // variance = sqrt(variance);
 
             this->depthMapAtlas[index].y = variance;
         }

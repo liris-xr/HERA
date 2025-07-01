@@ -173,13 +173,17 @@ varying vec3 vViewPosition;
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
 
+float square(float x) {
+	return x*x;
+}
+
 // Considering a point in a cube,
-//    7 -----  6	
+//    6 -----  7	
 //   / |     / |
 //	/  |	/  |
 // 4 ---- 5    |
 // |   |  |    |
-// |   3 -|--- 2	
+// |   2 -|--- 3	
 // |  /   |  /	
 // | /	  |	/ 
 // 0 ---- 1
@@ -195,17 +199,17 @@ vec3 getITexcoord(int i,vec3 texcoord) {
 	} else if(i == 1) {
 		return vec3(x+freqX,y,z);
 	} else if(i == 2) {
-		return vec3(x+freqX,y+freqZ,z);
-	} else if(i == 3) {
 		return vec3(x,y+freqZ,z); 
+	} else if(i == 3) {
+		return vec3(x+freqX,y+freqZ,z);
 	} else if(i == 4) {
 		return vec3(x,y,z+freqY); 
 	} else if(i == 5) {
 	 	return vec3(x+freqX,y,z+freqY);
 	} else if(i == 6) {
-		return vec3(x+freqX,y+freqZ,z+freqY); 
-	} else if(i == 7) {
 		return vec3(x,y+freqZ,z+freqY); 
+	} else if(i == 7) {
+		return vec3(x+freqX,y+freqZ,z+freqY); 
 	}
 }
 
@@ -508,7 +512,7 @@ vec3 getOctVector(vec3 texcoord) {
     }
 }
 
-float getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
+vec2 getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
 	vec3 iTexcoord = getITexcoord(i,texcoord); 
 	vec2 uv;
 	vec2 texcoordTriangleOrigin;
@@ -521,25 +525,23 @@ float getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
 								+ texcoordTriangleE1*uv.x
 								+ texcoordTriangleE2*uv.y;
 
-	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,iTexcoord.z)).r;
+	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,iTexcoord.z)).rg;
 }
 
-bool isProbeVisible(vec3 p, vec3 texcoord,int i,vec3 n,vec3 viewDir) {
-	vec3 pProbe = getIProbeWorldPosition(i,texcoord);
-	// vec3 direction = (p+n+(normalize(viewDir)*3.0)) - pProbe;
-	vec3 direction = p - pProbe + (n) * 0.05;
+bool isProbeVisible(vec3 p, vec3 texcoord,int i,vec3 n) {
+	vec3 probePos = getIProbeWorldPosition(i,texcoord);
+	vec3 probeToP = p - probePos + (n) * 0.05;
 
-	float distanceFromProbe = length(direction);
+	float distanceFromProbe = length(probeToP);
 
-	float probeZ = getProbeZBuffer(normalize(direction),texcoord,i);
+	float probeZ = getProbeZBuffer(normalize(probeToP),texcoord,i).r;
 
 	return distanceFromProbe <= probeZ;
 }
 
 void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n,vec3 viewDir) {
 	for(int i = 0;i<8;i++) {
-		
-		interpolationMask[i] = isProbeVisible(p, texcoord,i,n,viewDir);
+		interpolationMask[i] = isProbeVisible(p, texcoord,i,n);
 		// interpolationMask[i] = true;
 		// interpolationMask[i] = 0.09 < probeZ;
 	}
@@ -572,6 +574,84 @@ void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3
 
 	getProbeInterpolation(inter01_32,inter45_76,y,probeSH);
 	// getProbeSH(0,texcoord,probeSH);
+}
+
+vec3 getTrilinearWeight(vec3 alpha, ivec3 offset) {
+	vec3 trilinear;
+	
+	if(offset.x == 1) {
+		trilinear.x = alpha.x;
+	} else {
+		trilinear.x = 1.0 - alpha.x; 
+	}
+
+	if(offset.y == 1) {
+		trilinear.y = alpha.y;
+	} else {
+		trilinear.y = 1.0 - alpha.y; 
+	}
+
+	if(offset.z == 1) {
+		trilinear.z = alpha.z;
+	} else {
+		trilinear.z = 1.0 - alpha.z; 
+	}
+
+	return trilinear;
+}
+
+float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
+	// 0 => (0,0,0), 1 = > (1,0,0), 2 => (0,0,1), 3 => (1,0,1), 
+	// 4 => (0,1,0), 5 => (1,1,0), 6 => (0,1,1), 7 => (1,1,1)
+	ivec3 offset = ivec3(i, i >> 2, i >> 1) & ivec3(1);
+
+	vec3 trilinear = getTrilinearWeight(alpha,offset);
+	float weight = 1.0;
+
+	vec3 probePos = getIProbeWorldPosition(i,texcoord);
+	vec3 probeToP = p - probePos + (n) * 0.05;
+
+	vec2 zBuffer = getProbeZBuffer(normalize(probeToP),texcoord,i);
+
+	float distanceToProbe = length(probeToP);
+	
+	if( distanceToProbe > zBuffer.x ) { // Obstruction
+		// http://www.punkuser.net/vsm/vsm_paper.pdf; equation 5
+		float chebyshevWeight = zBuffer.y / (zBuffer.y + square(max(distanceToProbe - zBuffer.x, 0.0)));
+
+		chebyshevWeight = max(pow3(chebyshevWeight), 0.0);
+
+		weight *= chebyshevWeight;
+	} else {
+		weight *= trilinear.x * trilinear.y * trilinear.z;
+	}
+
+	return max(0.00001,weight);
+}
+
+vec3 getWeightedIrradiance(vec3 texcoord, vec3 p, vec3 n) {
+	vec3 sumIrradiance = vec3(0);
+	float sumWeight = 0.0;
+
+	float x = (texcoord.x - float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth) * lpvTextureWidth;
+	float z = (texcoord.y - float(int(texcoord.y*lpvTextureDepth))/lpvTextureDepth) * lpvTextureDepth;
+	float y = (texcoord.z - float(int(texcoord.z*lpvTextureHeight))/lpvTextureHeight) * lpvTextureHeight;
+
+	// Weight on each axis depending on where the sampling point is in the box
+	vec3 alpha = vec3(x,y,z);
+	
+	vec3[9] probeSH;
+	for(int i = 0;i<8;++i) {
+		float weight = getProbeWeight(texcoord,p,i,alpha,n);
+		// float weight = x+z+y;
+
+		getProbeSH(i,texcoord,probeSH);
+
+		sumIrradiance += weight * getLightProbeIrradiance(probeSH,n);
+		sumWeight += weight;
+	}
+
+	return sumIrradiance / sumWeight;
 }
 
 void main() {
@@ -607,8 +687,8 @@ void main() {
 		(2.0*((wPosition.y-lpvCenter.y) / lpvHeight) + 1.) / 2.
 		);
 		
-	vec3 interpolatedLightProbe[9];
-	getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,worldNormal,geometryViewDir);
+	// vec3 interpolatedLightProbe[9];
+	// getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,worldNormal,geometryViewDir);
 		
 	
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
@@ -621,8 +701,9 @@ void main() {
 	// texture(sh7,texcoord).rgb,
 	// texture(sh8,texcoord).rgb
 	// );
-
-	vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
+	// vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
+	
+	vec3 color = getWeightedIrradiance(texcoord,wPosition.xyz,worldNormal);
 	IncidentLight il = IncidentLight(color,normal,true);
 	
 	RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
@@ -641,21 +722,15 @@ void main() {
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
 
-	vec3 c;
-	if(isProbeVisible(wPosition.xyz,texcoord,7,worldNormal,geometryViewDir)) {
-		c = vec3(1,0,0);
-	} else {
-		c = vec3(0,0,0); 
-	}
+	// vec3 c;
+	// if(isProbeVisible(wPosition.xyz,texcoord,7,worldNormal,geometryViewDir)) {
+	// 	c = vec3(1,0,0);
+	// } else {
+	// 	c = vec3(0,0,0); 
+	// }
 	// outgoingLight = c;
 
-	// outgoingLight = vec3(length(wPosition.xyz - getIProbeWorldPosition(4,texcoord)));
-	// outgoingLight = vec3(getProbeZBuffer(wPosition.xyz - getIProbeWorldPosition(7,texcoord),texcoord,6));
-
-	// outgoingLight = getIProbeWorldPosition(0,texcoord);
-
-	// outgoingLight = vec3(getProbeZBuffer(getOctVector(texcoord),texcoord,0));
-	
+		
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>

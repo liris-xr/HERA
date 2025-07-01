@@ -114,7 +114,7 @@ class LightProbeVolume {
         unsigned int depthMapNbPixel;
         unsigned int depthMapAtlasWidth, depthMapAtlasDepth,depthMapAtlasHeight;
 
-        unsigned int nbRayPerAis;
+        unsigned int nbRayPerAxis;
 
         LightSources * lightSources;
         Mesh mesh;
@@ -169,7 +169,7 @@ class LightProbeVolume {
                             const unsigned int nbIndirectSamples,
                             const unsigned int nbDirectIndirectSamples,
                             const unsigned int depthMapSize,
-                            const unsigned int nbRayPerAis);
+                            const unsigned int nbRayPerAxis);
         ~LightProbeVolume();
 
         void bake();

@@ -488,7 +488,7 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
                 variance += diff*diff;
             }
             variance /= (this->nbRayPerAxis*this->nbRayPerAxis) - 1;
-            // variance = sqrt(variance);
+            variance = sqrt(variance);
 
             this->depthMapAtlas[index].y = variance;
         }

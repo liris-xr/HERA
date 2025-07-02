@@ -203,6 +203,7 @@ float LightProbeVolume::getClosestNeighbourDistance(const Point & position,std::
 }
 
 void LightProbeVolume::updateBasedOnInvalidity() {
+    #pragma omp parallel for
     for(LightProbe & probe : this->probes) {
         // Based on the probe's invalidity score
         // We create a meaned spherical harmonics of the surrounding probes (weighted with their own score)
@@ -314,14 +315,13 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
         if(hit) {
             nbIntersection++;
             float * shBasis = getBasis(sphereDirection);
-
-            if(hit.t < distanceFromGeometry) {
-                distanceFromGeometry = hit.t;
-                directionOfGeometry = sphereDirection;
-            }
-
+            
             if(isBackFaceTouched(hit.triangle_id, sphereDirection)) {
                 this->invalidityTexture[probe.id]++;
+                if(hit.t < distanceFromGeometry) {
+                    distanceFromGeometry = hit.t;
+                    directionOfGeometry = sphereDirection;
+                }
 
             } else {
                 const GLTFMaterial material = this->materials[mesh.triangle_material_index(hit.triangle_id)];
@@ -363,7 +363,7 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
     
     if(this->invalidityTexture[probe.id]) {
         this->invalidityTexture[probe.id] /= float(nbIntersection);
-        if(this->invalidityTexture[probe.id] > 0.1 && probe.nbDisplacement < 3) {
+        if(this->invalidityTexture[probe.id] > 0.5 && probe.nbDisplacement < 3) {
             probe.position = probe.position + directionOfGeometry*distanceFromGeometry*1.01;
             probe.nbDisplacement++;
             

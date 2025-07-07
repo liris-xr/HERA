@@ -57,8 +57,10 @@ export class ArSceneManager{
     activeSceneIndex = computed(()=>{
         let index = 0;
         for(let scene of this.scenes) {
-            if(scene.sceneId === this.activeSceneId.value)
+            if(scene.sceneId === this.activeSceneId.value) {
+                this.setScene(scene);
                 return index;
+            }
             index++;
         }
         return 0;
@@ -79,9 +81,10 @@ export class ArSceneManager{
         this.setFirstActive();
     }
 
-    resetScene(){
-        this.active.value.resetScene()
+    async resetScene() {
+        await this.active.value.resetScene()
         this.#updateLighting();
+        this.startSounds();
     }
 
 
@@ -114,13 +117,13 @@ export class ArSceneManager{
 
     setPreviousActive(){
         if(this.hasPrevious.value){
-            this.activeSceneId.value = this.previous.value.sceneId;
+            this.setScene(this.previous.value)
         }
     }
 
     setNextActive(){
         if(this.hasNext.value){
-            this.activeSceneId.value = this.next.value.sceneId;
+            this.setScene(this.next.value)
         }
     }
 
@@ -156,10 +159,12 @@ export class ArSceneManager{
 
 
             for (let trigger of triggers) {
+                if (trigger.hideInViewer) continue;
+
                 const triggerWordlPosition = new THREE.Vector3();
                 trigger.mesh.getWorldPosition(triggerWordlPosition);
 
-                const distanceWorld = this.calculateDistanceTriggers(cameraPosition, triggerWordlPosition);
+                const distanceWorld = this.calculateDistanceTriggers(camera.position, triggerWordlPosition);
 
                 if (distanceWorld < trigger.getRadius()) {
                     trigger.userIn();
@@ -206,11 +211,13 @@ export class ArSceneManager{
     setScene(scene){
         if (scene !== null){
             if (this.activeSceneId.value === scene.sceneId) { return; }
+
             this.getActiveScene().stopAllSounds();
             this.activeSceneId.value = scene.sceneId;
             this.#changeActionManager(scene);
 
             scene.startSounds();
+
             return 0;
         }
         else{
@@ -232,6 +239,7 @@ export class ArSceneManager{
 
 
     #changeActionManager(scene){
+        if(!this.actionManager){return;}
         this.actionManager.changeParameters({
             triggers :scene.getTriggers(),
             sounds: scene.getSounds()  ,

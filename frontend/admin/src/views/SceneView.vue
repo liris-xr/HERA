@@ -69,7 +69,7 @@ const showSceneDuplicateModal = ref(false);
 const showLabelEditModal = ref(false);
 const showTriggerEditModal = ref(false);
 let lastClickedLabel = null
-let lastClickedTrigger = null
+let lastClickedTrigger = ref(null);
 
 const uploadedEnvmap = ref({
   rawData:null,
@@ -406,8 +406,13 @@ onBeforeRouteUpdate((to, from, next)=>{
   beforeRedirect(to, from, next)
 })
 
+function setVolumeSound(level, sound){
+  sound.setVolume(level);
 
-
+  if (sound.isPlaying.value) {
+    editor.scene.setVolume(sound);
+  }
+}
 
 </script>
 
@@ -517,12 +522,17 @@ onBeforeRouteUpdate((to, from, next)=>{
                           :downloadUrl="getResource(sound.url) || 'null'"
                           :playOnStartup="sound.playOnStartup.value"
                           :isLoopingEnabled="sound.isLoopingEnabled.value"
+                          :isPlaying="sound.isPlaying.value"
+                          :volumeLevel="sound.volumeLevel"
                           :error="sound.hasError.value "
                           :loading="sound.isLoading.value "
+                          @playSound="editor.scene.playSound(sound)"
+                          @stopSound="editor.scene.stopSound(sound)"
                           @playOnStartup="(status)=>{sound.switchPlayOnStartupStatus(status); saved = false;}"
                           @loopingEnabled="(status)=>{sound.switchLoopingEnabledStatus(status); saved = false;}"
                           @delete="editor.scene.removeSound(sound)"
                           @duplicate="editor.scene.duplicateSound(sound)"
+                          @setVolume="(level)=>{setVolumeSound(level, sound); saved = false}"
               />
               <div v-if="!editor.scene.soundManager.hasSound.value">{{$t('sceneView.leftSection.sceneSounds.noSoundInfo')}}</div>
             </div>
@@ -592,8 +602,9 @@ onBeforeRouteUpdate((to, from, next)=>{
 
           <Teleport to="body">
             <trigger-edit-modal
-                :show="showTriggerEditModal && lastClickedTrigger!=null"
+                :show="showTriggerEditModal && lastClickedTrigger!== null "
                 :trigger="lastClickedTrigger"
+                :triggers="editor.scene.triggerManager.getTriggers.value"
                 :assets="editor.scene.assetManager.getAssets.value"
                 :sounds="editor.scene.soundManager.getSounds.value"
                 :project="scene.project"
@@ -601,6 +612,8 @@ onBeforeRouteUpdate((to, from, next)=>{
                 :userData="userData"
                 @close="showTriggerEditModal = false"
                 @confirm="(trigger)=>{
+                  console.log(trigger)
+
                   editor.scene.triggerManager.getSelectedTrigger.value.copyFromAnotherTrigger(trigger);
                   editor.scene.getTransformMode.value = 'radius';
                   editor.scene.updateRadius(trigger.radius);

@@ -12,7 +12,8 @@ import {TriggerAction} from "@/js/threeExt/triggerManagement/triggerAction.js";
 
 const props = defineProps({
   show: {type: Boolean, default: false},
-  trigger: {type: Trigger, required: false},
+  trigger: {type: Trigger, required: false, default: null},
+  triggers: {type: Object, required: true},
   assets: {type: Object, required: true},
   sounds: {type: Object, required: true},
   project: {type: Object, required: true},
@@ -64,6 +65,8 @@ watch(() =>props.show,async (value) => {
 
       let arraySoundsName = initArraySound();
 
+      let arrayTrigger = initArrayTrigger();
+
       listObject ={
         'none' : [],
         'displayAsset' : arrayAssetsName,
@@ -71,7 +74,9 @@ watch(() =>props.show,async (value) => {
         'changeScene' : arrayScenesName,
         'animation' : arrayAssetsAnimation,
         'startDialogue' : [],
+        'displayTrigger' : arrayTrigger,
       };
+
 
       if(props.trigger) {
         actionIn.value = actions[props.trigger.actionIn] || null;
@@ -81,7 +86,11 @@ watch(() =>props.show,async (value) => {
         objectIn.value = getObjectFromList(props.trigger.actionIn, props.trigger.objectIn);
         objectOut.value = getObjectFromList(props.trigger.actionOut, props.trigger.objectOut);
 
+        listActions.value = [];
+        await nextTick();
+
         listActions.value = props.trigger.getChainedActions().slice();
+
       }
     }
     catch (e) {
@@ -159,6 +168,7 @@ function getListObject() {
 
 async function initArrayScene() {
   let scenes;
+
   await fetchProject(props.project.id, props.userData.id, props.token).then(rep => {
     scenes = rep.scenes.map(scene => ({
       id: scene.id,
@@ -194,7 +204,15 @@ function initArraySound(){
   return props.sounds.map(sound => ({
     id: sound.id,
     label: sound.name,
-    url: sound.url
+    url: sound.url,
+    volumeLevel: sound.volumeLevel,
+  }))
+}
+
+function  initArrayTrigger(){
+  return props.triggers.map(trigger => ({
+    id: trigger.id,
+    label: "trigger",
   }))
 }
 </script>

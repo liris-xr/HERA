@@ -211,7 +211,8 @@
           "changeScene": "Change scene",
           "animation": "Trigger an animation",
           "startDialogue": "Show/hide labels",
-          "displayAsset": "Show/hide a 3D model"
+          "displayAsset": "Show/hide a 3D model",
+          "displayTrigger": "Show/hide a trigger"
           }
         },
       "sceneCamera": {

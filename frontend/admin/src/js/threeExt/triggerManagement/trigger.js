@@ -118,12 +118,12 @@ export class Trigger extends classes(SelectableInterface, LoadableInterface){
             this.#hasError.value = false;
             this.#isLoading.value = false;
 
-            const geometry = new THREE.SphereGeometry(1, 32, 32);
+            const geometry = new THREE.SphereGeometry(this.radius, 32, 32);
             const wireframe = new THREE.WireframeGeometry(geometry);
             this.mesh = new THREE.LineSegments(wireframe, new THREE.LineBasicMaterial({ color: 0xeeebe3 }));
 
             this.mesh.position.set(this.position.x, this.position.y, this.position.z);
-            this.mesh.scale.set(this.radius, this.radius, this.radius);
+            this.mesh.scale.set(1, 1, 1);
 
             resolve(this.mesh);
         })

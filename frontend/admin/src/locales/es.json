@@ -33,7 +33,7 @@
     "login": "Iniciar sesión"
   },
   "defaultProjectSettings": {
-    "unit": "scenario",
+    "unit": "escenario",
     "calibrationMessage": "Toca en cualquier lugar para colocar tu objeto"
   },
   "projectsView": {
@@ -208,7 +208,8 @@
           "changeScene": "Cambiar de escenario",
           "animation": "Activar una animación",
           "startDialogue": "Mostrar/Ocultar etiquetas",
-          "displayAsset": "Mostrar/ocultar un modelo 3D"
+          "displayAsset": "Mostrar/ocultar un modelo 3D",
+          "displayTrigger": "Mostrar/ocultar un activador"
         }
       },
       "sceneCamera": {

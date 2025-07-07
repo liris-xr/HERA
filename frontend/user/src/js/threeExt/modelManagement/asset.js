@@ -121,9 +121,9 @@ export class Asset extends SceneElementInterface{
         return true;
     }
 
-    hide(){
-        this.object.visible = !this.hidden.value;
-        this.hidden.value = !this.hidden.value;
+    hide(state){
+        this.object.visible = !state;
+        this.hidden.value = state;
     }
 
 

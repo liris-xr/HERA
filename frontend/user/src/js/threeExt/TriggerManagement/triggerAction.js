@@ -65,8 +65,6 @@ export class TriggerAction {
         if (this.hasBeenPlayed) {return false}
         if(this.timestampStart === 0) return true;
 
-        console.log("FAIRE ACTION DU TRIGGER: " + time + " RES: " + (this.timestampStart > (time) && this.timestampStart < (time+250)));
-
         return (this.timestampStart >= (time) && this.timestampStart < (time+250));
 
     }
@@ -81,12 +79,8 @@ export class TriggerAction {
 
     playAction() {
         const actionManager = new ActionManager()
-        this.hasBeenPlayed = true;
-        console.log("ACTIONNNNN")
 
-        console.log(actionManager);
-
-        actionManager.doAction(this.action, this.object);
+        this.hasBeenPlayed = actionManager.doAction(this.action, this.object);
     }
 
     reset(){

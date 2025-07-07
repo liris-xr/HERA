@@ -7,6 +7,7 @@ export const actions = {
         "animation": i18n.global.t("sceneView.leftSection.sceneTriggers.actions.animation"),
         "startDialogue": i18n.global.t("sceneView.leftSection.sceneTriggers.actions.startDialogue"),
         "displayAsset": i18n.global.t("sceneView.leftSection.sceneTriggers.actions.displayAsset"),
+        "displayTrigger": i18n.global.t("sceneView.leftSection.sceneTriggers.actions.displayTrigger"),
 };
 
 

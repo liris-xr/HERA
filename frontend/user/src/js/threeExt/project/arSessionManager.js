@@ -268,9 +268,8 @@ export class ArSessionManager {
 
     async stop(){
         if(this.arSession != null) {
+            this.cleanupARSession();
             await this.arSession.end();
-            this.sceneManager.actionManager.stopAllSounds() ;
-            this.sceneManager.getActiveScene().stopAllSounds() ;
         }
     }
 
@@ -284,6 +283,7 @@ export class ArSessionManager {
             this.removeVrCameraPosition()
         this.#resetCameraPosition()
 
+        this.cleanupARSession();
         if(this.sceneManager.active.value.hasLabels.value) {
             this.sceneManager.active.value.labelPlayer.stop()
         }
@@ -291,11 +291,18 @@ export class ArSessionManager {
         if(this.xr3dUi)
             this.xr3dUi.removeFromScene(this.sceneManager.active.value)
 
-
     }
 
     reset() {
+        this.cleanupARSession();
         this.sceneManager.reset();
+    }
+
+    cleanupARSession(){
+        this.sceneManager.actionManager.stopAllSounds() ;
+        this.sceneManager.getActiveScene().stopAllSounds() ;
+        this.sceneManager.getActiveScene().resetLabels();
+        this.sceneManager.getActiveScene().resetTriggers();
     }
 
     onXrFrame(time, frame) {

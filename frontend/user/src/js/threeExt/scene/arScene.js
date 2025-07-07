@@ -150,11 +150,8 @@ export class ArScene extends AbstractScene {
         }
 
         for (let triggerData of this.#triggers) {
-            if (!triggerData.hideInViewer){
                 await triggerData.load();
                 triggerData.pushToScene(this);
-            }
-
         }
 
         this.computeBoundingSphere(true);
@@ -189,7 +186,7 @@ export class ArScene extends AbstractScene {
         }
     }
 
-    resetScene(){
+    async resetScene() {
         this.stopAllSounds();
 
         while (this.children.length > 0) {
@@ -207,7 +204,7 @@ export class ArScene extends AbstractScene {
             if (child.texture) child.texture.dispose();
         }
 
-        this.init();
+        await this.init();
 
         this.resetLabels();
         this.resetTriggers();
@@ -283,7 +280,6 @@ export class ArScene extends AbstractScene {
 
     stopAllSounds() {
         this.#activeSounds.forEach(sound => {
-            console.log(sound);
             if (sound[0].isPlaying()) {
                 sound[1].stop();
                 sound[0].stop();

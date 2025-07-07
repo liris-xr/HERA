@@ -1,8 +1,10 @@
 import {SceneElementInterface} from "@/js/threeExt/interfaces/sceneElementInterface.js";
 import * as THREE from "three";
 import {TriggerAction} from "@/js/threeExt/TriggerManagement/triggerAction.js";
+import {ActionManager} from "@/js/threeExt/TriggerManagement/actionManager.js";
 
 export class Trigger extends SceneElementInterface{
+    id;
 
     mesh;
 
@@ -29,6 +31,8 @@ export class Trigger extends SceneElementInterface{
 
      constructor(triggerData) {
         super();
+
+        this.id = triggerData.id;
 
         if (triggerData.radius) {
             this.radius = triggerData.radius;
@@ -108,7 +112,8 @@ export class Trigger extends SceneElementInterface{
 
 
          this.mesh.position.set(this.position.x, this.position.y, this.position.z);
-         this.mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
+         this.mesh.scale.set(1, 1, 1);
+         this.mesh.visible = !this.hideInViewer;
 
          return this.mesh;
     }
@@ -151,7 +156,6 @@ export class Trigger extends SceneElementInterface{
         this.thereIsUser = this.userInside;
 
         if (previousUserInside === true && this.thereIsUser === false) {
-            console.log("User just exited the zone → actionOnPause()");
             this.actionOnPause();
             return
         }
@@ -193,26 +197,28 @@ export class Trigger extends SceneElementInterface{
     actionOnPause(){
          this.pause();
 
-         if(this.allActionFinish()){
-             return;
-         }
+        const ignoredActions = new Set([
+            "sceneChange",
+            "displayAsset",
+            "displayTrigger"
+        ]);
 
-         for (let action of this.chainedActions) {
-            if (action.getAction() !== "changeScene")
+        for (let action of this.chainedActions) {
+            if (!ignoredActions.has(action.getAction())) {
                 action.pauseAction();
+            }
         }
     }
 
-    allActionFinish(){
 
-         let compteur = 0;
-         for (let action of this.chainedActions) {
-             if (action.hasBeenPlayed()){
-                 compteur++;
-             }
+    playActionOut(){
+        const actionManager = new ActionManager()
 
-        }
+        actionManager.doAction(this.actionOut, this.objectOut) ;
+    }
 
-         return (compteur === this.chainedActions.length );
+    hide(state){
+         this.mesh.visible = !state;
+         this.hideInViewer = state;
     }
 }

@@ -8,6 +8,7 @@ import { sequelize } from '../database.js'
  * @property {Object} url
  * @property {Object} playOnStartup
  * @property {Object} isLoopingEnabled
+ * @property {String} volumeLevel
  */
 
 export default sequelize.define('ArSound', {
@@ -39,6 +40,11 @@ export default sequelize.define('ArSound', {
     isLoopingEnabled:{
         type:DataTypes.BOOLEAN,
         defaultValue: false,
+        allowNull: false
+    },
+    volumeLevel:{
+        type:DataTypes.STRING,
+        defaultValue: "0.5",
         allowNull: false
     },
     sceneId:{

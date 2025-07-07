@@ -49,6 +49,8 @@ export class EditorScene extends THREE.Scene {
     currentMeshGroup;
     transformBeforeChange;
 
+    #activeSounds;
+
     constructor(shadowMapSize) {
         super();
         this.labelManager = new LabelManager();
@@ -121,6 +123,8 @@ export class EditorScene extends THREE.Scene {
         },{deep:true});
 
         this.onChanged = null;
+
+        this.#activeSounds = [];
     }
 
     setMeshMap(meshes) {
@@ -288,10 +292,10 @@ export class EditorScene extends THREE.Scene {
     setSelected(object, selected = true){
         this.deselectAll();
         this.selected.value = object;
+
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
-
             if(this.#meshSelectionMode.value) {
                 if(object.isMesh) {
                     this.#transformControls.attach(object)
@@ -364,6 +368,47 @@ export class EditorScene extends THREE.Scene {
     removeSound(sound){
         this.setSelected(null);
         this.soundManager.removeFromScene(this, sound);
+    }
+
+    playSound(sound){
+        const audioLoader = new THREE.AudioLoader();
+        const listener = new THREE.AudioListener();
+        const audio = new THREE.Audio(listener);
+        audioLoader.load(getResource(sound.url), (buffer) => {
+            audio.setBuffer(buffer);
+            audio.setVolume(sound.volumeLevel);
+            audio.play();
+
+            setTimeout(() => {
+                if (audio.source) {
+                    audio.source.onended = () => {
+                        sound.stop()
+                    };
+                }
+            }, 10);
+        });
+
+        sound.play();
+
+        this.#activeSounds.push([sound, audio]);
+    }
+
+    stopSound(soundCurrentlyPlaying){
+        this.#activeSounds.forEach(sound => {
+            if (sound[0].id === soundCurrentlyPlaying.id) {
+                sound[1].stop();
+                sound[0].stop();
+            }
+        });
+    }
+
+    setVolume(soundCurrentlyPlaying){
+        this.#activeSounds.forEach(sound => {
+            if (sound[0].id === soundCurrentlyPlaying.id) {
+                sound[1].setVolume(soundCurrentlyPlaying.volumeLevel);
+
+            }
+        });
     }
 
     duplicateSound(sound){

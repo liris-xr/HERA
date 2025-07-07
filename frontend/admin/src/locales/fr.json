@@ -218,7 +218,8 @@
           "changeScene":  "Changer de scène",
           "animation": "Déclencher une animation",
           "startDialogue": "Afficher/Cacher les labels",
-          "displayAsset": "Afficher/Cacher un modèle 3D"
+          "displayAsset": "Afficher/Cacher un modèle 3D",
+          "displayTrigger": "Afficher/Cacher un trigger"
         }
       },
       "sceneCamera": {

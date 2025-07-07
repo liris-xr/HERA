@@ -53,6 +53,7 @@ export class SoundManager {
                 playOnStartup: sound.playOnStartup.value,
                 isLoopingEnabled: sound.isLoopingEnabled.value,
                 copiedUrl: sound?.copiedUrl,
+                volumeLevel: sound?.volumeLevel
             });
         }
         return result;

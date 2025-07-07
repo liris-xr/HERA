@@ -13,6 +13,9 @@ export class Sound extends classes(SelectableInterface, LoadableInterface){
     playOnStartup;
     isLoopingEnabled;
 
+    volumeLevel
+    isPlaying
+
     #hasError;
     #isLoading;
 
@@ -41,8 +44,16 @@ export class Sound extends classes(SelectableInterface, LoadableInterface){
         if(soundData?.copiedUrl)
             this.copiedUrl = soundData.copiedUrl;
 
+        if(soundData?.volumeLevel){
+            this.volumeLevel = soundData.volumeLevel;
+        }
+        else{
+            this.volumeLevel = "0.5";
+        }
+
         this.#hasError = ref(false);
         this.#isLoading = ref(false);
+        this.isPlaying = ref(false);
     }
 
     hasError = computed(()=>{
@@ -67,5 +78,18 @@ export class Sound extends classes(SelectableInterface, LoadableInterface){
     setUploadedAtUrl(url){
         this.uploadData = null;
         this.url = url;
+    }
+
+    play(){
+        this.isPlaying.value = true;
+    }
+
+    stop(){
+        this.isPlaying.value = false;
+    }
+
+
+    setVolume(level){
+        this.volumeLevel = level;
     }
 }

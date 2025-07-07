@@ -113,6 +113,7 @@ router.put(baseUrl+"admin/sounds/:soundId", authMiddleware, async (req, res) => 
             name: req.body?.name,
             isLoopingEnabled: req.body?.isLoopingEnabled || false,
             playOnStartup: req.body?.playOnStartup || false,
+            volumeLevel: req.body?.volumeLevel || 0.5
         }, {
             returning: true
         })
@@ -148,6 +149,7 @@ router.post(baseUrl+"admin/sounds", authMiddleware, adminUploadSound.single("sou
             sceneId: req.body.sceneId,
             playOnStartup: req.body.playOnStartup || false,
             isLoopingEnabled: req.body.isLoopingEnabled || false,
+            volumeLevel: req.body.volumeLevel || 0.5
         })
 
         res.set({

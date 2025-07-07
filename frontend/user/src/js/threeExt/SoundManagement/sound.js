@@ -11,8 +11,21 @@ export class Sound {
         this.id = soundData.id;
         this.name = soundData.name;
         this.url = soundData.url;
-        this.playOnStartup = soundData.playOnStartup;
-        this.isLoopingEnabled = soundData.isLoopingEnabled;
+
+        if (soundData.playOnStartup){
+            this.playOnStartup = soundData.playOnStartup;
+        }
+        else {
+            this.playOnStartup = false;
+        }
+
+        if(soundData.playOnStartup){
+            this.isLoopingEnabled = soundData.isLoopingEnabled;
+        }
+        else {
+            this.isLoopingEnabled = false;
+        }
+
         this.isPlay = false;
     }
 

@@ -374,6 +374,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                     await ArSound.update({
                         playOnStartup: sound.playOnStartup,
                         isLoopingEnabled: sound.isLoopingEnabled,
+                        volumeLevel: sound.volumeLevel,
                     },{
                         where: {id: sound.id},
                         returning: true,
@@ -388,6 +389,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                         name: sound.name,
                         playOnStartup: sound.playOnStartup,
                         isLoopingEnabled: sound.isLoopingEnabled,
+                        volumeLevel: sound.volumeLevel,
                     }
 
                     if(sound.copiedUrl) {

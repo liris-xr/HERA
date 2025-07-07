@@ -1,17 +1,22 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
+import {ref} from "vue";
 
 const props = defineProps({
   index: {type: Number, default: 0},
   text: {type: String, required: true},
   playOnStartup: {type: Boolean, required: true, default: false},
   isLoopingEnabled: {type: Boolean, required: true, default: false},
+  volumeLevel: {type: String, required: true},
+  isPlaying: {type: Boolean, required: true},
   error: {type: Boolean, default: false},
   loading: {type: Boolean, default: false},
   downloadUrl: {type: String, required: true},
 });
 
-defineEmits(['delete', 'playOnStartup', 'loopingEnabled', 'duplicate']);
+defineEmits(['delete', 'playOnStartup', 'loopingEnabled', 'duplicate', "playSound", "stopSound", "setVolume"]);
+
+let volumeLevel = ref(props.volumeLevel);
 
 const onClick = (cb) => {
   if(!(props.loading)) cb()
@@ -25,23 +30,33 @@ const onClick = (cb) => {
       <span :class="{textStrike: error}"></span>
       <span>{{index+1}}</span>
       <span>{{text}}</span>
+      <input type="range" min="0" max="1" step="0.01" v-model="volumeLevel" @change="$emit('setVolume', volumeLevel)">
+
     </div>
+
+
 
     <div class="inlineFlex">
       <icon-svg url="/icons/warning.svg" theme="danger" v-if="error" :title="$t('sceneView.leftSection.sceneSounds.assetLoadFailed')" class="iconAction"/>
       <icon-svg url="/icons/spinner.svg" theme="default" v-if="loading"/>
 
-        <a v-if="downloadUrl && !error && !loading" target="_blank" rel="noopener noreferrer" :href="downloadUrl">
+      <a v-if="downloadUrl && !error && !loading" target="_blank" rel="noopener noreferrer" :href="downloadUrl">
         <icon-svg url="/icons/download.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop=""/>
       </a>
 
-      <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete'); })"/>
+      <icon-svg v-if="!isPlaying" url="/icons/play.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('playSound'); soundPlay = true; console.log(soundPlay)})"/>
+      <icon-svg v-else url="/icons/pause.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('stopSound'); soundPlay = false})"/>
 
-      <icon-svg v-if="isLoopingEnabled" url="/icons/looping.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('loopingEnabled',false)})"/>
-      <icon-svg v-else url="/icons/notLooping.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('loopingEnabled', true)})"/>
+      <icon-svg v-if="isLoopingEnabled" url="/icons/repeatSound.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('loopingEnabled',false)})"/>
+      <icon-svg v-else url="/icons/repeatSoundOnce.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('loopingEnabled', true)})"/>
 
       <icon-svg v-if="playOnStartup" url="/icons/playOnStartup.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('playOnStartup',false)})"/>
       <icon-svg v-else url="/icons/notPlayOnStartup.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('playOnStartup', true)})"/>
+
+
+
+      <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete'); })"/>
+
     </div>
   </div>
 </template>

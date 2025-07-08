@@ -18,10 +18,10 @@ export class LightSet extends classes(THREE.Group,SceneElementInterface) {
         this.#directionalLight.shadow.mapSize.height = shadowMapSize;
         this.#directionalLight.shadow.normalBias = 0.01;
 
-        // this.add(ambientLight);
-        // this.add(this.#directionalLight);
+        this.add(ambientLight);
+        this.add(this.#directionalLight);
 
-        const lightProbeVolume = new LightProbeVolume(new THREE.Vector3(0,1,0),8,2,2,2,scene);
+        // const lightProbeVolume = new LightProbeVolume(new THREE.Vector3(0,1,0),8,2,2,2,scene);
         // console.time()
         // lightProbeVolume.bake(1,16,0,0);
         // console.timeEnd()

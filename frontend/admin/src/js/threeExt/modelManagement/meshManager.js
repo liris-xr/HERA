@@ -703,10 +703,10 @@ void main() {
 	// );
 	// vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
 	
-	vec3 color = getWeightedIrradiance(texcoord,wPosition.xyz,worldNormal);
-	IncidentLight il = IncidentLight(color,normal,true);
+	// vec3 color = getWeightedIrradiance(texcoord,wPosition.xyz,worldNormal);
+	// IncidentLight il = IncidentLight(color,normal,true);
 	
-	RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+	// RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
 	
 	vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
 	vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
@@ -721,16 +721,6 @@ void main() {
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
-
-	// vec3 c;
-	// if(isProbeVisible(wPosition.xyz,texcoord,7,worldNormal,geometryViewDir)) {
-	// 	c = vec3(1,0,0);
-	// } else {
-	// 	c = vec3(0,0,0); 
-	// }
-	// outgoingLight = c;
-
-		
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>

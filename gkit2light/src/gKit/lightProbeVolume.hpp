@@ -127,6 +127,8 @@ class LightProbeVolume {
         unsigned int nbIndirectSamples;
         unsigned int nbDirectIndirectSamples;
 
+        float freq;
+
 
         float indirectWeight; 
 

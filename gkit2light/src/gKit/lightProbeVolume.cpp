@@ -74,7 +74,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
         this->meshTriangles.emplace_back(td,i);
     }
     
-    float freq = 1.0/density;
+    this->freq = 1.0/density;
     unsigned int nbProbe = 0;
     
     for(unsigned int i = 0;i<texturesHeight;i++) {
@@ -364,7 +364,7 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
     if(this->invalidityTexture[probe.id]) {
         this->invalidityTexture[probe.id] /= float(nbIntersection);
         if(this->invalidityTexture[probe.id] > 0.5 && probe.nbDisplacement < 3) {
-            probe.position = probe.position + directionOfGeometry*distanceFromGeometry*1.01;
+            probe.position = probe.position + directionOfGeometry*(distanceFromGeometry+(this->freq/2.0));
             probe.nbDisplacement++;
             
             for (unsigned int j = 0;j<9;j++) {

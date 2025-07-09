@@ -96,7 +96,7 @@ int main( const int argc, const char **argv )
 
     lpv.bake();
     lpv.writeLPV();
-    lpv.writeDepthMapLayer(1);
+    lpv.writeDepthMapLayer(0);
 
     // std::cout << lpv.probes[0].getDepth(15,8) - lpv.probes[1].getDepth(15,8) << std::endl;
     // std::cout <<  lpv.probes[7].getDepth(15,8) - lpv.probes[8].getDepth(15,8) << std::endl;

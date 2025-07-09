@@ -703,10 +703,10 @@ void main() {
 	// );
 	// vec3 color = getLightProbeIrradiance(interpolatedLightProbe,normal);
 	
-	// vec3 color = getWeightedIrradiance(texcoord,wPosition.xyz,worldNormal);
-	// IncidentLight il = IncidentLight(color,normal,true);
+	vec3 color = getWeightedIrradiance(texcoord,wPosition.xyz,worldNormal);
+	IncidentLight il = IncidentLight(color,normal,true);
 	
-	// RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+	RE_Direct( il, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
 	
 	vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
 	vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;

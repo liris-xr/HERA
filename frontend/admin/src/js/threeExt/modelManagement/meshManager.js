@@ -377,11 +377,10 @@ vec2 getIJ(vec3 texcoord) {
 			);	
 } 
 
+// Debug uses only
 vec3 getOctVector(vec3 texcoord) {
 	vec2 ij = getIJ(texcoord);
 
-	
-	
 	float i = ij.x;
 	float j = ij.y;
 	if(i < 1. || i > 17. || j < 1. || j > 17.) {
@@ -528,54 +527,6 @@ vec2 getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
 	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,iTexcoord.z)).rg;
 }
 
-bool isProbeVisible(vec3 p, vec3 texcoord,int i,vec3 n) {
-	vec3 probePos = getIProbeWorldPosition(i,texcoord);
-	vec3 probeToP = p - probePos + (n) * 0.05;
-
-	float distanceFromProbe = length(probeToP);
-
-	float probeZ = getProbeZBuffer(normalize(probeToP),texcoord,i).r;
-
-	return distanceFromProbe <= probeZ;
-}
-
-void getInterpolationMask(vec3 texcoord,vec3 p,inout bool[8] interpolationMask,vec3 n,vec3 viewDir) {
-	for(int i = 0;i<8;i++) {
-		interpolationMask[i] = isProbeVisible(p, texcoord,i,n);
-		// interpolationMask[i] = true;
-		// interpolationMask[i] = 0.09 < probeZ;
-	}
-}
-
-void getInterpolatedLightProbe(vec3 texcoord, vec3 p,inout vec3[9] probeSH, vec3 n, vec3 viewDir ) {
-	bool interpolationMask[8];
-	getInterpolationMask(texcoord,p,interpolationMask,n,viewDir);
-
-	float x = (texcoord.x - float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth) * lpvTextureWidth;
-	float z = (texcoord.y - float(int(texcoord.y*lpvTextureDepth))/lpvTextureDepth) * lpvTextureDepth;
-	float y = (texcoord.z - float(int(texcoord.z*lpvTextureHeight))/lpvTextureHeight) * lpvTextureHeight;
-
-	vec3 inter0_1[9];
-	getMaskedProbeInterpolation(0,1,interpolationMask[0],interpolationMask[1],x,texcoord,inter0_1);  
-	vec3 inter3_2[9];
-	getMaskedProbeInterpolation(3,2,interpolationMask[3],interpolationMask[2],x,texcoord,inter3_2);
-	
-	vec3 inter01_32[9];
-	getProbeInterpolation(inter0_1,inter3_2,z,inter01_32);
-
-
-	vec3 inter4_5[9];
-	getMaskedProbeInterpolation(4,5,interpolationMask[4],interpolationMask[5],x,texcoord,inter4_5);  
-	vec3 inter7_6[9];
-	getMaskedProbeInterpolation(7,6,interpolationMask[7],interpolationMask[6],x,texcoord,inter7_6);
-
-	vec3 inter45_76[9];
-	getProbeInterpolation(inter4_5,inter7_6,z,inter45_76);
-
-	getProbeInterpolation(inter01_32,inter45_76,y,probeSH);
-	// getProbeSH(0,texcoord,probeSH);
-}
-
 vec3 getTrilinearWeight(vec3 alpha, ivec3 offset) {
 	vec3 trilinear;
 	
@@ -687,10 +638,6 @@ void main() {
 		(2.0*((wPosition.y-lpvCenter.y) / lpvHeight) + 1.) / 2.
 		);
 		
-	// vec3 interpolatedLightProbe[9];
-	// getInterpolatedLightProbe(texcoord,wPosition.xyz,interpolatedLightProbe,worldNormal,geometryViewDir);
-		
-	
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 	// texture(sh1,texcoord).rgb,
 	// texture(sh2,texcoord).rgb,

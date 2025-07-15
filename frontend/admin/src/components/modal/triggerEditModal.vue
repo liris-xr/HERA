@@ -16,9 +16,7 @@ const props = defineProps({
   triggers: {type: Object, required: true},
   assets: {type: Object, required: true},
   sounds: {type: Object, required: true},
-  project: {type: Object, required: true},
-  token: {type: String, required: true},
-  userData: {type: Object, required: true},
+  scenes: {type: Array, required: true, default: []},
 });
 
 const actionIn = ref("none");
@@ -32,32 +30,13 @@ const radius = ref(1);
 let listActions = ref([]);
 let listObject = {};
 
-async function fetchProject(projectId, userId, token) {
-  try {
-    const res = await fetch(`${ENDPOINT}users/${userId}/project/${projectId}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-
-        });
-    if(res.ok){
-      return await res.json();
-    }
-    throw new Error("ko");
-  } catch (e) {
-    console.error(e);
-  }
-}
-
 
 watch(() =>props.show,async (value) => {
   if (value) {
     await nextTick();
 
     try {
-      let arrayScenesName = await initArrayScene();
+      let arrayScenesName = props.scenes;
 
       let arrayAssetsName = initArrayAssets();
 
@@ -147,8 +126,9 @@ function addAction(){
   listActions.value.push(new TriggerAction({action: "none", object: "none", timestampStart: 0}));
 }
 
-function removeAction(action){
-  listActions.value.splice(listActions.value.indexOf(action),1);
+function removeAction(index){
+  listActions.value.splice(index, 1);
+  nextTick();
 }
 
 function getListObject() {
@@ -165,18 +145,6 @@ function getListObject() {
 * (used internally to uniquely identify the object).
 *
 * */
-
-async function initArrayScene() {
-  let scenes;
-
-  await fetchProject(props.project.id, props.userData.id, props.token).then(rep => {
-    scenes = rep.scenes.map(scene => ({
-      id: scene.id,
-      label: scene.title
-    }));
-  });
-  return scenes;
-}
 
 function initArrayAssets(){
   return props.assets.map(asset => ({
@@ -234,11 +202,12 @@ function  initArrayTrigger(){
 
           <div class="action-items-container">
             <action-item v-for="(action, index) in listActions"
+                         :key="action.id"
                          :index="index"
                          :triggerAction="action"
                          :listObject="getListObject()"
                          :show="props.show"
-                         @delete="removeAction(action)"
+                         @delete="removeAction(index)"
             />
           </div>
 

@@ -120,6 +120,11 @@ router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, re
                         {
                             model: ArAsset,
                             as: "assets",
+                            where: {
+                                hideInViewer: {
+                                    [Op.ne]: 2
+                                }
+                            },
                         },
                         {
                             model: ArLabel,
@@ -594,6 +599,16 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
                             as: "labels",
                             attributes: {exclude: ['id']}
                         },
+                        {
+                            model: ArTrigger,
+                            as: "triggers",
+                            attributes: {exclude: ['id']}
+                        },
+                        {
+                            model: ArSound,
+                            as: "sounds",
+                            attributes: {exclude: ['id']}
+                        },
                     ],
                 },
 
@@ -607,6 +622,18 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
         })
 
         if (project) {
+            const scenes = await ArScene.findAll({
+                where: { projectId }
+            });
+
+            const triggerPromises = scenes.map(scene => {
+                return ArTrigger.findAll({
+                    where: { sceneId: scene.id }
+                });
+            });
+
+            const triggers = await Promise.all(triggerPromises);
+            const triggerObj = triggers.flat().map(t => t.toJSON());
 
             const jsonFilePath = path.join(getTempDirectory(), projectId + "-" + Date.now() + '.json')
 
@@ -616,7 +643,12 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
             const projectObj = project.toJSON()
             delete projectObj.id
 
-            await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
+            const combined = {
+                project: projectObj,
+                trigger: triggerObj,
+            };
+
+            await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(combined), (err) => {})
 
             res.zip({
                 files: [
@@ -656,8 +688,6 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    console.log(req.uploadedFilePath)
-
     try {
         const dataFolder = req.uploadedFilePath + "-data"
         // dézipper le fichier
@@ -670,7 +700,7 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         const projectObj = JSON.parse(data)
         projectObj.userId = token.id
 
-        const project = await ArProject.create(projectObj, {
+        const project = await ArProject.create(projectObj.project, {
             include: [
                 {
                     model: ArScene,
@@ -687,6 +717,14 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
                         {
                             model: ArLabel,
                             as: "labels",
+                        },
+                        {
+                            model: ArTrigger,
+                            as: "triggers",
+                        },
+                        {
+                            model: ArSound,
+                            as: "sounds",
                         },
                     ],
                 },
@@ -705,6 +743,11 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
             for(let asset of scene.assets) {
                 asset.url = updateUrl(asset.url, project.id)
                 await asset.save()
+            }
+
+            for(let sound of scene.sounds) {
+                sound.url = updateUrl(sound.url, project.id)
+                await sound.save()
             }
 
             await scene.save()

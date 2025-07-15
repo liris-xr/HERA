@@ -63,6 +63,8 @@ const loading = ref(true);
 const error = ref(false);
 const ready = computed(()=>!loading.value && !error.value);
 
+let scenes;
+
 const showMaterialMenu = ref(false);
 const showSceneDeleteModal = ref(false);
 const showSceneDuplicateModal = ref(false);
@@ -150,9 +152,38 @@ async function duplicateScene(newTitle){
   }
 }
 
+async function fetchProject(projectId, userId, token) {
+  try {
+    const res = await fetch(`${ENDPOINT}users/${userId}/project/${projectId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+
+        });
+    if(res.ok){
+      return await res.json();
+    }
+    throw new Error("ko");
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 
 onMounted(async () => {
   scene.value = await fetchScene(route.params.sceneId);
+
+  await fetchProject(scene.value.project.id, userData.value.id, token.value).then(rep => {
+    scenes = rep.scenes.map(scene => ({
+      id: scene.id,
+      label: scene.title
+    }));
+  });
+
+
+  sortArrays();
 
   loading.value = false;
 
@@ -172,6 +203,24 @@ onMounted(async () => {
   window.addEventListener("keydown", handleKeydown)
 
 })
+
+function sortArrays() {
+  if (scene.value.labels)
+    scene.value.labels.sort((a, b) => a.timestampStart - b.timestampStart);
+  else{
+    console.warn("Labels was not sorted")
+  }
+
+  if (scene.value.triggers){
+    scene.value.triggers.forEach((trigger) => {
+      trigger.chainedActions.sort((a, b) => a.timestampStart - b.timestampStart);
+    });
+  } else {
+    console.warn("Trigger was not sorted")
+  }
+
+
+}
 
 
 
@@ -414,6 +463,10 @@ function setVolumeSound(level, sound){
   }
 }
 
+function setLabelsVisible(){
+  editor.scene.labelManager.setLabelsVisible();
+}
+
 </script>
 
 <template>
@@ -543,6 +596,9 @@ function setVolumeSound(level, sound){
             <div class="inlineFlex">
               <label>{{$t("sceneView.leftSection.sceneLabels.label")}}</label>
               <button-view :text="$t('sceneView.leftSection.sceneLabels.addLabelButton')" icon="/icons/add.svg" @click="editor.scene.addNewLabel()"></button-view>
+              <icon-svg v-if="editor.scene.labelManager.areAllLabelsVisible" url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="setLabelsVisible()"/>
+              <icon-svg v-else url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="setLabelsVisible()"/>
+
             </div>
             <div id="labelList">
                   <label-item v-for="(label, index) in editor.scene.labelManager.getLabels.value"
@@ -550,8 +606,10 @@ function setVolumeSound(level, sound){
                               :index="index"
                               v-model="label.content.value"
                               :active="label.isSelected.value"
+                              :visible="label.getVisible()"
                               @click="editor.scene.setSelected(label)"
                               @delete="editor.scene.removeLabel(label)"
+                              @hideInViewer="label.setVisible(!label.getVisible())"
                               @advanced-edit="()=>{
                                 lastClickedLabel = label;
                                 showLabelEditModal=true;
@@ -607,9 +665,7 @@ function setVolumeSound(level, sound){
                 :triggers="editor.scene.triggerManager.getTriggers.value"
                 :assets="editor.scene.assetManager.getAssets.value"
                 :sounds="editor.scene.soundManager.getSounds.value"
-                :project="scene.project"
-                :token="token"
-                :userData="userData"
+                :scenes="scenes"
                 @close="showTriggerEditModal = false"
                 @confirm="(trigger)=>{
                   console.log(trigger)
@@ -642,7 +698,7 @@ function setVolumeSound(level, sound){
                         :text="asset.name"
                         :active-animation="asset.activeAnimation"
                         :download-url="getResource(asset.sourceUrl)"
-                        :hide-in-viewer="asset.hideInViewer.value"
+                        :hide-in-viewer="Number(asset.hideInViewer.value)"
                         :active="asset.isSelected.value"
                         :error="asset.hasError.value"
                         :loading="asset.isLoading.value"

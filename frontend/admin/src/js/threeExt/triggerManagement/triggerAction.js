@@ -1,10 +1,16 @@
 export class TriggerAction {
+    id
+
     action
     object
     timestampStart
 
 
+
     constructor(obj) {
+        this.id = Date.now() + Math.random();
+
+
         if (obj.action) {
             this.action = obj.action;
         }

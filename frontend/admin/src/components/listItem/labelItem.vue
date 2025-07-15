@@ -7,12 +7,13 @@ import {Label} from "@/js/threeExt/postprocessing/label.js";
 const props = defineProps({
   index: {type: Number, default: 0},
   active: {type: Boolean, default: false},
+  visible: {type: Boolean, default: true},
 })
 
 const text = defineModel();
 const id = getCurrentInstance().uid;
 
-defineEmits(['advanced-edit','delete'])
+defineEmits(['advanced-edit','delete', 'hideInViewer']);
 </script>
 
 <template>
@@ -26,6 +27,10 @@ defineEmits(['advanced-edit','delete'])
       <tag text="2D/txt" icon="/icons/info.svg"/>
       <icon-svg url="/icons/edit.svg" theme="text" class="iconAction" :hover-effect="true" @click="$emit('advanced-edit')"/>
       <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="$emit('delete')"/>
+      <icon-svg v-if="!visible" url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="$emit('hideInViewer')"/>
+      <icon-svg v-else url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="$emit('hideInViewer')"/>
+
+
     </div>
   </div>
 </template>

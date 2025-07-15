@@ -189,6 +189,7 @@
         "addAssetButtonErrorFileNotSupported": "This file format is not supported.\nPlease use .glb or .gltf",
         "noAssetsInfo": "This scene does not have any 3D model",
         "assetNotDisplayed": "This object will not be displayed in viewer",
+        "assetNotDisplayedInAr": "This object will not be taken into account when loading data.",
         "assetLoadFailed": "Unable to load this 3D model"
       },
       "sceneSounds": {
@@ -202,6 +203,7 @@
         "label": "Trigger:",
         "addTriggerButton": "Add",
         "noTriggerInfo": "This scene contains no trigger.",
+        "triggerNotDisplayed": "This trigger will be hidden during the display.",
         "assetNotDisplayed": "This trigger will not be displayed during the preview.",
         "actionIn": "On enter",
         "actionOut": "On exit",

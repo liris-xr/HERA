@@ -196,6 +196,7 @@
         "addAssetButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .glb ou .gltf",
         "noAssetsInfo": "Cette scène ne contient aucun modèle 3D",
         "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
+        "assetNotDisplayedInAr": "Cet objet ne sera pas pris en compte lors du chargement des données.",
         "assetLoadFailed": "Impossible de charger ce modèle 3D"
       },
       "sceneSounds":{
@@ -209,7 +210,7 @@
         "label": "Déclencheur :",
         "addTriggerButton": "Ajouter",
         "noTriggerInfo": "Cette scène ne contient aucun déclencheur",
-        "assetNotDisplayed": "Ce déclencheur ne sera pas affiché lors de la visualisation",
+        "triggerNotDisplayed": "Ce déclencheur sera caché lors de la visualisation",
         "actionIn" : "Entrant",
         "actionOut": "Sortant",
         "actions": {

@@ -186,6 +186,7 @@
         "addAssetButtonErrorFileNotSupported": "Este formato de archivo no es compatible.\nPor favor, usa .glb o .gltf",
         "noAssetsInfo": "Este escenario no tiene ningún modelo 3D",
         "assetNotDisplayed": "Este objeto no se mostrará en el visor",
+        "assetNotDisplayedInAr": "Este objeto no se tendrá en cuenta cuando se carguen los datos.",
         "assetLoadFailed": "No se pudo cargar este modelo 3D"
       },
       "sceneSounds":{
@@ -199,7 +200,7 @@
         "label": "Activador  :",
         "addTriggerButton": "Añadir",
         "noTriggerInfo": "Este escenario no contiene activador",
-        "assetNotDisplayed": "Este activador no se mostrará durante la visualización.",
+        "triggerNotDisplayed": "Este activador estará escondido durante la visualización.",
         "actionIn": "Al entrar",
         "actionOut": "Al salir",
         "actions": {

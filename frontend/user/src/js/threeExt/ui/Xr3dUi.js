@@ -108,8 +108,8 @@ export class Xr3dUi {
     setupUI() {
         const container = new ThreeMeshUI.Block({
             contentDirection: 'column',
-            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
-            fontTexture: '/viewer/public/fonts/Inter-variable.png',
+            fontFamily: '/viewer/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/fonts/Inter-variable.png',
             font: 0.07,
             padding: 0.02,
             borderRadius: 0.11,
@@ -121,8 +121,8 @@ export class Xr3dUi {
         this.animationContainer = new ThreeMeshUI.Block( {
             justifyContent: 'center',
             contentDirection: 'row-reverse',
-            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
-            fontTexture: '/viewer/public/fonts/Inter-variable.png',
+            fontFamily: '/viewer/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/fonts/Inter-variable.png',
             fontSize: 0.07,
             padding: 0.02,
             margin: 0.02,
@@ -153,8 +153,8 @@ export class Xr3dUi {
         const sceneContainer = new ThreeMeshUI.Block( {
             justifyContent: 'center',
             contentDirection: 'row-reverse',
-            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
-            fontTexture: '/viewer/public/fonts/Inter-variable.png',
+            fontFamily: '/viewer/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/fonts/Inter-variable.png',
             fontSize: 0.07,
             padding: 0.02,
             margin: 0.02,
@@ -179,8 +179,8 @@ export class Xr3dUi {
         const vrActionsContainer = new ThreeMeshUI.Block( {
             justifyContent: 'center',
             contentDirection: 'row-reverse',
-            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
-            fontTexture: '/viewer/public/fonts/Inter-variable.png',
+            fontFamily: '/viewer/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/fonts/Inter-variable.png',
             fontSize: 0.07,
             padding: 0.02,
             margin: 0.02,
@@ -202,8 +202,8 @@ export class Xr3dUi {
         this.notificationsContainer = new ThreeMeshUI.Block( {
             justifyContent: 'space-evenly',
             contentDirection: 'column',
-            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
-            fontTexture: '/viewer/public/fonts/Inter-variable.png',
+            fontFamily: '/viewer/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/fonts/Inter-variable.png',
             fontSize: 0.07,
             padding: 0.02,
             borderRadius: 0.11,
@@ -227,8 +227,8 @@ export class Xr3dUi {
 
         const notification = new ThreeMeshUI.Block( {
             contentDirection: 'column-reverse',
-            fontFamily: '/viewer/public/fonts/Inter-variable-msdf.json',
-            fontTexture: '/viewer/public/fonts/Inter-variable.png',
+            fontFamily: '/viewer/fonts/Inter-variable-msdf.json',
+            fontTexture: '/viewer/fonts/Inter-variable.png',
             fontSize: 0.07,
             interLine: 0.01,
             padding: 0.05,

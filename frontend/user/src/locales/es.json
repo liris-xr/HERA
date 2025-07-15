@@ -134,7 +134,7 @@
       }
     },
     "quitQr": "Appuyez n'importe ou pour faire disparaitre le QR code",
-    "unpublishedWarning": "Impossible d'afficher le QR code : votre projet est privé",
+    "unpublishedWarning": "Atención, vuestro proyecto está privado",
     "brightnessTip": "Pour faciliter le scan du QR code, augmentez la luminosité de votre écran",
     "viewers": "spectateurs",
     "currentScene": "Scène actuelle",

@@ -316,12 +316,12 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
             nbIntersection++;
             float * shBasis = getBasis(sphereDirection);
             
+            if(hit.t < distanceFromGeometry) {
+                distanceFromGeometry = hit.t;
+                directionOfGeometry = sphereDirection;
+            }
             if(isBackFaceTouched(hit.triangle_id, sphereDirection)) {
                 this->invalidityTexture[probe.id]++;
-                if(hit.t < distanceFromGeometry) {
-                    distanceFromGeometry = hit.t;
-                    directionOfGeometry = sphereDirection;
-                }
 
             } else {
                 const GLTFMaterial material = this->materials[mesh.triangle_material_index(hit.triangle_id)];
@@ -363,7 +363,7 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
     
     if(this->invalidityTexture[probe.id]) {
         this->invalidityTexture[probe.id] /= float(nbIntersection);
-        if(this->invalidityTexture[probe.id] > 0.5 && probe.nbDisplacement < 3) {
+        if(this->invalidityTexture[probe.id] > 0.1 && probe.nbDisplacement < 3) {
             probe.position = probe.position + directionOfGeometry*(distanceFromGeometry+(this->freq/2.0));
             probe.nbDisplacement++;
             
@@ -376,6 +376,20 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
             this->invalidityTexture[probe.id] = 0;
             this->updateIndirectLighting(probe);
         }
+    }
+
+    if(distanceFromGeometry < this->freq/6.0 && probe.nbDisplacement < 5) {
+        probe.position = probe.position - directionOfGeometry*(this->freq/2.0);
+        probe.nbDisplacement++;
+
+
+        for (unsigned int j = 0;j<9;j++) {
+            probe.indirectCoefficients[j].x = 0;
+            probe.indirectCoefficients[j].y = 0;
+            probe.indirectCoefficients[j].z = 0;
+        }
+        
+        this->updateIndirectLighting(probe);
     }
 }
 
@@ -594,7 +608,25 @@ void LightProbeVolume::writeLPV() {
 
 
         atlasFile.close();
-    } 
+    }
+    
+    // Write probe position
+    std::fstream shPosFile;
+    shPosFile.open("../frontend/admin/public/textures/shPositions.csv",std::ios_base::out);
+    
+    for(unsigned int i = 0;i<this->probes.size()-1;i++) {
+        shPosFile<<this->probes[i].position.x<<',';
+        shPosFile<<this->probes[i].position.y<<',';
+        shPosFile<<this->probes[i].position.z<<',';
+        shPosFile<<0.0<<',';
+    }
+    shPosFile<<this->probes[this->probes.size()-1].position.x<<',';
+    shPosFile<<this->probes[this->probes.size()-1].position.y<<',';
+    shPosFile<<this->probes[this->probes.size()-1].position.z<<',';
+    shPosFile<<0.0;
+
+
+    shPosFile.close();
 }
 
 void LightProbeVolume::writeParameters(float density,float width,float depth,float height,const Point & center) {
@@ -611,6 +643,7 @@ void LightProbeVolume::writeParameters(float density,float width,float depth,flo
      file.close();
 }
 
+// Debug, write an image
 void LightProbeVolume::writeDepthMap() {
     unsigned int size = this->depthMapSizeWithBorders;
     Image depthMap(size,size);
@@ -620,9 +653,9 @@ void LightProbeVolume::writeDepthMap() {
         depthMap(i) = Color(value);
     }
     write_image(depthMap, "../frontend/admin/public/textures/depthMapS.png");
-
 }
 
+// Debug, write an image
 void LightProbeVolume::writeDepthMapLayer(unsigned int stage) {
     unsigned int sizeX = this->depthMapSizeWithBorders*this->texturesWidth;
     unsigned int sizeZ = this->depthMapSizeWithBorders*this->texturesDepth;

@@ -79,6 +79,8 @@ uniform sampler3D sh6;
 uniform sampler3D sh7;
 uniform sampler3D sh8;
 
+uniform sampler3D shPos;
+
 uniform vec3 lpvCenter;
 uniform float lpvWidth;
 uniform float lpvDepth;
@@ -235,37 +237,13 @@ void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
 				  );
 }
 
+vec3 getProbePos(int i, vec3 texcoord) {
+	return texture(shPos,getITexcoord(i,texcoord)).rgb;
+}
+
 void linearProbeInterpolation(vec3[9] a, vec3[9] b, float v, inout vec3[9] probeSH) {
 	for(int i = 0;i<9;i++) {
 		probeSH[i] = mix(a[i],b[i],v);
-	}
-}
-
-void getMaskedProbeInterpolation(int ai, int bi, bool aMask, bool bMask,float v,vec3 texcoord,inout vec3[9] probeSH) {
-	if(aMask && bMask) {
-		vec3[9] a;
-		vec3[9] b;
-		getProbeSH(ai,texcoord,a);
-		getProbeSH(bi,texcoord,b);
-		linearProbeInterpolation(a,b,v,probeSH);
-	} else if(aMask) {
-		getProbeSH(ai,texcoord,probeSH);
-	} else if(bMask) {
-		getProbeSH(bi,texcoord,probeSH);
-	} else {
-		probeSH[0] = vec3(3.0,0,0);
-	}
-}
-
-void getProbeInterpolation(vec3[9] a, vec3[9] b,float v,inout vec3[9] probeSH) {
-	if(a[0].x != 3.0 && b[0].x != 3.0) {
-		linearProbeInterpolation(a,b,v,probeSH);
-	} else if(a[0].x != 3.0) {
-		probeSH = a;
-	} else if(b[0].x != 3.0) {
-		probeSH = b;
-	} else {
-		probeSH[0] = vec3(3.0,0,0);
 	}
 }
 
@@ -559,7 +537,7 @@ float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
 	vec3 trilinear = getTrilinearWeight(alpha,offset);
 	float weight = 1.0;
 
-	vec3 probePos = getIProbeWorldPosition(i,texcoord);
+	vec3 probePos = getProbePos(i,texcoord);
 	vec3 probeToP = p - probePos + (n) * 0.05;
 
 	vec2 zBuffer = getProbeZBuffer(normalize(probeToP),texcoord,i);
@@ -682,6 +660,7 @@ export class MeshManager {
 	textureLoader
 	shTextures;
 	depthMapTexture;
+	shPositions;
 	lpvParameters;
 	atlasParameters;
 
@@ -701,6 +680,15 @@ export class MeshManager {
 			})
 			.catch((e) => console.error(e));
 		}
+
+		fetch(BASE_URL+'textures/shPositions.csv')
+			.then((res) => res.text())
+			.then((text) => {
+				const values = text.split(',').map(Number);
+				
+				this.shPositions = new Float32Array(values);
+			})
+			.catch((e) => console.error(e));
 		
 		fetch(BASE_URL+"textures/lpvParameters.json")
 		.then((res) => res.json())
@@ -731,25 +719,32 @@ export class MeshManager {
     });
 	
     addSubMesh(scene,mesh,meshData) {
-		let textSize = 0;
+		let atlasSize = 0;
+		let nbProbe = 0;
 		
 		mesh.material.customProgramCacheKey = () => {
 			mesh.material.needsUpdate = true;
 
 
 			if(this.lpvParameters && this.atlasParameters) {
-				textSize = this.atlasParameters.width * 
+				atlasSize = this.atlasParameters.width * 
 							this.atlasParameters.depth *
 							this.lpvParameters.height*this.lpvParameters.density;
+
+				nbProbe = this.lpvParameters.width*this.lpvParameters.density*
+				this.lpvParameters.depth*this.lpvParameters.density*
+				this.lpvParameters.height*this.lpvParameters.density;
 			}
-			
-			return this.lpvParameters && this.shTextures.length == 9 && this.atlasParameters && this.depthMapTexture.length == textSize*2 ? '1' : '0';
+			return this.lpvParameters && this.shTextures.length == 9 && this.atlasParameters && this.depthMapTexture.length == atlasSize*2 && this.shPositions.length == nbProbe*4 ? '1' : '0';
 		}
         
         mesh.material.onBeforeCompile = (shader) => {
 			
 			if(this.lpvParameters && this.shTextures.length == 9 
-				&& this.atlasParameters && this.depthMapTexture.length  == textSize*2) {
+				&& this.atlasParameters && this.depthMapTexture.length  == atlasSize*2
+				&& this.shPositions.length == nbProbe*4) {
+
+				
 				shader.vertexShader = vertexShader;
 				shader.fragmentShader = fragShader;
 				
@@ -768,6 +763,21 @@ export class MeshManager {
 					
 					shader.uniforms["sh"+i] = {value: sh3DTexture};
 				}
+				
+
+				const shPositionsTexture= new THREE.Data3DTexture(this.shPositions, 
+					this.lpvParameters.width*this.lpvParameters.density,
+					this.lpvParameters.depth*this.lpvParameters.density,
+					this.lpvParameters.height*this.lpvParameters.density);
+				shPositionsTexture.magFilter = THREE.NearestFilter;
+				shPositionsTexture.minFilter = THREE.NearestFilter;
+				shPositionsTexture.type = THREE.FloatType;
+				shPositionsTexture.wrapS = THREE.ClampToEdgeWrapping
+				shPositionsTexture.wrapT = THREE.ClampToEdgeWrapping
+				shPositionsTexture.wrapR = THREE.ClampToEdgeWrapping
+				shPositionsTexture.needsUpdate = true;
+
+				shader.uniforms["shPos"] = {value: shPositionsTexture};
 				
 				const atlasTexture = new THREE.Data3DTexture(this.depthMapTexture, 
 					this.atlasParameters.width,

@@ -33,8 +33,8 @@ export default sequelize.define('ArAsset', {
         }
     },
     hideInViewer:{
-      type:DataTypes.BOOLEAN,
-      defaultValue: false,
+      type:DataTypes.NUMBER,
+      defaultValue: 0,
       allowNull: false
     },
     position:{

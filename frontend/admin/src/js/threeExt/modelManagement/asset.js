@@ -75,7 +75,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
     })
 
     switchViewerDisplayStatus(){
-        this.hideInViewer.value = !this.hideInViewer.value;
+        this.hideInViewer.value = (this.hideInViewer.value + 1)%3;
     }
 
     load(){

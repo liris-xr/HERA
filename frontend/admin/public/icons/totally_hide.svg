@@ -1,0 +1,6 @@
+<!-- sample rectangle -->
+<svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 3L21 21" stroke="black" stroke-width="2" stroke-linecap="round"/>
+  <path d="M10.584 10.586A2 2 0 0013.414 13.414M16.23 16.23C15.007 17.06 13.564 17.5 12 17.5C8.273 17.5 4.947 14.911 3 12C3.775 10.857 4.737 9.828 5.854 9M8.473 6.473C9.594 6.165 10.781 6 12 6C15.727 6 19.053 8.589 21 11.5C20.202 12.64 19.225 13.671 18.105 14.59" 
+    stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

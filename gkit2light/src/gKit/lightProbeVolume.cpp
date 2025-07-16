@@ -360,11 +360,10 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
             }
         }
     }
-    
-    if(this->invalidityTexture[probe.id]) {
+    if(this->invalidityTexture[probe.id]) { // Invalid probe inside geometry
         this->invalidityTexture[probe.id] /= float(nbIntersection);
         if(this->invalidityTexture[probe.id] > 0.1 && probe.nbDisplacement < 3) {
-            probe.position = probe.position + directionOfGeometry*(distanceFromGeometry+(this->freq/2.0));
+            probe.position = probe.position + directionOfGeometry*(distanceFromGeometry+(this->freq/4.0));
             probe.nbDisplacement++;
             
             for (unsigned int j = 0;j<9;j++) {
@@ -376,9 +375,7 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
             this->invalidityTexture[probe.id] = 0;
             this->updateIndirectLighting(probe);
         }
-    }
-
-    if(distanceFromGeometry < this->freq/6.0 && probe.nbDisplacement < 5) {
+    } else if(distanceFromGeometry < this->freq/6.0 && probe.nbDisplacement < 5) { // Valid probe, too close to geometry
         probe.position = probe.position - directionOfGeometry*(this->freq/2.0);
         probe.nbDisplacement++;
 
@@ -391,6 +388,8 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
         
         this->updateIndirectLighting(probe);
     }
+    
+
 }
 
 void LightProbeVolume::stitchDepthMapCorners(unsigned int i0) {

@@ -360,35 +360,40 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
             }
         }
     }
-    if(this->invalidityTexture[probe.id]) { // Invalid probe inside geometry
-        this->invalidityTexture[probe.id] /= float(nbIntersection);
-        if(this->invalidityTexture[probe.id] > 0.1 && probe.nbDisplacement < 3) {
-            probe.position = probe.position + directionOfGeometry*(distanceFromGeometry+(this->freq/4.0));
-            probe.nbDisplacement++;
-            
-            for (unsigned int j = 0;j<9;j++) {
-                probe.indirectCoefficients[j].x = 0;
-                probe.indirectCoefficients[j].y = 0;
-                probe.indirectCoefficients[j].z = 0;
+    if(probe.nbDisplacement < 5) {
+
+        if(this->invalidityTexture[probe.id]) { // Invalid probe inside geometry
+            this->invalidityTexture[probe.id] /= float(nbIntersection);
+            if(this->invalidityTexture[probe.id] > 0.1 ) {
+                float displacement = (distanceFromGeometry + (this->freq/2.0)) / (probe.nbDisplacement + 1);
+                Vector worldSpaceOffset = directionOfGeometry * displacement;
+                Vector cubeSpaceOffset = worldSpaceOffset / this->freq;
+    
+                probe.position = probe.position + worldSpaceOffset;
+                probe.offset = probe.offset + cubeSpaceOffset;
+                probe.nbDisplacement++;
+                
+                probe.resetIndirectCoefficients();
+                
+                this->invalidityTexture[probe.id] = 0;
+                this->updateIndirectLighting(probe);
             }
+        } else if(distanceFromGeometry < this->freq/4.0) { // Valid probe, too close to geometry
+            float displacement = (this->freq/4.0) / (probe.nbDisplacement == 0 ? 1 : probe.nbDisplacement);
+
+            Vector worldSpaceOffset = -directionOfGeometry*displacement;
+            Vector cubeSpaceOffset = worldSpaceOffset / this->freq;
+
+            probe.position = probe.position + worldSpaceOffset;
+            probe.offset = probe.offset + cubeSpaceOffset;
+            probe.nbDisplacement++;
+    
+    
+            probe.resetIndirectCoefficients();
             
-            this->invalidityTexture[probe.id] = 0;
             this->updateIndirectLighting(probe);
         }
-    } else if(distanceFromGeometry < this->freq/6.0 && probe.nbDisplacement < 5) { // Valid probe, too close to geometry
-        probe.position = probe.position - directionOfGeometry*(this->freq/2.0);
-        probe.nbDisplacement++;
-
-
-        for (unsigned int j = 0;j<9;j++) {
-            probe.indirectCoefficients[j].x = 0;
-            probe.indirectCoefficients[j].y = 0;
-            probe.indirectCoefficients[j].z = 0;
-        }
-        
-        this->updateIndirectLighting(probe);
     }
-    
 
 }
 
@@ -626,6 +631,24 @@ void LightProbeVolume::writeLPV() {
 
 
     shPosFile.close();
+
+     // Write probe offset
+     std::fstream shOffsetFile;
+     shOffsetFile.open("../frontend/admin/public/textures/shOffset.csv",std::ios_base::out);
+     
+     for(unsigned int i = 0;i<this->probes.size()-1;i++) {
+         shOffsetFile<<this->probes[i].offset.x<<',';
+         shOffsetFile<<this->probes[i].offset.y<<',';
+         shOffsetFile<<this->probes[i].offset.z<<',';
+         shOffsetFile<<0.0<<',';
+     }
+     shOffsetFile<<this->probes[this->probes.size()-1].offset.x<<',';
+     shOffsetFile<<this->probes[this->probes.size()-1].offset.y<<',';
+     shOffsetFile<<this->probes[this->probes.size()-1].offset.z<<',';
+     shOffsetFile<<0.0;
+ 
+ 
+     shOffsetFile.close();
 }
 
 void LightProbeVolume::writeParameters(float density,float width,float depth,float height,const Point & center) {

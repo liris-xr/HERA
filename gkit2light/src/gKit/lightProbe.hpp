@@ -16,8 +16,8 @@ class LightProbe {
 
         std::vector<std::vector<float>> octMap;
 
+        Vector offset; 
 
-        Vector directionOfGeometry;
         unsigned int id;
         
         unsigned int nbDisplacement;
@@ -33,6 +33,8 @@ class LightProbe {
         void scale(const float s);
 
         float getDepth(unsigned int i, unsigned int j);
+
+        void resetIndirectCoefficients();
 };
 
 #endif

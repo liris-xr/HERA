@@ -80,6 +80,7 @@ uniform sampler3D sh7;
 uniform sampler3D sh8;
 
 uniform sampler3D shPos;
+uniform sampler3D shOffset;
 
 uniform vec3 lpvCenter;
 uniform float lpvWidth;
@@ -239,6 +240,10 @@ void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
 
 vec3 getProbePos(int i, vec3 texcoord) {
 	return texture(shPos,getITexcoord(i,texcoord)).rgb;
+}
+
+vec3 getProbeOffset(int i, vec3 texcoord) {
+	return texture(shOffset,getITexcoord(i,texcoord)).rgb;
 }
 
 void linearProbeInterpolation(vec3[9] a, vec3[9] b, float v, inout vec3[9] probeSH) {
@@ -534,6 +539,10 @@ float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
 	// 4 => (0,1,0), 5 => (1,1,0), 6 => (0,1,1), 7 => (1,1,1)
 	ivec3 offset = ivec3(i, i >> 2, i >> 1) & ivec3(1);
 
+	vec3 range = vec3(1,1,1) + getProbeOffset(i,texcoord); // Cubewise 
+	vec3 alphaWithOffset = abs (alpha / range);
+
+
 	vec3 trilinear = getTrilinearWeight(alpha,offset);
 	float weight = 1.0;
 
@@ -572,7 +581,6 @@ vec3 getWeightedIrradiance(vec3 texcoord, vec3 p, vec3 n) {
 	vec3[9] probeSH;
 	for(int i = 0;i<8;++i) {
 		float weight = getProbeWeight(texcoord,p,i,alpha,n);
-		// float weight = x+z+y;
 
 		getProbeSH(i,texcoord,probeSH);
 
@@ -655,173 +663,183 @@ void main() {
 	#include <dithering_fragment>
 }`
 
+function addTexture(shader,data,width,depth,height,uniform,filter,format) {
+	const texture = new THREE.Data3DTexture(data, 
+		width,
+		depth,
+		height);
+	texture.magFilter = filter;
+	texture.minFilter = filter;
+	texture.type = THREE.FloatType;
+	texture.wrapS = THREE.ClampToEdgeWrapping
+	texture.wrapT = THREE.ClampToEdgeWrapping
+	texture.wrapR = THREE.ClampToEdgeWrapping
+	texture.needsUpdate = true;
+	if(format) {
+		texture.format = format;
+	}
+
+	shader.uniforms[uniform] = {value: texture};
+} 
+
+function fetchTexture(fileName,data) {
+	fetch(BASE_URL+fileName)
+		.then((res) => res.text())
+		.then((text) => {
+			const values = text.split(',').map(Number);
+			
+			data.value = new Float32Array(values);
+		})
+		.catch((e) => console.error(e));
+}
+
+function fetchParameters(fileName,data) {
+	
+	fetch(BASE_URL+fileName)
+		.then((res) => res.json())
+		.then((json) => {
+			data.value = json;
+		})
+		.catch((e) => console.error(e));
+}
+
 export class MeshManager {
     #meshes
-	textureLoader
+
 	shTextures;
 	depthMapTexture;
 	shPositions;
+	shOffset;
+
+	nbProbe;
+	atlasSize;
+
 	lpvParameters;
 	atlasParameters;
 
     constructor() {
         this.#meshes = shallowReactive([]);
-		this.textureLoader = new THREE.TextureLoader();
+
+		this.nbProbe = 0;
 
 		this.shTextures = [];
-		this.depthMapTexture = [];
+		this.depthMapTexture = {};
+		this.shPositions = {};
+		this.shOffset = {};
+		this.lpvParameters = {};
+		this.lpvParameters.value = {}
+		this.atlasParameters = {};
+		this.atlasParameters.value = {}
 		for(let i = 0;i<9;i++) {
-			fetch(BASE_URL+'textures/sh'+i+'.csv')
-			.then((res) => res.text())
-			.then((text) => {
-				const values = text.split(',').map(Number);
-				
-				this.shTextures.push(new Float32Array(values));
-			})
-			.catch((e) => console.error(e));
+			this.shTextures.push({});
+			fetchTexture('textures/sh'+i+'.csv',this.shTextures[i]);
 		}
 
-		fetch(BASE_URL+'textures/shPositions.csv')
-			.then((res) => res.text())
-			.then((text) => {
-				const values = text.split(',').map(Number);
-				
-				this.shPositions = new Float32Array(values);
-			})
-			.catch((e) => console.error(e));
+		fetchTexture('textures/shPositions.csv',this.shPositions);
+		fetchTexture('textures/depthMapAtlas.csv',this.depthMapTexture)
+		fetchTexture('textures/shOffset.csv',this.shOffset);	
 		
-		fetch(BASE_URL+"textures/lpvParameters.json")
-		.then((res) => res.json())
-		.then((json) => {
-			this.lpvParameters = json;
-		})
-		.catch((e) => console.error(e));
-
-		fetch(BASE_URL+'textures/depthMapAtlas.csv')
-		.then((res) => res.text())
-		.then((text) => {
-			const values = text.split(',').map(Number);
-			
-			this.depthMapTexture = new Float32Array(values);
-		})
-		.catch((e) => console.error(e));
-		
-		fetch(BASE_URL+"textures/atlasParameters.json")
-		.then((res) => res.json())
-		.then((json) => {
-			this.atlasParameters = json;
-		})
-		.catch((e) => console.error(e));
+		fetchParameters("textures/lpvParameters.json",this.lpvParameters)
+		fetchParameters("textures/atlasParameters.json",this.atlasParameters)
     }
 	
     getMeshes = computed(()=>{
 		return this.#meshes;
     });
+
+	areDataLoaded() {
+		
+		const res = this.lpvParameters.value && 
+		this.shTextures.length == 9 &&
+		this.atlasParameters.value && 
+		this.depthMapTexture.value
+		this.shPositions.value
+		this.shOffset.value;
+		return res;
+	}
 	
     addSubMesh(scene,mesh,meshData) {
-		let atlasSize = 0;
-		let nbProbe = 0;
-		
+
 		mesh.material.customProgramCacheKey = () => {
 			mesh.material.needsUpdate = true;
 
+			if(this.lpvParameters.value && this.atlasParameters.value) {
+				this.atlasSize = this.atlasParameters.value.width * 
+							this.atlasParameters.value.depth *
+							this.lpvParameters.value.height*this.lpvParameters.value.density;
 
-			if(this.lpvParameters && this.atlasParameters) {
-				atlasSize = this.atlasParameters.width * 
-							this.atlasParameters.depth *
-							this.lpvParameters.height*this.lpvParameters.density;
-
-				nbProbe = this.lpvParameters.width*this.lpvParameters.density*
-				this.lpvParameters.depth*this.lpvParameters.density*
-				this.lpvParameters.height*this.lpvParameters.density;
+				this.nbProbe = this.lpvParameters.value.width*this.lpvParameters.value.density*
+				this.lpvParameters.value.depth*this.lpvParameters.value.density*
+				this.lpvParameters.value.height*this.lpvParameters.value.density;
 			}
-			return this.lpvParameters && this.shTextures.length == 9 && this.atlasParameters && this.depthMapTexture.length == atlasSize*2 && this.shPositions.length == nbProbe*4 ? '1' : '0';
+			
+			return this.areDataLoaded() ? '1' : '0';
 		}
         
         mesh.material.onBeforeCompile = (shader) => {
 			
-			if(this.lpvParameters && this.shTextures.length == 9 
-				&& this.atlasParameters && this.depthMapTexture.length  == atlasSize*2
-				&& this.shPositions.length == nbProbe*4) {
-
+			if(this.areDataLoaded()) {
 				
 				shader.vertexShader = vertexShader;
 				shader.fragmentShader = fragShader;
 				
 				for(let i = 0;i<9;i++) {
-					const sh3DTexture = new THREE.Data3DTexture(this.shTextures[i], 
-																this.lpvParameters.width*this.lpvParameters.density,
-																this.lpvParameters.depth*this.lpvParameters.density,
-																this.lpvParameters.height*this.lpvParameters.density);
-					sh3DTexture.magFilter = THREE.NearestFilter;
-					sh3DTexture.minFilter = THREE.NearestFilter;
-					sh3DTexture.type = THREE.FloatType;
-					sh3DTexture.wrapS = THREE.ClampToEdgeWrapping
-					sh3DTexture.wrapT = THREE.ClampToEdgeWrapping
-					sh3DTexture.wrapR = THREE.ClampToEdgeWrapping
-					sh3DTexture.needsUpdate = true;
-					
-					shader.uniforms["sh"+i] = {value: sh3DTexture};
+					addTexture(shader,this.shTextures[i].value,
+						this.lpvParameters.value.width*this.lpvParameters.value.density,
+						this.lpvParameters.value.depth*this.lpvParameters.value.density,
+						this.lpvParameters.value.height*this.lpvParameters.value.density,
+						"sh"+i,THREE.NearestFilter);
 				}
 				
+				addTexture(shader,this.shPositions.value,
+					this.lpvParameters.value.width*this.lpvParameters.value.density,
+					this.lpvParameters.value.depth*this.lpvParameters.value.density,
+					this.lpvParameters.value.height*this.lpvParameters.value.density,
+					"shPos",THREE.NearestFilter	
+				);
 
-				const shPositionsTexture= new THREE.Data3DTexture(this.shPositions, 
-					this.lpvParameters.width*this.lpvParameters.density,
-					this.lpvParameters.depth*this.lpvParameters.density,
-					this.lpvParameters.height*this.lpvParameters.density);
-				shPositionsTexture.magFilter = THREE.NearestFilter;
-				shPositionsTexture.minFilter = THREE.NearestFilter;
-				shPositionsTexture.type = THREE.FloatType;
-				shPositionsTexture.wrapS = THREE.ClampToEdgeWrapping
-				shPositionsTexture.wrapT = THREE.ClampToEdgeWrapping
-				shPositionsTexture.wrapR = THREE.ClampToEdgeWrapping
-				shPositionsTexture.needsUpdate = true;
+				addTexture(shader,this.shOffset.value,
+					this.lpvParameters.value.width*this.lpvParameters.value.density,
+					this.lpvParameters.value.depth*this.lpvParameters.value.density,
+					this.lpvParameters.value.height*this.lpvParameters.value.density,
+					"shOffset",THREE.NearestFilter	
+				);
 
-				shader.uniforms["shPos"] = {value: shPositionsTexture};
-				
-				const atlasTexture = new THREE.Data3DTexture(this.depthMapTexture, 
-					this.atlasParameters.width,
-					this.atlasParameters.depth,
-					(this.lpvParameters.height*this.lpvParameters.density));
-				atlasTexture.format = THREE.RGFormat;
-				atlasTexture.magFilter = THREE.LinearFilter;
-				atlasTexture.minFilter = THREE.LinearFilter;
-				atlasTexture.type = THREE.FloatType;
-				atlasTexture.wrapS = THREE.ClampToEdgeWrapping
-				atlasTexture.wrapT = THREE.ClampToEdgeWrapping
-				atlasTexture.wrapR = THREE.ClampToEdgeWrapping
-				atlasTexture.needsUpdate = true;
-				
-				shader.uniforms.depthMapAtlas = {value: atlasTexture};
+				addTexture(shader,this.depthMapTexture.value,
+					this.atlasParameters.value.width,
+					this.atlasParameters.value.depth,
+					(this.lpvParameters.value.height*this.lpvParameters.value.density),
+					"depthMapAtlas",THREE.LinearFilter,THREE.RGFormat
+				)
 
 
 
-				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParameters.center.x,this.lpvParameters.center.y,this.lpvParameters.center.z)};
-				shader.uniforms.lpvWidth = {value : this.lpvParameters.width};
-				shader.uniforms.lpvDepth = {value : this.lpvParameters.depth};
-				shader.uniforms.lpvHeight = {value : this.lpvParameters.height};
-				shader.uniforms.lpvTextureWidth = {value : this.lpvParameters.width*this.lpvParameters.density};
-				shader.uniforms.lpvTextureDepth = {value : this.lpvParameters.depth*this.lpvParameters.density};
-				shader.uniforms.lpvTextureHeight = {value : this.lpvParameters.height*this.lpvParameters.density};
-				shader.uniforms.lpvDensity = {value : this.lpvParameters.density};
+				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParameters.value.center.x,this.lpvParameters.value.center.y,this.lpvParameters.value.center.z)};
+				shader.uniforms.lpvWidth = {value : this.lpvParameters.value.width};
+				shader.uniforms.lpvDepth = {value : this.lpvParameters.value.depth};
+				shader.uniforms.lpvHeight = {value : this.lpvParameters.value.height};
+				shader.uniforms.lpvTextureWidth = {value : this.lpvParameters.value.width*this.lpvParameters.value.density};
+				shader.uniforms.lpvTextureDepth = {value : this.lpvParameters.value.depth*this.lpvParameters.value.density};
+				shader.uniforms.lpvTextureHeight = {value : this.lpvParameters.value.height*this.lpvParameters.value.density};
+				shader.uniforms.lpvDensity = {value : this.lpvParameters.value.density};
 
 
-				shader.uniforms.atlasFreqX = { value : (1.0/this.atlasParameters.width)};
-				shader.uniforms.atlasFreqZ = { value : (1.0/this.atlasParameters.depth)};
+				shader.uniforms.atlasFreqX = { value : (1.0/this.atlasParameters.value.width)};
+				shader.uniforms.atlasFreqZ = { value : (1.0/this.atlasParameters.value.depth)};
 
-				shader.uniforms.depthMapHalfSizeX = { value : (this.atlasParameters.depthMapSize/2.0)*(1.0/this.atlasParameters.width)};
-				shader.uniforms.depthMapHalfSizeZ = { value : (this.atlasParameters.depthMapSize/2.0)*(1.0/this.atlasParameters.depth)};
+				shader.uniforms.depthMapHalfSizeX = { value : (this.atlasParameters.value.depthMapSize/2.0)*(1.0/this.atlasParameters.value.width)};
+				shader.uniforms.depthMapHalfSizeZ = { value : (this.atlasParameters.value.depthMapSize/2.0)*(1.0/this.atlasParameters.value.depth)};
 
-				shader.uniforms.depthMapSize = { value : this.atlasParameters.depthMapSize };
-				shader.uniforms.halfDepthMapSize = { value : this.atlasParameters.depthMapSize/2.0 };
+				shader.uniforms.depthMapSize = { value : this.atlasParameters.value.depthMapSize };
+				shader.uniforms.halfDepthMapSize = { value : this.atlasParameters.value.depthMapSize/2.0 };
 
 				
 				
 				
-				shader.uniforms.freqX = {value:1.0/(this.lpvParameters.width*this.lpvParameters.density)};
-				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.height*this.lpvParameters.density)};
-				shader.uniforms.freqZ = {value:1.0/(this.lpvParameters.depth*this.lpvParameters.density)};
-				shader.uniforms.worldFreq = {value:1.0/this.lpvParameters.density};
+				shader.uniforms.freqX = {value:1.0/(this.lpvParameters.value.width*this.lpvParameters.value.density)};
+				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.value.height*this.lpvParameters.value.density)};
+				shader.uniforms.freqZ = {value:1.0/(this.lpvParameters.value.depth*this.lpvParameters.value.density)};
+				shader.uniforms.worldFreq = {value:1.0/this.lpvParameters.value.density};
 				
 			}
         }

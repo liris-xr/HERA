@@ -4,6 +4,7 @@ LightProbe::LightProbe(Point pos,unsigned int id) {
     this->position = pos;
     this->id = id;
     this->nbDisplacement = 0;
+    this->offset = Vector(0,0,0);
 }
 
 float * getBasis(const Vector direction) {
@@ -50,4 +51,12 @@ void LightProbe::scale(const float s) {
 
 float LightProbe::getDepth(unsigned int i, unsigned int j) {
     return this->octMap[j][i];
+}
+
+void LightProbe::resetIndirectCoefficients() {
+    for (unsigned int j = 0;j<9;j++) {
+        this->indirectCoefficients[j].x = 0;
+        this->indirectCoefficients[j].y = 0;
+        this->indirectCoefficients[j].z = 0;
+    }
 }

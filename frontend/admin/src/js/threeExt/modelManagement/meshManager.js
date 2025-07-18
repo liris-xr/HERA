@@ -534,16 +534,29 @@ vec3 getTrilinearWeight(vec3 alpha, ivec3 offset) {
 	return trilinear;
 }
 
+vec3 getBarycentricWeights(vec3 alpha, ivec3 offset, vec3 movedOffset) {
+	// We need to find 3 vectors in order to find our weights
+	vec3 x = ( vec3(1,0,0) - 2.0*vec3(offset) ) - movedOffset ;
+	vec3 y = ( vec3(0,1,0) - 2.0*vec3(offset) ) - movedOffset ;
+	vec3 z = ( vec3(0,0,1) - 2.0*vec3(offset) ) - movedOffset ;
+
+	return vec3(1,1,1) - vec3(
+		clamp( dot(alpha - movedOffset , x ) ,0.,1.),
+		clamp( dot(alpha - movedOffset , y ) ,0.,1.),
+		clamp( dot(alpha - movedOffset , z ) ,0.,1.)
+	);
+}
+
 float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
 	// 0 => (0,0,0), 1 = > (1,0,0), 2 => (0,0,1), 3 => (1,0,1), 
 	// 4 => (0,1,0), 5 => (1,1,0), 6 => (0,1,1), 7 => (1,1,1)
 	ivec3 offset = ivec3(i, i >> 2, i >> 1) & ivec3(1);
 
-	vec3 range = vec3(1,1,1) + getProbeOffset(i,texcoord); // Cubewise 
-	vec3 alphaWithOffset = abs (alpha / range);
+	vec3 movedOffset = vec3(offset) + getProbeOffset(i,texcoord); // Cubewise 
 
 
-	vec3 trilinear = getTrilinearWeight(alpha,offset);
+	// vec3 trilinear = getTrilinearWeight(alpha,offset);
+	vec3 trilinear = getBarycentricWeights(alpha,offset,movedOffset);
 	float weight = 1.0;
 
 	vec3 probePos = getProbePos(i,texcoord);
@@ -561,7 +574,7 @@ float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
 
 		weight *= chebyshevWeight;
 	} else {
-		weight *= trilinear.x * trilinear.y * trilinear.z;
+		weight *= trilinear.x * trilinear.y * trilinear.z ;
 	}
 
 	return max(0.00001,weight);
@@ -654,6 +667,8 @@ void main() {
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
+
+	// outgoingLight = getProbePos(0,texcoord);
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>

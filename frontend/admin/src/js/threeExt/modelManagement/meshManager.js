@@ -536,15 +536,20 @@ vec3 getTrilinearWeight(vec3 alpha, ivec3 offset) {
 
 vec3 getBarycentricWeights(vec3 alpha, ivec3 offset, vec3 movedOffset) {
 	// We need to find 3 vectors in order to find our weights
-	vec3 x = ( vec3(1,0,0) - 2.0*vec3(offset) ) - movedOffset ;
-	vec3 y = ( vec3(0,1,0) - 2.0*vec3(offset) ) - movedOffset ;
-	vec3 z = ( vec3(0,0,1) - 2.0*vec3(offset) ) - movedOffset ;
+	vec3 xPoint = vec3(1 - offset.x,offset.y,offset.z);
+	vec3 yPoint = vec3(offset.x , 1 - offset.y , offset.z);
+	vec3 zPoint = vec3(offset.x , offset.y , 1 - offset.z);
+	
+	vec3 x = xPoint - movedOffset ;
+	vec3 y = yPoint - movedOffset ;
+	vec3 z = zPoint - movedOffset ;
 
+	vec3 originToAlpha = alpha - movedOffset;
 	return vec3(1,1,1) - vec3(
-		clamp( dot(alpha - movedOffset , x ) ,0.,1.),
-		clamp( dot(alpha - movedOffset , y ) ,0.,1.),
-		clamp( dot(alpha - movedOffset , z ) ,0.,1.)
-	);
+		abs ( movedOffset.x - alpha.x ),
+		abs ( movedOffset.y - alpha.y ),
+		abs ( movedOffset.z - alpha.z )
+		);
 }
 
 float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
@@ -668,7 +673,15 @@ void main() {
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
 
-	// outgoingLight = getProbePos(0,texcoord);
+	float x = (texcoord.x - float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth) * lpvTextureWidth;
+	float z = (texcoord.y - float(int(texcoord.y*lpvTextureDepth))/lpvTextureDepth) * lpvTextureDepth;
+	float y = (texcoord.z - float(int(texcoord.z*lpvTextureHeight))/lpvTextureHeight) * lpvTextureHeight;
+
+	// Weight on each axis depending on where the sampling point is in the box
+	vec3 alpha = vec3(x,y,z);
+
+	// outgoingLight = vec3(getBarycentricWeights(alpha,ivec3(0,0,0),vec3(0.5,0,0)).r);
+	// outgoingLight = alpha;
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>

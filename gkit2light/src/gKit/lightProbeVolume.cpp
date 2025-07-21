@@ -379,7 +379,7 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
                 this->updateIndirectLighting(probe);
             }
         } else if(distanceFromGeometry < this->freq/4.0) { // Valid probe, too close to geometry
-            float displacement = (this->freq/2.0) / (probe.nbDisplacement == 0 ? 1 : probe.nbDisplacement);
+            float displacement = (this->freq/4.0) / (probe.nbDisplacement == 0 ? 1 : probe.nbDisplacement);
 
             Vector worldSpaceOffset = -directionOfGeometry*displacement;
             Vector cubeSpaceOffset = worldSpaceOffset / this->freq;

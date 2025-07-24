@@ -181,16 +181,26 @@ float square(float x) {
 }
 
 // Considering a point in a cube,
-//    6 -----  7	
-//   / |     / |
-//	/  |	/  |
-// 4 ---- 5    |
-// |   |  |    |
-// |   2 -|--- 3	
-// |  /   |  /	
-// | /	  |	/ 
-// 0 ---- 1
+//    6 --------- 7	
+//   / |       /  |
+//	/  |	  /   |
+// 4 ------- 5    |
+// |   |     |    |
+// |   2 ----|-- 3	
+// |  /      |  /	
+// | /	     | / 
+// 0 ------- 1
 // Depending of the cube texcoord is in, we want to get the coord of i
+
+// Get the 3 points that are connected to i
+// For instance, 4 will return (5,6,1)
+ivec3 getNeighbourCubePoints(int i) {
+	int xOffset = i % 2 == 0 ? 1 : -1; 
+	int yOffset = i % 4 == 0 || (i-1) % 4 == 0 ? 2 : -2; 
+	int zOffset = i > 3 ? 4 : -4; 
+
+	return ivec3(i+xOffset,i+yOffset,i+zOffset);
+}
 
 vec3 getITexcoord(int i,vec3 texcoord) {
 	float x = float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth;
@@ -534,34 +544,41 @@ vec3 getTrilinearWeight(vec3 alpha, ivec3 offset) {
 	return trilinear;
 }
 
-vec3 getBarycentricWeights(vec3 alpha, ivec3 offset, vec3 movedOffset) {
+vec3 getBarycentricWeights(vec3 alpha, ivec3 offset, vec3 movedOffset, vec3 texcoord, int i) {
 	// We need to find 3 vectors in order to find our weights
-	vec3 xPoint = vec3(1 - offset.x,offset.y,offset.z);
-	vec3 yPoint = vec3(offset.x , 1 - offset.y , offset.z);
-	vec3 zPoint = vec3(offset.x , offset.y , 1 - offset.z);
-	
-	vec3 x = xPoint - movedOffset ;
-	vec3 y = yPoint - movedOffset ;
-	vec3 z = zPoint - movedOffset ;
+ 
+	ivec3 neighbours = getNeighbourCubePoints(i);
 
-	vec3 originToAlpha = alpha - movedOffset;
-	return vec3(1,1,1) - vec3(
-		abs ( movedOffset.x - alpha.x ),
-		abs ( movedOffset.y - alpha.y ),
-		abs ( movedOffset.z - alpha.z )
-		);
+	vec3 x = vec3(1-offset.x,offset.y,offset.z) + getProbeOffset(neighbours.x,texcoord);
+	vec3 y = vec3(offset.x,1-offset.y,offset.z) + getProbeOffset(neighbours.y,texcoord);
+	vec3 z = vec3(offset.x,offset.y,1-offset.z) + getProbeOffset(neighbours.z,texcoord);
+
+	vec3 movedOffsetToX = x - movedOffset ;
+	vec3 movedOffsetToY = y - movedOffset ;
+	vec3 movedOffsetToZ = z - movedOffset ;
+
+	vec3 movedOffsetToAlpha = alpha - movedOffset;
+	
+	// return vec3(alpha);
+
+	return vec3(1) - vec3(
+		abs( dot(movedOffsetToAlpha , movedOffsetToX ) ),
+		abs( dot(movedOffsetToAlpha , movedOffsetToY ) ),
+		abs( dot(movedOffsetToAlpha , movedOffsetToZ ) )
+	) ;
 }
 
 float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
 	// 0 => (0,0,0), 1 = > (1,0,0), 2 => (0,0,1), 3 => (1,0,1), 
 	// 4 => (0,1,0), 5 => (1,1,0), 6 => (0,1,1), 7 => (1,1,1)
+
 	ivec3 offset = ivec3(i, i >> 2, i >> 1) & ivec3(1);
 
 	vec3 movedOffset = vec3(offset) + getProbeOffset(i,texcoord); // Cubewise 
 
 
 	// vec3 trilinear = getTrilinearWeight(alpha,offset);
-	vec3 trilinear = getBarycentricWeights(alpha,offset,movedOffset);
+	vec3 trilinear = getBarycentricWeights(alpha,offset,movedOffset,texcoord,i);
 	float weight = 1.0;
 
 	vec3 probePos = getProbePos(i,texcoord);
@@ -672,16 +689,6 @@ void main() {
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
 		outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + ( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat;
 	#endif
-
-	float x = (texcoord.x - float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth) * lpvTextureWidth;
-	float z = (texcoord.y - float(int(texcoord.y*lpvTextureDepth))/lpvTextureDepth) * lpvTextureDepth;
-	float y = (texcoord.z - float(int(texcoord.z*lpvTextureHeight))/lpvTextureHeight) * lpvTextureHeight;
-
-	// Weight on each axis depending on where the sampling point is in the box
-	vec3 alpha = vec3(x,y,z);
-
-	// outgoingLight = vec3(getBarycentricWeights(alpha,ivec3(0,0,0),vec3(0.5,0,0)).r);
-	// outgoingLight = alpha;
 
 	#include <opaque_fragment>
 	#include <tonemapping_fragment>

@@ -9,17 +9,17 @@ export class LightSet extends classes(THREE.Group,SceneElementInterface) {
     constructor(shadowMapSize,scene) {
         super();
 
-        const ambientLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
+        // const ambientLight = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
 
-        this.#directionalLight = new THREE.DirectionalLight( 0xffffff, 8 );
-        this.setLightPosition(2,2,2)
-        this.#directionalLight.castShadow = true;
-        this.#directionalLight.shadow.mapSize.width = shadowMapSize;
-        this.#directionalLight.shadow.mapSize.height = shadowMapSize;
-        this.#directionalLight.shadow.normalBias = 0.01;
+        // this.#directionalLight = new THREE.DirectionalLight( 0xffffff, 8 );
+        // this.setLightPosition(2,2,2)
+        // this.#directionalLight.castShadow = true;
+        // this.#directionalLight.shadow.mapSize.width = shadowMapSize;
+        // this.#directionalLight.shadow.mapSize.height = shadowMapSize;
+        // this.#directionalLight.shadow.normalBias = 0.01;
 
-        this.add(ambientLight);
-        this.add(this.#directionalLight);
+        // this.add(ambientLight);
+        // this.add(this.#directionalLight);
 
         // const lightProbeVolume = new LightProbeVolume(new THREE.Vector3(0,1,0),8,2,2,2,scene);
         // console.time()

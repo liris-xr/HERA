@@ -660,6 +660,8 @@ void main() {
 	// Old way of interpolating probes, using GPU interpolation
 	// Doesn't account for obstructions, but works fine
 	// You can take off comment it order to try it, and comment "getWieghtedIrradiance" line
+	// Change "THREE.NearestFilter" to "THREE.LinearFilter" when sending spherical harmonics texture to the GPU, in the javascript code
+
 
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 	// texture(sh1,texcoord).rgb,
@@ -784,6 +786,8 @@ export class MeshManager {
 		return this.#meshes;
     });
 
+	// There are a lot of data to be fetched :
+	// We need to be sure everything is loaded, so we can update the shader
 	areDataLoaded() {
 		
 		const res = this.lpvParameters.value && 
@@ -797,6 +801,7 @@ export class MeshManager {
 	
     addSubMesh(scene,mesh,meshData) {
 
+		// Trigger shader update if everything if loaded
 		mesh.material.customProgramCacheKey = () => {
 			mesh.material.needsUpdate = true;
 
@@ -820,6 +825,8 @@ export class MeshManager {
 				shader.vertexShader = vertexShader;
 				shader.fragmentShader = fragShader;
 				
+				// Send every spherical harmonics component to the shader
+				// Change "THREE.NearestFilter" to "THREE.LinearFilter" if you want to use it with GPU interpolation (without accouting for probe visibility)
 				for(let i = 0;i<9;i++) {
 					addTexture(shader,this.shTextures[i].value,
 						this.lpvParameters.value.width*this.lpvParameters.value.density,
@@ -850,7 +857,7 @@ export class MeshManager {
 				)
 
 
-
+				// Sends every Irradiance Volume parameters to the shader
 				shader.uniforms.lpvCenter = {value : new THREE.Vector3(this.lpvParameters.value.center.x,this.lpvParameters.value.center.y,this.lpvParameters.value.center.z)};
 				shader.uniforms.lpvWidth = {value : this.lpvParameters.value.width};
 				shader.uniforms.lpvDepth = {value : this.lpvParameters.value.depth};
@@ -859,25 +866,19 @@ export class MeshManager {
 				shader.uniforms.lpvTextureDepth = {value : this.lpvParameters.value.depth*this.lpvParameters.value.density};
 				shader.uniforms.lpvTextureHeight = {value : this.lpvParameters.value.height*this.lpvParameters.value.density};
 				shader.uniforms.lpvDensity = {value : this.lpvParameters.value.density};
-
-
-				shader.uniforms.atlasFreqX = { value : (1.0/this.atlasParameters.value.width)};
-				shader.uniforms.atlasFreqZ = { value : (1.0/this.atlasParameters.value.depth)};
-
-				shader.uniforms.depthMapHalfSizeX = { value : (this.atlasParameters.value.depthMapSize/2.0)*(1.0/this.atlasParameters.value.width)};
-				shader.uniforms.depthMapHalfSizeZ = { value : (this.atlasParameters.value.depthMapSize/2.0)*(1.0/this.atlasParameters.value.depth)};
-
-				shader.uniforms.depthMapSize = { value : this.atlasParameters.value.depthMapSize };
-				shader.uniforms.halfDepthMapSize = { value : this.atlasParameters.value.depthMapSize/2.0 };
-
-				
-				
-				
 				shader.uniforms.freqX = {value:1.0/(this.lpvParameters.value.width*this.lpvParameters.value.density)};
 				shader.uniforms.freqY = {value:1.0/(this.lpvParameters.value.height*this.lpvParameters.value.density)};
 				shader.uniforms.freqZ = {value:1.0/(this.lpvParameters.value.depth*this.lpvParameters.value.density)};
 				shader.uniforms.worldFreq = {value:1.0/this.lpvParameters.value.density};
-				
+
+
+				// Depth map paramaterss
+				shader.uniforms.atlasFreqX = { value : (1.0/this.atlasParameters.value.width)};
+				shader.uniforms.atlasFreqZ = { value : (1.0/this.atlasParameters.value.depth)};
+				shader.uniforms.depthMapHalfSizeX = { value : (this.atlasParameters.value.depthMapSize/2.0)*(1.0/this.atlasParameters.value.width)};
+				shader.uniforms.depthMapHalfSizeZ = { value : (this.atlasParameters.value.depthMapSize/2.0)*(1.0/this.atlasParameters.value.depth)};
+				shader.uniforms.depthMapSize = { value : this.atlasParameters.value.depthMapSize };
+				shader.uniforms.halfDepthMapSize = { value : this.atlasParameters.value.depthMapSize/2.0 };
 			}
         }
 

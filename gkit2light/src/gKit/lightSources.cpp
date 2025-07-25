@@ -6,6 +6,7 @@ std::default_random_engine LSrng(seed());
 
 LightSources::LightSources(const Mesh & mesh,const std::vector<GLTFMaterial> & materials) {
     this->totalLuminance = 0;
+    // Luminance of a triangle scale depending on his strength AND his size
 
     for(int i= 0; i < mesh.triangle_count(); i++) {
         Color color = materials[mesh.triangle_material_index(i)].emission;
@@ -28,6 +29,10 @@ LightSources::LightSources(const Mesh & mesh,const std::vector<GLTFMaterial> & m
     for(unsigned int i = 0;i<this->weights.size();i++) {
         this->weights[i] /= totalLuminance;
     }
+
+    // Initialize the random discrete distribution generator
+    // Each triangle is weighted depending on his luminance 
+    // The stronger it is, the more likely it is to be picked
     this->dd = std::discrete_distribution<unsigned int>(this->weights.begin(),this->weights.end());
 }
 

@@ -27,7 +27,7 @@ Un volume de 2\*2\*2
 16 rayons de direct par rayon d'indirect
 
 Des depthmap de 16*16
-Où on lance 8 rayons pour chaque pixel
+Où on lance 8 par axe (donc 8*8) rayons pour chaque pixel
 
 
 ### Fichiers générés 

@@ -11,7 +11,7 @@
 #include "octahedron.hpp"
 #include "vec.h"
 
-
+// Les structures Ray, Hit et Triangle viennent de gKit
 struct Ray
 {
     Point o;                // origine
@@ -92,20 +92,20 @@ struct Triangle
             + ( e1 * r1 )
             + ( e2 * r2 )) + Vector(n) *0.001;
     }
-
-    // bool isBackFaceTouched(const Vector & direction) const {
-    //     return dot(n,-direction) < 0;
-    // }
 };
 
 class LightProbeVolume {
     private:
-
+        // We use 9 compenents harmononics
+        // Each texture store one component for every probe
+        // A component is a vec3 (color)
         std::vector<float> shTextures[9]; // 9 textures
                                           // A pixel of a texture is a component of a spherical harmonic
+
         std::vector<float> invalidityTexture; // A single texture telling us how much a probe is invalid
                                               // The more a probe sees back-face, the more invalid it is
 
+        // Useful in order to generate depth maps
         Octahedron * octahedron;
         std::vector<vec2> depthMapAtlas;
 
@@ -116,6 +116,7 @@ class LightProbeVolume {
 
         unsigned int nbRayPerAxis;
 
+        // Store lights sources of the scene (emissive triangles)
         LightSources * lightSources;
         Mesh mesh;
         std::vector<GLTFMaterial> materials;
@@ -139,6 +140,7 @@ class LightProbeVolume {
 
         void addNeighbour(const unsigned int probeId,std::vector<LightProbe> & neighbours);
 
+        // Fill neighbours with every neighbour of a probe
         void add3DNeighbours(const unsigned int probeId,std::vector<LightProbe> & neighbours);
 
         float getClosestNeighbourDistance(const Point & position,std::vector<LightProbe> & neighbours);

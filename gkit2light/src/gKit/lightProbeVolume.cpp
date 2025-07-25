@@ -77,6 +77,7 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
     this->freq = 1.0/density;
     unsigned int nbProbe = 0;
     
+    // Place every probe
     for(unsigned int i = 0;i<texturesHeight;i++) {
         for(unsigned int j = 0; j<texturesDepth; j++) {
             for(unsigned int k = 0;k<texturesWidth;k++) {
@@ -113,25 +114,6 @@ LightProbeVolume::LightProbeVolume(const Mesh & mesh,
 
 LightProbeVolume::~LightProbeVolume() {
 
-}
-
-
-Vector LightProbeVolume::getRandomSphereDirection(const Point & origin) {
-    float r1 = uniform(rng);
-    float r2 = uniform(rng);
-    
-    float phi = 2*M_PI*r1;
-    float theta = acos(1-(2*r2)); 
-
-    float x = origin.x + (2 * cos(phi)) * sqrt(r2*(1-r2));
-    float y = origin.y + (2 * sin(phi)) * sqrt(r2*(1-r2)); 
-    float z = origin.z + (1-(2*r2));
-
-    
-    Point pointOnSphere(x,y,z);
-    Vector direction = pointOnSphere - origin;
-
-    return normalize(direction);
 }
 
 float fract( const float v )  { return v - std::floor(v); }
@@ -202,12 +184,13 @@ float LightProbeVolume::getClosestNeighbourDistance(const Point & position,std::
     return minDist;
 }
 
+// Based on the probe's invalidity score
+// We create a meaned spherical harmonics of the surrounding probes (weighted with their own score)
+// Then we lerp between both, based on the probe's invalidity score
 void LightProbeVolume::updateBasedOnInvalidity() {
     #pragma omp parallel for
     for(LightProbe & probe : this->probes) {
-        // Based on the probe's invalidity score
-        // We create a meaned spherical harmonics of the surrounding probes (weighted with their own score)
-        // Then we lerp between both, based on the probe's invalidity score
+        
         if(this->invalidityTexture[probe.id] > 0) {
             LightProbe newLightProbe(probe.position,probe.id);
             std::vector<LightProbe> neighbours;
@@ -276,7 +259,13 @@ bool LightProbeVolume::isBackFaceTouched(const unsigned int triangleId, const Ve
 }
 
 void LightProbeVolume::updateDirectLighting(LightProbe & probe) {
-    // #pragma omp parallel for
+    // For each sample we :
+    // Choose a random light source
+    // Choose a random point on it
+
+    // See if the point is obstructed
+    // Obstructed : we don't do anything
+    // Visible : we update the coeefficents of the probe
     for(unsigned int i = 0;i<this->nbDirectSamples;i++) {
         unsigned int lightSourceId = this->lightSources->getRandomWeightedLightSourceId();
         unsigned int triangleId = this->lightSources->getTriangleId(lightSourceId);
@@ -306,9 +295,14 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
     Vector directionOfGeometry;
 
     float sampleOffset = uniform(rng);
+
+    // For each sample, we :
+    // Create a ray between a random direction on a sphere
+    // If it hits, we save the closest direction to the geometry 
+    // If it hits a light reflector, we want to know how much irradiance this light reflector receive
+    // So we calculated direct illumination for this point, just as in updateDirectLighting
     for(unsigned int i = 0;i<this->nbIndirectSamples;i++) {
         Vector sphereDirection = this->getRandomSphereDirectionFibo(i,this->nbIndirectSamples,sampleOffset);
-        // Vector sphereDirection = this->getRandomSphereDirection(probe.position);
 
         Hit hit = this->getClosestIntersection(probe.position, sphereDirection);
 
@@ -320,6 +314,8 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
                 distanceFromGeometry = hit.t;
                 directionOfGeometry = sphereDirection;
             }
+
+            // Used to know if a probe is inside geometry
             if(isBackFaceTouched(hit.triangle_id, sphereDirection)) {
                 this->invalidityTexture[probe.id]++;
 
@@ -346,6 +342,8 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
                             lightReflectorColor = lightReflectorColor + (material.color*lightSourceColor);
                         }
                     }
+
+                    
                     lightReflectorColor = (lightReflectorColor * this->lightSources->totalLuminance) / float(this->nbDirectIndirectSamples);
                     if(lightReflectorColor.max() > 0.0) {
                         float * shBasis = getBasis(sphereDirection);
@@ -360,8 +358,11 @@ void LightProbeVolume::updateIndirectLighting(LightProbe & probe) {
             }
         }
     }
-    if(probe.nbDisplacement < 5) {
 
+    // Move probe if inside geometry, or if it is to close to geometry
+    // We rebake afeter moving the probe
+    // nbDisplacement limits recursivity
+    if(probe.nbDisplacement < 5) {
         if(this->invalidityTexture[probe.id]) { // Invalid probe inside geometry
             this->invalidityTexture[probe.id] /= float(nbIntersection);
             if(this->invalidityTexture[probe.id] > 0.1 ) {
@@ -469,6 +470,10 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
     unsigned int startWidth = ( probeLayerId % unsigned(texturesWidth) ) * depthMapSizeWithBorders;
     unsigned int startHeight = ( probe.id / nbProbeOnLayer ) * ( depthMapNbPixel * nbProbeOnLayer );
 
+    // For each pixel
+    // We shoot nbRayPerAxis*nbRayPerAxis ray in order to compute depth
+    // That's pretty much it, everything else is mostly getting the right pixel in the 1D table
+    // Storing 2D texture of 3D probes in a 1D table is a little annoying for sure
     for(unsigned int j = 0;j<depthMapSize;j++) {
         std::vector<float> line;
 
@@ -514,6 +519,8 @@ void LightProbeVolume::updateDepthMap(LightProbe & probe) {
         probe.octMap.push_back(line);
     }
 
+    // Now that our depth map as been computed, we need to stitch the sides and the corners
+    // Useful so we can have GPU interpolation on our depth maps
     unsigned int i0 = startDepth
                     + startWidth
                     + startHeight

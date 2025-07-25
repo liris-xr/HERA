@@ -18,6 +18,7 @@ const int N = 256;
 
 int main( const int argc, const char **argv )
 {
+    // Program parameters 
     const char *scene_filename= "data/cornell_box-_original.glb";
     if(argc > 1)
         scene_filename= argv[1];
@@ -87,7 +88,6 @@ int main( const int argc, const char **argv )
 
     auto start= std::chrono::high_resolution_clock::now();
 
-    
     LightProbeVolume lpv(mesh,materials,
             Point(centerX,centerY,centerZ),
             density,width,depth,height,
@@ -96,12 +96,10 @@ int main( const int argc, const char **argv )
 
     lpv.bake();
     lpv.writeLPV();
-    lpv.writeDepthMapLayer(0);
 
-    // std::cout << lpv.probes[0].getDepth(15,8) - lpv.probes[1].getDepth(15,8) << std::endl;
-    // std::cout <<  lpv.probes[7].getDepth(15,8) - lpv.probes[8].getDepth(15,8) << std::endl;
-    // std::cout << lpv.probes[1].getDepth(11,8) << std::endl;
-    // std::cout << lpv.probes[17].getDepth(11,8) << std::endl;
+    // Optional : only useful in order to debug depth map
+    // The image is sent in frontend/public/admin/public/textures
+    lpv.writeDepthMapLayer(0);
 
     auto stop= std::chrono::high_resolution_clock::now();
     int cpu= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();

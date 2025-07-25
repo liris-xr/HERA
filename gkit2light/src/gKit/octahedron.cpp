@@ -9,6 +9,13 @@ const Vector RIGHT(1,0,0);
 const Vector LEFT(-1,0,0);
 const Vector DOWN(0,-1,0);
 
+// G ---- H ---- I
+// |   /    \    |
+// | /        \  |
+// D ---- E ---- F
+// |  \       /  |
+// |   \    /    |
+// A ---- B ---- C
 Octahedron::Octahedron(unsigned int size) {
     this->size = size;
     this->halfSize = size/2;
@@ -41,6 +48,9 @@ Octahedron::Octahedron(unsigned int size) {
     };
 }
 
+// (i,j) the coordinates of the pixel in the octahedron texture
+// Return the vector, obtained by interpolating between the 3 points of the triangle the pixel is
+// Each point of the octahedron represent a direction 
 Vector Octahedron::getVector(float i, float j) {
     Vector p(i,j,0);
     float a1, a2, a3;

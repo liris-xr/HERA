@@ -202,6 +202,8 @@ ivec3 getNeighbourCubePoints(int i) {
 	return ivec3(i+xOffset,i+yOffset,i+zOffset);
 }
 
+// Texcoord being a point inside of a cube :
+// Returns the exact i point coordinates in texture space
 vec3 getITexcoord(int i,vec3 texcoord) {
 	float x = float(int(texcoord.x*lpvTextureWidth))/lpvTextureWidth;
 	float y = float(int(texcoord.y*lpvTextureDepth))/lpvTextureDepth;
@@ -226,6 +228,8 @@ vec3 getITexcoord(int i,vec3 texcoord) {
 	}
 }
 
+// Texcoord being a point inside of a cube :
+// Returns the exact i point coordinates, but in world space
 vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
 	vec3 itexcoord = getITexcoord(i,texcoord);
 	float x = ((lpvWidth * ((2.0*itexcoord.x)-1.0)) / 2.0) + lpvCenter.x;
@@ -235,6 +239,7 @@ vec3 getIProbeWorldPosition(int i, vec3 texcoord ) {
 	return vec3(x,y,z);
 }
 
+// builds probeSH with the 9 spherical harmonics component
 void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
 	probeSH = vec3[9]( texture(sh0,getITexcoord(i,texcoord)).rgb,
 					texture(sh1,getITexcoord(i,texcoord)).rgb,
@@ -248,20 +253,15 @@ void getProbeSH(int i,vec3 texcoord, inout vec3[9] probeSH) {
 				  );
 }
 
+// return world space probe position
 vec3 getProbePos(int i, vec3 texcoord) {
 	return texture(shPos,getITexcoord(i,texcoord)).rgb;
 }
 
+// return cube space probe offset
 vec3 getProbeOffset(int i, vec3 texcoord) {
 	return texture(shOffset,getITexcoord(i,texcoord)).rgb;
 }
-
-void linearProbeInterpolation(vec3[9] a, vec3[9] b, float v, inout vec3[9] probeSH) {
-	for(int i = 0;i<9;i++) {
-		probeSH[i] = mix(a[i],b[i],v);
-	}
-}
-
 
 // Source : gkit2light, Jean-Claude Iehl
 vec2 intersectTriangle(vec3 triangleOrigin, vec3 e1, vec3 e2, vec3 origin, vec3 direction) {
@@ -279,6 +279,11 @@ vec2 intersectTriangle(vec3 triangleOrigin, vec3 e1, vec3 e2, vec3 origin, vec3 
 	return vec2(u, v);   
 }
 
+// return a few things useful to find the right pixel of the octahedric depth map :
+// uv : coordinates of the pixel in the triangle
+// texcoordTriangleOrigin : origin of the triangle
+// texcoordTriangleE1 : first vector representing the triangle
+// texcoordTriangleE2 : second vector representing the triangle
 void intersectOctMap(in vec3 direction, in vec3 texcoord, inout vec2 uv, inout vec2 texcoordTriangleOrigin, inout vec2 texcoordTriangleE1, inout vec2 texcoordTriangleE2) {
 	if(direction.x > 0.0) { // Right side of the depthmap 
 		if(direction.z > 0.0) { // Upper side of the depthmap
@@ -359,6 +364,7 @@ void intersectOctMap(in vec3 direction, in vec3 texcoord, inout vec2 uv, inout v
 	}
 }
 
+// returns a pixel of the atlas depth map
 float getProbeDepthMap(vec3 texcoord) {
 	return texture(depthMapAtlas,vec3(texcoord.x,texcoord.y,0.)).r;
 }
@@ -370,7 +376,9 @@ vec2 getIJ(vec3 texcoord) {
 			);	
 } 
 
-// Debug uses only
+// Debug : used to display the depthmap on object
+// useful if we want to be sure the depthmap is well displayed when we request with direction (the same way it has been built)
+// careful, the i < 1. || i > 17... are hard coded !! just change 17 for "depthMapSize + 1"
 vec3 getOctVector(vec3 texcoord) {
 	vec2 ij = getIJ(texcoord);
 
@@ -504,6 +512,9 @@ vec3 getOctVector(vec3 texcoord) {
     }
 }
 
+// Return probeZBuffer 
+// First component is mean depth, second is variance
+// direction is the direction between the probe and the point
 vec2 getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
 	vec3 iTexcoord = getITexcoord(i,texcoord); 
 	vec2 uv;
@@ -520,46 +531,29 @@ vec2 getProbeZBuffer(vec3 direction, vec3 texcoord, int i) {
 	return texture(depthMapAtlas,vec3(depthTexcoord.x,depthTexcoord.y,iTexcoord.z)).rg;
 }
 
-vec3 getTrilinearWeight(vec3 alpha, ivec3 offset) {
-	vec3 trilinear;
-	
-	if(offset.x == 1) {
-		trilinear.x = alpha.x;
-	} else {
-		trilinear.x = 1.0 - alpha.x; 
-	}
-
-	if(offset.y == 1) {
-		trilinear.y = alpha.y;
-	} else {
-		trilinear.y = 1.0 - alpha.y; 
-	}
-
-	if(offset.z == 1) {
-		trilinear.z = alpha.z;
-	} else {
-		trilinear.z = 1.0 - alpha.z; 
-	}
-
-	return trilinear;
-}
-
+// return the weight on a point within a cube for a specific probe 
+// alpha is point coordinates in cube space
+// offset is probe coordinates in cube space
+// movedOffset is probe coordinates after being moved in cube space
+// texcoord is point coordinates in texture space
+// i is probe indice in the cube
 vec3 getBarycentricWeights(vec3 alpha, ivec3 offset, vec3 movedOffset, vec3 texcoord, int i) {
 	// We need to find 3 vectors in order to find our weights
  
 	ivec3 neighbours = getNeighbourCubePoints(i);
 
-	vec3 x = vec3(1-offset.x,offset.y,offset.z) + getProbeOffset(neighbours.x,texcoord);
-	vec3 y = vec3(offset.x,1-offset.y,offset.z) + getProbeOffset(neighbours.y,texcoord);
-	vec3 z = vec3(offset.x,offset.y,1-offset.z) + getProbeOffset(neighbours.z,texcoord);
+	// n1 : neighbour of probe in cube space, in "x" axis
+	// n2 : same for y axis
+	// n3 : same for z axis
+	vec3 n1 = vec3(1-offset.x,offset.y,offset.z) + getProbeOffset(neighbours.x,texcoord);
+	vec3 n2 = vec3(offset.x,1-offset.y,offset.z) + getProbeOffset(neighbours.y,texcoord);
+	vec3 n3 = vec3(offset.x,offset.y,1-offset.z) + getProbeOffset(neighbours.z,texcoord);
 
-	vec3 movedOffsetToX = x - movedOffset ;
-	vec3 movedOffsetToY = y - movedOffset ;
-	vec3 movedOffsetToZ = z - movedOffset ;
+	vec3 movedOffsetToX = n1 - movedOffset ;
+	vec3 movedOffsetToY = n2 - movedOffset ;
+	vec3 movedOffsetToZ = n3 - movedOffset ;
 
 	vec3 movedOffsetToAlpha = alpha - movedOffset;
-	
-	// return vec3(alpha);
 
 	return vec3(1) - vec3(
 		abs( dot(movedOffsetToAlpha , movedOffsetToX ) ),
@@ -568,6 +562,11 @@ vec3 getBarycentricWeights(vec3 alpha, ivec3 offset, vec3 movedOffset, vec3 texc
 	) ;
 }
 
+// Return probe weight, depending on probe distance from point AND if it is obstructed
+// texcoord is point coordinates in texture space
+// p is point coordinates in world space
+// alpha is point coordinates in cube space
+// n is triangle normal 
 float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
 	// 0 => (0,0,0), 1 = > (1,0,0), 2 => (0,0,1), 3 => (1,0,1), 
 	// 4 => (0,1,0), 5 => (1,1,0), 6 => (0,1,1), 7 => (1,1,1)
@@ -576,8 +575,6 @@ float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
 
 	vec3 movedOffset = vec3(offset) + getProbeOffset(i,texcoord); // Cubewise 
 
-
-	// vec3 trilinear = getTrilinearWeight(alpha,offset);
 	vec3 trilinear = getBarycentricWeights(alpha,offset,movedOffset,texcoord,i);
 	float weight = 1.0;
 
@@ -602,6 +599,7 @@ float getProbeWeight(vec3 texcoord, vec3 p,int i,vec3 alpha, vec3 n) {
 	return max(0.00001,weight);
 }
 
+// compute meaned irradiance of each probe in the cube, depending of each probe weight
 vec3 getWeightedIrradiance(vec3 texcoord, vec3 p, vec3 n) {
 	vec3 sumIrradiance = vec3(0);
 	float sumWeight = 0.0;
@@ -659,6 +657,10 @@ void main() {
 		(2.0*((wPosition.y-lpvCenter.y) / lpvHeight) + 1.) / 2.
 		);
 		
+	// Old way of interpolating probes, using GPU interpolation
+	// Doesn't account for obstructions, but works fine
+	// You can take off comment it order to try it, and comment "getWieghtedIrradiance" line
+
 	// vec3 interpolatedLightProbe[9] = vec3[9]( texture(sh0,texcoord).rgb,
 	// texture(sh1,texcoord).rgb,
 	// texture(sh2,texcoord).rgb,

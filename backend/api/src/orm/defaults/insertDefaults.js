@@ -15,7 +15,7 @@ export async function insertDefaults() {
         password: passwordHash('admin'),
     });
 
-    for(let i = 0; i < 200; i++) {
+    for(let i = 0; i < 2; i++) {
         const user = ArUser.create({
             username: 'user'+i,
             email: 'user'+i+'@gmail.com',

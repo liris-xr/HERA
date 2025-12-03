@@ -22,7 +22,6 @@ watch(() =>props.show,async (value) => {
   if (value) {
     await nextTick();
     text.value = props.label.content.value;
-
     timestampStart.value = props.label.timestampStart;
     timestampEnd.value = props.label.timestampEnd;
   }
@@ -30,21 +29,44 @@ watch(() =>props.show,async (value) => {
 
 
 function clampValue(value){
-  if(value === "" || value === undefined || isNaN(value) || isNaN(Math.round(value))) return null;
-  let rounded = Math.round(value);
+  if(value === undefined || isNaN(value) || isNaN(Math.round(value))) return undefined;
+  if(value === "" ||  value === null) return null;
+
+  let rounded = Math.round(Number(value));
   if(rounded < 0) return 0;
-  return value
+  return rounded
 }
 
+function editedLabelValidation($emit){
+  let startTimer = clampValue(timestampStart.value)
+  const endTimer = clampValue(timestampEnd.value)
 
+  if(startTimer === undefined || endTimer === undefined) return
+
+  if(startTimer === null && endTimer !== null) {
+    timestampStart.value = 0
+    startTimer = clampValue(timestampStart.value)
+  }
+
+  if(endTimer === null){
+    $emit('confirm', getEditedLabel.value)
+    return
+  }
+
+  if(startTimer < endTimer){
+    $emit('confirm', getEditedLabel.value)
+  }
+}
 
 const getEditedLabel = computed(()=>{
-  const data = {
-    text: text.value,
-    timestampStart: clampValue(timestampStart.value),
-    timestampEnd: clampValue(timestampEnd.value),
-  }
-  return new Label(data)
+    const data = {
+      text: text.value,
+      timestampStart: clampValue(timestampStart.value),
+      timestampEnd: clampValue(timestampEnd.value),
+    }
+
+    console.log("getEditedLabel - data content : ", data);
+    return new Label(data)
 })
 
 </script>
@@ -53,7 +75,6 @@ const getEditedLabel = computed(()=>{
   <modal :show="show" @close="$emit('close')">
     <template #header>
       <h3>{{$t("labelEditModal.title")}}</h3>
-
     </template>
 
     <template #body>
@@ -80,12 +101,12 @@ const getEditedLabel = computed(()=>{
           <div>
               <div class="inlineFlex">
                 <label for="AdvancedEditTimestampStart">{{$t("labelEditModal.animation.in.label")}}</label>
-                <input type="number" id="AdvancedEditTimestampStart" :placeholder="$t('labelEditModal.animation.in.placeholder')" v-model="timestampStart" min="0">
+                <input type="text" id="AdvancedEditTimestampStart" :placeholder="$t('labelEditModal.animation.in.placeholder')" v-model="timestampStart" min="0">
               </div>
 
             <div class="inlineFlex">
               <label for="AdvancedEditTimestampEnd">{{$t("labelEditModal.animation.out.label")}}</label>
-              <input type="number" id="AdvancedEditTimestampEnd" :placeholder="$t('labelEditModal.animation.out.placeholder')" v-model="timestampEnd" min="0">
+              <input type="text" id="AdvancedEditTimestampEnd" :placeholder="$t('labelEditModal.animation.out.placeholder')" v-model="timestampEnd" min="timestampStart">
             </div>
 
           </div>
@@ -102,7 +123,7 @@ const getEditedLabel = computed(()=>{
     <template #footer>
       <div class="inlineFlex flexRight">
         <button-view :text="$t('labelEditModal.buttons.cancel')" @click="$emit('close')"></button-view>
-        <filled-button-view :text="$t('labelEditModal.buttons.confirm')" @click="$emit('confirm', getEditedLabel)"></filled-button-view>
+        <filled-button-view :text="$t('labelEditModal.buttons.confirm')" @click="editedLabelValidation($emit)"></filled-button-view>
       </div>
     </template>
   </modal>

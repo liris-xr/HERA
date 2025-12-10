@@ -88,6 +88,14 @@
         "label": "Image:",
         "alt": "Project image"
       },
+      "projectQuitMessage": {
+        "label": "Quitting Message",
+        "placeholder": "The message users will see before quitting"
+      },
+      "projectQuitUrl": {
+        "label": "Form link",
+        "placeholder": "Link to an external form for feedback"
+      },
       "buttons": {
         "duplicate": "Duplicate project",
         "delete": "Delete project"

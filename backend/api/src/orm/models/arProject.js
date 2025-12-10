@@ -44,6 +44,16 @@ export default sequelize.define('ArProject', {
         allowNull: false,
         defaultValue: 'public/common/projectCoverBlank.png',
     },
+    quitMessage:{
+        type: DataTypes.TEXT,
+        allowNull: false,
+        defaultValue: '',
+    },
+    quitUrl:{
+        type: DataTypes.TEXT,
+        allowNull: false,
+        defaultValue: '',
+    },
     unit:{
         type: DataTypes.STRING,
         allowNull: false,

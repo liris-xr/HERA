@@ -1,12 +1,13 @@
 <script setup>
 
 import Modal from "@/components/modal/modal.vue";
-import {computed, getCurrentInstance, nextTick, ref, watch} from "vue";
+import {computed, nextTick, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Editor from "primevue/editor"
+import NotificationComponent from '@/components/notification/notification.vue'
 
 const props = defineProps({
   show: {type: Boolean, default: false},
@@ -17,6 +18,8 @@ const text = ref("");
 const timestampStart = ref(null);
 const timestampEnd = ref(null);
 
+const showNotification = ref(false);
+const textNotification = ref("");
 
 watch(() =>props.show,async (value) => {
   if (value) {
@@ -32,16 +35,15 @@ function clampValue(value){
   if(value === undefined || isNaN(value) || isNaN(Math.round(value))) return undefined;
   if(value === "" ||  value === null) return null;
 
-  let rounded = Math.round(Number(value));
-  if(rounded < 0) return 0;
-  return rounded
+  return Math.round(Number(value))
 }
 
 function editedLabelValidation($emit){
   let startTimer = clampValue(timestampStart.value)
   const endTimer = clampValue(timestampEnd.value)
 
-  if(startTimer === undefined || endTimer === undefined) return
+  if(!validateTimestamps(startTimer,endTimer))
+    return
 
   if(startTimer === null && endTimer !== null) {
     timestampStart.value = 0
@@ -50,12 +52,36 @@ function editedLabelValidation($emit){
 
   if(endTimer === null){
     $emit('confirm', getEditedLabel.value)
-    return
-  }
-
-  if(startTimer < endTimer){
+  } else if(startTimer < endTimer){
     $emit('confirm', getEditedLabel.value)
   }
+}
+
+function validateTimestamps (startTimer,endTimer){
+  let isTimeStampValid = true;
+
+  console.log("startTimer : ", startTimer, " endTimer : ",endTimer);
+  if(startTimer === undefined || endTimer === undefined){
+    displayNotification("Please, enter a number")
+    isTimeStampValid = false
+  } else if (endTimer < 0 || startTimer < 0){
+    displayNotification("A number cannot be less than 0")
+    isTimeStampValid = false
+  } else if (endTimer != null && endTimer < startTimer){
+    displayNotification("Exit number must be greater than Entry number")
+    isTimeStampValid = false
+  }
+
+  return isTimeStampValid
+}
+
+function displayNotification(textToDisplay) {
+  showNotification.value = true;
+  textNotification.value = textToDisplay;
+
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 5000);
 }
 
 const getEditedLabel = computed(()=>{
@@ -68,7 +94,6 @@ const getEditedLabel = computed(()=>{
     console.log("getEditedLabel - data content : ", data);
     return new Label(data)
 })
-
 </script>
 
 <template>
@@ -122,9 +147,14 @@ const getEditedLabel = computed(()=>{
 
     <template #footer>
       <div class="inlineFlex flexRight">
-        <button-view :text="$t('labelEditModal.buttons.cancel')" @click="$emit('close')"></button-view>
+        <button-view :text="$t('labelEditModal.buttons.cancel')" @click="$emit('close') ; showNotification=false"></button-view>
         <filled-button-view :text="$t('labelEditModal.buttons.confirm')" @click="editedLabelValidation($emit)"></filled-button-view>
       </div>
+      <NotificationComponent :visible="showNotification">
+        <template #content>
+          <p class="notificationText">{{ textNotification }}</p>
+        </template>
+      </NotificationComponent>
     </template>
   </modal>
 </template>
@@ -222,5 +252,9 @@ textarea{
   --p-editor-overlay-option-focus-background: var(--darkerBackgroundColor);
 
 
+}
+
+.notificationText{
+  text-align: center;
 }
 </style>

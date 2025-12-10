@@ -156,6 +156,8 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             unit: req.body.unit,
             calibrationMessage: req.body.calibrationMessage,
             userId: token.id,
+            quitMessage: req.body.quitMessage,
+            quitUrl: req.body.quitUrl,
         }, {
             returning: true
         })
@@ -195,6 +197,8 @@ router.post(baseUrl+'project', authMiddleware, async (req, res) => {
             unit: req.body.unit,
             calibrationMessage: req.body.calibrationMessage,
             userId: token.id,
+            quitMessage: req.body.quitMessage,
+            quitUrl: req.body.quitUrl,
         });
 
         res.set({

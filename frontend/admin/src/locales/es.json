@@ -86,6 +86,14 @@
         "label": "Imagen:",
         "alt": "Imagen del proyecto"
       },
+      "projectQuitMessage": {
+        "label": "Mensaje antès de salir",
+        "placeholder": "El mensaje usuarios van a ver antès de salir"
+      },
+      "projectQuitUrl": {
+        "label": "Enlace de Formulario",
+        "placeholder": "Enlace de un formulario para los comentarios de los usuarios"
+      },
       "buttons": {
         "duplicate": "Duplicar proyecto",
         "delete": "Eliminar proyecto"

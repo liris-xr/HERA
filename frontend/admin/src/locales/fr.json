@@ -91,6 +91,14 @@
         "label": "Image :",
         "alt": "Image du projet"
       },
+      "projectQuitMessage": {
+        "label": "Message de fin",
+        "placeholder": "Message que les utilisateurs verront avant de quitter"
+      },
+      "projectQuitUrl": {
+        "label": "Lien de formulaire",
+        "placeholder": "Lien vers un formulaire externe pour les retours utilisateurs"
+      },
       "buttons": {
         "duplicate": "Dupliquer le projet",
         "delete": "Supprimer le projet"

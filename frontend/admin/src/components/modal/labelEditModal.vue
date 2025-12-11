@@ -14,7 +14,7 @@ const props = defineProps({
   label: {type: Label},
 })
 
-const text = ref("");
+const labelText = ref("");
 const timestampStart = ref(null);
 const timestampEnd = ref(null);
 
@@ -24,7 +24,7 @@ const textNotification = ref("");
 watch(() =>props.show,async (value) => {
   if (value) {
     await nextTick();
-    text.value = props.label.content.value;
+    labelText.value = props.label.content.value;
     timestampStart.value = props.label.timestampStart;
     timestampEnd.value = props.label.timestampEnd;
   }
@@ -39,40 +39,33 @@ function clampValue(value){
 }
 
 function editedLabelValidation($emit){
+  if(!validateTimestamps())
+    return
+
+  if(timestampStart.value === null && timestampEnd.value !== null)
+    timestampStart.value = 0
+
+  $emit('confirm', getEditedLabel.value)
+}
+
+function validateTimestamps (){
   let startTimer = clampValue(timestampStart.value)
   const endTimer = clampValue(timestampEnd.value)
 
-  if(!validateTimestamps(startTimer,endTimer))
-    return
+  let isTimestampValid = true;
 
-  if(startTimer === null && endTimer !== null) {
-    timestampStart.value = 0
-    startTimer = clampValue(timestampStart.value)
-  }
-
-  if(endTimer === null){
-    $emit('confirm', getEditedLabel.value)
-  } else if(startTimer < endTimer){
-    $emit('confirm', getEditedLabel.value)
-  }
-}
-
-function validateTimestamps (startTimer,endTimer){
-  let isTimeStampValid = true;
-
-  console.log("startTimer : ", startTimer, " endTimer : ",endTimer);
   if(startTimer === undefined || endTimer === undefined){
     displayNotification("Please, enter a number")
-    isTimeStampValid = false
+    isTimestampValid = false
   } else if (endTimer < 0 || startTimer < 0){
     displayNotification("A number cannot be less than 0")
-    isTimeStampValid = false
+    isTimestampValid = false
   } else if (endTimer != null && endTimer < startTimer){
     displayNotification("Exit number must be greater than Entry number")
-    isTimeStampValid = false
+    isTimestampValid = false
   }
 
-  return isTimeStampValid
+  return isTimestampValid
 }
 
 function displayNotification(textToDisplay) {
@@ -81,12 +74,30 @@ function displayNotification(textToDisplay) {
 
   setTimeout(() => {
     showNotification.value = false;
-  }, 5000);
+  }, 10000);
+}
+
+function updateStartTimestamp(target,amount)
+{
+  const targetRef = target === 'start' ? timestampStart : timestampEnd;
+
+  let currentValue = Number(targetRef.value) || 0;
+  let newValue = currentValue + amount
+
+  if (newValue < 0)
+    newValue = 0;
+
+  targetRef.value = newValue;
+  console.log("current value ",currentValue)
+  console.log("newValue value ",newValue)
+  console.log("targetRef ",targetRef)
+  console.log("targetRef value ", targetRef.value);
+
 }
 
 const getEditedLabel = computed(()=>{
     const data = {
-      text: text.value,
+      text: labelText.value,
       timestampStart: clampValue(timestampStart.value),
       timestampEnd: clampValue(timestampEnd.value),
     }
@@ -111,7 +122,7 @@ const getEditedLabel = computed(()=>{
               <icon-svg url="/icons/text.svg" theme="textImportant"></icon-svg>
             </span>
 
-            <Editor class="editor" v-model="text" />
+            <Editor class="editor" v-model="labelText" />
             <!-- <textarea v-model="text" rows="8" :placeholder="$t('labelEditModal.content.placeholder')"></textarea> -->
           </div>
 
@@ -127,11 +138,15 @@ const getEditedLabel = computed(()=>{
               <div class="inlineFlex">
                 <label for="AdvancedEditTimestampStart">{{$t("labelEditModal.animation.in.label")}}</label>
                 <input type="text" id="AdvancedEditTimestampStart" :placeholder="$t('labelEditModal.animation.in.placeholder')" v-model="timestampStart" min="0">
+                <Button class="updateValueButton" @click="updateStartTimestamp('start',1)">↑</Button>
+                <Button class="updateValueButton" @click="updateStartTimestamp('start',-1)">↓</Button>
               </div>
 
             <div class="inlineFlex">
               <label for="AdvancedEditTimestampEnd">{{$t("labelEditModal.animation.out.label")}}</label>
               <input type="text" id="AdvancedEditTimestampEnd" :placeholder="$t('labelEditModal.animation.out.placeholder')" v-model="timestampEnd" min="timestampStart">
+              <Button class="updateValueButton" @click="updateStartTimestamp('end',1)">↑</Button>
+              <Button class="updateValueButton" @click="updateStartTimestamp('end',-1)">↓</Button>
             </div>
 
           </div>
@@ -167,7 +182,6 @@ const getEditedLabel = computed(()=>{
   align-items: center;
   margin-bottom: 8px;
 }
-
 .flexRight{
   justify-content: flex-end;
 }
@@ -180,6 +194,20 @@ label{
   margin-right: 16px;
   font-weight: 500;
   width: fit-content;
+}
+
+.updateValueButton{
+  margin-left: 6px;
+  padding: 4px;
+  background: var(--accentColor);
+  color: var(--backgroundColor);
+  border: none;
+  border-radius: 4px;
+}
+
+.updateValueButton:hover{
+  outline: solid 2px var(--textImportantColor);
+  outline-offset: 2px;
 }
 
 input{
@@ -199,7 +227,6 @@ input{
 input:focus{
   background-color: var(--darkerBackgroundColor);
   outline-color: var(--accentColor);
-
 }
 
 

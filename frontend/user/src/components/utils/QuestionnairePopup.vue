@@ -1,14 +1,16 @@
+// Liens vers la page demo : https://localhost:8082/viewer/questionnaire-demo
 <script setup>
-import { defineProps, defineEmits, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import QuestionnaireFormSkeleton from './QuestionnaireFormSkeleton.vue'
+import { defineProps, defineEmits, watch, ref, onBeforeUnmount, nextTick } from 'vue'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
-  title: { type: String, default: 'Questionnaire' },
+  title: { type: String, default: 'Votre avis compte !' },
   confirmLabel: { type: String, default: null },
   cancelLabel: { type: String, default: null },
   disableConfirm: { type: Boolean, default: false },
-  schema: { type: Array, default: () => [] }
+  schema: { type: Array, default: () => [] },
+  quitMessage: { type: String, default: '' },
+  quitUrl: { type: String, default: '' }
 })
 
 const emit = defineEmits(['confirm', 'cancel', 'update:visible', 'update:modelValue'])
@@ -19,8 +21,14 @@ const isValid = ref(false)
 const modalRef = ref(null)
 let previousActive = null
 
+const DEFAULT_QUIT_URL = 'https://www.youtube.com/'
+
 function onConfirm() {
-  if (props.disableConfirm || !isValid.value) return
+  if (props.disableConfirm) return
+  const targetUrl = props.quitUrl || DEFAULT_QUIT_URL
+  if (targetUrl) {
+    window.open(targetUrl, '_blank', 'noopener,noreferrer')
+  }
   emit('confirm', formData.value)
   emit('update:visible', false)
 }
@@ -107,27 +115,31 @@ function onModelUpdate(v) {
           </header>
 
           <main class="modal__body">
-            <slot>
-              <QuestionnaireFormSkeleton
-                :schema="schema"
-                v-model:modelValue="formData"
-                @validity="onValidity"
-                @update:modelValue="onModelUpdate"
-              />
-            </slot>
+            <!-- Message : valeur par défaut si vide -->
+            <div class="q-block">
+              <p class="q-value">
+                {{ quitMessage || 'Vous allez être redirigé vers un questionnaire externe.' }}
+              </p>
+            </div>
+            <div class="q-block">
+              <label class="q-label">URL de redirection</label>
+              <p class="q-value">
+                {{ quitUrl || 'https://www.youtube.com/' }}
+              </p>
+            </div>
           </main>
 
           <footer class="modal__footer">
             <button class="btn btn--secondary" @click="onCancel">
-              {{ cancelLabel || ($t ? $t('cancel') : 'Annuler') }}
+              {{ cancelLabel || ($t ? $t('projectView.arView.questionnairePopup.cancel') : 'Fermer') }}
             </button>
             <button
               class="btn btn--primary"
-              :disabled="props.disableConfirm ? props.disableConfirm : !isValid"
-              :aria-disabled="(props.disableConfirm ? props.disableConfirm : !isValid) ? 'true' : 'false'"
+              :disabled="props.disableConfirm"
+              :aria-disabled="props.disableConfirm ? 'true' : 'false'"
               @click="onConfirm"
             >
-              {{ confirmLabel || ($t ? $t('confirm') : 'Valider') }}
+              {{ confirmLabel || ($t ? $t('projectView.arView.questionnairePopup.confirm') : 'Ouvrir le questionnaire') }}
             </button>
           </footer>
         </div>
@@ -143,7 +155,7 @@ function onModelUpdate(v) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(2,6,23,0.5);
+  background: rgba(34, 58, 80, 0.35);
   z-index: 2000;
   padding: 16px;
 }
@@ -151,61 +163,99 @@ function onModelUpdate(v) {
 .modal{
   width: 100%;
   max-width: 560px;
-  background: var(--backgroundColor, #fff);
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(2,6,23,0.16);
+  background: var(--backgroundColor);
+  border-radius: 14px;
+  box-shadow: var(--defaultUniformShadow);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .modal__header{
-  padding: 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid rgba(34, 58, 80, 0.08);
 }
 
 .modal__title{
   margin: 0;
   font-size: 1.1rem;
-  color: var(--textImportantColor, #111);
+  font-weight: 600;
+  color: var(--textImportantColor);
 }
 
 .modal__body{
-  padding: 16px;
+  padding: 16px 20px 12px;
   min-height: 120px;
   max-height: 70vh;
   overflow: auto;
 }
 
 .modal__footer{
-  padding: 12px 16px;
-  border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 12px 20px 16px;
+  border-top: 1px solid rgba(34, 58, 80, 0.06);
   justify-content: flex-end;
   display:flex;
-  gap:8px;
+  gap:10px;
 }
 
 .btn{
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
   border: none;
   cursor: pointer;
   font-weight:600;
+  font-size: 14px;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.08s ease;
 }
 
 .btn--primary{
-  background: var(--accentColor, #007bff);
-  color: white;
+  background: var(--accentColor);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(63, 155, 240, 0.35);
+}
+
+.btn--primary:hover:not([disabled]):not([aria-disabled='true']){
+  background: #3187d6;
+  transform: translateY(-1px);
 }
 
 .btn--primary[disabled], .btn--primary[aria-disabled='true']{
-  opacity:0.6; cursor:not-allowed;
+  opacity:0.6;
+  cursor:not-allowed;
+  box-shadow: none;
 }
 
 .btn--secondary{
   background: transparent;
-  color: var(--textColor, #444);
-  border: 1px solid rgba(0,0,0,0.04);
+  color: var(--textImportantColor);
+  border: 1px solid rgba(34, 58, 80, 0.15);
+}
+
+.btn--secondary:hover{
+  background: rgba(229, 231, 232, 0.6);
+}
+
+.q-block{ margin-bottom:12px; }
+.q-label{ display:block; font-size:13px; font-weight:600; color:var(--textImportantColor); margin-bottom:4px; }
+.q-value{ margin:0; padding:9px 11px; border-radius:10px; background:#F5F7F9; font-size:14px; color:var(--textColor); word-break:break-word; }
+
+/* Animations cohérentes avec le reste de l’UI */
+.overlay-fade-enter-active,
+.overlay-fade-leave-active{
+  transition: opacity 0.18s ease-out;
+}
+.overlay-fade-enter-from,
+.overlay-fade-leave-to{
+  opacity: 0;
+}
+
+.modal-scale-enter-active,
+.modal-scale-leave-active{
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+}
+.modal-scale-enter-from,
+.modal-scale-leave-to{
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
 }
 </style>
-

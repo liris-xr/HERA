@@ -306,7 +306,7 @@ onBeforeRouteUpdate((to, from, next)=>{
   beforeRedirect(to, from, next)
 })
 
-
+const showQuitPreview = ref(false)
 </script>
 
 <template>

@@ -155,6 +155,15 @@
         "saved": "Sauvegardé",
         "saving": "Sauvegarde en cours"
       }
+    },
+    "arView": {
+      "questionnairePopup": {
+        "title": "Votre avis compte !",
+        "cancel": "Fermer",
+        "confirm": "Ouvrir le questionnaire",
+        "defaultMessage": "Vous allez être redirigé vers un questionnaire externe.",
+        "defaultUrl": "https://www.youtube.com/"
+      }
     }
   },
 

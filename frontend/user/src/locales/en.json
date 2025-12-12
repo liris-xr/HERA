@@ -40,6 +40,13 @@
           "previousButton": "Previous",
           "nextButton": "Next"
         }
+      },
+      "questionnairePopup": {
+        "title": "Your feedback matters!",
+        "cancel": "Close",
+        "confirm": "Open the questionnaire",
+        "defaultMessage": "You will be redirected to an external questionnaire.",
+        "defaultUrl": "https://www.youtube.com/"
       }
     },
     "projectInfo": {

@@ -1,16 +1,11 @@
 <template>
   <div class="demo-page">
-    <h1>Questionnaire</h1>
+    <h1>Popup Questionnaire</h1>
 
     <div class="controls">
-      <div class="title-static">Questionnaire de démonstration</div>
-
       <div class="actions">
         <button class="btn primary" @click="visible = true">Ouvrir le popup</button>
-        <button class="btn" @click="reset">Réinitialiser</button>
       </div>
-
-      <p v-if="status" class="status">{{ status }}</p>
     </div>
 
     <QuestionnairePopup
@@ -28,7 +23,7 @@ import { ref } from 'vue'
 import QuestionnairePopup from '@/components/utils/QuestionnairePopup.vue'
 
 const visible = ref(false)
-const title = ref('Questionnaire de démonstration')
+const title = ref('Votre avis compte !')
 const status = ref('')
 
 const demoSchema = [

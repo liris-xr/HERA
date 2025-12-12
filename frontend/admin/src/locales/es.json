@@ -150,6 +150,15 @@
         "saved": "Guardado",
         "saving": "Guardando"
       }
+    },
+    "arView": {
+      "questionnairePopup": {
+        "title": "¡Tu opinión cuenta!",
+        "cancel": "Cerrar",
+        "confirm": "Abrir el cuestionario",
+        "defaultMessage": "Vas a ser redirigido a un cuestionario externo.",
+        "defaultUrl": "https://www.youtube.com/"
+      }
     }
   },
   "sceneView": {

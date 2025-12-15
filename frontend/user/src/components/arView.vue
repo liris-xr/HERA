@@ -74,19 +74,17 @@ const buttonText = computed(() => {
   <div id="startButton">
     <button-view
       icon="/icons/ar.svg"
-      :text="$t('projectView.arView.startAr.button')"
-      @click="arSessionManager.start()"
-      :disabled="!loaded || !arCompatible"
-      :class="{buttonDisabled:!loaded || !arCompatible }"
+      :text="buttonText"
+      @click="arSessionManager.start(json.displayMode)"
+      :disabled="!loaded || !xrCompatible"
+      :class="{buttonDisabled:!loaded || !xrCompatible }"
       v-if="loaded"
     />
-    <button-view icon="/icons/ar.svg" :text="buttonText" @click="arSessionManager.start(json.displayMode)" :disabled="!loaded || !xrCompatible" :class="{buttonDisabled:!loaded || !xrCompatible }" v-if="loaded"></button-view>
     <span v-if="!loaded">
       {{$t("projectView.arView.startAr.loading")}}
       <icon-svg url="/icons/spinner.svg"></icon-svg>
     </span>
     <span v-if="loaded && !xrCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
-
   </div>
 
   <div>

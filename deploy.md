@@ -156,15 +156,15 @@ Since the site is based on the Vue.js Framework, it must be compiled into a stat
 ```shell
 npm run build
 ```
-After running this command, a `build` will be created. Copy the `.htaccess` file into it (this file is needed to allow Vue.js to handle URLs properly):
+After running this command, a `dist` will be created. Copy the `.htaccess` file into it (this file is needed to allow Vue.js to handle URLs properly):
 ```shell
-cp .htaccess ./build
+cp .htaccess ./dist
 ```
 
-Now, the `build` folder contains all the static files that can be hosted by Apache.
+Now, the `dist` folder contains all the static files that can be hosted by Apache.
 As agreed earlier, we will store these files in the `/var/www` folder
 ```shell
-cp -r ./build /var/www/hera/frontend/viewer
+cp -r ./dist /var/www/hera/frontend/viewer
 ```
 Note: to ensure the `.htaccess` file works, the destination folder must be named `viewer` for the viewer site, and `editor` for the editor site.
 
@@ -181,29 +181,31 @@ nano apache.conf
 Edit it to change the following information:
 ```
 <VirtualHost *:443>
-ServerAdmin webmaster@localhost
+    ServerAdmin webmaster@localhost
 
-DocumentRoot /var/www/hera/frontend <-- path to site root
+    DocumentRoot /var/www/hera/frontend                    <-- Website root path
 
-<Directory /var/www/hera/frontend> <-- path to site root
-Options FollowSymLinks
-AllowOverride All
-Require all granted
-</Directory>
+    Alias /editor /var/www/frontend/editor                 <-- editor path
+    <Directory /var/www/frontend/editor>                   <-- editor path
+    ...
+    ...
+    Alias /viewer /var/www/frontend/viewer                 <-- viewer path
+    <Directory /var/www/frontend/viewer>                   <-- viewer path
 
-ErrorLog ${APACHE_LOG_DIR}/error.log
-CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-SSLEngine on
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-SSLCertificateFile /home/webadmin/certificate/certificate.crt <-- path to certificate .crt files
-SSLCertificateKeyFile /home/webadmin/certificate/privatekey.key <-- path to the certificate .key files
-<FilesMatch "\.(?:cgi|shtml|phtml|php)$">
-SSLOptions +StdEnvVars
-</FilesMatch>
-<Directory /usr/lib/cgi-bin>
-SSLOptions +StdEnvVars
-</Directory>
+    SSLEngine on
+
+    SSLCertificateFile /home/webadmin/certificate/certificate.crt <-- path to certificate .crt files
+    SSLCertificateKeyFile /home/webadmin/certificate/privatekey.key <-- path to the certificate .key files
+    <FilesMatch "\.(?:cgi|shtml|phtml|php)$">
+        SSLOptions +StdEnvVars
+    </FilesMatch>
+    <Directory /usr/lib/cgi-bin>
+        SSLOptions +StdEnvVars
+    </Directory>
 </VirtualHost>
 ```
 

@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, reactive, ref} from "vue";
 import {ArSessionManager} from "@/js/threeExt/project/arSessionManager.js";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
@@ -10,13 +10,27 @@ import IconContextMenuItem from "@/components/utils/IconContextMenuItem.vue";
 import ActionBubble from "@/components/utils/actionBubble.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import QuestionnairePopup from '@/components/utils/QuestionnairePopup.vue';
+import {useI18n} from "vue-i18n";
 
+const {t} = useI18n()
 
 const props = defineProps({
   json: {type: Object, required: true}
 })
 
+const emit = defineEmits(["loaded"])
+
 const arSessionManager = new ArSessionManager(props.json);
+const overlayBottom = ref(true)
+
+defineExpose({
+  arSessionManager: reactive(arSessionManager), // on expose une version reactive pour uniformiser l'acces aux champs
+                                                // dans les pages presentation et project, car sur la 1ere, on utilise
+                                                // une ref pour le socket (car il peut ne pas etre utilisé), alors que
+                                                // sur l'autre, c'est un reactive car toujours utilisé, donc pas besoin
+                                                // de le reaffecter
+  overlayBottom
+})
 
 const container = ref(null);
 const arOverlay = ref(null);
@@ -24,8 +38,8 @@ const labelContainer = ref(null);
 
 const contextMenu = ref(null);
 
-const arCompatible = ref(false);
-arCompatible.value = await arSessionManager.isArCompatible();
+const xrCompatible = ref(false);
+xrCompatible.value = await arSessionManager.isXrCompatible(props.json.displayMode);
 const loaded = ref(false);
 const showQuestionnairePopup = ref(false)
 
@@ -33,6 +47,7 @@ const showQuestionnairePopup = ref(false)
 onMounted(async () => {
   await arSessionManager.init(container.value, arOverlay.value);
   loaded.value = true;
+  emit("loaded")
 })
 
 
@@ -41,16 +56,21 @@ function toggleContextMenuStatus(){
 }
 
 async function handleStopArSession() {
-  // on arrête proprement la session AR
   await arSessionManager.stop()
-  // Afficher la popup uniquement si on a bien une quitUrl
   if (props.json && props.json.quitUrl) {
     showQuestionnairePopup.value = true
   }
 }
+const buttonText = computed(() => {
+  if(props.json.displayMode === "ar")
+    return t('projectView.arView.startAr.button')
+  return t('projectView.arView.startVr.button')
+})
+
 </script>
 
 <template>
+
   <div id="startButton">
     <button-view
       icon="/icons/ar.svg"
@@ -60,11 +80,12 @@ async function handleStopArSession() {
       :class="{buttonDisabled:!loaded || !arCompatible }"
       v-if="loaded"
     />
+    <button-view icon="/icons/ar.svg" :text="buttonText" @click="arSessionManager.start(json.displayMode)" :disabled="!loaded || !xrCompatible" :class="{buttonDisabled:!loaded || !xrCompatible }" v-if="loaded"></button-view>
     <span v-if="!loaded">
       {{$t("projectView.arView.startAr.loading")}}
       <icon-svg url="/icons/spinner.svg"></icon-svg>
     </span>
-    <span v-if="loaded && !arCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
+    <span v-if="loaded && !xrCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
 
   </div>
 
@@ -114,21 +135,32 @@ async function handleStopArSession() {
         <expandable-ar-notification v-for="error in arSessionManager.sceneManager.active.value.getErrors.value" :title="error.title" :text="error.message"></expandable-ar-notification>
 
 
-        <div id="playerActions" v-if="arSessionManager.sceneManager.active.value.hasAnimation.value">
-          <action-bubble
-              :icon="arSessionManager.sceneManager.active.value.labelPlayer.isPlaying.value ? '/icons/pause.svg' : '/icons/play.svg'"
-              @click="arSessionManager.sceneManager.active.value.labelPlayer.togglePlaying()"
-          />
+        <div id="playerActions">
+          <template v-if="arSessionManager.sceneManager.active.value.hasAnimation.value">
+            <action-bubble
+                :icon="arSessionManager.sceneManager.active.value.labelPlayer.isPlaying.value ? '/icons/pause.svg' : '/icons/play.svg'"
+                @click="arSessionManager.sceneManager.active.value.labelPlayer.togglePlaying()"
+            />
+
+            <action-bubble
+                icon="/icons/restart.svg"
+                @click="arSessionManager.sceneManager.active.value.labelPlayer.reset()"
+            />
+          </template>
 
           <action-bubble
-              icon="/icons/restart.svg"
-              @click="arSessionManager.sceneManager.active.value.labelPlayer.reset()"
+              v-if="!arSessionManager.sceneManager.scenePlacementManager.isEnabled.value"
+              icon="/icons/ar.svg"
+              @click="arSessionManager.sceneManager.scenePlacementManager.reset()"
           />
 
         </div>
+
+
+
       </div>
 
-      <div id="overlayBottom" class="overlayBlur">
+      <div id="overlayBottom" class="overlayBlur" v-if="overlayBottom">
         <button class="arrowButton"
                 id="arrowButtonPrevious"
                 :class="{buttonDisabled:!arSessionManager.sceneManager.hasPrevious.value}"
@@ -183,7 +215,6 @@ async function handleStopArSession() {
 </template>
 
 <style scoped>
-
 
 h2{
   overflow: hidden;

@@ -15,8 +15,8 @@ watch(() =>props.show,async (value) => {
 </script>
 <template>
   <Transition name="modal">
-    <div v-if="show" class="modal-mask" @click="$emit('close')">
-      <div ref="modalContainer" class="modal-container" @click="$event.stopPropagation()" @keydown.esc="$emit('close')" tabindex="0">
+    <div v-if="show" class="modal-mask" @mousedown="$emit('close')">
+      <div ref="modalContainer" class="modal-container" @mousedown="$event.stopPropagation()" @keydown.esc="$emit('close')" tabindex="0">
         <div class="modal-header">
           <slot name="header">default header</slot>
         </div>
@@ -51,6 +51,7 @@ watch(() =>props.show,async (value) => {
   backdrop-filter: blur(8px);
   display: flex;
   transition: opacity 0.3s ease;
+
 }
 
 .modal-container {
@@ -63,6 +64,9 @@ watch(() =>props.show,async (value) => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);
   transition: all 0.3s ease;
+
+  max-height: 95%;
+  overflow-y: auto;
 }
 
 .modal-container:focus-visible {

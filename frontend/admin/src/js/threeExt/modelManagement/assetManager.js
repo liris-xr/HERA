@@ -1,41 +1,124 @@
 import {computed, shallowReactive} from "vue";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
+import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {MeshLoadError} from "@/js/threeExt/error/meshLoadError.js";
 import * as THREE from "three";
 import {Vector3} from "three";
+import { subclip } from "three/src/animation/AnimationUtils";
 
 let currentAssetId = 0;
 export class AssetManager {
     #assets;
+    sceneTitle;
+    projectId;
+    meshManagerMap;
+    meshDataMap; // Data (tranforms, materials) coming from the database
     onChanged;
     onMoved;
 
     constructor() {
         this.#assets = shallowReactive([]);
+        this.meshManagerMap = new Map();
+    }
+
+    setProjectId(id) {
+        this.projectId = id;
+    }
+
+    setSceneTitle(title) {
+        this.sceneTitle = title
+    }
+
+    setMeshMap(meshDataMap) {
+        this.meshDataMap = meshDataMap;
+    }
+
+    setMeshMapWithData(meshData) {
+        meshData.forEach( (mesh) => {
+            // this.meshDataMap.set(mesh.id,mesh)
+
+            if(this.meshDataMap.get(mesh.assetId))
+                this.meshDataMap.get(mesh.assetId)[mesh.id] = mesh
+            else
+                this.meshDataMap.set(mesh.assetId, { [mesh.id]: mesh })
+        })
     }
 
     getAssets = computed(()=>{
         return this.#assets;
     });
 
+    getAssetSubMeshes(asset) {
+        let subMeshes = []
 
-    addToScene(scene,asset,onAdd){
-        if(asset.id == null){
-            asset.id = 'new-asset'+currentAssetId;
-            currentAssetId++;
+        const step = (child,transform) => {
+            for(let children of child.children) {
+                if ("material" in children) {
+                    children.applyMatrix4(transform)
+                    subMeshes.push(children)
+                } else {
+                    let newTransform = new THREE.Matrix4()
+                    step(children,newTransform.multiplyMatrices(transform,children.matrix))
+                }
+                
+            }
+        }
+        
+        step(asset,new THREE.Matrix4())
+
+        return subMeshes
+    }
+
+    updateAssetSubMeshes(assetData, meshManager, scene) {
+        const step = (child,transform) => {
+            for(let children of child.children) {
+                if ("material" in children) {
+                    children.applyMatrix4(transform)
+                    const subMeshData = this.meshDataMap.get(assetData.id)?.["project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+children.name]
+                    // meshManager.updateSubMesh(children,subMeshData)
+
+                    this.meshManagerMap.get(assetData.id).addSubMesh(scene,children,subMeshData)
+
+                } else {
+                    let newTransform = new THREE.Matrix4()
+                    step(children,transform/*newTransform.multiplyMatrices(transform,children.matrix)*/)
+                }
+
+            }
         }
 
+        if(assetData.mesh) {
+            step(assetData.mesh,new THREE.Matrix4())
+        }
+    }
+
+    addToScene(scene,asset,onAdd,decomposeMesh=true){
+        if(asset.id == null){
+            asset.id = 'new-asset'+currentAssetId++;
+        }
+        
+        this.meshManagerMap.set(asset.id,new MeshManager())
+
+
         asset.load().then((mesh)=>{
+
+            const meshManager = this.meshManagerMap.get(asset.id)
+            if(decomposeMesh)
+                this.updateAssetSubMeshes(asset, meshManager, scene);
             scene.add(mesh)
+
+            this.setMeshMapWithData(this.getResultMeshes())
+            
             if(onAdd)
                 onAdd(asset)
-        }).catch(()=>{
+        }).catch((e)=>{
             scene.appendError(new MeshLoadError(asset.sourceUrl))
             }
         );
-
+        
         this.#assets.push(asset);
         this.runOnChanged();
+
         return asset;
     }
 
@@ -44,8 +127,11 @@ export class AssetManager {
         this.#assets.forEach(function(currentAsset, index, object) {
             if (asset.id === currentAsset.id) {
                 object.splice(index, 1);
-                scene.remove(asset.getObject());
                 self.runOnChanged();
+
+                scene.remove(currentAsset.mesh)
+                // self.meshManagerMap.get(asset.id).clear(scene)
+                self.meshManagerMap.delete(asset.id)
                 return true
             }
         });
@@ -59,15 +145,52 @@ export class AssetManager {
     getResultAssets(){
         const result = []
         for (let asset of this.#assets) {
-            result.push({
-                id: asset.id,
-                name:asset.name,
-                position:asset.getResultPosition(),
-                rotation: asset.getResultRotation(),
-                scale: asset.getResultScale(),
-                hideInViewer: asset.hideInViewer.value
-            });
+            if(asset.id !== "vrCamera")
+                result.push({
+                    id: asset.id,
+                    name:asset.name,
+                    position:asset.getResultPosition(),
+                    rotation: asset.getResultRotation(),
+                    scale: asset.getResultScale(),
+                    hideInViewer: asset.hideInViewer.value,
+                    copiedUrl: asset?.copiedUrl,
+                    activeAnimation: asset.activeAnimation
+                });
         }
+        
+        return result;
+    }
+
+    getResultMeshes() {
+        let result = []
+        
+        this.meshManagerMap.forEach( (meshManager,assetId) => {
+            for (let mesh of meshManager.getMeshes.value) {
+                result.push({
+                    id:"project-"+this.projectId+"-scene-"+this.sceneTitle+"-mesh-"+mesh.name,
+                    position:mesh.position,
+                    rotation:mesh.rotation,
+                    scale: mesh.scale,
+                    assetId:assetId,
+                    name: mesh.name,
+                    color:{
+                        r:mesh?.material?.color?.r,
+                        g:mesh?.material?.color?.g,
+                        b:mesh?.material?.color?.b,
+                    },
+                    emissive:{
+                        r:mesh?.material?.emissive?.r,
+                        g:mesh?.material?.emissive?.g,
+                        b:mesh?.material?.emissive?.b,
+                    },
+                    emissiveIntensity: mesh.material.emissiveIntensity,
+                    roughness: mesh.material.roughness,
+                    metalness: mesh.material.metalness,
+                    opacity: mesh.material.opacity
+                })
+            }
+        })
+
         return result;
     }
 
@@ -88,6 +211,20 @@ export class AssetManager {
                     asset.id = id.newId
                 }
             }
+            this.meshManagerMap.forEach((meshManager,assetId) => {
+                for(let mesh of meshManager.getMeshes.value) {
+                    if(mesh.assetId === id.tempId){
+                        mesh.assetId = id.newId
+                    }
+                }
+            })
+
+            for(let k of this.meshManagerMap.keys())
+                if(k === id.tempId) {
+                    this.meshManagerMap.set(id.newId, this.meshManagerMap.get(id.tempId));
+                    this.meshManagerMap.delete(id.tempId);
+                }
+
         }
 
         for (let i = 0; i < assets.length; i++) {
@@ -109,11 +246,14 @@ export class AssetManager {
 
     getSceneBoundingBox(){
         const boundingGroup = []
-        for (let asset of this.#assets) {
-            const assetBoundingBox = new THREE.Box3().setFromObject(asset.getObject());
-            boundingGroup.push(assetBoundingBox);
-        }
-
+        
+        this.meshManagerMap.forEach( (meshManager) => {
+            for (let mesh of meshManager.getMeshes.value) {
+                const meshBoundingBox = new THREE.Box3().setFromObject(mesh);
+                boundingGroup.push(meshBoundingBox);
+            }
+        })
+        
         let vMin = new Vector3(0,0,0);
         let vMax = new Vector3(0,0,0);
         for (let boundingBox of boundingGroup) {

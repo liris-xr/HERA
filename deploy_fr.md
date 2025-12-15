@@ -6,7 +6,7 @@ Ce document décrit la procédure de déploiement sur un serveur linux (debian) 
 Vous aurez besoin d'un serveur linux qui répond aux exigences suivantes :
 - Node.js est installé avec le gestionnaire de packages npm
 - Un serveur web Apache est installé
-- Vous disposez d'un certificat SSL présent sous la forme de deux fichiers : `certificate.crt` et `privatekey.key`
+- Mkcert est installé ou vous disposez d'un certificat SSL présent sous la forme de deux fichiers : `certificate.crt` et `privatekey.key`
 
 Dans la suite, nous considérerons qu'il existe un utilisateur 'webadmin' sur le serveur linux. 
 
@@ -16,6 +16,19 @@ Dans la suite, nous considérerons qu'il existe un utilisateur 'webadmin' sur le
 ### Téléchargement des fichiers sur le serveur
 Clonez les fichiers sur le serveur en utilisant la commande `git clone`
 Ici, nous considérerons que les fichiers ont été clonés dans `/home/webadmin/hera`
+
+
+
+### Création d’un certificat SSL
+**NB** : cette étape n’est nécessaire que si vous ne disposez pas encore d’un certificat SSL. Comme le certificat sera auto-signé, l’utilisateur devra l’accepter manuellement lors de l’avertissement affiché par son navigateur.
+
+Le certificat SSL peut être généré facilement avec **mkcert**. Une fois **mkcert** installé, il vous suffira d’exécuter les commandes suivantes :
+```shell
+mkcert -install
+cd hera/backend/api
+mkcert -cert-file certificate.crt -key-file privatekey.key localhost
+```
+
 
 
 ### Configuration des fichiers
@@ -160,15 +173,15 @@ Le site étant basé sur le Framework Vue.js, il doit être compilé dans un fic
 ```shell
 npm run build
 ```
-Après l'exécution de cette commande, un dossier `build` sera créé. Copiez-y le fichier `.htaccess` (ce fichier est nécessaire pour permettre à Vue.js de gérer correctement les URLs) :
+Après l'exécution de cette commande, un dossier `dist` sera créé. Copiez-y le fichier `.htaccess` (ce fichier est nécessaire pour permettre à Vue.js de gérer correctement les URLs) :
 ```shell
-cp .htaccess ./build
+cp .htaccess ./dist
 ```
 
-À présent, le dossier `build` continent tous les fichiers statiques pouvant être hébergés par Apache.
+À présent, le dossier `dist` continent tous les fichiers statiques pouvant être hébergés par Apache.
 Comme convenu plus tôt, nous allons stocker ces fichiers dans le dossier `/var/www`
 ```shell
-cp -r ./build /var/www/hera/frontend/viewer
+cp -r ./dist /var/www/hera/frontend/viewer
 ```
 Remarque : pour assurer le fonctionnement du fichier `.htaccess`, le dossier destination doit être nommé `viewer` pour le site de visualisation, et `editor` pour le site d'édition.
 
@@ -191,11 +204,12 @@ nano apache.conf
 
         DocumentRoot /var/www/hera/frontend                    <-- chemin vers la racine du site
 
-        <Directory /var/www/hera/frontend>                     <-- chemin vers la racine du site
-                Options FollowSymLinks
-                AllowOverride All
-                Require all granted
-        </Directory>
+        Alias /editor /var/www/frontend/editor                 <-- chemin vers l'éditeur
+        <Directory /var/www/frontend/editor>                   <-- chemin vers l'éditeur
+        ...
+        ...
+        Alias /viewer /var/www/frontend/viewer                 <-- chemin vers le viewer
+        <Directory /var/www/frontend/viewer>                   <-- chemin vers le viewer
 
        
         ErrorLog ${APACHE_LOG_DIR}/error.log

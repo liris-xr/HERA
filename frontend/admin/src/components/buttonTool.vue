@@ -5,7 +5,7 @@ import {computed} from "vue";
 
 const props = defineProps({
   name:{type:String,required:true},
-  currentActive:{type:String,required:true},
+  currentActive:{type:String},
 })
 
 

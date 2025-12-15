@@ -53,8 +53,6 @@ export class Editor {
 
         this.orbitControls = new OrbitControls( this.camera, this.renderer.domElement);
 
-
-
         this.onWindowResize();
         this.#resetCameraPosition();
 
@@ -87,6 +85,7 @@ export class Editor {
 
 
     onFrame(time, frame) {
+
         this.scene.onFrame(time, frame, this.camera.position)
         this.orbitControls.update();
         this.renderer.render(this.scene, this.camera);

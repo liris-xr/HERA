@@ -32,4 +32,8 @@ export class AbstractScene extends classes(THREE.Scene, RenderLoopInterface){
     resetLabels(){
         throw new ImplementationError("resetLabels");
     }
+
+    findAssetById(id){
+        throw new ImplementationError("findAssetById");
+    }
 }

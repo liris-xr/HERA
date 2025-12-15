@@ -3,20 +3,25 @@ import {Scene} from "three";
 import * as THREE from "three";
 import {getResource} from "@/js/endpoints.js";
 
-export class Mesh{
+export class Object3D {
     sourceUrl;
-    mesh
+    animations
+    object
 
     #error
 
     constructor(sourceUrl) {
         this.sourceUrl = sourceUrl;
         this.#error = false
-        this.mesh = null;
+        this.object = null;
     }
 
     hasError(){
         return this.#error;
+    }
+
+    hasAnimations() {
+        return (this.animations && this.animations.length !== 0);
     }
 
     async load(){
@@ -31,11 +36,13 @@ export class Mesh{
                 }
             });
 
-            this.mesh = mesh.scene;
+            this.animations = mesh.animations
+            this.object = mesh.scene;
+            this.object.animations = this.animations
 
         }catch(error){
             console.error(error);
-            this.mesh = new Scene();
+            this.object = new Scene();
             this.#error = true;
         }
     }

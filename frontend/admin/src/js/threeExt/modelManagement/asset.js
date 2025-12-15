@@ -8,7 +8,7 @@ import * as THREE from "three";
 export class Asset extends classes(SelectableInterface, LoadableInterface){
 
     id;
-    mesh;
+    subMeshes;
     name;
     hideInViewer;
     sourceUrl;
@@ -21,18 +21,26 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
     #isLoading;
     #isSelected;
 
+    animationMixer
+    animations
+    activeAnimation
+
+    copiedUrl
+
 
 
 
     constructor(assetData) {
         super();
         this.id = assetData.id;
+        this.subMeshes = [];
         this.#isSelected = ref(false);
         this.sourceUrl = assetData.url;
         this.name = assetData.name;
         this.hideInViewer = ref(assetData.hideInViewer);
         this.uploadData = assetData.uploadData || null;
-
+        this.activeAnimation = assetData.activeAnimation || null;
+        this.animations = []
 
         this.mesh = new THREE.Mesh();
 
@@ -52,6 +60,9 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
             this.scale = {x:1,y:1, z:1};
         this.#hasError = ref(false);
         this.#isLoading = ref(true);
+
+        if(assetData?.copiedUrl)
+            this.copiedUrl = assetData.copiedUrl;
     }
 
     hasError = computed(()=>{
@@ -73,7 +84,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
         }else{
             meshToLoad = new Mesh(this.sourceUrl, null)
         }
-
+        
         return new Promise((resolve, reject) => {
             meshToLoad.load().then((mesh)=>{
                 this.#isLoading.value = false;
@@ -84,6 +95,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 this.mesh = mesh;
+                this.animations = mesh.animations;
                 resolve(this.mesh)
             }).catch(()=>{
                     this.#isLoading.value = false;
@@ -92,8 +104,10 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
                 }
             );
         });
+    }
 
-
+    addSubMesh(mesh) {
+        this.subMeshes.push(mesh);
     }
 
     getObject(){
@@ -135,4 +149,23 @@ export class Asset extends classes(SelectableInterface, LoadableInterface){
         result.z = this.getObject().scale.z;
         return result;
     }
+
+    clone() {
+        const clonedData = {
+            id: crypto.randomUUID(),
+            name: this.name,
+            url: this.sourceUrl,
+            hideInViewer: this.hideInViewer.value,
+            uploadData: this.uploadData,
+            position: { ...this.position },
+            rotation: { ...this.rotation },
+            scale: { ...this.scale }
+        };
+
+        // penser a load le nouvel asset
+        return new Asset(clonedData);
+    }
+
+
+
 }

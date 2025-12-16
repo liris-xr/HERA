@@ -189,6 +189,9 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             title: req.body?.title,
             description: req.body?.description,
             pictureUrl: updatedUrl,
+            userId: token.id,
+            quitMessage: req.body.quitMessage,
+            quitUrl: req.body.quitUrl,
             unit: req.body?.unit,
             displayMode: req.body.displayMode,
             calibrationMessage: req.body?.calibrationMessage,
@@ -232,6 +235,8 @@ router.post(baseUrl+'project', authMiddleware, async (req, res) => {
             unit: req.body.unit,
             calibrationMessage: req.body.calibrationMessage,
             userId: token.id,
+            quitMessage: req.body.quitMessage,
+            quitUrl: req.body.quitUrl,
             published: req.body?.published,
         });
 

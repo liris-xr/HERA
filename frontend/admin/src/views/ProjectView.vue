@@ -306,7 +306,7 @@ onBeforeRouteUpdate((to, from, next)=>{
   beforeRedirect(to, from, next)
 })
 
-
+const showQuitPreview = ref(false)
 </script>
 
 <template>
@@ -382,6 +382,25 @@ onBeforeRouteUpdate((to, from, next)=>{
             <img ref="projectPictureTag" :src="getImage" :alt="$t('projectView.leftSection.title')">
           </div>
 
+          <div class="multilineField">
+          <div class="inlineFlex">
+            <label>{{$t("projectView.leftSection.projectQuitMessage.label")}}</label>
+            <label for="desc">
+              <icon-svg url="/icons/edit.svg" theme="default" :hover-effect="true"></icon-svg>
+            </label>
+          </div>
+          <textarea id="desc" v-model="project.quitMessage" rows="8" :placeholder="$t('projectView.leftSection.projectQuitMessage.placeholder')"></textarea>
+          </div>
+
+          <div class="multilineField">
+            <div class="inlineFlex">
+              <label>{{$t("projectView.leftSection.projectQuitUrl.label")}}</label>
+              <label for="desc">
+                <icon-svg url="/icons/edit.svg" theme="default" :hover-effect="true"></icon-svg>
+              </label>
+            </div>
+            <textarea id="desc" v-model="project.quitUrl" rows="1" :placeholder="$t('projectView.leftSection.projectQuitUrl.placeholder')"></textarea>
+          </div>
 
           <div class="inlineFlex">
             <button-view :text="$t('projectView.leftSection.buttons.duplicate')" icon="/icons/duplicate.svg" @click="showDuplicateProjectModal = true"></button-view>

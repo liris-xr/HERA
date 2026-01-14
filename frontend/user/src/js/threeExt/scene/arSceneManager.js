@@ -2,10 +2,15 @@ import {ArScene} from "@/js/threeExt/scene/arScene.js";
 import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.js";
 import {computed, ref, watch} from "vue";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
+import {ArRecordManager} from "@/js/threeExt/scene/arRecordManager.js";
 
 export class ArSceneManager{
     scenes;
     activeSceneId;
+
+    currentFrame = 0;
+    startRecording = false;
+    recordManager;
 
     scenePlacementManager;
     #lightEstimate;
@@ -18,6 +23,7 @@ export class ArSceneManager{
         this.isArRunning = ref(false);
         this.#lightEstimate = new LightSet(shadowMapSize);
         this.scenePlacementManager = new ScenePlacementManager();
+        this.recordManager = new ArRecordManager();
 
         this.scenes = [];
         for (let sceneData of scenes) {
@@ -29,6 +35,22 @@ export class ArSceneManager{
         this.activeSceneId = ref(this.scenes[0].sceneId);
 
         this.onSceneChanged = null
+
+        if(this.startRecording){
+            setInterval(() => {
+                this.recordManager.addToBuffer(
+                    {
+                        sceneId: this.activeSceneId,
+                        time: Date.now().toString(),
+                        frame: this.currentFrame,
+                        matrix: this.scenePlacementManager.getWorldTransformMatrix()
+                    });
+            }, this.recordManager.recordTimerMs);
+
+            setInterval(async () => {
+                this.recordManager.sendData();
+            }, this.recordManager.sendRecordsTimerMs);
+        }
 
         watch(this.active, (value) => {
             this.#updateLighting();
@@ -127,7 +149,7 @@ export class ArSceneManager{
 
     onXrFrame(time, frame, localSpace, camera, renderer){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
-        
+        this.currentFrame = frame;
         this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), camera, renderer);
     }
 
@@ -145,4 +167,6 @@ export class ArSceneManager{
         for(let scene of this.scenes)
             scene.labelPlayer.setXr(xr)
     }
+
+
 }

@@ -58,26 +58,26 @@ router.get(baseUrl+'records/:page' , authMiddleware,async (req, res) => {
 /**
  * Route to add records
  */
-
-router.post(baseUrl+"records/:page", authMiddleware, async (req, res) => {
+router.post(baseUrl+"records/", authMiddleware, async (req, res) => {
     const authUser = req.user
 
     if(!authUser.admin) {
         res.status(401);
-        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+        return res.send({ error: 'Unauthorized', details: 'Permission not granted' })
     }
 
     try {
         const recordsToAddJson = req.body;
-        /*
-        TODO record also needs
-        id
-        projectId
-        sceneId
-        userId
-        */
         for(let i=0; i<recordsToAddJson.length; i++) {
+            let scene = await fetch(`${ENDPOINT}scene/${recordsToAddJson[i].sceneId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            scene = scene.body
             await ArRecord.create({
+                projectId: scene ? scene.projectId : null,
+                sceneId: recordsToAddJson[i].sceneId,
+                userId: recordsToAddJson[i].userId,
                 date: recordsToAddJson[i].date,
                 time: recordsToAddJson[i].time,
                 frame: recordsToAddJson[i].frame,

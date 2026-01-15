@@ -14,7 +14,7 @@ export const sequelize = new Sequelize({
     logging: false,
 });
 
-const databaseRecordsPath = 'src/database/databaseRecords.sqlite.sqlite';
+const databaseRecordsPath = 'src/database/databaseRecords.sqlite';
 
 export const sequelizeRecords = new Sequelize({
     dialect: 'sqlite',

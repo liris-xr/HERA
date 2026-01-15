@@ -9,7 +9,7 @@ export class ArSceneManager{
     activeSceneId;
 
     currentFrame = 0;
-    startRecording = false;
+    startRecording = true;
     recordManager;
 
     scenePlacementManager;
@@ -37,8 +37,8 @@ export class ArSceneManager{
         this.onSceneChanged = null
 
         if(this.startRecording){
-            setInterval(() => {
-                this.recordManager.addToBuffer(
+            setInterval(async () => {
+                await this.recordManager.addToBuffer(
                     {
                         sceneId: this.activeSceneId,
                         time: Date.now().toString(),
@@ -48,7 +48,7 @@ export class ArSceneManager{
             }, this.recordManager.recordTimerMs);
 
             setInterval(async () => {
-                this.recordManager.sendData();
+               await this.recordManager.sendData();
             }, this.recordManager.sendRecordsTimerMs);
         }
 

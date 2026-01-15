@@ -1,4 +1,3 @@
-
 {
   "locale": "es-ES",
   "header": {
@@ -79,7 +78,7 @@
     },
     "startPresentation": "Démarrer une nouvelle présentation",
     "presentationState": "Etat de la présentation",
-    "terminated": "La présentation est maintenant terminée, merci pour votre attention",
+    "terminated": "La presentación est maintenant terminée, merci pour votre attention",
     "seeProject": "Voir le projet"
   },
 
@@ -168,5 +167,12 @@
   "meshLoadError": {
     "title": "Error de carga",
     "message": "No se pudo cargar el archivo"
+  },
+  "recordUserModal": {
+    "title": "Registro de trazas de usuario",
+    "body": "\u00bfQuieres activar el registro de trazas de usuario durante esta sesi\u00f3n?",
+    "no": "No",
+    "yes": "S\u00ed",
+    "close": "Cerrar"
   }
 }

@@ -32,4 +32,8 @@ export class ArRecordManager {
             body: JSON.stringify(dataToSend)
         });
     }
+
+    getSecondsBetweenEachRecord(){
+        return Math.ceil((this.recordTimerMs)/1000);
+    }
 }

@@ -112,10 +112,10 @@ export class ArSessionManager {
         return this.#isArRunning.value;
     })
 
-
     async start(mode="ar") {
         // this.reset();
         this.#isArRunning.value = true
+        this.sceneManager.startRecordingScene();
 
         const options = mode === "ar" ? {
             requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
@@ -266,6 +266,7 @@ export class ArSessionManager {
     }
 
     async stop(){
+        this.sceneManager.stopRecordingScene();
         if(this.arSession != null)
             await this.arSession.end();
     }
@@ -276,10 +277,6 @@ export class ArSessionManager {
         this.sceneManager.scenePlacementManager.hitTestSource = null
         this.#isArRunning.value = false;
         this.sceneManager.isArRunning.value = false;
-        if(this.sceneManager.recordManager){
-            if(this.sceneManager.recordManager.intervalRecordId !== (-1)) clearInterval(this.sceneManager.recordManager.intervalRecordId);
-            if(this.sceneManager.recordManager.intervalSendRecordsId !== (-1)) clearInterval(this.sceneManager.recordManager.intervalSendRecordsId);
-        }
 
         if(this.xrMode === "vr")
             this.removeVrCameraPosition()
@@ -291,7 +288,6 @@ export class ArSessionManager {
 
         if(this.xr3dUi)
             this.xr3dUi.removeFromScene(this.sceneManager.active.value)
-
 
     }
 

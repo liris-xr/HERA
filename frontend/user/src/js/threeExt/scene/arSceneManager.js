@@ -63,12 +63,15 @@ export class ArSceneManager{
         this.setFirstActive();
         this.#updateLighting();
 
+    }
+
+     startRecordingScene(){
         if(this.startRecording){
 
-            if(this.recordManager.intervalRecordId !== (-1)) clearInterval(this.recordManager.intervalRecordId);
-            if(this.recordManager.intervalSendRecordsId !== (-1)) clearInterval(this.recordManager.intervalSendRecordsId);
+            this.stopRecordingScene()
 
             this.recordManager.intervalRecordId = setInterval(async () => {
+                this.currentFrame += this.recordManager.getSecondsBetweenEachRecord();
                 await this.recordManager.addToBuffer(
                     {
                         sceneId: this.activeSceneId.value,
@@ -82,7 +85,13 @@ export class ArSceneManager{
                 await this.recordManager.sendData();
             }, this.recordManager.sendRecordsTimerMs);
         }
+    }
 
+    stopRecordingScene(){
+        if(this.recordManager){
+            if(this.recordManager.intervalRecordId !== (-1)) clearInterval(this.recordManager.intervalRecordId);
+            if(this.recordManager.intervalSendRecordsId !== (-1)) clearInterval(this.recordManager.intervalSendRecordsId);
+        }
     }
 
     reset(){
@@ -153,7 +162,6 @@ export class ArSceneManager{
 
     onXrFrame(time, frame, localSpace, camera, renderer){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
-        this.currentFrame++;
         this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), camera, renderer);
     }
 

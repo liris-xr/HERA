@@ -2,6 +2,7 @@ import express from 'express'
 import {baseUrl} from "./baseUrl.js";
 import authMiddleware from "../middlewares/auth.js";
 import ArRecord from "../orm/models/arRecord.js";
+import {ArAsset, ArLabel, ArMesh, ArProject, ArScene, ArUser} from "../orm/index.js";
 
 const router = express.Router()
 
@@ -63,15 +64,13 @@ router.get(baseUrl+'records/:page' , authMiddleware,async (req, res) => {
 /**
  * Route to add records
  */
-router.post(baseUrl+"records/", authMiddleware, async (req, res) => {
+router.post(baseUrl+"records/", async (req, res) => {
     try {
         const recordsToAddJson = req.body;
         for(let i=0; i<recordsToAddJson.length; i++) {
-            let scene = await fetch(`${ENDPOINT}scene/${recordsToAddJson[i].sceneId}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            scene = await scene.json()
+            let scene = (await ArScene.findOne({
+                where: {id: recordsToAddJson[i].sceneId},
+            }));
             await ArRecord.create({
                 projectId: scene ? scene.projectId : null,
                 sceneId: recordsToAddJson[i].sceneId,

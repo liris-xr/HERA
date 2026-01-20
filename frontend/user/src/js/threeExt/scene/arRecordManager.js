@@ -7,6 +7,8 @@ export class ArRecordManager {
     sendRecordsTimerMs;
     recordBuffer = [];
     userTempId;
+    intervalRecordId = -1;
+    intervalSendRecordsId = -1;
 
     constructor(recordTimerMs = 2000, sendRecordsTimerMs = 30000) {
         this.recordTimerMs = recordTimerMs;
@@ -24,7 +26,7 @@ export class ArRecordManager {
         if (this.recordBuffer.length === 0) return;
         const dataToSend = [...this.recordBuffer];
         this.recordBuffer = [];
-        await fetch(`${ENDPOINT}records/}`, {
+        await fetch(`${ENDPOINT}records/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dataToSend)

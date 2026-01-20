@@ -36,22 +36,6 @@ export class ArSceneManager{
 
         this.onSceneChanged = null
 
-        if(this.startRecording){
-            setInterval(async () => {
-                await this.recordManager.addToBuffer(
-                    {
-                        sceneId: this.activeSceneId,
-                        time: Date.now().toString(),
-                        frame: this.currentFrame,
-                        matrix: this.scenePlacementManager.getWorldTransformMatrix()
-                    });
-            }, this.recordManager.recordTimerMs);
-
-            setInterval(async () => {
-               await this.recordManager.sendData();
-            }, this.recordManager.sendRecordsTimerMs);
-        }
-
         watch(this.active, (value) => {
             this.#updateLighting();
             this.active.value.resetLabels();
@@ -78,6 +62,26 @@ export class ArSceneManager{
         }
         this.setFirstActive();
         this.#updateLighting();
+
+        if(this.startRecording){
+
+            if(this.recordManager.intervalRecordId !== (-1)) clearInterval(this.recordManager.intervalRecordId);
+            if(this.recordManager.intervalSendRecordsId !== (-1)) clearInterval(this.recordManager.intervalSendRecordsId);
+
+            this.recordManager.intervalRecordId = setInterval(async () => {
+                await this.recordManager.addToBuffer(
+                    {
+                        sceneId: this.activeSceneId.value,
+                        time: Date.now().toString(),
+                        frame: this.currentFrame,
+                        matrix: this.scenePlacementManager.getWorldTransformMatrix()
+                    });
+            }, this.recordManager.recordTimerMs);
+
+            this.recordManager.intervalSendRecordsId = setInterval(async () => {
+                await this.recordManager.sendData();
+            }, this.recordManager.sendRecordsTimerMs);
+        }
 
     }
 

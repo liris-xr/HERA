@@ -276,6 +276,11 @@ export class ArSessionManager {
         this.sceneManager.scenePlacementManager.hitTestSource = null
         this.#isArRunning.value = false;
         this.sceneManager.isArRunning.value = false;
+        if(this.sceneManager.recordManager){
+            if(this.sceneManager.recordManager.intervalRecordId !== (-1)) clearInterval(this.sceneManager.recordManager.intervalRecordId);
+            if(this.sceneManager.recordManager.intervalSendRecordsId !== (-1)) clearInterval(this.sceneManager.recordManager.intervalSendRecordsId);
+        }
+
         if(this.xrMode === "vr")
             this.removeVrCameraPosition()
         this.#resetCameraPosition()

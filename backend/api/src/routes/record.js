@@ -69,19 +69,19 @@ router.post(baseUrl+"records/", authMiddleware, async (req, res) => {
     try {
         const recordsToAddJson = req.body;
         for(let i=0; i<recordsToAddJson.length; i++) {
-            let scene = await fetch(`${ENDPOINT}scene/${recordsToAddJson[i].sceneId}`, {
+            let scene = await fetch(`${ENDPOINT}scene/${recordsToAddJson[i].sceneId.value}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });
             scene = scene.body
             await ArRecord.create({
                 projectId: scene ? scene.projectId : null,
-                sceneId: recordsToAddJson[i].sceneId,
+                sceneId: recordsToAddJson[i].sceneId.value,
                 userId: recordsToAddJson[i].userId,
                 date: recordsToAddJson[i].date,
                 time: recordsToAddJson[i].time,
                 frame: recordsToAddJson[i].frame,
-                matrix: recordsToAddJson[i].matrix,
+                matrix: recordsToAddJson[i].matrix?.elements.join(','),
             })
         }
         res.set({

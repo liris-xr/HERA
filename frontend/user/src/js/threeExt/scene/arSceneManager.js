@@ -9,7 +9,7 @@ export class ArSceneManager{
     activeSceneId;
 
     currentFrame = 0;
-    startRecording = true;
+    startRecording = false;
     recordManager;
 
     scenePlacementManager;
@@ -33,6 +33,7 @@ export class ArSceneManager{
             this.scenes.push(new ArScene({id:0, title:"None", assets:[]}));
 
         this.activeSceneId = ref(this.scenes[0].sceneId);
+        this.startRecording = this.scenes[0].recordUser ?? false;
 
         this.onSceneChanged = null
 
@@ -68,7 +69,8 @@ export class ArSceneManager{
      startRecordingScene(){
         if(this.startRecording){
 
-            this.stopRecordingScene()
+            this.stopRecordingScene();
+            this.currentFrame = 0;
 
             this.recordManager.intervalRecordId = setInterval(async () => {
                 this.currentFrame += this.recordManager.getSecondsBetweenEachRecord();
@@ -123,18 +125,23 @@ export class ArSceneManager{
     setFirstActive(){
         const first = this.scenes[0];
         this.activeSceneId.value = first.sceneId;
+        this.startRecording = first.recordUser ?? false;
     }
 
 
     setPreviousActive(){
         if(this.hasPrevious.value){
             this.activeSceneId.value = this.previous.value.sceneId;
+            this.startRecording = this.previous.value.recordUser ?? false;
+            this.startRecordingScene();
         }
     }
 
     setNextActive(){
         if(this.hasNext.value){
             this.activeSceneId.value = this.next.value.sceneId;
+            this.startRecording = this.next.value.recordUser ?? false;
+            this.startRecordingScene();
         }
     }
 

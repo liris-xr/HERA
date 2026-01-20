@@ -74,7 +74,7 @@ export class ArSceneManager{
                         sceneId: this.activeSceneId.value,
                         time: Date.now().toString(),
                         frame: this.currentFrame,
-                        matrix: this.scenePlacementManager.getWorldTransformMatrix()
+                        matrix: this.scenePlacementManager.getWorldTransformMatrix().toArray()
                     });
             }, this.recordManager.recordTimerMs);
 
@@ -153,7 +153,7 @@ export class ArSceneManager{
 
     onXrFrame(time, frame, localSpace, camera, renderer){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
-        this.currentFrame = frame;
+        this.currentFrame++;
         this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), camera, renderer);
     }
 

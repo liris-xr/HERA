@@ -6,7 +6,6 @@ import { sequelizeRecords } from '../database.js'
  * @property {string} projectId
  * @property {string} sceneId
  * @property {string} userId
- * @property {string} date
  * @property {string} time
  * @property {string} frame
  * @property {Object} matrix

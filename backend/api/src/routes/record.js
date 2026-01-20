@@ -12,6 +12,11 @@ const PAGE_LENGTH = 20;
  */
 router.get(baseUrl+'records/:page' , authMiddleware,async (req, res) => {
     const authUser = req.user
+    if(!authUser.admin) {
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'Permission not granted' })
+    }
+
     const page = parseInt(req.params.page);
     try{
         if(!req.user.admin){
@@ -59,13 +64,6 @@ router.get(baseUrl+'records/:page' , authMiddleware,async (req, res) => {
  * Route to add records
  */
 router.post(baseUrl+"records/", authMiddleware, async (req, res) => {
-    const authUser = req.user
-
-    if(!authUser.admin) {
-        res.status(401);
-        return res.send({ error: 'Unauthorized', details: 'Permission not granted' })
-    }
-
     try {
         const recordsToAddJson = req.body;
         for(let i=0; i<recordsToAddJson.length; i++) {
@@ -73,15 +71,14 @@ router.post(baseUrl+"records/", authMiddleware, async (req, res) => {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });
-            scene = scene.body
+            scene = await scene.json()
             await ArRecord.create({
                 projectId: scene ? scene.projectId : null,
                 sceneId: recordsToAddJson[i].sceneId,
                 userId: recordsToAddJson[i].userId,
-                date: recordsToAddJson[i].date,
                 time: recordsToAddJson[i].time,
-                frame: recordsToAddJson[i].frame?.join(','),
-                matrix: recordsToAddJson[i].matrix?.elements?.join(','),
+                frame: recordsToAddJson[i].frame.toString(),
+                matrix: recordsToAddJson[i].matrix?.join(','),
             })
         }
         res.set({

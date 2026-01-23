@@ -1,7 +1,7 @@
 <script setup>
 import ArView from "@/components/arView.vue";
-import {computed, reactive, ref} from "vue";
-import {useRoute} from "vue-router";
+import {computed, onBeforeUnmount, reactive, ref} from "vue";
+import {onBeforeRouteLeave, useRoute} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
@@ -231,6 +231,46 @@ const projectUrl = computed(() => {
 })
 
 const recordUserEnabled = computed(() => route.query.recordUser === '1' || route.query.recordUser === 'true')
+
+let isEnding = false
+
+function cleanupAndResetRecordUser() {
+  if (isEnding) return
+  isEnding = true
+  try {
+    socket.send("presentation:terminate", (data) => {
+      terminated.value = !!data?.success
+    })
+  } catch (e) {
+  }
+}
+
+onBeforeRouteLeave((to, from, next) => {
+  cleanupAndResetRecordUser()
+  if (to?.query && ('recordUser' in to.query)) {
+    const q = { ...to.query }
+    delete q.recordUser
+    next({ ...to, query: q, replace: true })
+    return
+  }
+  next()
+})
+
+const onPageHide = () => cleanupAndResetRecordUser()
+const onVisibilityChange = () => {
+  if (document.visibilityState === 'hidden') cleanupAndResetRecordUser()
+}
+window.addEventListener('pagehide', onPageHide)
+window.addEventListener('beforeunload', onPageHide)
+document.addEventListener('visibilitychange', onVisibilityChange)
+
+onBeforeUnmount(() => {
+  cleanupAndResetRecordUser()
+  window.removeEventListener('pagehide', onPageHide)
+  window.removeEventListener('beforeunload', onPageHide)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
+
 
 </script>
 

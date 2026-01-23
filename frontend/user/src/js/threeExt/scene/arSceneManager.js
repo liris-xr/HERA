@@ -3,13 +3,15 @@ import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.j
 import {computed, ref, watch} from "vue";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {ArRecordManager} from "@/js/threeExt/scene/arRecordManager.js";
+import {ENDPOINT} from "@/js/endpoints.js";
 
 export class ArSceneManager{
     scenes;
     activeSceneId;
 
+    camera;
     currentFrame = 0;
-    startRecording = false;
+    startRecording = true;
     recordManager;
 
     scenePlacementManager;
@@ -79,7 +81,7 @@ export class ArSceneManager{
                         sceneId: this.activeSceneId.value,
                         time: Date.now().toString(),
                         frame: this.currentFrame,
-                        matrix: this.scenePlacementManager.getWorldTransformMatrix().toArray()
+                        matrix:this.camera.matrixWorld.elements
                     });
             }, this.recordManager.recordTimerMs);
 
@@ -169,6 +171,7 @@ export class ArSceneManager{
 
     onXrFrame(time, frame, localSpace, camera, renderer){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
+        this.camera = camera;
         this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), camera, renderer);
     }
 

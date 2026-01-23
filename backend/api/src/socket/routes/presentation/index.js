@@ -44,3 +44,5 @@ export function sendUserCount(presentationId) {
         socket?.emit("presentation:userCount", presentation.viewers.length)
     }
 }
+
+//TODO intervalle pour supprimer les présentations inactives

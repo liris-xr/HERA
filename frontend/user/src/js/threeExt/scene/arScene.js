@@ -16,6 +16,7 @@ export class ArScene extends AbstractScene {
     sceneId
     title;
     description;
+    recordUser;
     #assets
     meshDataMap // Mesh data from the database
     labelPlayer;
@@ -31,6 +32,7 @@ export class ArScene extends AbstractScene {
         this.sceneId = sceneData.id;
         this.title = sceneData.title;
         this.description = sceneData.description;
+        this.recordUser = sceneData.recordUser;
         this.#assets = [];
         this.meshDataMap = new Map();
         this.meshManager = new MeshManager()

@@ -1,7 +1,7 @@
 <script setup>
 import ArView from "@/components/arView.vue";
-import {computed, reactive, ref} from "vue";
-import {useRoute} from "vue-router";
+import {computed, onBeforeUnmount, reactive, ref} from "vue";
+import {onBeforeRouteLeave, useRoute} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
@@ -93,10 +93,31 @@ fetchProject(route.params.projectId).then((r)=>{
   loading.value = false;
 });
 
+async function setRecordUserInDb(value) {
+  try {
+    await fetch(`${ENDPOINT}scenes/recordUser`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({
+        projectId: route.params.projectId,
+        recordUser: !!value,
+      })
+    })
+  } catch (e) {
+    // best-effort
+  }
+}
+
 function initSocket() {
   socket.socketActionManager = new SocketActionManager(arView.value.arSessionManager)
 
   const recordUser = recordUserEnabled.value
+
+  // Persistance BD via route Scene
+  setRecordUserInDb(recordUser)
 
   socket.send("presentation:create", {projectId: route.params.projectId, recordUser}, (data) => {
     console.log(data)
@@ -123,11 +144,12 @@ function hideQr() {
 }
 
 async function endPresentation() {
-  socket.send("presentation:terminate", (data) => {
-    if (data.success)
-      terminated.value = true
-    console.log(data)
-  })
+  await setRecordUserInDb(false)
+   socket.send("presentation:terminate", (data) => {
+     if (data.success)
+       terminated.value = true
+     console.log(data)
+   })
 }
 
 function highlight(asset) {
@@ -231,6 +253,39 @@ const projectUrl = computed(() => {
 })
 
 const recordUserEnabled = computed(() => route.query.recordUser === '1' || route.query.recordUser === 'true')
+
+let isEnding = false
+
+function cleanupAndResetRecordUser() {
+  // Best-effort: le temps de propagation du paquet n'est pas garanti en unload,
+  // mais route-leave/fin explicite couvrent le cas standard.
+  if (isEnding) return
+  isEnding = true
+  setRecordUserInDb(false)
+   try {
+     socket.send("presentation:terminate", (data) => {
+       terminated.value = !!data?.success
+     })
+   } catch (e) {
+     // ignore
+   }
+}
+
+onBeforeRouteLeave((to, from, next) => {
+  cleanupAndResetRecordUser()
+  if (to?.query && ('recordUser' in to.query)) {
+    const q = { ...to.query }
+    delete q.recordUser
+    next({ ...to, query: q, replace: true })
+    return
+  }
+  next()
+})
+
+
+onBeforeUnmount(() => {
+})
+
 
 </script>
 

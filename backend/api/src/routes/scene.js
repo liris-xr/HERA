@@ -9,6 +9,45 @@ import {deleteAsset, deleteFile, uploadEnvmapAndAssets} from "../utils/fileUploa
 
 const router = express.Router()
 
+// Met à jour l'état global "recordUser" pour toutes les scènes d'un projet
+// Body: { projectId: string, recordUser: boolean }
+router.post(baseUrl+'scenes/recordUser', authMiddleware, async (req, res) => {
+    const token = req.user
+    const {projectId, recordUser} = req.body ?? {}
+
+    res.set({ 'Content-Type': 'application/json' })
+
+    if(!projectId || typeof recordUser !== 'boolean')
+        return res.status(400).send({error: 'Invalid body. Expected { projectId, recordUser }'})
+
+    try {
+        const project = await ArProject.findOne({
+            where: { id: projectId },
+            include:[{
+                model: ArUser,
+                as:"owner",
+                attributes:["id"],
+            }]
+        })
+
+        if(!project)
+            return res.status(404).send({error: 'Project not found'})
+
+        if(project.owner.id != token.id && !req.user.admin)
+            return res.status(403).send({error: 'User not granted'})
+
+        const [updatedCount] = await ArScene.update(
+            { recordUser },
+            { where: { projectId } }
+        )
+
+        return res.status(200).send({success: true, updatedCount, projectId, recordUser})
+    } catch (e) {
+        console.log(e)
+        return res.status(400).send({ error: 'Unable to update recordUser' })
+    }
+})
+
 router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
     const sceneId = req.params.sceneId;
     const token = req.user
@@ -60,8 +99,6 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
     }
 
 })
-
-
 
 
 

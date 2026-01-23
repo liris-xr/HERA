@@ -172,7 +172,6 @@
     "title": "User traces recording",
     "body": "Do you want to enable user traces recording during this session?",
     "no": "No",
-    "yes": "Yes",
-    "close": "Close"
+    "yes": "Yes"
   }
 }

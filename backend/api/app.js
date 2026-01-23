@@ -34,7 +34,6 @@ const options = {
     cert: fs.readFileSync('certificate.crt')
 };
 
-
 const app = express()
 app.use(express.json())
 app.use(cors({}))
@@ -45,6 +44,16 @@ async function main () {
     await initializeDatabase({force: false});
     // await resetDatabase();
     // await insertDefaults();
+
+    // REQUEST CATCHER FOR DEVELOPMENT
+    app.use((req, res, next) => {
+        console.log('\n--- REQUEST INFORMATION ---');
+        console.log('Method:', req.method);
+        console.log('URL:', req.url);
+        console.log('Headers:', req.headers);
+        console.log('Body:', req.body);
+        next();
+    });
 
     app.use(project);
     app.use(auth);

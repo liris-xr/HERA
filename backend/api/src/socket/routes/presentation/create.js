@@ -12,6 +12,7 @@ export function createPresentation(socket, data, callback) {
 
     const recordUser = !!data?.recordUser
 
+
     presentations[roomId] = {
         host: socket.id,
         viewers: [],

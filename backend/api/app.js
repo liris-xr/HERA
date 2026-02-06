@@ -45,16 +45,6 @@ async function main () {
     // await resetDatabase();
     // await insertDefaults();
 
-    // REQUEST CATCHER FOR DEVELOPMENT
-    app.use((req, res, next) => {
-        console.log('\n--- REQUEST INFORMATION ---');
-        console.log('Method:', req.method);
-        console.log('URL:', req.url);
-        console.log('Headers:', req.headers);
-        console.log('Body:', req.body);
-        next();
-    });
-
     app.use(project);
     app.use(auth);
     app.use(user);

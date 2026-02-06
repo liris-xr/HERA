@@ -3,13 +3,16 @@ import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.j
 import {computed, ref, watch} from "vue";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {ArRecordManager} from "@/js/threeExt/scene/arRecordManager.js";
+import {ENDPOINT} from "@/js/endpoints.js";
+import * as THREE from "three";
 
 export class ArSceneManager{
     scenes;
     activeSceneId;
 
+    camera;
     currentFrame = 0;
-    startRecording = false;
+    startRecording = true;
     recordManager;
 
     scenePlacementManager;
@@ -66,20 +69,28 @@ export class ArSceneManager{
 
     }
 
-     startRecordingScene(){
+    startRecordingScene(){
         if(this.startRecording){
 
             this.stopRecordingScene();
             this.currentFrame = 0;
 
             this.recordManager.intervalRecordId = setInterval(async () => {
+                if(this.scenePlacementManager.isEnabled.value || !this.camera) return;
+
+                this.camera.updateMatrixWorld();
+                const sceneAnchorMatrix = this.scenePlacementManager.getWorldTransformMatrix();
+                const inverseSceneMatrix = new THREE.Matrix4().copy(sceneAnchorMatrix).invert();
+                const relativeCameraMatrix = new THREE.Matrix4()
+                    .multiplyMatrices(inverseSceneMatrix, this.camera.matrixWorld);
+
                 this.currentFrame += this.recordManager.getSecondsBetweenEachRecord();
                 await this.recordManager.addToBuffer(
                     {
                         sceneId: this.activeSceneId.value,
                         time: Date.now().toString(),
                         frame: this.currentFrame,
-                        matrix: this.scenePlacementManager.getWorldTransformMatrix().toArray()
+                        matrix: [ ...relativeCameraMatrix.elements ]
                     });
             }, this.recordManager.recordTimerMs);
 
@@ -169,6 +180,7 @@ export class ArSceneManager{
 
     onXrFrame(time, frame, localSpace, camera, renderer){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
+        this.camera = camera;
         this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), camera, renderer);
     }
 

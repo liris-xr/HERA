@@ -4,6 +4,7 @@ import {computed, ref, watch} from "vue";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {ArRecordManager} from "@/js/threeExt/scene/arRecordManager.js";
 import {ENDPOINT} from "@/js/endpoints.js";
+import * as THREE from "three";
 
 export class ArSceneManager{
     scenes;
@@ -68,20 +69,26 @@ export class ArSceneManager{
 
     }
 
-     startRecordingScene(){
+    startRecordingScene(){
         if(this.startRecording){
 
             this.stopRecordingScene();
             this.currentFrame = 0;
 
             this.recordManager.intervalRecordId = setInterval(async () => {
+                this.camera.updateMatrixWorld();
+                const sceneAnchorMatrix = this.scenePlacementManager.getWorldTransformMatrix();
+                const inverseSceneMatrix = new THREE.Matrix4().copy(sceneAnchorMatrix).invert();
+                const relativeCameraMatrix = new THREE.Matrix4()
+                    .multiplyMatrices(inverseSceneMatrix, this.camera.matrixWorld);
+
                 this.currentFrame += this.recordManager.getSecondsBetweenEachRecord();
                 await this.recordManager.addToBuffer(
                     {
                         sceneId: this.activeSceneId.value,
                         time: Date.now().toString(),
                         frame: this.currentFrame,
-                        matrix:this.camera.matrixWorld.elements
+                        matrix: [ ...relativeCameraMatrix.elements ]
                     });
             }, this.recordManager.recordTimerMs);
 

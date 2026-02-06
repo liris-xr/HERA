@@ -19,9 +19,10 @@ import PresentationPresetItem from "@/components/items/PresentationPresetItem.vu
 import ButtonView from "@/components/button/buttonView.vue";
 import {toast} from "vue3-toastify";
 import {generateUUID} from "three/src/math/MathUtils.js";
+import RecordUserModal from "@/components/modal/recordUserModal.vue";
 
 
-const { isAuthenticated, token } = useAuthStore()
+const { isAuthenticated, token, userData } = useAuthStore()
 const {t} = useI18n()
 
 if (!isAuthenticated.value) {
@@ -65,6 +66,7 @@ let recordTarget = null
 const showTerminate = ref(false)
 const terminated = ref(false)
 
+const showRecordUserModal = ref(false)
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -286,6 +288,34 @@ onBeforeRouteLeave((to, from, next) => {
 onBeforeUnmount(() => {
 })
 
+
+async function confirmRestartPresentation(shouldRecord) {
+  showRecordUserModal.value = false
+
+  const target = {
+    name: 'presentation',
+    params: route.params,
+    query: { recordUser: shouldRecord ? '1' : '0' },
+  }
+
+  // `router.replace` est asynchrone; si on reload trop tôt, l'URL ne change pas.
+  // Ici, on force une navigation fiable en assignant l'URL résolue.
+  const { href } = router.resolve(target)
+  window.location.assign(href)
+}
+
+function restartPresentation(e) {
+  if (e?.preventDefault) e.preventDefault()
+
+  // Popup uniquement pour un admin connecté
+  if (isAuthenticated.value && userData?.value?.admin) {
+    showRecordUserModal.value = true
+    return
+  }
+
+  // comportement historique
+  router.go()
+}
 
 </script>
 
@@ -577,13 +607,21 @@ onBeforeUnmount(() => {
 
   <div v-if="terminated" class="terminated">
     <h1>{{$t('presentation.terminated')}}</h1>
-    <a href="" @click="router.go()">
+    <a href="" @click="restartPresentation">
       {{$t('presentation.restart')}}
     </a>
     <RouterLink :to="{ name: 'project', params: route.params}">
       {{$t('presentation.seeProject')}}
     </RouterLink>
   </div>
+
+  <Teleport to="body">
+    <record-user-modal
+        v-if="isAuthenticated && userData?.admin"
+        :show="showRecordUserModal"
+        @close="showRecordUserModal = false"
+        @confirm="confirmRestartPresentation" />
+  </Teleport>
 
   <div class="modal" v-if="showTerminate">
     <div>

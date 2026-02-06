@@ -76,6 +76,8 @@ export class ArSceneManager{
             this.currentFrame = 0;
 
             this.recordManager.intervalRecordId = setInterval(async () => {
+                if(this.scenePlacementManager.isEnabled.value || !this.camera) return;
+
                 this.camera.updateMatrixWorld();
                 const sceneAnchorMatrix = this.scenePlacementManager.getWorldTransformMatrix();
                 const inverseSceneMatrix = new THREE.Matrix4().copy(sceneAnchorMatrix).invert();

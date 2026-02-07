@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArPreset, ArAction} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware, {optionnalAuthMiddleware} from "../middlewares/auth.js";
 import {
@@ -22,6 +22,44 @@ import {updateUrl} from "../utils/updateUrl.js";
 const router = express.Router()
 
 const PAGE_LENGTH = 20;
+
+const projectInclude = [
+    {
+        model: ArScene,
+        as: "scenes",
+        separate: true,
+        order: [['index', 'ASC']],
+        include: [
+            { 
+                model: ArMesh, 
+                as: "meshes" 
+            },
+            { 
+                model: ArAsset, 
+                as: "assets", 
+                where: { hideInViewer: false }, 
+                required: false 
+            },
+            { 
+                model: ArLabel, 
+                as: "labels",
+            },
+        ],
+    },
+    {
+        model: ArUser,
+        as: "owner",
+        attributes: ["username"],
+    },
+    {
+        model: ArPreset,
+        as: "presets",
+        include: [{ 
+            model: ArAction, 
+            as: "actions"
+        }]
+    }
+];
 
 router.get(baseUrl+'projects/:page', optionnalAuthMiddleware, async (req, res) => {
     const page = parseInt(req.params.page);
@@ -107,39 +145,7 @@ router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, re
     let project = await ArProject.findOne({
             where,
             attributes,
-            include:[
-                {
-                    model: ArScene,
-                    as: "scenes",
-                    separate: true,
-                    order: [['index', 'ASC']],
-                    include:[
-                        {
-                            model:ArMesh,
-                            as:"meshes"
-                        },
-                        {
-                            model: ArAsset,
-                            as: "assets",
-                            where:{
-                                hideInViewer: false
-                            },
-                            required:false
-                        },
-                        {
-                            model: ArLabel,
-                            as: "labels",
-                        },
-                    ],
-                },
-
-                {
-                    model: ArUser,
-                    as: "owner",
-                    attributes: ["username"],
-                }
-
-            ],
+            include: projectInclude
         })
 
     res.set({
@@ -208,8 +214,47 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             }
         }
 
+        // gestion des presets
+        if (req.body.presets) {
+            const presetsData = typeof req.body.presets === 'string'
+                ? JSON.parse(req.body.presets)
+                : req.body.presets;
 
-        return res.status(200).send(project)
+            // Supprimer les anciens presets
+            const ArPreset = sequelize.models.ArPreset;
+            const ArAction = sequelize.models.ArAction;
+
+            await ArPreset.destroy({ where: { projectId: project.id } });
+
+            // Créer les nouveaux
+            for (const presetData of presetsData) {
+                const newPreset = await ArPreset.create({
+                    projectId: project.id,
+                    bigText: presetData.bigText,
+                    icon: presetData.icon,
+                    text: presetData.text
+                });
+
+                if (presetData.actions && Array.isArray(presetData.actions)) {
+                    for (const actionData of presetData.actions) {
+                        await ArAction.create({
+                            presetId: newPreset.id,
+                            event: actionData.event,
+                            targetSceneId: actionData.targetSceneId || actionData.parameters?.sceneId || null,
+                            targetAssetId: actionData.targetAssetId || actionData.parameters?.assetId || null,
+                            parameters: actionData.parameters || {}
+                        });
+                    }
+                }
+            }
+        }
+
+        const updatedProject = await ArProject.findOne({
+            where: { id: projectId },
+            include: projectInclude
+        })
+
+        return res.status(200).send(updatedProject)
     }catch (e){
         console.log(e)
         res.set({
@@ -431,19 +476,49 @@ router.put(baseUrl+'project/:projectId/presets', authMiddleware, async (req, res
         return res.status(404).send({ error: 'No project found'});
 
     try {
+        const ArPreset = sequelize.models.ArPreset;
+        const ArAction = sequelize.models.ArAction;
 
-        await project.update({
-            presets: req.body.presets
-        }, {
-            returning: true
-        })
+        // Supprimer les anciens presets
+        await ArPreset.destroy({ where: { projectId: project.id } });
 
-        return res.status(200).send(project)
+        // Créer les nouveaux
+        const presetsData = req.body.presets;
+
+        if (presetsData && Array.isArray(presetsData)) {
+            for (const presetData of presetsData) {
+                const newPreset = await ArPreset.create({
+                    projectId: project.id,
+                    bigText: presetData.bigText,
+                    icon: presetData.icon,
+                    text: presetData.text
+                });
+
+                if (presetData.actions && Array.isArray(presetData.actions)) {
+                    for (const actionData of presetData.actions) {
+                        await ArAction.create({
+                            presetId: newPreset.id,
+                            event: actionData.event,
+                            targetSceneId: actionData.targetSceneId || actionData.parameters?.sceneId || null,
+                            targetAssetId: actionData.targetAssetId || actionData.parameters?.assetId || null,
+                            parameters: actionData.parameters || {}
+                        });
+                    }
+                }
+            }
+        }
+
+        const updatedProject = await ArProject.findOne({
+            where: { id: projectId },
+            include: projectInclude
+        });
+
+        return res.status(200).send(updatedProject)
 
     } catch(e) {
         console.log(e);
         res.status(400);
-        return res.send({error: 'Unable to fetch project'});
+        return res.send({ error: 'Unable to save presets'});
     }
 
 
@@ -568,6 +643,16 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
                     model: ArUser,
                     as: "owner",
                     attributes: ["username"],
+                },
+                {
+                    model: sequelize.models.ArPreset,
+                    as: "presets",
+                    include:[
+                        {
+                            model: sequelize.models.ArAction,
+                            as: "actions"
+                        }
+                    ]
                 }
 
             ],

@@ -29,24 +29,27 @@ export class SocketConnection {
         this.recording = ref(false)
         this.actionsRecord = []
 
-        this.socket.onAny((event, ...args) => this.handleActionManager(event, ...args))
+        this.socket.onAny((event, payload) => this.handleActionManager(event, payload))
     }
 
-    send(event, ...args) {
+    send(event, payload, callback = null) {
         if(this.recording) {
-            this.actionsRecord.push({event, args})
+            this.actionsRecord.push({event, payload})
         } else {
-            this.socket.emit(event, ...args)
+            if(callback)
+                this.socket.emit(event, payload, callback)
+            else
+                this.socket.emit(event, payload)
         }
 
-        this.handleActionManager(event, ...args)
+        this.handleActionManager(event, payload)
     }
 
     addListener(event, handler) {
         this.socket.on(event, handler)
     }
 
-    handleActionManager(event, ...args) {
+    handleActionManager(event, payload) {
         if(!this.socketActionManager) return
 
         if(event.startsWith("presentation:action:")) {
@@ -55,7 +58,7 @@ export class SocketConnection {
                 Object.getOwnPropertyNames(Object.getPrototypeOf(this.socketActionManager)).includes(eventName) &&
                 typeof this.socketActionManager[eventName] === 'function'
             )
-                this.socketActionManager[eventName](...args)
+                this.socketActionManager[eventName](payload)
             else
                 console.error("SocketActionManager : event "+eventName+" not found")
         }

@@ -618,23 +618,23 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
                     as: "scenes",
                     separate: true,
                     order: [['index', 'ASC']],
-                    attributes: {exclude: ['id']},
+                    //attributes: {exclude: ['id']},
                     include:[
                         {
                             model:ArMesh,
                             as:"meshes",
-                            attributes: {exclude: ['id']}
+                            // exclude: [id]
                         },
                         {
                             model: ArAsset,
                             as: "assets",
                             required:false,
-                            attributes: {exclude: ['id']}
+                            // exclude: [id]
                         },
                         {
                             model: ArLabel,
                             as: "labels",
-                            attributes: {exclude: ['id']}
+                            // exclude: [id]
                         },
                     ],
                 },
@@ -722,6 +722,20 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         const projectObj = JSON.parse(data)
         projectObj.userId = token.id
 
+        const presetsData = projectObj.presets || [];
+        delete projectObj.presets;
+        const sourceScenesData = JSON.parse(JSON.stringify(projectObj.scenes || []));
+        
+        const removeIds = (obj) => {
+            if (Array.isArray(obj)) obj.forEach(removeIds);
+            else if (typeof obj === 'object' && obj !== null) {
+                delete obj.id;
+                Object.values(obj).forEach(removeIds);
+            }
+        };
+        removeIds(projectObj.scenes);
+
+
         const project = await ArProject.create(projectObj, {
             include: [
                 {
@@ -747,19 +761,84 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         })
 
         // modifier l'url des fichiers (assets, cover...)
-
         project.pictureUrl = updateUrl(project.pictureUrl, project.id)
         await project.save()
 
-        for(let scene of project.scenes) {
+        const sceneMap = new Map();
+        const assetMap = new Map();
+        const labelMap = new Map();
+
+        for(let i = 0; i < project.scenes.length; i++) {
+            const scene = project.scenes[i];
+            const oldSceneData = sourceScenesData[i];
+            
+            if(oldSceneData && oldSceneData.id) {
+                sceneMap.set(oldSceneData.id, scene.id);
+            }
+
             scene.envmapUrl = updateUrl(scene.envmapUrl, project.id)
 
-            for(let asset of scene.assets) {
+            for(let j = 0; j < scene.assets.length; j++) {
+                const asset = scene.assets[j];
+                const oldAssetData = oldSceneData ? oldSceneData.assets[j] : null;
+
+                if(oldAssetData && oldAssetData.id) {
+                    assetMap.set(oldAssetData.id, asset.id);
+                }
+
                 asset.url = updateUrl(asset.url, project.id)
                 await asset.save()
             }
 
+            for(let j = 0; j < scene.labels.length; j++) {
+                const label = scene.labels[j];
+                const oldLabelData = oldSceneData ? oldSceneData.labels[j] : null;
+
+                if(oldLabelData && oldLabelData.id) {
+                    labelMap.set(oldLabelData.id, label.id);
+                }
+            }
+
             await scene.save()
+        }
+
+
+        for (const presetData of presetsData) {
+            const newPreset = await ArPreset.create({
+                projectId: project.id,
+                bigText: presetData.bigText,
+                icon: presetData.icon,
+                text: presetData.text
+            });
+
+            if (presetData.actions && Array.isArray(presetData.actions)) {
+                for (const actionData of presetData.actions) {
+                    
+                    let newTargetSceneId = null;
+                    if (actionData.targetSceneId) {
+                        newTargetSceneId = sceneMap.get(actionData.targetSceneId);
+                    }
+
+                    let newTargetAssetId = null;
+                    if (actionData.targetAssetId) {
+                        newTargetAssetId = assetMap.get(actionData.targetAssetId);
+                    }
+
+                    const newParams = { ...actionData.parameters };
+                    if (newParams.sceneId) newParams.sceneId = sceneMap.get(newParams.sceneId) || newParams.sceneId;
+                    if (newParams.assetId) newParams.assetId = assetMap.get(newParams.assetId) || newParams.assetId;
+                    if (newParams.labelId) newParams.labelId = labelMap.get(newParams.labelId) || newParams.labelId;
+
+
+                    await ArAction.create({
+                        presetId: newPreset.id,
+                        event: actionData.event,
+                        targetSceneId: newTargetSceneId,
+                        targetAssetId: newTargetAssetId,
+                        parameters: newParams
+                    });
+                }
+            }
         }
 
 

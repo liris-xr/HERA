@@ -156,16 +156,19 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function applyPreset(preset) {
     if (!preset || !preset.actions) return;
 
-    const sortedActions = [...preset.actions].sort((a, b) => {
-        if (a.event.includes('reset')) return -1;
-        if (b.event.includes('reset')) return 1;
-        return 0;
+    let actionsToRun = [...preset.actions];
+    actionsToRun.sort((a, b) => {
+        const getRank = (event) => {
+            if (event.includes('reset')) return 0;
+            if (event.includes('scene')) return 1;
+            return 2;
+        };
+        return getRank(a.event) - getRank(b.event);
     });
 
-    for (const action of sortedActions) {
+    for (const action of actionsToRun) {
         const effectiveAssetId = action.targetAssetId || action.assetId || action.parameters?.assetId;
         const effectiveSceneId = action.targetSceneId || action.sceneId || action.parameters?.sceneId;
-
         const payload = {
             ...action.parameters,
             targetAssetId: effectiveAssetId,
@@ -180,13 +183,8 @@ async function applyPreset(preset) {
         };
 
         socket.send(action.event, payload);
-
-        if (action.event.includes('reset')) {
-            await sleep(50);
-        }
     }
 }
-
 
 function showAll() {
   socket.send("presentation:action:showAll", {})

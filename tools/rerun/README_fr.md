@@ -51,9 +51,12 @@ Entrez simplement la commande suivante dans un terminal :
 rerun
 ```
 
-5. Lancer le script de Relecture
-- Allez dans votre IDE et lancez le script UserTrackingReplay. `UserTrackingReplay`
-
+5. Script de Replay
+- Allez dans votre IDE et lancez le script `UserTrackingReplay`.
+- Changez `rawDbPath`, `rawRecordDbPath`, `rawBaseAssetPath` pour faire correspondre au chemin des BD et des assets.
+- Ouvrez `databaseRecords` et récuperer l'ID de la scene et du user dont vous voulez le replay
+- Executez le script
+- 
 6. Configuration de Rerun
 
 Une fois le script lancé, une nouvelle fenêtre s'ouvrira dans le visualiseur Rerun.

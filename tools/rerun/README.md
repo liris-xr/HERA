@@ -49,8 +49,11 @@ Simply write this command:
 rerun
 ```
 
-5. Launch the UserTrackingReplay Script
-- Go to your IDE and launch the UserTrackingReplay script (Version)
+5. UserTrackingReplay Script
+- Go to your IDE and launch the `UserTrackingReplay` script
+- Change `rawDbPath`, `rawRecordDbPath`, `rawBaseAssetPath` to correspond to the path to the DB and assets
+- Open `databaseRecords` and get the scene and user ID you want to replay
+- Run the script
 
 6. Rerun configuration
 

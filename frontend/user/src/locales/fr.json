@@ -66,7 +66,8 @@
         "cancel": "Fermer",
         "confirm": "Ouvrir le questionnaire",
         "defaultMessage": "Vous allez être redirigé vers un questionnaire externe.",
-        "defaultUrl": "https://www.youtube.com/"
+        "defaultUrl": "https://www.youtube.com/",
+        "redirectUrlLabel": "URL de redirection"
       }
     },
     "projectInfo": {
@@ -174,5 +175,13 @@
     "body": "Souhaitez-vous activer l’enregistrement des traces utilisateur pendant cette session ?",
     "no": "Non",
     "yes": "Oui"
+  },
+  "questionnaireDemo": {
+    "nameLabel": "Nom",
+    "namePlaceholder": "Entrez votre nom",
+    "commentLabel": "Commentaire",
+    "commentPlaceholder": "Optionnel",
+    "confirmed": "Confirmé",
+    "cancelled": "Annulé"
   }
 }

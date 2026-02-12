@@ -65,7 +65,8 @@
         "cancel": "Close",
         "confirm": "Open the questionnaire",
         "defaultMessage": "You will be redirected to an external questionnaire.",
-        "defaultUrl": "https://www.youtube.com/"
+        "defaultUrl": "https://www.youtube.com/",
+        "redirectUrlLabel": "Redirect URL"
       }
     },
     "projectInfo": {
@@ -173,5 +174,13 @@
     "body": "Do you want to enable user traces recording during this session?",
     "no": "No",
     "yes": "Yes"
+  },
+  "questionnaireDemo": {
+    "nameLabel": "Name",
+    "namePlaceholder": "Enter your name",
+    "commentLabel": "Comment",
+    "commentPlaceholder": "Optional",
+    "confirmed": "Confirmed",
+    "cancelled": "Canceled"
   }
 }

@@ -1,10 +1,12 @@
 <template>
   <div class="demo-page">
-    <h1>Popup Questionnaire</h1>
+    <h1>{{ $t ? $t('projectView.arView.questionnairePopup.title') : 'Questionnaire popup' }}</h1>
 
     <div class="controls">
       <div class="actions">
-        <button class="btn primary" @click="visible = true">Ouvrir le popup</button>
+        <button class="btn primary" @click="visible = true">
+          {{ $t ? $t('projectView.arView.questionnairePopup.confirm') : 'Open the questionnaire' }}
+        </button>
       </div>
     </div>
 
@@ -19,16 +21,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import QuestionnairePopup from '@/components/utils/QuestionnairePopup.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const visible = ref(false)
-const title = ref('Votre avis compte !')
+const title = computed(() => t('projectView.arView.questionnairePopup.title'))
 const status = ref('')
 
 const demoSchema = [
-  { model: 'name', label: 'Nom', type: 'string', required: true, placeholder: 'Entrez votre nom' },
-  { model: 'comment', label: 'Commentaire', type: 'textarea', required: false, placeholder: 'Optionnel' }
+  { model: 'name', label: t('questionnaireDemo.nameLabel'), type: 'string', required: true, placeholder: t('questionnaireDemo.namePlaceholder') },
+  { model: 'comment', label: t('questionnaireDemo.commentLabel'), type: 'textarea', required: false, placeholder: t('questionnaireDemo.commentPlaceholder') }
 ]
 
 function reset() {
@@ -36,13 +41,13 @@ function reset() {
 }
 
 function onConfirm(payload) {
-  status.value = 'Confirmé'
+  status.value = t('questionnaireDemo.confirmed')
   console.log('confirm payload', payload)
   visible.value = false
 }
 
 function onCancel() {
-  status.value = 'Annulé'
+  status.value = t('questionnaireDemo.cancelled')
   visible.value = false
 }
 </script>

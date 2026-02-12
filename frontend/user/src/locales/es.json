@@ -65,7 +65,8 @@
         "cancel": "Cerrar",
         "confirm": "Abrir el cuestionario",
         "defaultMessage": "Vas a ser redirigido a un cuestionario externo.",
-        "defaultUrl": "https://www.youtube.com/"
+        "defaultUrl": "https://www.youtube.com/",
+        "redirectUrlLabel": "URL de redirección"
       }
     },
     "projectInfo": {
@@ -170,9 +171,17 @@
   },
   "recordUserModal": {
     "title": "Registro de trazas de usuario",
-    "body": "\u00bfQuieres activar el registro de trazas de usuario durante esta sesi\u00f3n?",
+    "body": "¿Quieres activar el registro de trazas de usuario durante esta sesión?",
     "no": "No",
-    "yes": "S\u00ed",
+    "yes": "Sí",
     "close": "Cerrar"
+  },
+  "questionnaireDemo": {
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Introduce tu nombre",
+    "commentLabel": "Comentario",
+    "commentPlaceholder": "Opcional",
+    "confirmed": "Confirmado",
+    "cancelled": "Cancelado"
   }
 }

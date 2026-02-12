@@ -151,10 +151,39 @@ function resetScene() {
   socket.send("presentation:action:reset", {})
 }
 
-function applyPreset(preset) {
-  for(const action of preset.actions) {
-    socket.send(action.event, ...action.args)
-  }
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function applyPreset(preset) {
+    if (!preset || !preset.actions) return;
+
+    let actionsToRun = [...preset.actions];
+    actionsToRun.sort((a, b) => {
+        const getRank = (event) => {
+            if (event.includes('reset')) return 0;
+            if (event.includes('scene')) return 1;
+            return 2;
+        };
+        return getRank(a.event) - getRank(b.event);
+    });
+
+    for (const action of actionsToRun) {
+        const effectiveAssetId = action.targetAssetId || action.assetId || action.parameters?.assetId;
+        const effectiveSceneId = action.targetSceneId || action.sceneId || action.parameters?.sceneId;
+        const payload = {
+            ...action.parameters,
+            targetAssetId: effectiveAssetId,
+            targetSceneId: effectiveSceneId,
+            assetId: effectiveAssetId,
+            sceneId: effectiveSceneId,
+            parameters: {
+                ...action.parameters,
+                assetId: effectiveAssetId,
+                sceneId: effectiveSceneId
+            }
+        };
+
+        socket.send(action.event, payload);
+    }
 }
 
 function showAll() {
@@ -193,17 +222,35 @@ function createPreset() {
 }
 
 async function savePresets() {
+  
+  const presetsToSend = editingPresets.value.map(preset => ({
+    ...preset,
+    actions: (preset.actions || []).map(action => {
+      // Handle both new recordings (payload) and existing records (parameters)
+      const parameters = action.payload || action.parameters || {};
+      
+      return {
+        event: action.event,
+        // Extract IDs explicitly for the backend Relation
+        targetSceneId: action.targetSceneId || parameters.sceneId || null,
+        targetAssetId: action.targetAssetId || parameters.assetId || null,
+        parameters: parameters
+      }
+    })
+  }))
+
   const res = await fetch(`${ENDPOINT}project/${project.id}/presets`,{
     method: "PUT",
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token.value}`,
     },
-    body: JSON.stringify({presets: editingPresets.value}),
+    body: JSON.stringify({presets: presetsToSend }),
   })
 
   if(res.ok) {
-    project.presets = editingPresets.value
+    const updatedProjectData = await res.json();
+    project.presets = updatedProjectData.presets; 
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT

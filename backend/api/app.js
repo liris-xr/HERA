@@ -20,8 +20,6 @@ const __filename = fileURLToPath(import.meta.url);
 export const DIRNAME = path.dirname(__filename);
 
 
-
-
 //for https only :
 import * as fs from "node:fs";
 import * as https from "node:https";
@@ -30,8 +28,8 @@ import setupSocket from "./src/socket/index.js";
 import {errorHandler} from "./src/utils/errorHandler.js";
 import zip from 'express-easy-zip'
 const options = {
-    key: fs.readFileSync('privatekey.key'),
-    cert: fs.readFileSync('certificate.crt')
+    key: fs.readFileSync(path.join(DIRNAME, "certs", "localhost-key.pem")),
+    cert: fs.readFileSync(path.join(DIRNAME, "certs", "localhost.pem")),
 };
 
 const app = express()

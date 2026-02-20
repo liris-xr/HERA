@@ -28,8 +28,9 @@ import EnvmapItem from "@/components/listItem/envmapItem.vue";
 import {useI18n} from "vue-i18n";
 import {EXRLoader} from "three/addons";
 import * as THREE from "three"
+import TriggerItem from "@/components/listItem/triggerItem.vue";
+import TriggerEditModal from "@/components/modal/triggerEditModal.vue";
 import SoundItem from "@/components/listItem/soundItem.vue";
-
 
 const route = useRoute();
 const {token, userData} = useAuthStore();
@@ -44,6 +45,7 @@ const scene = ref({
   },
   labels:[],
   assets:[],
+  triggers:[],
   sounds: [],
   envmapUrl: ""
 });
@@ -61,11 +63,15 @@ const loading = ref(true);
 const error = ref(false);
 const ready = computed(()=>!loading.value && !error.value);
 
+let scenes;
+
 const showMaterialMenu = ref(false);
 const showSceneDeleteModal = ref(false);
 const showSceneDuplicateModal = ref(false);
 const showLabelEditModal = ref(false);
+const showTriggerEditModal = ref(false);
 let lastClickedLabel = null
+let lastClickedTrigger = ref(null);
 
 const uploadedEnvmap = ref({
   rawData:null,
@@ -146,11 +152,38 @@ async function duplicateScene(newTitle){
   }
 }
 
+async function fetchProject(projectId, userId, token) {
+  try {
+    const res = await fetch(`${ENDPOINT}users/${userId}/project/${projectId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+
+        });
+    if(res.ok){
+      return await res.json();
+    }
+    throw new Error("ko");
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 
 onMounted(async () => {
   scene.value = await fetchScene(route.params.sceneId);
 
   loading.value = false;
+
+  await fetchProject(scene.value.project.id, userData.value.id, token.value).then(rep => {
+    scenes = rep.scenes.map(scene => ({
+      id: scene.id,
+      label: scene.title
+    }));
+  });
+
 
   sortArrays();
 
@@ -159,14 +192,11 @@ onMounted(async () => {
   await editor.init(scene.value,container.value);
 
 
-  console.log("editor:", editor)
-  console.log("scene:", editor?.scene)
-  console.log("soundManager:", editor?.scene?.soundManager)
-
   editor.scene.labelManager.onChanged = ()=>{saved.value = false};
   editor.scene.assetManager.onChanged = ()=>{saved.value = false};
-  editor.scene.onChanged = ()=>{saved.value = false};
+  editor.scene.triggerManager.onChanged = ()=>{saved.value = false};
   editor.scene.soundManager.onChanged = ()=>{saved.value = false};
+  editor.scene.onChanged = ()=>{saved.value = false};
   editor.onChanged = ()=>{saved.value = false};
   await sleep(100);
 
@@ -176,14 +206,24 @@ onMounted(async () => {
 
 })
 
-
 function sortArrays() {
   if (scene.value.labels)
     scene.value.labels.sort((a, b) => a.timestampStart - b.timestampStart);
   else{
     console.warn("Labels was not sorted")
   }
+
+  if (scene.value.triggers){
+    scene.value.triggers.forEach((trigger) => {
+      trigger.chainedActions.sort((a, b) => a.timestampStart - b.timestampStart);
+    });
+  } else {
+    console.warn("Trigger was not sorted")
+  }
+
+
 }
+
 
 
 async function saveScene(sceneData, uploads, envmapFile, soundToUploads) {
@@ -204,7 +244,7 @@ async function saveScene(sceneData, uploads, envmapFile, soundToUploads) {
         formData.append('uploads', file);
       });
     }
-      
+
     if (soundToUploads && soundToUploads.length >0) {
       soundToUploads.forEach(file => {
         formData.append('soundToUploads', file);
@@ -248,6 +288,7 @@ async function saveAll(){
     labels:editor.scene.labelManager.getResultLabel(),
     assets:editor.scene.assetManager.getResultAssets(),
     meshes:editor.scene.assetManager.getResultMeshes(),
+    triggers:editor.scene.triggerManager.getResultTriggers(),
     sounds:editor.scene.soundManager.getResultSounds(),
     vrStartPosition: editor.scene.vrStartPosition,
     envmapUrl: scene.value.envmapUrl || "",
@@ -263,7 +304,7 @@ async function saveAll(){
     scene.value.envmapUrl = r.scene.envmapUrl;
     await sleep(1000);
     saved.value = true;
-    editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching)
+    editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching);
     editor.scene.soundManager.setUploaded(r.scene.sounds, r.soundsIdMatching);
     // window.location.reload();
   }
@@ -312,7 +353,6 @@ async function updateEnvmap(file){
       reader.readAsDataURL(file);
       saved.value = false;
     }
-
   }
 }
 
@@ -417,7 +457,6 @@ onBeforeRouteUpdate((to, from, next)=>{
   beforeRedirect(to, from, next)
 })
 
-
 function setVolumeSound(level, sound){
   sound.setVolume(level);
 
@@ -426,6 +465,9 @@ function setVolumeSound(level, sound){
   }
 }
 
+function setLabelsVisible(){
+  editor.scene.labelManager.setLabelsVisible();
+}
 
 </script>
 
@@ -517,7 +559,6 @@ function setVolumeSound(level, sound){
 
           </div>
 
-
           <div class="multilineField">
             <div class="inlineFlex">
               <label>{{$t("sceneView.leftSection.sceneSounds.label")}}</label>
@@ -529,7 +570,7 @@ function setVolumeSound(level, sound){
               ></file-upload-button-view>
             </div>
             <div id="soundList">
-              <sound-item v-for="(sound, index) in editor?.scene?.soundManager?.getSounds?.value || []"
+              <sound-item v-for="(sound, index) in editor.scene.soundManager.getSounds.value"
                           class="sceneItem"
                           :index="index"
                           :text="sound.name"
@@ -548,14 +589,18 @@ function setVolumeSound(level, sound){
                           @duplicate="editor.scene.duplicateSound(sound)"
                           @setVolume="(level)=>{setVolumeSound(level, sound); saved = false}"
               />
-              <div v-if="editor?.scene?.soundManager && !editor.scene.soundManager.hasSound.value">{{$t('sceneView.leftSection.sceneSounds.noSoundInfo')}}</div>
+              <div v-if="!editor.scene.soundManager.hasSound.value">{{$t('sceneView.leftSection.sceneSounds.noSoundInfo')}}</div>
             </div>
           </div>
+
 
           <div class="multilineField">
             <div class="inlineFlex">
               <label>{{$t("sceneView.leftSection.sceneLabels.label")}}</label>
               <button-view :text="$t('sceneView.leftSection.sceneLabels.addLabelButton')" icon="/icons/add.svg" @click="editor.scene.addNewLabel()"></button-view>
+              <icon-svg v-if="editor.scene.labelManager.areAllLabelsVisible" url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="setLabelsVisible()"/>
+              <icon-svg v-else url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="setLabelsVisible()"/>
+
             </div>
             <div id="labelList">
                   <label-item v-for="(label, index) in editor.scene.labelManager.getLabels.value"
@@ -563,14 +608,43 @@ function setVolumeSound(level, sound){
                               :index="index"
                               v-model="label.content.value"
                               :active="label.isSelected.value"
+                              :visible="label.getVisible()"
                               @click="editor.scene.setSelected(label)"
                               @delete="editor.scene.removeLabel(label)"
+                              @hideInViewer="label.setVisible(!label.getVisible())"
                               @advanced-edit="()=>{
                                 lastClickedLabel = label;
                                 showLabelEditModal=true;
                               }"
                   />
                   <div v-if="!editor.scene.labelManager.hasLabels.value">{{$t('sceneView.leftSection.sceneLabels.noLabelInfo')}}</div>
+            </div>
+          </div>
+
+          <div class="multilineField">
+            <div class="inlineFlex">
+              <label>{{$t("sceneView.leftSection.sceneTriggers.label")}}</label>
+              <button-view :text="$t('sceneView.leftSection.sceneTriggers.addTriggerButton')" icon="/icons/add.svg" @click="editor.scene.addNewTrigger()"></button-view>
+            </div>
+
+            <div id="triggerList">
+                <trigger-item v-for="(trigger, index) in editor.scene.triggerManager.getTriggers.value"
+                              class="sceneItem"
+                            :index="index"
+                            :active="trigger.isSelected.value"
+                            :hideInViewer="trigger.hideInViewer.value"
+                            :loading="trigger.isLoading.value"
+                            :error="trigger.hasError.value"
+                            :actionIn="trigger.actionIn"
+                            :actionOut="trigger.actionOut"
+                            @click="editor.scene.setSelected(trigger)"
+                            @delete="editor.scene.removeTrigger(trigger)"
+                            @hideInViewer="(status)=>{trigger.switchViewerDisplayStatus(status); saved = false}"
+                            @advanced-edit="()=>{
+                              lastClickedTrigger = trigger;
+                              showTriggerEditModal=true;}"
+                />
+                <div v-if="!editor.scene.triggerManager.hasTriggers.value">{{$t('sceneView.leftSection.sceneTriggers.noTriggerInfo')}}</div>
             </div>
           </div>
 
@@ -584,6 +658,27 @@ function setVolumeSound(level, sound){
                   showLabelEditModal = false;
                 }">
             </label-edit-modal>
+          </Teleport>
+
+          <Teleport to="body">
+            <trigger-edit-modal
+                :show="showTriggerEditModal && lastClickedTrigger!== null "
+                :trigger="lastClickedTrigger"
+                :triggers="editor.scene.triggerManager.getTriggers.value"
+                :assets="editor.scene.assetManager.getAssets.value"
+                :sounds="editor.scene.soundManager.getSounds.value"
+                :scenes="scenes"
+                @close="showTriggerEditModal = false"
+                @confirm="(trigger)=>{
+                  console.log(trigger)
+
+                  editor.scene.triggerManager.getSelectedTrigger.value.copyFromAnotherTrigger(trigger);
+                  editor.scene.getTransformMode.value = 'radius';
+                  editor.scene.updateRadius(trigger.radius);
+
+                  showTriggerEditModal = false;
+                }">
+            </trigger-edit-modal>
           </Teleport>
 
           <div class="multilineField">
@@ -605,7 +700,7 @@ function setVolumeSound(level, sound){
                         :text="asset.name"
                         :active-animation="asset.activeAnimation"
                         :download-url="getResource(asset.sourceUrl)"
-                        :hide-in-viewer="asset.hideInViewer.value"
+                        :hide-in-viewer="Number(asset.hideInViewer.value)"
                         :active="asset.isSelected.value"
                         :error="asset.hasError.value"
                         :loading="asset.isLoading.value"

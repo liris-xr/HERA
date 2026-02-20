@@ -9,6 +9,8 @@ import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
+import {SoundManager} from "@/js/soundManagement/soundManager.js";
+import {Sound} from "@/js/soundManagement/sound.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
 import {ModelLoader} from "@/js/threeExt/modelManagement/modelLoader.js";
@@ -24,6 +26,7 @@ export class EditorScene extends THREE.Scene {
     sceneTitle;
     assetManager;
     labelManager;
+    soundManager;
     meshMap;
     #errors;
     #gridPlane;
@@ -43,11 +46,14 @@ export class EditorScene extends THREE.Scene {
     currentMeshGroup;
     transformBeforeChange;
 
+    #activeSounds;
+
     constructor(shadowMapSize) {
         super();
         this.labelManager = new LabelManager();
         this.assetManager = new AssetManager();
         this.meshMap = new Map();
+        this.soundManager = new SoundManager();
         this.#errors = ref([]);
         this.#lightSet = new LightSet(shadowMapSize);
         this.#lightSet.pushToScene(this);
@@ -111,6 +117,8 @@ export class EditorScene extends THREE.Scene {
         },{deep:true});
 
         this.onChanged = null;
+        
+        this.#activeSounds = [];
     }
 
     setMeshMap(meshes) {
@@ -146,6 +154,12 @@ export class EditorScene extends THREE.Scene {
         for (let labelData of sceneData.labels) {
             this.labelManager.addToScene(this,labelData);
         }
+
+        for (let soundData of sceneData.sounds) {
+            const sound = new Sound(soundData);
+            this.soundManager.addToScene(this,sound);
+        }
+
 
         this.#gridPlane = new GridPlane();
         this.#gridPlane.pushToScene(this);
@@ -306,6 +320,93 @@ export class EditorScene extends THREE.Scene {
         for (let asset of this.assetManager.getAssets.value){
             asset.setSelected(false);
         }
+    }
+
+    addNewSound(soundFile){
+        const soundData = {
+            id:null,
+            url: null,
+            uploadData: soundFile,
+            name: soundFile.name,
+        };
+
+        const sound = new Sound(soundData);
+        this.soundManager.addToScene(this,sound);
+    }
+
+    removeSound(sound){
+        this.setSelected(null);
+        this.soundManager.removeFromScene(this, sound);
+    }
+
+    playSound(sound){
+        if (!sound.uploadData) {
+            console.error("No file to play");
+            return;
+        }
+
+        const url = URL.createObjectURL(sound.uploadData);
+
+        const audioLoader = new THREE.AudioLoader();
+        const listener = new THREE.AudioListener();
+        const audio = new THREE.Audio(listener);
+
+        audioLoader.load(
+            url,
+            (buffer) => {
+                audio.setBuffer(buffer);
+                audio.setVolume(parseFloat(sound.volumeLevel));
+                audio.play();
+                setTimeout(() => {
+                    if (audio.source) {
+                        audio.source.onended = () => {
+                            sound.stop()
+                        };
+                    }
+                }, 10);
+
+            },
+            undefined,
+            (err) => {
+                console.error("Audio load error:", err);
+            }
+        );
+
+        this.#activeSounds.push([sound, audio]);
+    }   
+
+    stopSound(soundCurrentlyPlaying){
+        this.#activeSounds.forEach(sound => {
+            if (sound[0].id === soundCurrentlyPlaying.id) {
+                sound[1].stop();
+                sound[0].stop();
+            }
+        });
+    }
+
+    setVolume(soundCurrentlyPlaying){
+        this.#activeSounds.forEach(sound => {
+            if (sound[0].id === soundCurrentlyPlaying.id) {
+                sound[1].setVolume(soundCurrentlyPlaying.volumeLevel);
+
+            }
+        });
+    }
+
+    duplicateSound(sound){
+        this.setSelected(null);
+
+        const soundData = {
+            id:sound.id,
+            url: sound.sourceUrl,
+            name: sound.name,
+            copiedUrl: sound.sourceUrl,
+            playOnStartup: sound.playOnStartup.value,
+            isLoopingEnabled: sound.isLoopingEnabled.value,
+        };
+
+        const newSound = new Sound(soundData);
+        this.soundManager.addToScene(this,newSound);
     }
 
 

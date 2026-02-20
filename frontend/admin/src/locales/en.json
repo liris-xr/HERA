@@ -208,6 +208,13 @@
         "assetNotDisplayed": "This object will not be displayed in viewer",
         "assetLoadFailed": "Unable to load this 3D model"
       },
+      "sceneSounds": {
+        "label": "Sound:",
+        "addSoundButton": "Add",
+        "addSoundButtonErrorFileNotSupported": "This file format is not supported.\nPlease use .MP3.",
+        "noSoundInfo": "This scene contains no sound.",
+        "assetLoadFailed": "Failed to load the sound."
+      },
       "sceneCamera": {
         "label": "VR Camera",
         "basePosition": "Base position"

@@ -210,6 +210,13 @@
         "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
         "assetLoadFailed": "Impossible de charger ce modèle 3D"
       },
+      "sceneSounds":{
+        "label": "Son :",
+        "addSoundButton": "Ajouter",
+        "addSoundButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .MP3",
+        "noSoundInfo": "Cette scène ne contient aucun son",
+        "assetLoadFailed": "Impossible de charger le son"
+      },
       "sceneCamera": {
         "label": "Caméra VR",
         "basePosition": "Position de base"

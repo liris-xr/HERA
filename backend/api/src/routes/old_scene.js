@@ -1,13 +1,52 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArSound} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Op, Sequelize} from "sequelize";
 import {updateListByCompositeId, updateListById} from "../utils/updateListById.js";
-import {deleteAsset, deleteFile, deleteSound, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
+import {deleteAsset, deleteFile, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
 
 const router = express.Router()
+
+// Met à jour l'état global "recordUser" pour toutes les scènes d'un projet
+// Body: { projectId: string, recordUser: boolean }
+router.post(baseUrl+'scenes/recordUser', authMiddleware, async (req, res) => {
+    const token = req.user
+    const {projectId, recordUser} = req.body ?? {}
+
+    res.set({ 'Content-Type': 'application/json' })
+
+    if(!projectId || typeof recordUser !== 'boolean')
+        return res.status(400).send({error: 'Invalid body. Expected { projectId, recordUser }'})
+
+    try {
+        const project = await ArProject.findOne({
+            where: { id: projectId },
+            include:[{
+                model: ArUser,
+                as:"owner",
+                attributes:["id"],
+            }]
+        })
+
+        if(!project)
+            return res.status(404).send({error: 'Project not found'})
+
+        if(project.owner.id != token.id && !req.user.admin)
+            return res.status(403).send({error: 'User not granted'})
+
+        const [updatedCount] = await ArScene.update(
+            { recordUser },
+            { where: { projectId } }
+        )
+
+        return res.status(200).send({success: true, updatedCount, projectId, recordUser})
+    } catch (e) {
+        console.log(e)
+        return res.status(400).send({ error: 'Unable to update recordUser' })
+    }
+})
 
 router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
     const sceneId = req.params.sceneId;
@@ -26,10 +65,6 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
                 {
                     model: ArLabel,
                     as: "labels",
-                },
-                {
-                    model: ArSound,
-                    as: "sounds"
                 },
                 {
                     model: ArProject,
@@ -51,7 +86,7 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
         if (scene == null)
             return res.status(404).send({error: 'Scene not found'})
 
-        if (scene.project.owner.id !== token.id && !req.user.admin)
+        if (scene.project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
         res.status(200);
@@ -64,8 +99,6 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
     }
 
 })
-
-
 
 
 
@@ -83,10 +116,6 @@ const getPostUploadData = async (req, res, next) => {
             {
                 model: ArAsset,
                 as: "assets"
-            },
-            {
-                model: ArSound,
-                as: "sounds"
             },
             {
                 model: ArProject,
@@ -113,10 +142,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
     },
     {
         name: "uploads",
-        maxCount: 16
-    },
-    {
-        name: "soundToUploads",
         maxCount: 16
     }]
     ), async (req, res) => {
@@ -149,11 +174,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                 {
                     model: ArMesh,
                     as: "meshes"
-                },
-                {
-                    model: ArSound,
-                    as: "sounds"
-                },
+                }
             ],
             where: {id: sceneId},
         })
@@ -164,17 +185,15 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         if (scene == null)
             return res.status(404).send({error: 'Scene not found'})
 
-        if (scene.project.owner.id !== token.id && !req.user.admin)
+        if (scene.project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: "User not granted"})
 
 
         const knownLabelsIds = scene.labels.map( (label) => label.id )
         const knownAssetsIds = scene.assets.map( (asset) => asset.id )
         const knownMeshesIds = scene.meshes.map( (mesh) => { return {id: mesh.id, assetId: mesh.assetId} } )
-        const knownSoundsIds = scene.sounds.map( (sound) => sound.id )
 
         let assetsIdMatching = []
-        let soundsIdMatching = []
 
         let insertedCount = 0;
         if(!req.uploadedFilenames) req.uploadedFilenames = [];
@@ -315,52 +334,6 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         
             );
 
-            await updateListById(knownSoundsIds, JSON.parse(req.body.sounds),
-                async (sound)=>{
-                    await ArSound.update({
-                        playOnStartup: sound.playOnStartup,
-                        isLoopingEnabled: sound.isLoopingEnabled,
-                        volumeLevel: sound.volumeLevel,
-                    },{
-                        where: {id: sound.id},
-                        returning: true,
-                        transaction:t
-                    })
-                },
-
-
-                async (sound)=>{
-                    let data = {
-                        sceneId:scene.id,
-                        name: sound.name,
-                        playOnStartup: sound.playOnStartup,
-                        isLoopingEnabled: sound.isLoopingEnabled,
-                        volumeLevel: sound.volumeLevel,
-                    }
-
-                    if(sound.copiedUrl) {
-                        data.url = sound.copiedUrl
-                    } else
-                        data.url = req.uploadedFilenames[insertedCount++]
-
-                    const newSound = await ArSound.create(data,{
-                        transaction:t
-                    })
-
-                    soundsIdMatching.push({
-                        tempId:sound.id,
-                        newId:newSound.id
-                    })
-                },
-
-                async (knownId)=>{
-                    const soundToDelete = await ArSound.findOne({where: {id: knownId},transaction:t})
-                    await deleteSound(soundToDelete)
-                    soundToDelete.destroy({transaction:t})
-                    await soundToDelete.save({transaction:t})
-                }
-            );
-
             let updatedUrl = req.uploadedUrl;
             if(uploadedUrl && scene.envmapUrl !== "" && scene.envmapUrl != null){
                 deleteFile(scene.envmapUrl);
@@ -383,10 +356,11 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
         scene = await fetchScene()
 
+
+
         res.status(200).send({
             scene:scene,
-            assetsIdMatching: assetsIdMatching,
-            soundsIdMatching: soundsIdMatching
+            assetsIdMatching: assetsIdMatching
         })
     }catch (e){
         console.log(e)
@@ -473,10 +447,6 @@ router.delete(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
                 {
                     model: ArAsset,
                     as:"assets"
-                },
-                {
-                    model: ArSound,
-                    as:"sounds"
                 }
             ],
             where: {id: sceneId},
@@ -490,16 +460,12 @@ router.delete(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
             return res.status(404).send({error: 'Scene not found'})
         }
 
-        if(scene.project.owner.id !== token.id && !req.user.admin)
+        if(scene.project.owner.id != token.id && !req.user.admin)
             return res.status(403).send({error: 'User not granted'})
 
 
         for (let asset of scene.assets) {
             await deleteAsset(asset);
-        }
-
-        for (let sound of scene.sounds) {
-            await deleteSound(sound);
         }
 
         await scene.destroy();
@@ -537,10 +503,6 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
                     as: 'labels'
                 },
                 {
-                    model: ArSound,
-                    as: 'sounds'
-                },
-                {
                    model:ArProject,
                    as: "project",
                    attributes: ["id"],
@@ -563,7 +525,7 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Scene not found' });
         }
 
-        if(scene.project.owner.id !== token.id && !req.user.admin){
+        if(scene.project.owner.id != token.id && !req.user.admin){
             return res.status(403).send({error: 'User not granted'});
         }
 
@@ -604,16 +566,6 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             const newLabels = await Promise.all(scene.labels.map(async label => {
                 return ArLabel.create({
                     ...label.get({ plain: true }),
-                    id: undefined,
-                    sceneId: newScene.id
-                },{
-                    transaction:t
-                });
-            }));
-
-            const newSounds = await Promise.all(scene.sounds.map(async sound => {
-                return ArSound.create({
-                    ...sound.get({ plain: true }),
                     id: undefined,
                     sceneId: newScene.id
                 },{

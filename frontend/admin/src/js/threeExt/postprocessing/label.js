@@ -16,6 +16,8 @@ export class Label extends classes(SelectableInterface, LoadableInterface){
     #htmlContent
     #selected;
 
+    visible;
+
     constructor(labelData) {
         super();
         this.content = ref(labelData.text);
@@ -35,6 +37,8 @@ export class Label extends classes(SelectableInterface, LoadableInterface){
             this.runOnChanged();
         })
         this.init();
+
+        this.visible = ref(true);
     }
 
     init(){
@@ -99,6 +103,11 @@ export class Label extends classes(SelectableInterface, LoadableInterface){
 
     setVisible(visible){
         this.label.visible = visible;
+        this.visible.value = visible;
+    }
+
+    getVisible(){
+        return this.visible.value;
     }
 
     setSelected(selected){

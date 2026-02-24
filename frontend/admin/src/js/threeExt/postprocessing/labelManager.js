@@ -7,8 +7,11 @@ export class LabelManager {
     #labels;
     onChanged;
 
+    areAllLabelsVisible
+
     constructor() {
         this.#labels = shallowReactive([]);
+        this.areAllLabelsVisible = true;
     }
 
     getLabels = computed(()=>{
@@ -71,6 +74,13 @@ export class LabelManager {
             });
         }
         return result;
+    }
+
+    setLabelsVisible(){
+        this.areAllLabelsVisible = !this.areAllLabelsVisible;
+        this.#labels.forEach(label => {
+            label.setVisible(this.areAllLabelsVisible);
+        })
     }
 
 

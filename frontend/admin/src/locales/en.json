@@ -102,14 +102,6 @@
         "current": "Current envmap:",
         "uploadButton": "Upload"
       },
-      "projectQuitMessage": {
-        "label": "Quitting Message",
-        "placeholder": "The message users will see before quitting"
-      },
-      "projectQuitUrl": {
-        "label": "Form link",
-        "placeholder": "Link to an external form for feedback"
-      },
       "buttons": {
         "duplicate": "Duplicate project",
         "delete": "Delete project"
@@ -166,15 +158,6 @@
         "saved": "Saved",
         "saving": "Saving"
       }
-    },
-    "arView": {
-      "questionnairePopup": {
-        "title": "Your feedback matters!",
-        "cancel": "Close",
-        "confirm": "Open the questionnaire",
-        "defaultMessage": "You will be redirected to an external questionnaire.",
-        "defaultUrl": "https://www.youtube.com/"
-      }
     }
   },
 
@@ -206,6 +189,7 @@
         "addAssetButtonErrorFileNotSupported": "This file format is not supported.\nPlease use .glb or .gltf",
         "noAssetsInfo": "This scene does not have any 3D model",
         "assetNotDisplayed": "This object will not be displayed in viewer",
+        "assetNotDisplayedInAr": "This object will not be taken into account when loading data.",
         "assetLoadFailed": "Unable to load this 3D model"
       },
       "sceneSounds": {

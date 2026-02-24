@@ -67,8 +67,13 @@
     "selectedFile": {
       "notAnImageError": "Le fichier sélectionné n'est pas une image.",
       "notAnExrError": "Le fichier sélectionné n'est pas un fichier EXR valide.",
+      "notAnMP3Error": "Le fichier sélectionné n'est pas un fichier MP3 valide",
       "sizeError": {
         "part1": "L'image sélectionnée est trop volumineuse",
+        "part2": "Veuillez choisir un fichier"
+      },
+      "sizeErrorMP3": {
+        "part1": "L'audio sélectionnée est trop volumineuse",
         "part2": "Veuillez choisir un fichier"
       }
     },
@@ -98,14 +103,6 @@
       "projectImage": {
         "label": "Image :",
         "alt": "Image du projet"
-      },
-      "projectQuitMessage": {
-        "label": "Message de fin",
-        "placeholder": "Message que les utilisateurs verront avant de quitter"
-      },
-      "projectQuitUrl": {
-        "label": "Lien de formulaire",
-        "placeholder": "Lien vers un formulaire externe pour les retours utilisateurs"
       },
       "projectEnvmap": {
         "label": "Envmap:",
@@ -168,15 +165,6 @@
         "saved": "Sauvegardé",
         "saving": "Sauvegarde en cours"
       }
-    },
-    "arView": {
-      "questionnairePopup": {
-        "title": "Votre avis compte !",
-        "cancel": "Fermer",
-        "confirm": "Ouvrir le questionnaire",
-        "defaultMessage": "Vous allez être redirigé vers un questionnaire externe.",
-        "defaultUrl": "https://www.youtube.com/"
-      }
     }
   },
 
@@ -208,6 +196,7 @@
         "addAssetButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .glb ou .gltf",
         "noAssetsInfo": "Cette scène ne contient aucun modèle 3D",
         "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
+        "assetNotDisplayedInAr": "Cet objet ne sera pas pris en compte lors du chargement des données.",
         "assetLoadFailed": "Impossible de charger ce modèle 3D"
       },
       "sceneSounds":{
@@ -423,5 +412,15 @@
       "cancel": "Annuler",
       "confirm": "Valider"
     }
+  },
+  "triggerEditModal": {
+    "title": "Édition avancée",
+    "actionIn": "Action en entrant",
+    "actionOut": "Action en sortant",
+    "radius": "Rayon",
+    "objet": "Choisir Objet avec qui interagir",
+    "son": "Son",
+    "scene": "Scene:",
+    "dialogue": "Dialogue"
   }
 }

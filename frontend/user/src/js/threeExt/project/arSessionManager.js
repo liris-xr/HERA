@@ -30,13 +30,14 @@ export class ArSessionManager {
     domWidth;
     domHeight;
 
+
     constructor(json) {
         this.shadowMapSize = 4096
         this.domWidth = 380;
         this.domHeight = 280;
         this.#isArRunning = ref(false);
         this.enable3dUI = false
-        
+
         this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
         this.arCamera = new ArCamera();
 
@@ -112,10 +113,10 @@ export class ArSessionManager {
         return this.#isArRunning.value;
     })
 
+
     async start(mode="ar") {
         // this.reset();
         this.#isArRunning.value = true
-        this.sceneManager.startRecordingScene();
 
         const options = mode === "ar" ? {
             requiredFeatures: ['hit-test', 'dom-overlay',/*'light-estimation'*/],
@@ -266,9 +267,10 @@ export class ArSessionManager {
     }
 
     async stop(){
-        this.sceneManager.stopRecordingScene();
-        if(this.arSession != null)
+        if(this.arSession != null) {
+            this.cleanupARSession();
             await this.arSession.end();
+        }
     }
 
     onSessionEnded() {
@@ -277,11 +279,11 @@ export class ArSessionManager {
         this.sceneManager.scenePlacementManager.hitTestSource = null
         this.#isArRunning.value = false;
         this.sceneManager.isArRunning.value = false;
-
         if(this.xrMode === "vr")
             this.removeVrCameraPosition()
         this.#resetCameraPosition()
 
+        this.cleanupARSession();
         if(this.sceneManager.active.value.hasLabels.value) {
             this.sceneManager.active.value.labelPlayer.stop()
         }
@@ -292,11 +294,18 @@ export class ArSessionManager {
     }
 
     reset() {
+        this.cleanupARSession();
         this.sceneManager.reset();
     }
 
-    onXrFrame(time, frame) {
+    cleanupARSession(){
+        this.sceneManager.actionManager.stopAllSounds() ;
+        this.sceneManager.getActiveScene().stopAllSounds() ;
+        this.sceneManager.getActiveScene().resetLabels();
+        this.sceneManager.getActiveScene().resetTriggers();
+    }
 
+    onXrFrame(time, frame) {
         this.sceneManager.onXrFrame(time, frame, this.referenceSpace, this.arCamera, this.arRenderer);
         this.controls.update();
 

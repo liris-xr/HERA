@@ -215,6 +215,24 @@
         "noSoundInfo": "This scene contains no sound.",
         "assetLoadFailed": "Failed to load the sound."
       },
+      "sceneTriggers": {
+        "label": "Trigger:",
+        "addTriggerButton": "Add",
+        "noTriggerInfo": "This scene contains no trigger.",
+        "triggerNotDisplayed": "This trigger will be hidden during the display.",
+        "assetNotDisplayed": "This trigger will not be displayed during the preview.",
+        "actionIn": "On enter",
+        "actionOut": "On exit",
+        "actions": {
+          "none": "None",
+          "playSound": "Play a sound",
+          "changeScene": "Change scene",
+          "animation": "Trigger an animation",
+          "startDialogue": "Show/hide labels",
+          "displayAsset": "Show/hide a 3D model",
+          "displayTrigger": "Show/hide a trigger"
+          }
+        },
       "sceneCamera": {
         "label": "VR Camera",
         "basePosition": "Base position"

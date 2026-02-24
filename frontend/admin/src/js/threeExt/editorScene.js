@@ -9,11 +9,13 @@ import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
+import {TriggerManager} from "@/js/threeExt/triggerManagement/triggerManager.js";
 import {SoundManager} from "@/js/soundManagement/soundManager.js";
 import {Sound} from "@/js/soundManagement/sound.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
 import {ModelLoader} from "@/js/threeExt/modelManagement/modelLoader.js";
+import {Trigger} from "@/js/threeExt/triggerManagement/trigger.js";
 
 const transformModeKeys = {
     "translate":"position",
@@ -26,6 +28,7 @@ export class EditorScene extends THREE.Scene {
     sceneTitle;
     assetManager;
     labelManager;
+    triggerManager;
     soundManager;
     meshMap;
     #errors;
@@ -41,7 +44,7 @@ export class EditorScene extends THREE.Scene {
     #currentTransformMode;
     currentSelectedTransformValues;
     currentSelectedMaterialValues;
-    
+
     currentMeshes;
     currentMeshGroup;
     transformBeforeChange;
@@ -53,6 +56,7 @@ export class EditorScene extends THREE.Scene {
         this.labelManager = new LabelManager();
         this.assetManager = new AssetManager();
         this.meshMap = new Map();
+        this.triggerManager = new TriggerManager();
         this.soundManager = new SoundManager();
         this.#errors = ref([]);
         this.#lightSet = new LightSet(shadowMapSize);
@@ -76,7 +80,9 @@ export class EditorScene extends THREE.Scene {
         watch(() =>this.currentSelectedTransformValues, (value) => {
             if(this.selected.value == null) return;
 
-            if(this.selected.value instanceof Asset) {
+            if(this.selected.value instanceof Asset
+               || this.selected.value instanceof Label
+               || this.selected.value instanceof Trigger) {
 
                 this.selected.value.getObject()[transformModeKeys[this.getTransformMode.value]].set(value.value.x, value.value.y, value.value.z)
 
@@ -117,7 +123,7 @@ export class EditorScene extends THREE.Scene {
         },{deep:true});
 
         this.onChanged = null;
-        
+
         this.#activeSounds = [];
     }
 
@@ -145,7 +151,7 @@ export class EditorScene extends THREE.Scene {
         this.setSceneTitle(sceneData.title)
         this.assetManager.setSceneTitle(this.sceneTitle)
         this.assetManager.setProjectId(this.projectId)
-        
+
         for (let assetData of sceneData.assets) {
             const asset = new Asset(assetData);
             this.assetManager.addToScene(this, asset,()=>{this.updatePlaygroundSize()});
@@ -155,11 +161,14 @@ export class EditorScene extends THREE.Scene {
             this.labelManager.addToScene(this,labelData);
         }
 
+        for (let triggerData of sceneData.triggers){
+            this.triggerManager.addToScene(this,triggerData);
+        }
+
         for (let soundData of sceneData.sounds) {
             const sound = new Sound(soundData);
             this.soundManager.addToScene(this,sound);
         }
-
 
         this.#gridPlane = new GridPlane();
         this.#gridPlane.pushToScene(this);
@@ -196,7 +205,6 @@ export class EditorScene extends THREE.Scene {
         this.add(this.#transformControls);
         this.setTransformMode("translate");
 
-            
         this.#transformControls.addEventListener('mouseUp', (event) => {
             this.#updateSelectedTransformValues();
 
@@ -268,21 +276,26 @@ export class EditorScene extends THREE.Scene {
                         object = asset;
                     }
                 }
-                
+            }
+
+            for (let trigger of this.triggerManager.getTriggers.value) {
+                const intersects = raycaster.intersectObject(trigger.getObject(), true);
+                if (intersects.length > 0) {
+                    object = trigger;
+                }
             }
 
         }
 
         this.setSelected(object);
-
     }
     setSelected(object, selected = true){
         this.deselectAll();
         this.selected.value = object;
+
         if(object==null || selected === false){
             this.#transformControls.detach();
         } else {
-
             if(this.#meshSelectionMode.value) {
                 if(object.isMesh) {
                     this.#transformControls.attach(object)
@@ -308,6 +321,7 @@ export class EditorScene extends THREE.Scene {
     deselectAll(){
         this.#clearSelectedLabels();
         this.#clearSelectedObjects();
+        this.#clearSelectedTrigger();
     }
 
     #clearSelectedLabels(){
@@ -320,6 +334,23 @@ export class EditorScene extends THREE.Scene {
         for (let asset of this.assetManager.getAssets.value){
             asset.setSelected(false);
         }
+    }
+
+    #clearSelectedTrigger(){
+        for(let trigger of this.triggerManager.getTriggers.value){
+            trigger.setSelected(false);
+        }
+    }
+
+    addNewTrigger(){
+        const trigger = this.triggerManager.addToScene(this);
+        this.setSelected(trigger);
+        this.setTransformMode("translate");
+    }
+
+    removeTrigger(trigger){
+        this.setSelected(null);
+        this.triggerManager.removeFromScene(this, trigger);
     }
 
     addNewSound(soundFile){
@@ -340,40 +371,27 @@ export class EditorScene extends THREE.Scene {
     }
 
     playSound(sound){
-        if (!sound.uploadData) {
-            console.error("No file to play");
-            return;
-        }
-
-        const url = URL.createObjectURL(sound.uploadData);
-
         const audioLoader = new THREE.AudioLoader();
         const listener = new THREE.AudioListener();
         const audio = new THREE.Audio(listener);
+        audioLoader.load(getResource(sound.url), (buffer) => {
+            audio.setBuffer(buffer);
+            audio.setVolume(sound.volumeLevel);
+            audio.play();
 
-        audioLoader.load(
-            url,
-            (buffer) => {
-                audio.setBuffer(buffer);
-                audio.setVolume(parseFloat(sound.volumeLevel));
-                audio.play();
-                setTimeout(() => {
-                    if (audio.source) {
-                        audio.source.onended = () => {
-                            sound.stop()
-                        };
-                    }
-                }, 10);
+            setTimeout(() => {
+                if (audio.source) {
+                    audio.source.onended = () => {
+                        sound.stop()
+                    };
+                }
+            }, 10);
+        });
 
-            },
-            undefined,
-            (err) => {
-                console.error("Audio load error:", err);
-            }
-        );
+        sound.play();
 
         this.#activeSounds.push([sound, audio]);
-    }   
+    }
 
     stopSound(soundCurrentlyPlaying){
         this.#activeSounds.forEach(sound => {
@@ -408,6 +426,7 @@ export class EditorScene extends THREE.Scene {
         const newSound = new Sound(soundData);
         this.soundManager.addToScene(this,newSound);
     }
+
 
 
     addNewLabel(){
@@ -521,7 +540,9 @@ export class EditorScene extends THREE.Scene {
 
     #updateSelectedTransformValues(){
 
-        if(this.selected.value instanceof Asset) {
+        if(this.selected.value instanceof Asset ||
+            this.selected.value instanceof Label ||
+            this.selected.value instanceof Trigger) {
 
             if(this.getTransformMode.value === "translate"){
                 this.currentSelectedTransformValues.value = this.selected.value.getResultPosition();
@@ -546,7 +567,7 @@ export class EditorScene extends THREE.Scene {
         }
 
     }
-    
+
     #updateSelectedMaterialValues() {
 
         if(this.selected.value?.isObject3D) {
@@ -568,7 +589,11 @@ export class EditorScene extends THREE.Scene {
                 emissive:{r:"",g:"",b:""}
             }
         }
-        
+
+    }
+
+    updateRadius(radius){
+        this.selected.value.getObject().scale.set(radius, radius, radius);
     }
 }
 

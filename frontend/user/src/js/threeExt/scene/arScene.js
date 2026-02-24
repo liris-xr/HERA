@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {Asset} from "@/js/threeExt/modelManagement/asset.js";
 import {computed, shallowReactive} from "vue";
+import {Trigger} from "@/js/threeExt/TriggerManagement/trigger.js";
 import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
@@ -9,6 +10,7 @@ import {Vector3} from "three";
 import {EmptyAsset} from "@/js/threeExt/modelManagement/emptyAsset.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
+import {Sound} from "@/js/threeExt/SoundManagement/sound.js";
 import { MeshManager } from "../modelManagement/meshManager";
 import scene from "three/addons/offscreen/scene.js";
 
@@ -16,8 +18,9 @@ export class ArScene extends AbstractScene {
     sceneId
     title;
     description;
-    recordUser;
     #assets
+    #triggers
+    #sounds
     meshDataMap // Mesh data from the database
     labelPlayer;
     #shadowPlane
@@ -27,12 +30,15 @@ export class ArScene extends AbstractScene {
     clock
     vrStartPosition
 
+    #audioLoader;
+    #listener;
+    #activeSounds;
+
     constructor(sceneData) {
         super();
         this.sceneId = sceneData.id;
         this.title = sceneData.title;
         this.description = sceneData.description;
-        this.recordUser = sceneData.recordUser;
         this.#assets = [];
         this.meshDataMap = new Map();
         this.meshManager = new MeshManager()
@@ -42,6 +48,18 @@ export class ArScene extends AbstractScene {
             this.#assets.push(new Asset(assetData));
         }
 
+        this.#triggers = [];
+        for (let triggerData of sceneData.triggers) {
+            this.#triggers.push(new Trigger(triggerData));
+        }
+
+        this.#sounds = [];
+        for (let soundData of sceneData.sounds) {
+            this.#sounds.push(new Sound(soundData));
+        }
+
+
+        if(this.#assets.length === 0) this.#assets.push(new EmptyAsset())
         for (let meshData of sceneData.meshes) {
             this.meshDataMap.set(meshData.name,meshData)
         }
@@ -67,13 +85,13 @@ export class ArScene extends AbstractScene {
 
         this.clock = new THREE.Clock();
 
+        this.#audioLoader = new THREE.AudioLoader();
+        this.#listener = new THREE.AudioListener();
+        this.#activeSounds = [];
     }
 
     getAssetSubMeshes(assetData) {
         let subMeshes = []
-
-        console.log(assetData);
-        
 
         const step = (child,transform) => {
             for(let children of child.children) {
@@ -122,14 +140,20 @@ export class ArScene extends AbstractScene {
             if(assetData.hasError()){
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
             }
-            
+
             this.updateAssetSubMeshes(assetData);
-            if(assetData.object) {
+            if (assetData.object) {
                 this.add(assetData.object);
             } else {
                 this.add(assetData.mesh);
             }
         }
+
+        for (let triggerData of this.#triggers) {
+                await triggerData.load();
+                triggerData.pushToScene(this);
+        }
+
         this.computeBoundingSphere(true);
         this.#shadowPlane = new ShadowPlane(this.computeBoundingBox(false));
         this.#shadowPlane.pushToScene(this);
@@ -156,6 +180,41 @@ export class ArScene extends AbstractScene {
         this.labelPlayer.reset();
     }
 
+    resetTriggers = ()=>{
+        for (let trigger of this.#triggers) {
+            trigger.reset();
+        }
+    }
+
+    async resetScene() {
+        this.stopAllSounds();
+
+        while (this.children.length > 0) {
+            const child = this.children[0];
+            this.remove(child);
+
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(m => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+            if (child.texture) child.texture.dispose();
+        }
+
+        await this.init();
+
+        this.resetLabels();
+        this.resetTriggers();
+
+
+        for (let label of this.labelPlayer.getLabels()) {
+            label.pushToScene(this);
+        }
+    }
+
 
     computeBoundingBox(forceCompute = false){
         if(forceCompute || this.#boundingBox==null){
@@ -178,8 +237,8 @@ export class ArScene extends AbstractScene {
     }
 
 
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer){
-        worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer, isArRunning){
+            worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
 
         // animation
         const delta = this.clock.getDelta()
@@ -187,8 +246,46 @@ export class ArScene extends AbstractScene {
             if (asset.animationMixer)
                 asset.animationMixer.update(delta)
 
-
         this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer);
+
+        for (let trigger of this.#triggers){
+            trigger.onXrFrame(time,  isArRunning);
+        }
+    }
+
+    getTriggers(){
+        return this.#triggers;
+    }
+
+    getSounds(){
+        return this.#sounds;
+    }
+
+    startSounds(){
+        for (let soundData of this.#sounds) {
+            if(soundData.playOnStartup){
+                const audio = new THREE.Audio(this.#listener);
+                this.#listener.context.resume()
+                this.#audioLoader.load(getResource(soundData.url), (buffer) => {
+                    audio.setBuffer(buffer);
+                    audio.setLoop(soundData.isLoopingEnabled);
+                    audio.setVolume(1);
+                    audio.play();
+                    soundData.play();
+                    this.#activeSounds.push([soundData, audio]);
+                });
+            }
+        }
+    }
+
+    stopAllSounds() {
+        this.#activeSounds.forEach(sound => {
+            if (sound[0].isPlaying()) {
+                sound[1].stop();
+                sound[0].stop();
+            }
+        });
+        this.#activeSounds.length = [];
     }
 
     hasAssets() {

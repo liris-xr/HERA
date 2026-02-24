@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger, ArSound} from "../orm/index.js";
 import {sequelize} from "../orm/database.js";
 import authMiddleware, {optionnalAuthMiddleware} from "../middlewares/auth.js";
 import {
@@ -26,7 +26,6 @@ const PAGE_LENGTH = 20;
 router.get(baseUrl+'projects/:page', optionnalAuthMiddleware, async (req, res) => {
     const page = parseInt(req.params.page);
     try{
-
         let where = {}
         if(req.user)
             where = {
@@ -121,14 +120,23 @@ router.get(baseUrl+'project/:projectId', optionnalAuthMiddleware, async (req, re
                         {
                             model: ArAsset,
                             as: "assets",
-                            where:{
-                                hideInViewer: false
+                            where: {
+                                hideInViewer: {
+                                    [Op.ne]: 2
+                                }
                             },
-                            required:false
                         },
                         {
                             model: ArLabel,
                             as: "labels",
+                        },
+                        {
+                            model: ArTrigger,
+                            as: "triggers",
+                        },
+                        {
+                            model: ArSound,
+                            as: "sounds",
                         },
                     ],
                 },
@@ -189,9 +197,6 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
             title: req.body?.title,
             description: req.body?.description,
             pictureUrl: updatedUrl,
-            userId: token.id,
-            quitMessage: req.body.quitMessage,
-            quitUrl: req.body.quitUrl,
             unit: req.body?.unit,
             displayMode: req.body.displayMode,
             calibrationMessage: req.body?.calibrationMessage,
@@ -235,8 +240,6 @@ router.post(baseUrl+'project', authMiddleware, async (req, res) => {
             unit: req.body.unit,
             calibrationMessage: req.body.calibrationMessage,
             userId: token.id,
-            quitMessage: req.body.quitMessage,
-            quitUrl: req.body.quitUrl,
             published: req.body?.published,
         });
 
@@ -279,7 +282,7 @@ router.delete(baseUrl+'project/:projectId', authMiddleware, async (req, res) => 
             return res.status(404).send({error: 'Project not found'})
         }
 
-        if(project.owner.id != token.id && !req.user.admin)
+        if(project.owner.id !== token.id && !req.user.admin)
             return res.status(403).send({error: 'User not granted'})
 
 
@@ -326,6 +329,14 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                             model: ArLabel,
                             as: 'labels'
                         },
+                        {
+                            model: ArTrigger,
+                            as: 'triggers'
+                        },
+                        {
+                            model: ArSound,
+                            as: 'sounds'
+                        },
                     ]
                 },
                 {
@@ -344,7 +355,7 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        if(project.owner.id != token.id && !req.user.admin){
+        if(project.owner.id !== token.id && !req.user.admin){
             return res.status(403).send({error: 'User not granted'});
         }
 
@@ -401,9 +412,31 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                     });
                 }));
 
+                await Promise.all(scene.triggers.map(async trigger => {
+                    return ArTrigger.create({
+                        ...trigger.get({ plain: true }),
+                        id: undefined,
+                        sceneId: newScene.id,
+                    }, {
+                        transaction:t
+                    });
+                }));
+
+                await Promise.all(scene.sounds.map(async sound => {
+                    return ArSound.create({
+                        ...sound.get({ plain: true }),
+                        id: undefined,
+                        sceneId: newScene.id,
+                        url: getUpdatedPath(sound.url, projectId, newProject.id)
+                    }, {
+                        transaction:t
+                    });
+                }));
 
                 return newScene;
             }));
+
+
 
 
             await duplicateFolder(getProjectDirectory(projectId), getProjectDirectory(newProject.id))
@@ -566,6 +599,16 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
                             as: "labels",
                             attributes: {exclude: ['id']}
                         },
+                        {
+                            model: ArTrigger,
+                            as: "triggers",
+                            attributes: {exclude: ['id']}
+                        },
+                        {
+                            model: ArSound,
+                            as: "sounds",
+                            attributes: {exclude: ['id']}
+                        },
                     ],
                 },
 
@@ -579,6 +622,18 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
         })
 
         if (project) {
+            const scenes = await ArScene.findAll({
+                where: { projectId }
+            });
+
+            const triggerPromises = scenes.map(scene => {
+                return ArTrigger.findAll({
+                    where: { sceneId: scene.id }
+                });
+            });
+
+            const triggers = await Promise.all(triggerPromises);
+            const triggerObj = triggers.flat().map(t => t.toJSON());
 
             const jsonFilePath = path.join(getTempDirectory(), projectId + "-" + Date.now() + '.json')
 
@@ -588,7 +643,12 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
             const projectObj = project.toJSON()
             delete projectObj.id
 
-            await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
+            const combined = {
+                project: projectObj,
+                trigger: triggerObj,
+            };
+
+            await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(combined), (err) => {})
 
             res.zip({
                 files: [
@@ -628,8 +688,6 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    console.log(req.uploadedFilePath)
-
     try {
         const dataFolder = req.uploadedFilePath + "-data"
         // dézipper le fichier
@@ -642,7 +700,7 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         const projectObj = JSON.parse(data)
         projectObj.userId = token.id
 
-        const project = await ArProject.create(projectObj, {
+        const project = await ArProject.create(projectObj.project, {
             include: [
                 {
                     model: ArScene,
@@ -659,6 +717,14 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
                         {
                             model: ArLabel,
                             as: "labels",
+                        },
+                        {
+                            model: ArTrigger,
+                            as: "triggers",
+                        },
+                        {
+                            model: ArSound,
+                            as: "sounds",
                         },
                     ],
                 },
@@ -677,6 +743,11 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
             for(let asset of scene.assets) {
                 asset.url = updateUrl(asset.url, project.id)
                 await asset.save()
+            }
+
+            for(let sound of scene.sounds) {
+                sound.url = updateUrl(sound.url, project.id)
+                await sound.save()
             }
 
             await scene.save()
@@ -700,17 +771,5 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
     }
 
 })
-
-
-
-
-
-
-
-
-
-
-
-
 
 export default router

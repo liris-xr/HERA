@@ -212,6 +212,23 @@
         "noSoundInfo": "Este escenario no contiene sonido.",
         "assetLoadFailed": "No se pudo cargar el sonido."
       },
+      "sceneTriggers": {
+        "label": "Activador  :",
+        "addTriggerButton": "Añadir",
+        "noTriggerInfo": "Este escenario no contiene activador",
+        "triggerNotDisplayed": "Este activador estará escondido durante la visualización.",
+        "actionIn": "Al entrar",
+        "actionOut": "Al salir",
+        "actions": {
+          "none": "Ninguna",
+          "playSound": "Reproducir un sonido",
+          "changeScene": "Cambiar de escenario",
+          "animation": "Activar una animación",
+          "startDialogue": "Mostrar/Ocultar etiquetas",
+          "displayAsset": "Mostrar/ocultar un modelo 3D",
+          "displayTrigger": "Mostrar/ocultar un activador"
+        }
+      },
       "sceneCamera": {
         "label": "Caméra VR",
         "basePosition": "Position de base"

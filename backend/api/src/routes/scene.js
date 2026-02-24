@@ -1,6 +1,6 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
-import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArSound} from "../orm/index.js";
+import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser, ArTrigger, ArSound} from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
 import {sequelize} from "../orm/database.js";
 import {Op, Sequelize} from "sequelize";
@@ -26,6 +26,10 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
                 {
                     model: ArLabel,
                     as: "labels",
+                },
+                {
+                    model: ArTrigger,
+                    as: "triggers"
                 },
                 {
                     model: ArSound,
@@ -83,6 +87,10 @@ const getPostUploadData = async (req, res, next) => {
             {
                 model: ArAsset,
                 as: "assets"
+            },
+            {
+                model: ArTrigger,
+                as: "triggers"
             },
             {
                 model: ArSound,
@@ -151,6 +159,10 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                     as: "meshes"
                 },
                 {
+                    model: ArTrigger,
+                    as: "triggers"
+                },
+                {
                     model: ArSound,
                     as: "sounds"
                 },
@@ -171,6 +183,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
         const knownLabelsIds = scene.labels.map( (label) => label.id )
         const knownAssetsIds = scene.assets.map( (asset) => asset.id )
         const knownMeshesIds = scene.meshes.map( (mesh) => { return {id: mesh.id, assetId: mesh.assetId} } )
+        const knownTriggersIds = scene.triggers.map( (trigger) => trigger.id )
         const knownSoundsIds = scene.sounds.map( (sound) => sound.id )
 
         let assetsIdMatching = []
@@ -313,6 +326,47 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
                     await ArMesh.destroy({where: {id: knownId.id, assetId: knownId.assetId},transaction:t});
                 }
         
+            );
+
+            await updateListById(knownTriggersIds, JSON.parse(req.body.triggers),
+                async (trigger)=>{
+                    await ArTrigger.update({
+                        radius: trigger.radius,
+                        hideInViewer: trigger.hideInViewer,
+                        actionIn: trigger.actionIn,
+                        actionOut: trigger.actionOut,
+                        objectIn: trigger.objectIn,
+                        objectOut: trigger.objectOut,
+                        position: trigger.position,
+                        scale: trigger.scale,
+                        chainedActions: trigger.chainedActions,
+                    }, {
+                        where: {id: trigger.id},
+                        returning: true,
+                        transaction:t
+                    })
+                },
+
+                async (trigger)=>{
+                    await ArTrigger.create({
+                        sceneId:scene.id,
+                        radius: trigger.radius,
+                        hideInViewer: trigger.hideInViewer,
+                        actionIn: trigger.actionIn,
+                        actionOut: trigger.actionOut,
+                        objectIn: trigger.objectIn,
+                        objectOut: trigger.objectOut,
+                        position: trigger.position,
+                        scale: trigger.scale,
+                        chainedActions: trigger.chainedActions,
+                    },{
+                        transaction:t
+                    })
+                },
+
+                async (knownId)=>{
+                    await ArTrigger.destroy({where: {id: knownId},transaction:t});
+                }
             );
 
             await updateListById(knownSoundsIds, JSON.parse(req.body.sounds),
@@ -537,6 +591,10 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
                     as: 'labels'
                 },
                 {
+                    model: ArTrigger,
+                    as: 'triggers'
+                },
+                {
                     model: ArSound,
                     as: 'sounds'
                 },
@@ -604,6 +662,16 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
             const newLabels = await Promise.all(scene.labels.map(async label => {
                 return ArLabel.create({
                     ...label.get({ plain: true }),
+                    id: undefined,
+                    sceneId: newScene.id
+                },{
+                    transaction:t
+                });
+            }));
+
+            const newTriggers = await Promise.all(scene.triggers.map(async trigger => {
+                return ArTrigger.create({
+                    ...trigger.get({ plain: true }),
                     id: undefined,
                     sceneId: newScene.id
                 },{

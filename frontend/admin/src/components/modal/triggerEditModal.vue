@@ -78,30 +78,18 @@ watch(() =>props.show,async (value) => {
   }
 })
 
-const getEditedTrigger = computed(()=>{
-  if (radius.value === "") {
-    radius.value = 1;
-  }
-
-  actionIn.value = getActionKeyByLabel(actionIn.value);
-  actionOut.value = getActionKeyByLabel(actionOut.value);
-
-  if (actionIn === "none"){
-    objectIn.value = {id:"0", label:"none"};
-  }
-
-  if (actionOut === "none"){
-    objectOut.value = {id:"0", label:"none"};
-  }
-
-  return {actionIn : actionIn.value,
-          actionOut : actionOut.value,
-          radius : radius.value,
-          objectIn : objectIn.value,
-          objectOut : objectOut.value,
-          chainedActions : listActions.value,
-  };
-})
+const getEditedTrigger = computed(() => ({
+  actionIn: actionIn.value,
+  actionOut: actionOut.value,
+  radius: radius.value || 1,
+  objectIn: actionIn.value === "none"
+    ? { id: "0", label: "none" }
+    : objectIn.value,
+  objectOut: actionOut.value === "none"
+    ? { id: "0", label: "none" }
+    : objectOut.value,
+  chainedActions: listActions.value,
+}));
 
 function getActionKeyByLabel(label) {
   if (label === undefined || label === null || label === "none") {

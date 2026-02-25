@@ -4,6 +4,7 @@ import {LabelRenderer} from "@/js/threeExt/rendering/labelRenderer.js";
 import {EditorScene} from "@/js/threeExt/editorScene.js";
 import {EditorCamera} from "@/js/threeExt/lighting/editorCamera.js";
 import {runOnNonDraggingClick} from "@/js/utils/click.js";
+import * as THREE from 'three';
 
 export class Editor {
     scene
@@ -88,6 +89,37 @@ export class Editor {
 
         this.scene.onFrame(time, frame, this.camera.position)
         this.orbitControls.update();
+
+        this.scene.traverse((obj) => {
+            if (obj.isMesh && obj.material) {
+                if (!obj.material.isMeshStandardMaterial && !obj.material.isMeshPhysicalMaterial) {
+                    /* Method 1: no lights*/
+                    const oldMat = obj.material;
+                    let params = {
+                        opacity: oldMat.opacity !== undefined ? oldMat.opacity : 1,
+                        transparent: oldMat.transparent || false,
+                        color: oldMat.color && oldMat.color.isColor ? oldMat.color.clone() : new THREE.Color(0xffffff)
+                    };
+
+                    if (oldMat.map) params.map = oldMat.map;
+                    
+                    obj.material = new THREE.MeshStandardMaterial(params);
+
+                    /* Method 2: keep lights
+                    obj.material = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(0xffffff),
+                        map: oldMat.map,            
+                        emissiveMap: oldMat.map,    
+                        emissive: new THREE.Color(0xffffff),
+                        emissiveIntensity: 1,
+                        lights: false,              
+                    });*/
+                    //console.log(`Replaced simple material on mesh "${obj.name}" with MeshStandardMaterial`);
+                }
+            }
+        });
+  
+
         this.renderer.render(this.scene, this.camera);
 
 

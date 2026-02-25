@@ -100,6 +100,10 @@ export class LabelPlayer extends RenderLoopInterface{
         return null
     }
 
+    labelPlayerFinish(){
+        return ((this.#currentTime - this.#startOffset) >= this.#maxTimestamp);
+    }
+
     setXr(xr) {
         for(const label of this.#labels)
             label.setXr(xr);

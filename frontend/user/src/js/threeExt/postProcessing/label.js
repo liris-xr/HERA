@@ -156,6 +156,7 @@ export class Label{
 
     shouldBeVisible(time){
         if(this.timestampStart == null) return false;
+        if(this.timestampStart === 0) return true;
         if(this.timestampEnd == null && this.timestampStart < time) return true
 
         return this.timestampStart < time && time < this.timestampEnd;

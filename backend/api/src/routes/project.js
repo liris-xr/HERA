@@ -459,12 +459,22 @@ router.put(baseUrl+'project/:projectId/presets', authMiddleware, async (req, res
 
 const PROJECTS_PAGE_LENGTH = 10;
 
-router.get(baseUrl+'admin/projects/:page?', async (req, res) => {
+// Sans page -> page = 1
+router.get(baseUrl + 'admin/projects', async (req, res) => {
+    req.params.page = '1';
+    return adminProjectsHandler(req, res);
+});
+
+// Avec page explicite
+router.get(baseUrl + 'admin/projects/:page', async (req, res) => {
+    return adminProjectsHandler(req, res);
+});
+async function adminProjectsHandler(req, res) {
     const page = parseInt(req.params.page) || 1;
-    try{
+    try {
         const where = {}
 
-        if(req.query?.title)
+        if (req.query?.title)
             where.title = {
                 [Op.like]: `%${req.query?.title}%`
             }
@@ -508,10 +518,10 @@ router.get(baseUrl+'admin/projects/:page?', async (req, res) => {
             'Content-Type': 'application/json'
         });
 
-        if(rows == null){
+        if (rows == null) {
             res.status(404);
-            return res.send({ error: 'No project found'});
-        }else{
+            return res.send({error: 'No project found'});
+        } else {
             res.status(200);
             return res.send({
                 projects: rows,
@@ -519,13 +529,13 @@ router.get(baseUrl+'admin/projects/:page?', async (req, res) => {
                 currentPage: page,
             });
         }
-    }catch (e){
+    } catch (e) {
         console.log(e);
         res.status(400);
         return res.send({error: 'Unable to fetch projects'});
     }
+}
 
-})
 
 router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res) => {
     const token = req.user

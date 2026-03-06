@@ -1,637 +1,328 @@
-import express from 'express'
-import {baseUrl} from "./baseUrl.js";
-import {ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser} from "../orm/index.js";
+import express from "express";
+import { baseUrl } from "./baseUrl.js";
+import { ArMesh, ArAsset, ArLabel, ArProject, ArScene, ArUser } from "../orm/index.js";
 import authMiddleware from "../middlewares/auth.js";
-import {sequelize} from "../orm/database.js";
-import {Op, Sequelize} from "sequelize";
-import {updateListByCompositeId, updateListById} from "../utils/updateListById.js";
-import {deleteAsset, deleteFile, uploadEnvmapAndAssets} from "../utils/fileUpload.js";
+import { sequelize } from "../orm/database.js";
+import { Op, Sequelize } from "sequelize";
+import { updateListById } from "../utils/updateListById.js";
+import { deleteAsset, deleteFile, uploadEnvmapAndAssets } from "../utils/fileUpload.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
+function asJson(val, fallback) {
+    if (val == null) return fallback;
+    if (typeof val === "object") return val;
+    try { return JSON.parse(val); } catch { return fallback; }
+}
+
+function normalizeVariant(v) {
+    const s = String(v ?? "").trim().toLowerCase();
+    return s === "simplified" ? "simplified" : "original";
+}
+function normalizeRatio(r) {
+    const n = Number(r);
+    if (!Number.isFinite(n)) return null;
+    return Math.max(0.01, Math.min(1.0, n));
+}
+const normalizeUrl = (u) => String(u ?? "").replaceAll("\\", "/");
+
+router.get(baseUrl + "scenes/:sceneId", authMiddleware, async (req, res) => {
     const sceneId = req.params.sceneId;
-    const token = req.user
-    try{
-        let scene = (await ArScene.findOne({
+    const token = req.user;
+
+    try {
+        const scene = await ArScene.findOne({
             include: [
-                {
-                    model: ArMesh,
-                    as: "meshes"
-                },
+                { model: ArMesh, as: "meshes" },
                 {
                     model: ArAsset,
                     as: "assets",
+                    attributes: [
+                        "id", "name", "url", "simplifiedUrl",
+                        "preferredVariant", "simplifyRatio",
+                        "hideInViewer", "activeAnimation",
+                        "position", "rotation", "scale",
+                        "createdAt", "updatedAt",
+                    ],
                 },
-                {
-                    model: ArLabel,
-                    as: "labels",
-                },
+                { model: ArLabel, as: "labels" },
                 {
                     model: ArProject,
                     as: "project",
-                    attributes: ["id","title", "unit", "displayMode"],
-                    include:[{
-                        model: ArUser,
-                        as:"owner",
-                        attributes:["id", "username"]
-                    }]
-                }
+                    attributes: ["id", "title", "unit", "displayMode"],
+                    include: [{ model: ArUser, as: "owner", attributes: ["id", "username"] }],
+                },
             ],
-            where: {id: sceneId},
-        }));
-        res.set({
-            'Content-Type': 'application/json'
+            where: { id: sceneId },
         });
 
-        if (scene == null)
-            return res.status(404).send({error: 'Scene not found'})
+        res.set({ "Content-Type": "application/json" });
 
-        if (scene.project.owner.id != token.id && !req.user.admin)
-            return res.status(403).send({error: "User not granted"})
+        if (!scene) return res.status(404).send({ error: "Scene not found" });
+        if (scene.project.owner.id != token.id && !req.user.admin) {
+            return res.status(403).send({ error: "User not granted" });
+        }
 
-        res.status(200);
-        return res.send(scene);
-
-    }catch (e){
+        return res.status(200).send(scene);
+    } catch (e) {
         console.log(e);
-        res.status(400);
-        return res.send({ error: 'Unable to fetch scene'});
+        return res.status(400).send({ error: "Unable to fetch scene" });
     }
+});
 
-})
-
-
-
-
-
-
-// Middleware to extract some project data before upload
+/**
+ * Middleware to extract projectId + currentAssetCount before upload
+ */
 const getPostUploadData = async (req, res, next) => {
-    let sceneId = req.params.sceneId
+    const sceneId = req.params.sceneId;
 
-    let scene = await ArScene.findOne({
+    const scene = await ArScene.findOne({
         include: [
-            {
-                model: ArMesh,
-                as: "meshes"
-            },
-            {
-                model: ArAsset,
-                as: "assets"
-            },
-            {
-                model: ArProject,
-                as: "project",
-                attributes: ["id"],
-            }
+            { model: ArAsset, as: "assets" },
+            { model: ArProject, as: "project", attributes: ["id"] },
         ],
-        where: {id: sceneId},
-    })
+        where: { id: sceneId },
+    });
 
-    if (scene == null)
-        return res.status(404).send({error: 'Scene not found'})
+    if (!scene) return res.status(404).send({ error: "Scene not found" });
 
-    req.currentAssetCount = scene.assets.length
+    req.currentAssetCount = scene.assets.length;
     req.projectId = scene.project.id;
     next();
 };
 
+/**
+ * PUT scenes/:sceneId
+ * Upload files + update/create/delete labels/assets/meshes + update scene
+ */
+router.put(
+    baseUrl + "scenes/:sceneId",
+    authMiddleware,
+    getPostUploadData,
+    uploadEnvmapAndAssets.fields([
+        { name: "uploadedEnvmap", maxCount: 1 },
+        { name: "uploads", maxCount: 16 },
+    ]),
+    async (req, res) => {
+        const token = req.user;
+        const sceneId = req.params.sceneId;
+        const uploadedUrl = req.uploadedUrl;
 
-router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
-    uploadEnvmapAndAssets.fields([{
-        name: "uploadedEnvmap",
-        maxCount: 1
-    },
-    {
-        name: "uploads",
-        maxCount: 16
-    }]
-    ), async (req, res) => {
-    let token = req.user
-    let sceneId = req.params.sceneId
-    let uploadedUrl = req.uploadedUrl;
+        const uploadedFilenames = (req.uploadedFilenames ?? []).map(normalizeUrl);
 
-    try {
-        const fetchScene = async () => await ArScene.findOne({
-            include: [
-                {
-                    model: ArProject,
-                    as: "project",
+        try {
+            const fetchScene = async () =>
+                await ArScene.findOne({
                     include: [
-                        {
-                            model: ArUser,
-                            as: "owner",
-                            attributes: ["id"],
-                        }
-                    ]
-                },
-                {
-                    model: ArLabel,
-                    as: "labels"
-                },
-                {
-                    model: ArAsset,
-                    as: "assets"
-                },
-                {
-                    model: ArMesh,
-                    as: "meshes"
-                }
-            ],
-            where: {id: sceneId},
-        })
+                        { model: ArProject, as: "project", include: [{ model: ArUser, as: "owner", attributes: ["id"] }] },
+                        { model: ArLabel, as: "labels" },
+                        { model: ArAsset, as: "assets" },
+                        { model: ArMesh, as: "meshes" },
+                    ],
+                    where: { id: sceneId },
+                });
 
+            let scene = await fetchScene();
 
-        let scene = await fetchScene()
-
-        if (scene == null)
-            return res.status(404).send({error: 'Scene not found'})
-
-        if (scene.project.owner.id != token.id && !req.user.admin)
-            return res.status(403).send({error: "User not granted"})
-
-
-        const knownLabelsIds = scene.labels.map( (label) => label.id )
-        const knownAssetsIds = scene.assets.map( (asset) => asset.id )
-        const knownMeshesIds = scene.meshes.map( (mesh) => { return {id: mesh.id, assetId: mesh.assetId} } )
-
-        let assetsIdMatching = []
-
-        let insertedCount = 0;
-        if(!req.uploadedFilenames) req.uploadedFilenames = [];
-
-        await sequelize.transaction(async (t) => {
-            await updateListById(knownLabelsIds, typeof req.body.labels === "object" ? req.body.labels : JSON.parse(req.body.labels),
-                async (label)=>{
-                    await ArLabel.update({
-                        text:label.text,
-                        position:label.position,
-                        timestampStart:label.timestampStart,
-                        timestampEnd:label.timestampEnd,
-                    }, {
-                        where: {id: label.id},
-                        returning: true,
-                        transaction:t
-                    })
-                },
-
-                async (label)=>{
-                    await ArLabel.create({
-                        text:label.text,
-                        position:label.position,
-                        sceneId:scene.id,
-                        timestampStart:label.timestampStart,
-                        timestampEnd:label.timestampEnd,
-                    },{
-                        transaction:t
-                    })
-                },
-
-                async (knownId)=>{
-                    await ArLabel.destroy({where: {id: knownId},transaction:t});
-                }
-            );
-
-            await updateListById(knownAssetsIds, typeof req.body.assets === "object" ? req.body.assets : JSON.parse(req.body.assets),
-                async (asset)=>{
-                    await ArAsset.update({
-                        position:asset.position,
-                        rotation:asset.rotation,
-                        scale: asset.scale,
-                        hideInViewer: asset.hideInViewer,
-                        activeAnimation: asset.activeAnimation,
-                    }, {
-                        where: {id: asset.id},
-                        returning: true,
-                        transaction:t
-                    })
-                },
-
-                async (asset)=>{
-                    let data = {
-                        position:asset.position,
-                        rotation:asset.rotation,
-                        scale: asset.scale,
-                        sceneId:scene.id,
-                        name: asset.name,
-                        activeAnimation: asset.activeAnimation,
-                    }
-                    if(asset.copiedUrl) {
-                        data.url = asset.copiedUrl
-                    } else
-                        data.url = req.uploadedFilenames[insertedCount++]
-
-                    const newAsset = await ArAsset.create(data,{
-                        transaction:t
-                    })
-
-
-
-
-                    assetsIdMatching.push({
-                        tempId:asset.id,
-                        newId:newAsset.id
-                    })
-                },
-
-                async (knownId)=>{
-                    const assetToDelete = await ArAsset.findOne({where: {id: knownId},transaction:t})
-                    await deleteAsset(assetToDelete)
-                    assetToDelete.destroy({transaction:t})
-                    await assetToDelete.save({transaction:t})
-                }
-            );
-
-            await updateListByCompositeId(knownMeshesIds, ['id', 'assetId'], typeof req.body.meshes === "object" ? req.body.meshes : JSON.parse(req.body.meshes),
-                async (mesh) => {
-                    await ArMesh.update({
-                        id:mesh.id,
-                        position:mesh.position,
-                        rotation:mesh.rotation,
-                        scale: mesh.scale,
-                        color:mesh.color,
-                        emissiveIntensity: mesh.emissiveIntensity,
-                        emissive: mesh.emissive,
-                        roughness: mesh.roughness,
-                        metalness: mesh.metalness,
-                        opacity: mesh.opacity
-                    }, {
-                        where: {id: mesh.id, assetId: mesh.assetId},
-                        returning: true,
-                        transaction:t
-                    })
-                },
-
-                async (mesh)=>{
-                    let assetId = null
-                    for(let ids of assetsIdMatching) {
-                        if(ids.tempId === mesh.assetId) {
-                            assetId = ids.newId
-                            break
-                        }
-                    }
-
-                    await ArMesh.create({
-                        id:mesh.id,
-                        position:mesh.position,
-                        rotation:mesh.rotation,
-                        scale: mesh.scale,
-                        sceneId:scene.id,
-                        assetId:assetId ?? mesh.assetId,
-                        color:mesh.color,
-                        name: mesh.name,
-                        emissiveIntensity: mesh.emissiveIntensity,
-                        emissive: mesh.emissive,
-                        roughness: mesh.roughness,
-                        metalness: mesh.metalness,
-                        opacity: mesh.opacity
-                    },{
-                        transaction:t
-                    })
-                },
-                
-                async (knownId)=>{
-                    await ArMesh.destroy({where: {id: knownId.id, assetId: knownId.assetId},transaction:t});
-                }
-        
-            );
-
-            let updatedUrl = req.uploadedUrl;
-            if(uploadedUrl && scene.envmapUrl !== "" && scene.envmapUrl != null){
-                deleteFile(scene.envmapUrl);
-                updatedUrl = uploadedUrl
+            if (!scene) return res.status(404).send({ error: "Scene not found" });
+            if (scene.project.owner.id != token.id && !req.user.admin) {
+                return res.status(403).send({ error: "User not granted" });
             }
 
-            //update the main scene
-            await ArScene.update({
-                title: req.body.title,
-                description: req.body.description,
-                envmapUrl: updatedUrl || req.body.envmapUrl,
-                vrStartPosition: typeof req.body.vrStartPosition === "object" ? req.body.vrStartPosition : JSON.parse(req.body.vrStartPosition),
-            },{
-                where: {id: sceneId},
-                transaction:t,
-            })
+            const knownLabelsIds = scene.labels.map((l) => l.id);
+            const knownAssetsIds = scene.assets.map((a) => a.id);
 
-        })
+            const knownMeshes = scene.meshes.map((m) => ({ id: m.id, assetId: m.assetId }));
 
+            const labelsBody = asJson(req.body.labels, []);
+            const assetsBody = asJson(req.body.assets, []);
+            const meshesBody = asJson(req.body.meshes, []);
 
-        scene = await fetchScene()
+            const vrStartPositionBody = asJson(req.body.vrStartPosition, scene.vrStartPosition ?? null);
 
+            let assetsIdMatching = [];
+            let insertedCount = 0;
 
-
-        res.status(200).send({
-            scene:scene,
-            assetsIdMatching: assetsIdMatching
-        })
-    }catch (e){
-        console.log(e)
-        res.set({
-            'Content-Type': 'application/json'
-        })
-        res.status(400);
-        res.send({ error: 'Unable to save scene'});
-    }
-})
-
-
-router.post(baseUrl+'scenes', authMiddleware, async (req, res) => {
-    const token = req.user
-    try{
-
-        const project = await ArProject.findOne({
-            where: {
-                id: req.body.projectId
-            },
-            include:[{
-                model: ArUser,
-                as:"owner",
-            }]
-        })
-
-        if (project.owner.id !== token.id && !req.user.admin)
-            return res.status(403).send({error: "User not granted"})
-
-
-        const projectScenesIndexes = await ArScene.findOne({
-            where: {
-                projectId: req.body.projectId
-            },
-            attributes: [
-                [Sequelize.fn('MAX', Sequelize.col('index')), 'maxIndex']
-            ],
-            raw:true
-        });
-
-
-        let newIndex = 0
-        if(projectScenesIndexes.maxIndex !== null) newIndex = projectScenesIndexes.maxIndex+1
-
-        let newScene = await ArScene.create({
-            title: req.body.title,
-            description: req.body?.description,
-            projectId: req.body.projectId,
-            index: newIndex
-        });
-
-        res.set({
-            'Content-Type': 'application/json'
-        });
-        res.status(200);
-        return res.send(newScene);
-
-    }catch (e){
-        console.log(e);
-        res.status(400);
-        return res.send({ error: 'Unable to create scene'});
-    }
-})
-
-
-router.delete(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
-    const token = req.user
-    const sceneId = req.params.sceneId
-    try{
-        let scene = await ArScene.findOne({
-            include:[
-                {
-                    model: ArProject,
-                    as: "project",
-                    attributes:["id"],
-                    include:[
-                        {
-                            model: ArUser,
-                            as: "owner",
-                            attributes: ["id"]
+            await sequelize.transaction(async (t) => {
+                // LABELS
+                if (req.body.labels != null) {
+                    await updateListById(
+                        knownLabelsIds,
+                        labelsBody,
+                        async (label) => {
+                            await ArLabel.update(
+                                {
+                                    text: label.text,
+                                    position: label.position,
+                                    timestampStart: label.timestampStart,
+                                    timestampEnd: label.timestampEnd,
+                                },
+                                { where: { id: label.id }, transaction: t }
+                            );
+                        },
+                        async (label) => {
+                            await ArLabel.create(
+                                {
+                                    text: label.text,
+                                    position: label.position,
+                                    sceneId: scene.id,
+                                    timestampStart: label.timestampStart,
+                                    timestampEnd: label.timestampEnd,
+                                },
+                                { transaction: t }
+                            );
+                        },
+                        async (knownId) => {
+                            await ArLabel.destroy({ where: { id: knownId }, transaction: t });
                         }
-                    ]
-                },
-                {
-                    model: ArAsset,
-                    as:"assets"
+                    );
                 }
-            ],
-            where: {id: sceneId},
-        })
 
-        res.set({
-            'Content-Type': 'application/json'
-        });
+                // ASSETS
+                await updateListById(
+                    knownAssetsIds,
+                    assetsBody,
 
-        if(scene == null){
-            return res.status(404).send({error: 'Scene not found'})
-        }
+                    // UPDATE
+                    async (asset) => {
+                        await ArAsset.update(
+                            {
+                                position: asset.position,
+                                rotation: asset.rotation,
+                                scale: asset.scale,
+                                hideInViewer: asset.hideInViewer,
+                                activeAnimation: asset.activeAnimation,
 
-        if(scene.project.owner.id != token.id && !req.user.admin)
-            return res.status(403).send({error: 'User not granted'})
+                                preferredVariant: normalizeVariant(asset.preferredVariant),
+                                simplifyRatio: normalizeRatio(asset.simplifyRatio),
+                            },
+                            { where: { id: asset.id }, transaction: t }
+                        );
+                    },
 
+                    // CREATE
+                    async (asset) => {
+                        const data = {
+                            position: asset.position,
+                            rotation: asset.rotation,
+                            scale: asset.scale,
+                            sceneId: scene.id,
+                            name: asset.name,
+                            activeAnimation: asset.activeAnimation,
+                            hideInViewer: asset.hideInViewer ?? false,
 
-        for (let asset of scene.assets) {
-            await deleteAsset(asset);
-        }
+                            preferredVariant: normalizeVariant(asset.preferredVariant),
+                            simplifyRatio: normalizeRatio(asset.simplifyRatio),
+                            simplifiedUrl: null,
+                        };
 
-        await scene.destroy();
-        res.status(200);
-        return res.send();
+                        if (asset.copiedUrl) {
+                            data.url = normalizeUrl(asset.copiedUrl);
+                        } else {
+                            const nextUploaded = uploadedFilenames[insertedCount];
+                            if (!nextUploaded) {
+                                throw new Error(
+                                    `[SAVE] Missing uploaded filename for new asset "${asset.name}" (tempId=${asset.id}). ` +
+                                    `uploads received=${uploadedFilenames.length}, insertedCount=${insertedCount}.`
+                                );
+                            }
+                            data.url = normalizeUrl(nextUploaded);
+                            insertedCount++;
+                        }
 
-    }catch (e){
-        console.log(e);
-        res.status(400);
-        return res.send({ error: 'Unable to delete scene'});
-    }
-})
+                        const newAsset = await ArAsset.create(data, { transaction: t });
+                        assetsIdMatching.push({ tempId: asset.id, newId: newAsset.id });
+                    },
 
+                    // DELETE
+                    async (knownId) => {
+                        const assetToDelete = await ArAsset.findOne({ where: { id: knownId }, transaction: t });
+                        await deleteAsset(assetToDelete);
+                        await assetToDelete.destroy({ transaction: t });
+                    }
+                );
 
+                // MESHES
+                const meshes = Array.isArray(meshesBody) ? meshesBody : [];
 
-router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
-    const token = req.user
-    const sceneId = req.params.sceneId;
-
-    try {
-
-        const scene = await ArScene.findOne({
-            where: { id: sceneId },
-            include: [
-                {
-                    model:ArMesh,
-                    as:'meshes'
-                },
-                {
-                    model: ArAsset,
-                    as: 'assets'
-                },
-                {
-                    model: ArLabel,
-                    as: 'labels'
-                },
-                {
-                   model:ArProject,
-                   as: "project",
-                   attributes: ["id"],
-                   include:[
-                       {
-                           model: ArUser,
-                           as: "owner",
-                           attributes: ["id"]
-                       }
-                   ]
+                // temp assetId -> new id
+                const tempToNew = new Map(assetsIdMatching.map((m) => [m.tempId, m.newId]));
+                for (const m of meshes) {
+                    if (m?.assetId && tempToNew.has(m.assetId)) m.assetId = tempToNew.get(m.assetId);
                 }
-            ]
-        });
 
-        res.set({
-            'Content-Type': 'application/json'
-        });
+                // Skip invalid meshes
+                const valid = meshes.filter((m) => m && m.id && m.assetId);
 
-        if (!scene) {
-            return res.status(404).json({ error: 'Scene not found' });
-        }
+                const unique = new Map();
+                for (const m of valid) unique.set(`${m.id}::${m.assetId}`, m);
 
-        if(scene.project.owner.id != token.id && !req.user.admin){
-            return res.status(403).send({error: 'User not granted'});
-        }
+                // Delete removed meshes
+                const incomingKeys = new Set(unique.keys());
+                for (const km of knownMeshes) {
+                    const k = `${km.id}::${km.assetId}`;
+                    if (!incomingKeys.has(k)) {
+                        await ArMesh.destroy({ where: { id: km.id, assetId: km.assetId }, transaction: t });
+                    }
+                }
 
-        await sequelize.transaction(async (t) => {
+                for (const m of unique.values()) {
+                    const payload = {
+                        id: m.id,
+                        assetId: m.assetId,
+                        sceneId: scene.id,
 
-            //copy the scene
-            const newScene = await ArScene.create({
-                ...scene.get({ plain: true }),
-                id: undefined,
-                title: req.body.newTitle,
-            },{
-                transaction: t
+                        name: m.name,
+                        position: m.position,
+                        rotation: m.rotation,
+                        scale: m.scale,
+
+                        color: m.color,
+                        emissiveIntensity: m.emissiveIntensity,
+                        emissive: m.emissive,
+                        roughness: m.roughness,
+                        metalness: m.metalness,
+                        opacity: m.opacity,
+                    };
+
+                    const [updatedCount] = await ArMesh.update(payload, {
+                        where: { id: m.id, assetId: m.assetId },
+                        transaction: t,
+                    });
+                    if (updatedCount === 0) await ArMesh.create(payload, { transaction: t });
+                }
+
+                // ENVMAP
+                let updatedEnvmapUrl = uploadedUrl;
+                if (uploadedUrl && scene.envmapUrl) {
+                    deleteFile(scene.envmapUrl);
+                    updatedEnvmapUrl = uploadedUrl;
+                }
+
+                // UPDATE SCENE
+                await ArScene.update(
+                    {
+                        title: req.body.title,
+                        description: req.body.description,
+                        envmapUrl: updatedEnvmapUrl || req.body.envmapUrl,
+                        vrStartPosition: vrStartPositionBody,
+                    },
+                    { where: { id: sceneId }, transaction: t }
+                );
             });
 
-            //copy all meshes related to scene
-            const newMeshes = await Promise.all(scene.meshes.map(async mesh => {
-                return ArMesh.create({
-                    ...mesh.get({ plain: true }),
-                    id: "project-"+newScene.projectId+"-scene-"+req.body.newTitle+"-mesh-"+mesh.name, // générer un nouvel id
-                    sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
-                },{
-                    transaction:t
-                });
-            }));
+            scene = await fetchScene();
 
-            //copy all assets related to scene
-            const newAssets = await Promise.all(scene.assets.map(async asset => {
-                return ArAsset.create({
-                    ...asset.get({ plain: true }),
-                    id: undefined, // générer un nouvel id
-                    sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
-                },{
-                    transaction:t
-                });
-            }));
+            res.set({ "Content-Type": "application/json" });
+            return res.status(200).send({ scene, assetsIdMatching });
+        } catch (e) {
+            console.log("[SAVE SCENE ERROR]", e);
+            const details = e?.original?.message || e?.parent?.message || e?.message || String(e);
 
-            //copy all labels related to scene
-            const newLabels = await Promise.all(scene.labels.map(async label => {
-                return ArLabel.create({
-                    ...label.get({ plain: true }),
-                    id: undefined,
-                    sceneId: newScene.id
-                },{
-                    transaction:t
-                });
-            }));
-
-            res.status(200).send(newScene);
-
-        })
-
-
-    } catch (error) {
-        console.log(error)
-        res.status(400).json({ error: 'Unable to duplicate scene' });
+            res.set({ "Content-Type": "application/json" });
+            return res.status(400).send({ error: "Unable to save scene", details });
+        }
     }
-})
+);
 
-// routes pour le mode admin
-
-const SCENES_PAGE_LENGTH = 10;
-
-router.get(baseUrl+'admin/scenes/:page?', authMiddleware, async (req, res) => {
-    const sceneId = req.params.sceneId;
-    const token = req.user
-    const page = parseInt(req.params.page) || 1
-
-    if (!token.admin)
-        return res.status(403).send({error: "User not granted"})
-
-    try{
-        const where = {}
-        const whereProject = {}
-
-        if(req.query?.title)
-            where.title = {
-                [Op.like]: `%${req.query?.title}%`
-            }
-        if(req.query["project.title"])
-            whereProject.title = {
-                [Op.like]: `%${req.query["project.title"]}%`
-            }
-
-        let rows = (await ArScene.findAll({
-            subQuery: false,
-            include: [
-                {
-                    model: ArMesh,
-                    separate: true,
-                    as: "meshes"
-                },
-                {
-                    model: ArAsset,
-                    separate: true,
-                    as: "assets",
-                },
-                {
-                    model: ArLabel,
-                    separate: true,
-                    as: "labels",
-                },
-                {
-                    model: ArProject,
-                    as: "project",
-                    attributes: ["id","title", "unit"],
-                    where: whereProject,
-                    include:[{
-                        model: ArUser,
-                        as:"owner",
-                        attributes:["id", "username"]
-                    }]
-                }
-            ],
-            order: [['createdAt', 'ASC']],
-            limit: SCENES_PAGE_LENGTH,
-            offset: (page - 1) * SCENES_PAGE_LENGTH,
-            where
-        }));
-
-        let count = await ArScene.count({
-            where
-        })
-
-        res.set({
-            'Content-Type': 'application/json'
-        });
-
-        res.status(200);
-        return res.send({
-            scenes: rows,
-            totalPages: Math.ceil(count / SCENES_PAGE_LENGTH),
-            currentPage: page,
-        });
-
-    }catch (e){
-        console.log(e);
-        res.status(400);
-        return res.send({ error: 'Unable to fetch scene'});
-    }
-
-})
-
-
-
-
-export default router
+export default router;

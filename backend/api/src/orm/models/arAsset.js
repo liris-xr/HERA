@@ -18,6 +18,7 @@ export default sequelize.define('ArAsset', {
         allowNull: false,
         primaryKey: true
     },
+
     url:{
         type: DataTypes.STRING,
         allowNull: false,
@@ -60,5 +61,19 @@ export default sequelize.define('ArAsset', {
     sceneId:{
         type: DataTypes.UUID,
         allowNull: false,
+    },
+    simplifiedUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    preferredVariant: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "original",
+        validate: { isIn: [["original", "simplified"]] },
+    },
+    simplifyRatio: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
     }
 })

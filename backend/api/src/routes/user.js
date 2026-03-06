@@ -174,49 +174,53 @@ router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
 
 const USERS_PAGE_LENGTH = 10;
 
-router.get(baseUrl+'admin/users/:page?', authMiddleware, async (req, res) => {
-    const user = req.user
-    const page = parseInt(req.params.page) || 1
+// Sans page -> page = 1
+router.get(baseUrl + "admin/users", authMiddleware, async (req, res) => {
+    req.params.page = "1";
+    return adminUsersHandler(req, res);
+});
 
-    if(!user.admin) {
-        res.status(401);
-        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+// Avec page explicite
+router.get(baseUrl + "admin/users/:page", authMiddleware, async (req, res) => {
+    return adminUsersHandler(req, res);
+});
+
+async function adminUsersHandler(req, res) {
+    const user = req.user;
+    const page = parseInt(req.params.page) || 1;
+
+    if (!user.admin) {
+        return res.status(401).send({ error: "Unauthorized", details: "User not granted" });
     }
 
     try {
-        const where = {}
+        const where = {};
 
-        if(req.query?.username)
-            where.username = {
-                [Op.like]: `%${req.query?.username}%`
-            }
-        if(req.query?.email)
-            where.email = {
-                [Op.like]: `%${req.query?.email}%`
-            }
-
+        if (req.query?.username) {
+            where.username = { [Op.like]: `%${req.query.username}%` };
+        }
+        if (req.query?.email) {
+            where.email = { [Op.like]: `%${req.query.email}%` };
+        }
 
         const { count, rows } = await ArUser.findAndCountAll({
             attributes: ["username", "id", "email", "admin"],
             limit: USERS_PAGE_LENGTH,
             offset: (page - 1) * USERS_PAGE_LENGTH,
-            order: [['createdAt', 'ASC']],
-            where
+            order: [["createdAt", "ASC"]],
+            where,
         });
 
-        res.status(200);
-        res.send({
+        return res.status(200).send({
             users: rows,
             totalPages: Math.ceil(count / USERS_PAGE_LENGTH),
             currentPage: page,
         });
-    } catch (e){
+    } catch (e) {
         console.log(e);
-        res.status(400);
-        return res.send({error: 'Unable to fetch users'});
+        return res.status(400).send({ error: "Unable to fetch users" });
     }
-
-})
+}
 
 router.put(baseUrl+"admin/users/:userId", authMiddleware, async (req, res) => {
     const authUser = req.user

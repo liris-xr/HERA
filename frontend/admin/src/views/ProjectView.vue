@@ -153,31 +153,39 @@ async function saveAll(){
 
 }
 
-async function createScene(sceneTitle) {
-  const newScene = {
-    title: sceneTitle,
-    projectId: project.value.id,
+async function jsonOrThrow(res) {
+  const ct = res.headers.get("content-type") || "";
+  const text = await res.text();
+
+  if (!ct.includes("application/json")) {
+    throw new Error(
+        `Expected JSON but got "${ct}". URL=${res.url}. First chars: ${text.slice(0, 80)}`
+    );
   }
 
+  const data = JSON.parse(text);
+  if (!res.ok) throw new Error(data?.error || `${res.status} ${res.statusText}`);
+  return data;
+}
+
+async function createScene(sceneTitle) {
+  const payload = { title: sceneTitle, projectId: project.value.id };
+
   try {
-    const res = await fetch(`${ENDPOINT}scenes`,
-        {
-          method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.value}`,
-          },
-          body: JSON.stringify(newScene),
-        });
-    const scene = await res.json();
+    const res = await fetch(`${ENDPOINT}scenes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-
-    if (res.ok) {
-      await router.push({name: "scene", params:{sceneId: scene.id}});
-    }else
-      throw new Error(scene.error);
+    const scene = await jsonOrThrow(res);
+    await router.push({ name: "scene", params: { sceneId: scene.id } });
   } catch (e) {
-    alert(e)
+    alert(String(e?.message || e));
+    console.error(e);
   }
 }
 

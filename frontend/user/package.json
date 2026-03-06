@@ -10,6 +10,8 @@
     "adb": "adb reverse tcp:8081 tcp:8081 & adb reverse tcp:3000 tcp:3000"
   },
   "dependencies": {
+    "@baklavajs/core": "^2.8.1",
+    "@baklavajs/renderer-vue": "^2.8.1",
     "@types/webxr": "^0.5.15",
     "html2canvas": "^1.4.1",
     "jwt-decode": "^4.0.0",

@@ -5,13 +5,11 @@ import {GridPlane} from "@/js/threeExt/lighting/gridPlane.js";
 import {LightSet} from "@/js/threeExt/lighting/lightSet.js";
 import {LabelManager} from "@/js/threeExt/postprocessing/labelManager.js";
 import {AssetManager} from "@/js/threeExt/modelManagement/assetManager.js";
-import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
 import {getFileExtension} from "@/js/utils/fileUtils.js";
 import i18n from "@/i18n.js";
 import {Label} from "@/js/threeExt/postprocessing/label.js";
-import {EXRLoader} from "three/addons";
+import {EXRLoader} from "three/examples/jsm/addons";
 import {getResource} from "@/js/endpoints.js";
-import {ModelLoader} from "@/js/threeExt/modelManagement/modelLoader.js";
 
 const transformModeKeys = {
     "translate":"position",
@@ -67,7 +65,7 @@ export class EditorScene extends THREE.Scene {
         this.currentMeshes = []
         this.transformBeforeChange = null
 
-        watch(() =>this.currentSelectedTransformValues, (value) => {
+        watch(() => this.currentSelectedTransformValues.value, (value) => {
             if(this.selected.value == null) return;
 
             if(this.selected.value instanceof Asset) {

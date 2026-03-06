@@ -22,16 +22,11 @@ export const uploadCover = multer({ storage: multer.diskStorage({
         },
         filename: (req, file, cb) => {
             const ext = path.extname(file.originalname);
-
             const filename = "cover" + Date.now() + ext
             req.uploadedUrl = path.join(getImagesDirectory(req.body.id), filename);
-
             cb(null, filename);
         }
 })});
-
-
-
 
 export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
         destination: (req, file, cb) => {
@@ -201,23 +196,25 @@ function getEnvmapsDirectory(projectId){
 }
 
 
-function isUploadedFilePath(pathFromServerRoot){
-    const splitPath = pathFromServerRoot.split(path.sep);
-    return !(splitPath[1] != "files" || splitPath.length < 2);
+function isUploadedFilePath(pathFromServerRoot) {
+    if (!pathFromServerRoot) return false;
+    const normalized = String(pathFromServerRoot).replaceAll("\\", "/").replace(/^\/+/, "");
+    const parts = normalized.split("/");
 
+    return parts[0] === "public" && parts[1] === "files";
 }
 
-export function deleteFile(pathFromServerRoot){
-    if(!isUploadedFilePath(pathFromServerRoot)){
-        console.error("This file cannot be deleted");
+export function deleteFile(pathFromServerRoot) {
+    if (!isUploadedFilePath(pathFromServerRoot)) {
+        console.error("This file cannot be deleted:", pathFromServerRoot);
         return;
     }
-    const filePath = path.join(DIRNAME, pathFromServerRoot);
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-    }else{
-        console.error("unable to delete file");
-    }
+
+    const normalized = String(pathFromServerRoot).replaceAll("\\", "/").replace(/^\/+/, "");
+    const filePath = path.join(DIRNAME, ...normalized.split("/"));
+
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    else console.error("unable to delete file:", filePath);
 }
 
 
@@ -251,24 +248,24 @@ export function getUpdatedPath(currentPath, oldId, newId){
 }
 
 
-
-
-
-
 export async function deleteAsset(asset) {
+    if (!asset) return;
 
+    // original
+    if (asset.url) {
+        const othersOriginal = await arAsset.findAll({
+            where: { url: asset.url, id: { [Op.not]: asset.id } },
+        });
+        if (othersOriginal.length === 0) deleteFile(asset.url);
+    }
 
-    let assetsUsingSameUrl = await arAsset.findAll({
-        where:{
-            url:asset.url,
-            id:{
-                [Op.not]: asset.id
-            }
-        }
-    })
-
-    if (assetsUsingSameUrl.length === 0)
-        deleteFile(asset.url);
+    // simplified
+    if (asset.simplifiedUrl) {
+        const othersSimplified = await arAsset.findAll({
+            where: { simplifiedUrl: asset.simplifiedUrl, id: { [Op.not]: asset.id } },
+        });
+        if (othersSimplified.length === 0) deleteFile(asset.simplifiedUrl);
+    }
 }
 /*
 

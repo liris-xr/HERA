@@ -23,7 +23,7 @@ const props = defineProps({
   reset: {type: Boolean, default: false},
 })
 
-defineEmits(['select','delete','duplicate','hideInViewer', 'animationChanged', 'reset'])
+const emit = defineEmits(['select','delete','duplicate','hideInViewer', 'animationChanged', 'reset' , 'simplify', 'changed'])
 
 const onClick = (cb) => {
   if(!(props.loading)) cb()
@@ -42,12 +42,16 @@ watch(
 )
 
 const selectedOption = ref(null)
+const simplifyRatio = ref(0.25)
 
+const canSimplify = computed(() => props.rightMenu && !props.loading && !props.error && !!props.asset?.id)
 onMounted(async () => {
   selectedOption.value = props.activeAnimation ?? "none"
 })
 
-
+watch(simplifyRatio, () => {
+  emit('changed')
+})
 
 </script>
 
@@ -77,9 +81,31 @@ onMounted(async () => {
       <a v-if="rightMenu && downloadUrl && !error && !loading" target="_blank" rel="noopener noreferrer" :href="downloadUrl">
         <icon-svg url="/icons/download.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop=""/>
       </a>
-      
+
       <icon-svg v-if="rightMenu && hideInViewer" url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer',true)})"/>
       <icon-svg v-else-if="rightMenu" url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer', false)})"/>
+      <div v-if="canSimplify" class="simplifyBox" @click.stop="">
+        <input
+            class="simplifyRange"
+            type="range"
+            min="0.01"
+            max="1"
+            step="0.01"
+            v-model.number="simplifyRatio"
+        />
+        <span class="simplifyValue">{{ simplifyRatio.toFixed(2) }}</span>
+
+        <button
+            class="simplifyBtn"
+            type="button"
+            @click.stop="() => {
+              console.log('BUTTON CLICK', simplifyRatio)
+              emit('simplify', { ratio: simplifyRatio })
+            }">
+          Simplify
+        </button>
+      </div>
+
       <icon-svg v-if="rightMenu" url="/icons/duplicate.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('duplicate')})"/>
       <icon-svg v-if="rightMenu" url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete')})"/>
       <icon-svg v-if="reset" url="/icons/restart.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('reset')})"/>
@@ -134,5 +160,33 @@ onMounted(async () => {
 select {
   width: 100px;
 }
+.simplifyBox{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-right: 8px;
+}
 
+.simplifyRange{
+  width: 120px;
+}
+
+.simplifyValue{
+  font-size: 10pt;
+  min-width: 40px;
+  text-align: right;
+  opacity: 0.9;
+}
+
+.simplifyBtn{
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--darkerBackgroundColor);
+  background: var(--backgroundColor);
+  cursor: pointer;
+  color: var(--textImportantColor);
+}
+.simplifyBtn:hover{
+  outline: solid 1px var(--accentColor);
+}
 </style>

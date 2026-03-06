@@ -13,3 +13,6 @@ export const sequelize = new Sequelize({
     },
     logging: false,
 });
+console.log("[DB] Sequelize config:", sequelize?.config);
+console.log("[DB] Storage:", sequelize?.options?.storage);
+console.log("[DB] CWD:", process.cwd());

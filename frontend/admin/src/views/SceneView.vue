@@ -1,8 +1,8 @@
 <script setup>
-import {onBeforeRouteLeave, onBeforeRouteUpdate, useRoute} from "vue-router";
-import {computed, onMounted, ref, watch} from "vue";
-import {ENDPOINT, getResource} from "@/js/endpoints.js";
-import {useAuthStore} from "@/store/auth.js";
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute } from "vue-router";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { ENDPOINT, getResource } from "@/js/endpoints.js";
+import { useAuthStore } from "@/store/auth.js";
 import InlineTextEdit from "@/components/inlineTextEdit.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import ButtonView from "@/components/button/buttonView.vue";
@@ -10,310 +10,365 @@ import FilledButtonView from "@/components/button/filledButtonView.vue";
 import Notification from "@/components/notification/notification.vue";
 import AssetItem from "@/components/listItem/assetItem.vue";
 import LabelItem from "@/components/listItem/labelItem.vue";
-import {Editor} from "@/js/threeExt/editor.js";
+import { Editor } from "@/js/threeExt/editor.js";
 import ExpandableNotification from "@/components/notification/expandableNotification.vue";
-import {label} from "three/nodes";
 import router from "@/router/index.js";
 import DeleteConfirmModal from "@/components/modal/deleteConfirmModal.vue";
 import TextInputModal from "@/components/modal/textInputModal.vue";
 import FileUploadButtonView from "@/components/button/fileUploadButtonView.vue";
-import {sleep} from "@/js/utils/sleep.js";
+import { sleep } from "@/js/utils/sleep.js";
 import SaveWarningModal from "@/components/modal/saveWarningModal.vue";
 import ButtonTool from "@/components/buttonTool.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import LabelEditModal from "@/components/modal/labelEditModal.vue";
 import MaterialView from "@/components/materialView.vue";
-import {bytesToMBytes} from "@/js/projectPicture.js";
+import { bytesToMBytes } from "@/js/projectPicture.js";
 import EnvmapItem from "@/components/listItem/envmapItem.vue";
-import {useI18n} from "vue-i18n";
-import {EXRLoader} from "three/addons";
-import * as THREE from "three"
-
+import { useI18n } from "vue-i18n";
+import { EXRLoader } from "three/addons";
+import * as THREE from "three";
 
 const route = useRoute();
-const {token, userData} = useAuthStore();
-const {t} = useI18n()
+const { token } = useAuthStore();
+const { t } = useI18n();
 
 const editor = new Editor();
 
 const scene = ref({
-  id:"",
-  project:{
-    unit:""
-  },
-  labels:[],
-  assets:[],
-  envmapUrl: ""
+  id: "",
+  title: "",
+  description: "",
+  project: { id: "", title: "", unit: "" },
+  labels: [],
+  assets: [],
+  envmapUrl: "",
 });
 
 const saved = ref(true);
 const saving = ref(false);
-const container = ref(null);
-
-
-watch(scene, () => {
-    saved.value = false;
-}, { deep: true })
-
 const loading = ref(true);
 const error = ref(false);
-const ready = computed(()=>!loading.value && !error.value);
+const ready = computed(() => !loading.value && !error.value);
 
+const container = ref(null);
+
+const useSimplified = ref(false);
+
+// Envmap
+const uploadedEnvmap = ref({ rawData: null, tmpUrl: "" });
+const MAX_FILE_SIZE = 10; // MB
+
+// UI modals
 const showMaterialMenu = ref(false);
 const showSceneDeleteModal = ref(false);
 const showSceneDuplicateModal = ref(false);
 const showLabelEditModal = ref(false);
-let lastClickedLabel = null
+let lastClickedLabel = null;
 
-const uploadedEnvmap = ref({
-  rawData:null,
-  tmpUrl:"",
-})
+// Any edit => unsaved
+watch(
+    scene,
+    () => {
+      saved.value = false;
+    },
+    { deep: true }
+);
 
-const envmapElement = ref(null);
-
-const MAX_FILE_SIZE = 10; // 10 Mo
-
-async function fetchScene(sceneId) {
-  loading.value = true;
-  error.value = false;
+watch(useSimplified, async (val) => {
   try {
-    const res = await fetch(`${ENDPOINT}scenes/${sceneId}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.value}`,
-          },
+    const assets = editor.scene?.assetManager?.getAssets?.value ?? [];
+    for (const a of assets) {
+      if (!a || a.id === "vrCamera") continue;
 
-        });
-    if(res.ok){
-      return await res.json();
-    }
-    throw new Error("ko");
-  } catch (e) {
-    error.value = true;
-    loading.value = false
-  }
-}
-
-
-async function deleteScene(scene) {
-  try {
-    const res = await fetch(`${ENDPOINT}scenes/${scene.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.value}`,
-          },
-        });
-
-    if (res.ok) {
-      await router.push({name: "project", params: {projectId: scene.project.id}});
-    } else{
-      const result = await res.json();
-      throw new Error(result.error);
-    }
-  } catch (e) {
-    alert(e)
-  }
-}
-
-async function duplicateScene(newTitle){
-  try {
-    const res = await fetch(`${ENDPOINT}scene/${scene.value.id}/copy`,
-        {
-          method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.value}`,
-          },
-          body: JSON.stringify({
-            newTitle:newTitle,
-          })
-        });
-
-    const newScene = await res.json();
-    if (res.ok) {
-      await router.push({name: "scene", params: {sceneId: newScene.id}});
-    } else{
-      throw new Error(newScene.error);
-    }
-  } catch (e) {
-    alert(e)
-  }
-}
-
-
-onMounted(async () => {
-  scene.value = await fetchScene(route.params.sceneId);
-
-  loading.value = false;
-
-  await editor.init(scene.value,container.value);
-
-
-  editor.scene.labelManager.onChanged = ()=>{saved.value = false};
-  editor.scene.assetManager.onChanged = ()=>{saved.value = false};
-  editor.scene.onChanged = ()=>{saved.value = false};
-  editor.onChanged = ()=>{saved.value = false};
-  await sleep(100);
-
-  saved.value = true;
-
-  window.addEventListener("keydown", handleKeydown)
-
-})
-
-
-
-async function saveScene(sceneData, uploads, envmapFile) {
-  try {
-    const formData = new FormData();
-
-    Object.entries(sceneData).forEach(([key, value]) => {
-      if (Array.isArray(value) || typeof value === 'object') {
-        formData.append(key, JSON.stringify(value));
-      } else {
-        formData.append(key, value);
-      }
-    });
-
-
-    if (uploads && uploads.length >0) {
-      uploads.forEach(file => {
-        formData.append('uploads', file);
+      // reload every asset with override
+      await editor.scene.assetManager.reloadAndSwap(editor.scene, a, {
+        variantOverride: val ? "simplified" : "original",
       });
     }
 
-    if (envmapFile != null) {
-      formData.append('uploadedEnvmap', envmapFile);
-    }
-
-
-    const res = await fetch(`${ENDPOINT}scenes/${sceneData.id}`,
-    {
-          method: "PUT",
-          headers: {
-            'Authorization': `Bearer ${token.value}`,
-          },
-          body: formData,
-        });
-    if(res.ok){
-      return res.json();
-    }
-    throw new Error((await res.json()).error);
+    //saved.value = false;
   } catch (e) {
-    alert(e)
-    return null
+    console.error("[toggle useSimplified] error:", e);
+  }
+});
+
+async function fetchScene(sceneId) {
+  const res = await fetch(`${ENDPOINT}scenes/${sceneId}`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token.value}`,
+    },
+  });
+
+  if (res.ok) return await res.json();
+  const json = await res.json().catch(() => ({}));
+  throw new Error(json.error || "Unable to fetch scene");
+}
+
+// Lifecycle
+function handleKeydown(event) {
+  if (
+      (event.keyCode === 46 || event.keyCode === 8) &&
+      document.activeElement === document.body &&
+      editor.scene?.getSelected?.() != null
+  ) {
+    editor.scene.removeSelected();
+  }
+
+  if (event.keyCode === 68 && event.ctrlKey) {
+    event.preventDefault();
+    editor.scene.duplicateAsset(editor.scene.getSelected());
   }
 }
 
+onMounted(async () => {
+  try {
+    loading.value = true;
+    error.value = false;
 
-async function saveAll(){
-  if(saved.value) return
-  saving.value = true
+    const data = await fetchScene(route.params.sceneId);
+    scene.value = data;
 
+    loading.value = false;
 
-  const resultScene = {
-    id:scene.value.id,
-    title: scene.value.title,
-    description: scene.value.description,
-    project:scene.value.project,
-    labels:editor.scene.labelManager.getResultLabel(),
-    assets:editor.scene.assetManager.getResultAssets(),
-    meshes:editor.scene.assetManager.getResultMeshes(),
-    vrStartPosition: editor.scene.vrStartPosition,
-    envmapUrl: scene.value.envmapUrl || "",
-  };
+    if (!container.value) throw new Error("container is null");
 
-  const uploads = editor.scene.assetManager.getResultUploads();
+    await editor.init(scene.value, container.value);
 
-  const r = await saveScene(resultScene, uploads, uploadedEnvmap.value.rawData);
+    editor.scene.labelManager.onChanged = () => {
+      saved.value = false;
+    };
+    editor.scene.assetManager.onChanged = () => {
+      saved.value = false;
+    };
+    editor.scene.onChanged = () => {
+      saved.value = false;
+    };
+    editor.onChanged = () => {
+      saved.value = false;
+    };
 
-  if (r != null) {
+    await sleep(50);
+    saved.value = true;
+
+    window.addEventListener("keydown", handleKeydown);
+  } catch (e) {
+    console.error(e);
+    error.value = true;
+    loading.value = false;
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown);
+});
+
+async function saveScene(sceneData, uploads, envmapFile) {
+  const formData = new FormData();
+
+  Object.entries(sceneData).forEach(([key, value]) => {
+    if (Array.isArray(value) || typeof value === "object") {
+      formData.append(key, JSON.stringify(value));
+    } else {
+      formData.append(key, value);
+    }
+  });
+
+  if (uploads && uploads.length > 0) uploads.forEach((file) => formData.append("uploads", file));
+  if (envmapFile != null) formData.append("uploadedEnvmap", envmapFile);
+
+  const res = await fetch(`${ENDPOINT}scenes/${sceneData.id}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token.value}` },
+    body: formData,
+  });
+
+  if (res.ok) return res.json();
+
+  let payload = null;
+  try {
+    payload = await res.json();
+  } catch {
+    const txt = await res.text().catch(() => "");
+    console.error("[SAVE] non-JSON error response:", txt);
+    throw new Error(`Unable to save scene (HTTP ${res.status})`);
+  }
+
+  console.error("[SAVE] backend error payload:", payload);
+  throw new Error(
+      payload.details ? `${payload.error} — ${payload.details}` : payload.error || "Unable to save scene"
+  );
+}
+
+async function saveAll() {
+  if (saved.value) return;
+
+  saving.value = true;
+  try {
+    const resultScene = {
+      id: scene.value.id,
+      title: scene.value.title,
+      description: scene.value.description,
+      project: scene.value.project,
+
+      labels: editor.scene.labelManager.getResultLabel(),
+      assets: editor.scene.assetManager.getResultAssets(),
+
+      meshes: [],
+
+      vrStartPosition: editor.scene.vrStartPosition,
+      envmapUrl: scene.value.envmapUrl || "",
+    };
+
+    const uploads = editor.scene.assetManager.getResultUploads();
+    const r = await saveScene(resultScene, uploads, uploadedEnvmap.value.rawData);
+
     uploadedEnvmap.value.rawData = null;
     scene.value.envmapUrl = r.scene.envmapUrl;
-    await sleep(1000);
-    saved.value = true;
-    editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching)
-    // window.location.reload();
-  }
-  saving.value = false
 
+    editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching);
+
+    await sleep(50);
+    saved.value = true;
+  } catch (e) {
+    alert(e.message || e);
+  } finally {
+    saving.value = false;
+  }
 }
 
-async function updateEnvmap(file){
-  if (file) {
-    const size = bytesToMBytes(file.size)
-    if(!file.name.endsWith(".exr")){
-      alert(t('projectView.selectedFile.notAnExrError'))
-      uploadedEnvmap.value.rawData = null;
-      event.target.value = ""
-    }else if(size > MAX_FILE_SIZE){
-      alert(t('projectView.selectedFile.sizeError.part1')+" ("+size+"Mo). " + t("projectView.selectedFile.sizeError.part2")+" < "+MAX_FILE_SIZE+"Mo");
-      uploadedEnvmap.value.rawData = null;
-      event.target.value = ""
-    }else{
+// Envmap
+async function updateEnvmap(file) {
+  if (!file) return;
 
-      // vérifier que l'exr uploadé est valide
-      try {
-        const url = URL.createObjectURL(file)
+  const size = bytesToMBytes(file.size);
+  if (!file.name.endsWith(".exr")) {
+    alert(t("projectView.selectedFile.notAnExrError"));
+    uploadedEnvmap.value.rawData = null;
+    return;
+  }
+  if (size > MAX_FILE_SIZE) {
+    alert(
+        t("projectView.selectedFile.sizeError.part1") +
+        " (" +
+        size +
+        "Mo). " +
+        t("projectView.selectedFile.sizeError.part2") +
+        " < " +
+        MAX_FILE_SIZE +
+        "Mo"
+    );
+    uploadedEnvmap.value.rawData = null;
+    return;
+  }
 
-        editor.scene.environment = await (new EXRLoader()).load(url, (texture) => {
-          texture.mapping = THREE.EquirectangularReflectionMapping
+  try {
+    const url = URL.createObjectURL(file);
 
-          // this.background = texture
-        })
+    editor.scene.environment = await new EXRLoader().load(url, (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+    });
 
-        scene.value.envmapUrl = url;
+    scene.value.envmapUrl = url;
+    uploadedEnvmap.value.rawData = file;
+    saved.value = false;
+  } catch (e) {
+    alert(t("projectView.selectedFile.notAnExrError"));
+    uploadedEnvmap.value.rawData = null;
+  }
+}
 
-      } catch(error) {
-        alert(t('projectView.selectedFile.notAnExrError'))
-        uploadedEnvmap.value.rawData = null;
-        event.target.value = ""
-        return;
-      }
+function removeEnvmap() {
+  scene.value.envmapUrl = "";
+  editor.scene.environment = null;
+  saved.value = false;
+}
 
+// Scene actions
+async function deleteScene(sceneObj) {
+  const s = sceneObj?.value ?? sceneObj;
+  if (!s?.id) {
+    alert("Scene id missing");
+    return;
+  }
 
-      uploadedEnvmap.value.rawData = file
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        uploadedEnvmap.value.tmpUrl = e.target.result;
-      };
-      reader.readAsDataURL(file);
-      saved.value = false;
+  try {
+    const res = await fetch(`${ENDPOINT}scenes/${s.id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+    });
+
+    if (res.ok) {
+      await router.push({ name: "project", params: { projectId: s.project.id } });
+      return;
     }
 
+    const result = await res.json().catch(() => ({}));
+    throw new Error(result.error || "Unable to delete scene");
+  } catch (e) {
+    alert(e.message || e);
   }
 }
 
-function handleKeydown(event) {
-  if((event.keyCode === 46 || event.keyCode === 8) &&
-    document.activeElement === document.body && editor.scene.getSelected() != null)
-      editor.scene.removeSelected()
+async function duplicateScene(newTitle) {
+  try {
+    const res = await fetch(`${ENDPOINT}scene/${scene.value.id}/copy`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({ newTitle }),
+    });
 
-  if(event.keyCode === 68 && event.ctrlKey) {
-    event.preventDefault()
-    editor.scene.duplicateAsset(editor.scene.getSelected())
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || "Unable to duplicate scene");
+
+    await router.push({ name: "scene", params: { sceneId: json.id } });
+  } catch (e) {
+    alert(e.message || e);
   }
 }
 
+function resetVrCamera() {
+  if (!editor.scene.vrCamera) return;
 
+  editor.scene.vrStartPosition = {
+    position: { x: 0, y: 1.7, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+  };
 
+  editor.scene.vrCamera.mesh.position.set(0, 1.7, 0);
+  editor.scene.vrCamera.mesh.rotation.set(0, 0, 0);
 
-
+  saved.value = false;
+}
 
 const showSaveWarningModal = ref(false);
 let nextRoute = null;
 
+function beforeRedirect(to, from, next) {
+  if (!saved.value) {
+    showSaveWarningModal.value = true;
+    nextRoute = to;
+    next(false);
+  } else {
+    showSaveWarningModal.value = false;
+    next();
+  }
+}
+
+onBeforeRouteLeave((to, from, next) => beforeRedirect(to, from, next));
+onBeforeRouteUpdate((to, from, next) => beforeRedirect(to, from, next));
 
 async function confirmLeave() {
   saved.value = true;
   showSaveWarningModal.value = false;
   await router.push(nextRoute);
   window.location.reload();
-
 }
 
 async function confirmLeaveAndSave() {
@@ -328,125 +383,142 @@ function cancelLeave() {
   nextRoute = null;
 }
 
+const simplifying = ref(false);
 
-function beforeRedirect(to, from, next){
-  if (!saved.value) {
-    showSaveWarningModal.value = true;
-    nextRoute = to;
-    next(false);
-  } else {
-    showSaveWarningModal.value = false;
-    next();
+async function simplifyAsset(asset, ratio) {
+  if (!asset?.id) return;
+
+  const r = Number.isFinite(Number(ratio))
+      ? Math.max(0.01, Math.min(1.0, Number(ratio)))
+      : 0.25;
+
+  // must be saved in DB first
+  if (String(asset.id).startsWith("new-asset")) {
+    await saveAll();
+    if (String(asset.id).startsWith("new-asset")) {
+      alert("Asset not saved. Please save and try again.");
+      return;
+    }
+  }
+
+  simplifying.value = true;
+  try {
+    const res = await fetch(`${ENDPOINT}assets/${asset.id}/simplify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({ ratio: r }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || "Simplify failed");
+
+    // backend may return {asset:{...}} or directly {...}
+    const a = json.asset ?? json;
+
+    asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;
+    asset.simplifyRatio = a.simplifyRatio ?? r;
+
+    // Persist simplified for this asset
+    asset.preferredVariant = "simplified";
+
+    // Show simplified immediately in editor
+    await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
+      variantOverride: "simplified",
+    });
+
+    saved.value = false;
+  } catch (e) {
+    alert(e.message || e);
+  } finally {
+    simplifying.value = false;
   }
 }
 
-function removeEnvmap() {
-  scene.value.envmapUrl = "";
-
-  editor.scene.environment = null
-
-}
-
-function resetVrCamera() {
-  if(!editor.scene.vrCamera) return;
-
-  editor.scene.vrStartPosition = {
-    position: {x: 0, y: 1.7, z: 0},
-    rotation: {x: 0, y: 0, z: 0},
-  }
-  editor.scene.vrCamera.mesh.position.set(0, 1.7, 0);
-  editor.scene.vrCamera.mesh.rotation.set(0, 0, 0);
-
+function markChang() {
   saved.value = false;
 }
-
-onBeforeRouteLeave( (to, from, next)=>{
-  beforeRedirect(to, from, next)
-})
-
-onBeforeRouteUpdate((to, from, next)=>{
-  beforeRedirect(to, from, next)
-})
-
-
-
-
 </script>
 
 <template>
   <main>
     <form @submit.prevent="saveAll">
-
       <section ref="box">
-        <notification
-            theme="default"
-            icon="/icons/spinner.svg"
-            v-if="loading">
-          <template #content><p>{{$t("sceneView.loadingInfo")}}</p></template>
+        <notification theme="default" icon="/icons/spinner.svg" v-if="loading">
+          <template #content><p>{{ $t("sceneView.loadingInfo") }}</p></template>
         </notification>
-        <notification
-            theme="danger"
-            icon="/icons/info.svg"
-            v-if="error">
+
+        <notification theme="danger" icon="/icons/info.svg" v-if="error">
           <template #content>
             <redirect-message>
-              <template #content><p>{{$t("sceneView.loadingError")}}</p></template>
+              <template #content><p>{{ $t("sceneView.loadingError") }}</p></template>
             </redirect-message>
           </template>
         </notification>
       </section>
 
       <h1 v-if="ready">
-        <router-link :to="{name:'home'}">{{$t("sceneView.title.projects")}}</router-link>
+        <router-link :to="{ name: 'home' }">{{ $t("sceneView.title.projects") }}</router-link>
         ▸
-        <router-link :to="{name:'project', params:{projectId:scene.project.id}}">{{scene.project.title}}</router-link>
-        ▸ {{$t("sceneView.title.scenes")}} ▸
-        {{scene.title}}
+        <router-link :to="{ name: 'project', params: { projectId: scene.project.id } }">
+          {{ scene.project.title }}
+        </router-link>
+        ▸ {{ $t("sceneView.title.scenes") }} ▸
+        {{ scene.title }}
       </h1>
-      <section :class="{invisible: !ready}" class="center">
+
+      <section :class="{ invisible: !ready }" class="center">
         <section id="left">
-          <h2>{{$t("sceneView.leftSection.title")}}</h2>
+          <h2>{{ $t("sceneView.leftSection.title") }}</h2>
 
           <div class="inlineFlex">
-            <label>{{scene.project.unit}} :</label>
-            <inline-text-edit v-model="scene.title" :placeholder="$t('sceneView.leftSection.sceneTitle.placeholder')" :max-length="255"></inline-text-edit>
+            <label>{{ scene.project.unit }} :</label>
+            <inline-text-edit
+                v-model="scene.title"
+                :placeholder="$t('sceneView.leftSection.sceneTitle.placeholder')"
+                :max-length="255"
+            />
           </div>
 
           <div class="multilineField">
             <div class="inlineFlex">
-              <label>{{$t("sceneView.leftSection.sceneDescription.label")}}</label>
+              <label>{{ $t("sceneView.leftSection.sceneDescription.label") }}</label>
               <label for="desc">
-                <icon-svg url="/icons/edit.svg" theme="default" :hover-effect="true"></icon-svg>
+                <icon-svg url="/icons/edit.svg" theme="default" :hover-effect="true" />
               </label>
             </div>
-            <textarea id="desc" v-model="scene.description" rows="8" :placeholder="$t('sceneView.leftSection.sceneDescription.placeholder')"></textarea>
+            <textarea
+                id="desc"
+                v-model="scene.description"
+                rows="8"
+                :placeholder="$t('sceneView.leftSection.sceneDescription.placeholder')"
+            />
           </div>
-
-
 
           <div class="multilineField">
             <div class="inlineFlex">
-              <label for="envMap">{{$t("projectView.leftSection.projectEnvmap.label")}}</label>
+              <label for="envMap">{{ $t("projectView.leftSection.projectEnvmap.label") }}</label>
               <file-upload-button-view
                   :text="$t('projectView.leftSection.projectEnvmap.uploadButton')"
                   icon="/icons/upload.svg"
-                  @fileSelected="(file)=>{updateEnvmap(file)}"
+                  @fileSelected="(file) => updateEnvmap(file)"
                   :accept="['.exr']"
-              ></file-upload-button-view>
-
+              />
             </div>
-              <envmap-item
-                          ref="envmapElement"
-                          :text="scene.envmapUrl"
-                          :download-url="scene.envmapUrl"
-                          :hide-in-viewer=false
-                          @delete="removeEnvmap" />
+
+            <envmap-item
+                :text="scene.envmapUrl"
+                :download-url="scene.envmapUrl"
+                :hide-in-viewer="false"
+                @delete="removeEnvmap"
+            />
           </div>
 
-          <div class="multilineField" v-if="editor.scene.vrCamera">
-
+          <div class="multilineField" v-if="editor.scene?.vrCamera">
             <div class="inlineFlex">
-              <label>{{$t("sceneView.leftSection.sceneCamera.label")}}</label>
+              <label>{{ $t("sceneView.leftSection.sceneCamera.label") }}</label>
             </div>
 
             <asset-item
@@ -457,85 +529,106 @@ onBeforeRouteUpdate((to, from, next)=>{
                 :right-menu="false"
                 :reset="true"
                 @select="editor.scene.setSelected(editor.scene.vrCamera)"
-                @reset="resetVrCamera()" />
-
+                @reset="resetVrCamera()"
+            />
           </div>
 
           <div class="multilineField">
             <div class="inlineFlex">
-              <label>{{$t("sceneView.leftSection.sceneLabels.label")}}</label>
-              <button-view :text="$t('sceneView.leftSection.sceneLabels.addLabelButton')" icon="/icons/add.svg" @click="editor.scene.addNewLabel()"></button-view>
+              <label>{{ $t("sceneView.leftSection.sceneLabels.label") }}</label>
+              <button-view
+                  :text="$t('sceneView.leftSection.sceneLabels.addLabelButton')"
+                  icon="/icons/add.svg"
+                  @click="editor.scene.addNewLabel()"
+              />
             </div>
+
             <div id="labelList">
-                  <label-item v-for="(label, index) in editor.scene.labelManager.getLabels.value"
-                              class="sceneItem"
-                              :index="index"
-                              v-model="label.content.value"
-                              :active="label.isSelected.value"
-                              @click="editor.scene.setSelected(label)"
-                              @delete="editor.scene.removeLabel(label)"
-                              @advanced-edit="()=>{
-                                lastClickedLabel = label;
-                                showLabelEditModal=true;
-                              }"
-                  />
-                  <div v-if="!editor.scene.labelManager.hasLabels.value">{{$t('sceneView.leftSection.sceneLabels.noLabelInfo')}}</div>
+              <label-item
+                  v-for="(labelObj, index) in editor.scene.labelManager.getLabels.value"
+                  :key="labelObj.id ?? index"
+                  class="sceneItem"
+                  :index="index"
+                  v-model="labelObj.content.value"
+                  :active="labelObj.isSelected.value"
+                  @click="editor.scene.setSelected(labelObj)"
+                  @delete="editor.scene.removeLabel(labelObj)"
+                  @advanced-edit="() => { lastClickedLabel = labelObj; showLabelEditModal = true; }"
+              />
+              <div v-if="!editor.scene.labelManager.hasLabels.value">
+                {{ $t("sceneView.leftSection.sceneLabels.noLabelInfo") }}
+              </div>
             </div>
           </div>
-
-
 
           <Teleport to="body">
             <label-edit-modal
-                :show="showLabelEditModal && lastClickedLabel!=null"
+                :show="showLabelEditModal && lastClickedLabel != null"
                 :label="lastClickedLabel"
                 @close="showLabelEditModal = false"
-                @confirm="(newLabel)=>{
-                  editor.scene.labelManager.getSelectedLabel.value.copyContentFrom(newLabel);
-                  showLabelEditModal = false;
-                }">
-            </label-edit-modal>
+                @confirm="(newLabel) => { editor.scene.labelManager.getSelectedLabel.value.copyContentFrom(newLabel); showLabelEditModal = false; }"
+            />
           </Teleport>
 
-
+          <!-- ASSETS -->
           <div class="multilineField">
             <div class="inlineFlex">
-              <span>{{$t("sceneView.leftSection.sceneAssets.label")}}</span>
-             <file-upload-button-view
-                 :text="$t('sceneView.leftSection.sceneAssets.addAssetButton')"
-                 icon="/icons/upload.svg"
-                 @fileSelected="(file)=>{editor.scene.addNewAsset(file)}"
-                 :accept="['.glb','.gltf']"
-             ></file-upload-button-view>
+              <span>{{ $t("sceneView.leftSection.sceneAssets.label") }}</span>
+              <file-upload-button-view
+                  :text="$t('sceneView.leftSection.sceneAssets.addAssetButton')"
+                  icon="/icons/upload.svg"
+                  @fileSelected="(file) => editor.scene.addNewAsset(file)"
+                  :accept="['.glb', '.gltf']"
+              />
             </div>
+
+            <div class="inlineFlex" style="gap: 12px">
+              <label style="margin-right: 0">Use simplified</label>
+              <input type="checkbox" v-model="useSimplified" />
+            </div>
+
             <div id="assetList">
-                <template v-for="(asset, index) in editor.scene.assetManager.getAssets.value">
-                    <asset-item
-                        v-if="asset.id !== 'vrCamera'"
-                        class="sceneItem"
-                        :index="index"
-                        :text="asset.name"
-                        :active-animation="asset.activeAnimation"
-                        :download-url="getResource(asset.sourceUrl)"
-                        :hide-in-viewer="asset.hideInViewer.value"
-                        :active="asset.isSelected.value"
-                        :error="asset.hasError.value"
-                        :loading="asset.isLoading.value"
-                        :asset="asset"
-                        @select="editor.scene.setSelected(asset)"
-                        @delete="editor.scene.removeAsset(asset)"
-                        @duplicate="editor.scene.duplicateAsset(asset)"
-                        @animationChanged="(val)=>{asset.activeAnimation = val; saved = false}"
-                        @hide-in-viewer="()=>{asset.switchViewerDisplayStatus(); saved = false}"/>
-                </template>
-                <div v-if="scene.assets.length===0">{{$t("sceneView.leftSection.sceneAssets.noAssetsInfo")}}</div>
+              <template v-for="(asset, index) in editor.scene.assetManager.getAssets.value" :key="asset.id ?? index">
+                <asset-item
+                    v-if="asset.id !== 'vrCamera'"
+                    class="sceneItem"
+                    :index="index"
+                    :text="asset.name"
+                    :active-animation="asset.activeAnimation"
+                    :download-url="getResource(asset.sourceUrl)"
+                    :hide-in-viewer="asset.hideInViewer.value"
+                    :active="asset.isSelected.value"
+                    :error="asset.hasError.value"
+                    :loading="asset.isLoading.value"
+                    :asset="asset"
+                    @select="editor.scene.setSelected(asset)"
+                    @delete="editor.scene.removeAsset(asset)"
+                    @duplicate="editor.scene.duplicateAsset(asset)"
+                    @animationChanged="(val) => { asset.activeAnimation = val; saved.value = false; }"
+                    @hide-in-viewer="() => { asset.switchViewerDisplayStatus(); saved.value = false; }"
+                    @changed="markChang"
+                    @simplify="({ ratio }) => simplifyAsset(asset, ratio)"
+                />
+              </template>
+
+              <div v-if="scene.assets.length === 0">
+                {{ $t("sceneView.leftSection.sceneAssets.noAssetsInfo") }}
               </div>
             </div>
-
+          </div>
 
           <div class="inlineFlex">
-            <button-view :text="$t('sceneView.leftSection.buttons.duplicate')" icon="/icons/duplicate.svg" @click="showSceneDuplicateModal = true"></button-view>
-            <filled-button-view :text="$t('sceneView.leftSection.buttons.delete')" theme="danger" icon="/icons/delete.svg" @click="showSceneDeleteModal = true"></filled-button-view>
+            <button-view
+                :text="$t('sceneView.leftSection.buttons.duplicate')"
+                icon="/icons/duplicate.svg"
+                @click="showSceneDuplicateModal = true"
+            />
+            <filled-button-view
+                :text="$t('sceneView.leftSection.buttons.delete')"
+                theme="danger"
+                icon="/icons/delete.svg"
+                @click="showSceneDeleteModal = true"
+            />
           </div>
 
           <Teleport to="body">
@@ -545,63 +638,109 @@ onBeforeRouteUpdate((to, from, next)=>{
                 :input-placeholder="$t('sceneView.modals.duplicate.inputPlaceholder')"
                 :input-title="$t('sceneView.modals.duplicate.inputTitle')"
                 :title="$t('sceneView.modals.duplicate.title')"
-                @confirm="(value)=>duplicateScene(value)"
-                :input-default-value="scene.title+' '+$t('sceneView.modals.duplicate.inputDefaultValueCopy')">
-
-
-            </text-input-modal>
+                @confirm="(value) => duplicateScene(value)"
+                :input-default-value="scene.title + ' ' + $t('sceneView.modals.duplicate.inputDefaultValueCopy')"
+            />
           </Teleport>
 
-
           <Teleport to="body">
-            <delete-confirm-modal :show="showSceneDeleteModal" @close="showSceneDeleteModal = false" :title="$t('sceneView.modals.delete.title')" @confirm="deleteScene(scene)">
+            <delete-confirm-modal
+                :show="showSceneDeleteModal"
+                @close="showSceneDeleteModal = false"
+                :title="$t('sceneView.modals.delete.title')"
+                @confirm="deleteScene(scene)"
+            >
               <template #body>
-                <p>{{$t("sceneView.modals.delete.body.part1")}}<strong>{{scene.title}}</strong>.</p>
-                <p>{{$t("sceneView.modals.delete.body.part2")}}</p>
+                <p>{{ $t("sceneView.modals.delete.body.part1") }} <strong>{{ scene.title }}</strong>.</p>
+                <p>{{ $t("sceneView.modals.delete.body.part2") }}</p>
               </template>
             </delete-confirm-modal>
           </Teleport>
-
         </section>
 
         <span></span>
+
         <section id="right">
-          <h2>{{$t("sceneView.rightSection.title")}}</h2> 
+          <h2>{{ $t("sceneView.rightSection.title") }}</h2>
+
           <div id="previewGroup">
             <div ref="container" id="container"></div>
+
             <div id="toolGroup">
-              <button-tool :current-active="editor.scene.getTransformMode.value" name="translate" @click="editor.scene.setTransformMode('translate')"></button-tool>
-              <button-tool :current-active="editor.scene.getTransformMode.value" name="rotate" @click="editor.scene.setTransformMode('rotate')"></button-tool>
-              <button-tool :current-active="editor.scene.getTransformMode.value" name="scale" @click="editor.scene.setTransformMode('scale')"></button-tool>
-              <button-tool :current-active="showMaterialMenu ? '3d' : 'false' " name="3d" @click="() => { showMaterialMenu = !showMaterialMenu; editor.scene.setMaterialMenu(showMaterialMenu)}" ></button-tool>
+              <button-tool
+                  :current-active="editor.scene.getTransformMode.value"
+                  name="translate"
+                  @click="editor.scene.setTransformMode('translate')"
+              />
+              <button-tool
+                  :current-active="editor.scene.getTransformMode.value"
+                  name="rotate"
+                  @click="editor.scene.setTransformMode('rotate')"
+              />
+              <button-tool
+                  :current-active="editor.scene.getTransformMode.value"
+                  name="scale"
+                  @click="editor.scene.setTransformMode('scale')"
+              />
+              <button-tool
+                  :current-active="showMaterialMenu ? '3d' : 'false'"
+                  name="3d"
+                  @click="() => { showMaterialMenu = !showMaterialMenu; editor.scene.setMaterialMenu(showMaterialMenu); }"
+              />
 
               <div id="valuesGroup">
                 <label for="transformX">x:</label>
-                <input type="number" autocomplete="false" id="transformX" name="transformX" v-model="editor.scene.currentSelectedTransformValues.value.x" step="any">
+                <input
+                    type="number"
+                    autocomplete="false"
+                    id="transformX"
+                    name="transformX"
+                    v-model="editor.scene.currentSelectedTransformValues.value.x"
+                    step="any"
+                />
                 <label for="transformY">y:</label>
-                <input type="number" autocomplete="false" id="transformY" name="transformY" v-model="editor.scene.currentSelectedTransformValues.value.y" step="any">
+                <input
+                    type="number"
+                    autocomplete="false"
+                    id="transformY"
+                    name="transformY"
+                    v-model="editor.scene.currentSelectedTransformValues.value.y"
+                    step="any"
+                />
                 <label for="transformZ">z:</label>
-                <input type="number" autocomplete="false" id="transformZ" name="transformZ" v-model="editor.scene.currentSelectedTransformValues.value.z" step="any">
-
+                <input
+                    type="number"
+                    autocomplete="false"
+                    id="transformZ"
+                    name="transformZ"
+                    v-model="editor.scene.currentSelectedTransformValues.value.z"
+                    step="any"
+                />
               </div>
             </div>
           </div>
 
-          <expandable-notification v-for="error in editor.scene.getErrors.value" :title="error.title" :text="error.message"></expandable-notification>
-        </section>
-        <span> </span>
-        
-        <section v-if=showMaterialMenu id="materials"> 
-          <h2>{{$t("sceneView.materialSection.title")}}</h2> 
-          <material-view :material-data="editor.scene.currentSelectedMaterialValues.value"> </material-view>
+          <expandable-notification
+              v-for="(err, idx) in editor.scene.getErrors.value"
+              :key="idx"
+              :title="err.title"
+              :text="err.message"
+          />
         </section>
 
+        <span></span>
+
+        <section v-if="showMaterialMenu" id="materials">
+          <h2>{{ $t("sceneView.materialSection.title") }}</h2>
+          <material-view :material-data="editor.scene.currentSelectedMaterialValues.value" />
+        </section>
       </section>
 
       <section v-if="ready" class="bottomActionBar">
         <router-link :to="{ name: 'project', params: { projectId: scene.project.id } }">
-          <button-view :text="$t('sceneView.bottomActionBar.backButton')" icon="/icons/back.svg"/>
+          <button-view :text="$t('sceneView.bottomActionBar.backButton')" icon="/icons/back.svg" />
         </router-link>
+
         <filled-button-view
             :text="saving ? $t('sceneView.bottomActionBar.saveButton.saving') : saved ? $t('sceneView.bottomActionBar.saveButton.saved') : $t('sceneView.bottomActionBar.saveButton.save')"
             :icon="saving ? '/icons/spinner.svg' : saved ? '/icons/checkmarkRounded.svg' : '/icons/save.svg'"
@@ -616,16 +755,14 @@ onBeforeRouteUpdate((to, from, next)=>{
             :saving="saving"
             @close="cancelLeave"
             @save="confirmLeaveAndSave"
-            @dontSave="confirmLeave">
-
-        </save-warning-modal>
+            @dontSave="confirmLeave"
+        />
       </Teleport>
     </form>
   </main>
 </template>
 
 <style scoped>
-
 #valuesGroup{
   width: 100%;
   display: flex;
@@ -633,21 +770,9 @@ onBeforeRouteUpdate((to, from, next)=>{
   align-items: center;
   justify-content: right;
 }
-
-#valuesGroup>label{
-  margin-right: 4px;
-}
-
-#valuesGroup>input{
-  width: 64px;
-  margin-right: 16px;
-}
-
-#toolGroup{
-  display: flex;
-}
-
-
+#valuesGroup>label{ margin-right: 4px; }
+#valuesGroup>input{ width: 64px; margin-right: 16px; }
+#toolGroup{ display: flex; }
 #previewGroup{
   position: sticky;
   top: 64px;
@@ -662,13 +787,12 @@ onBeforeRouteUpdate((to, from, next)=>{
   overflow: hidden;
   margin-bottom: 16px;
 }
-
 h1{
   width: 100%;
   color: var(--textColor);
   font-size: 16px;
+  font-weight: normal;
 }
-
 form{
   width: 90%;
   margin: auto;
@@ -677,42 +801,15 @@ form{
   justify-content: flex-start;
   align-items: center;
 }
-
-
-
 .center{
   width: 100%;
   display: flex;
   justify-content: space-between;
   margin-bottom: 64px;
 }
-
-@media  screen and (min-width: 1200px) {
-  .center>section{
-    width: 50%;
-  }
-}
-
-@media  screen and (max-width: 1200px) {
-  form{
-    width: 100%;
-  }
-  .center>section{
-    width: 50%;
-  }
-}
-
-@media  screen and (max-width: 900px) {
-  .center{
-    flex-direction: column;
-  }
-
-  .center>section{
-    width: 100%;
-  }
-}
-
-
+@media screen and (min-width: 1200px) { .center>section{ width: 50%; } }
+@media screen and (max-width: 1200px) { form{ width: 100%; } .center>section{ width: 50%; } }
+@media screen and (max-width: 900px) { .center{ flex-direction: column; } .center>section{ width: 100%; } }
 
 .center>section{
   background-color: var(--backgroundColor);
@@ -720,20 +817,13 @@ form{
   flex-grow: 1;
   padding: 16px;
 }
-
-.center>span{
-  width: 16px;
-  height: 16px;
-}
-
+.center>span{ width: 16px; height: 16px; }
 
 h2{
   color: var(--textImportantColor);
   font-weight: 600;
   margin-bottom: 32px;
 }
-
-
 .inlineFlex{
   width: 100%;
   display: flex;
@@ -741,24 +831,10 @@ h2{
   align-items: center;
   margin-bottom: 8px;
 }
-
-.inlineFlex button{
-  margin-right: 8px;
-}
-
-.multilineField{
-  margin-bottom: 8px;
-}
-
-label{
-  margin-right: 16px;
-  font-weight: 500;
-  width: fit-content;
-}
-
-#labelList{
-  margin-bottom: 24px;
-}
+.inlineFlex button{ margin-right: 8px; }
+.multilineField{ margin-bottom: 8px; }
+label{ margin-right: 16px; font-weight: 500; width: fit-content; }
+#labelList{ margin-bottom: 24px; }
 
 textarea{
   width: 100%;
@@ -770,13 +846,6 @@ textarea{
   overflow-x: hidden;
   field-sizing: content;
 }
-
-img{
-  width: 100%;
-  border-radius: 4px;
-}
-
-
 .sceneItem{
   display: flex;
   width: 100%;
@@ -787,22 +856,14 @@ img{
   margin-bottom: 8px;
   padding: 8px;
 }
-
 .sceneItem>div{
   align-items: center;
   height: 100%;
   width: fit-content;
   margin-bottom: 0;
 }
-
-.sceneItem>div:last-child{
-  justify-content: flex-end;
-}
-
-.sceneItem>div>*{
-  margin-right: 16px;
-}
-
+.sceneItem>div:last-child{ justify-content: flex-end; }
+.sceneItem>div>*{ margin-right: 16px; }
 
 .bottomActionBar{
   position: fixed;
@@ -816,26 +877,8 @@ img{
   box-shadow: var(--defaultUniformShadow);
   z-index: 4;
 }
+.bottomActionBar>*{ margin-left: 8px; }
 
-.bottomActionBar>*{
-  margin-left: 8px;
-}
-
-
-.invisible{
-  display: none !important;
-}
-strong{
-  color: var(--accentColor);
-}
-
-
-h1{
-  font-weight: normal;
-}
-
-.inlineFlex>span{
-  margin-right: 16px;
-  font-weight: 500;
-}
+.invisible{ display: none !important; }
+strong{ color: var(--accentColor); }
 </style>

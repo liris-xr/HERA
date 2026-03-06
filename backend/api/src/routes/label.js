@@ -12,61 +12,78 @@ const router = express.Router()
 
 const LABELS_PAGE_LENGTH = 10;
 
-router.get(baseUrl+'admin/labels/:page?', authMiddleware, async (req, res) => {
-    const user = req.user
-    const page = parseInt(req.params.page) || 1
+// Sans page -> page = 1
+router.get(baseUrl + "admin/labels", authMiddleware, async (req, res) => {
+    req.params.page = "1";
+    return adminLabelsHandler(req, res);
+});
 
-    if(!user.admin) {
-        res.status(401);
-        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+// Avec page explicite
+router.get(baseUrl + "admin/labels/:page", authMiddleware, async (req, res) => {
+    return adminLabelsHandler(req, res);
+});
+
+async function adminLabelsHandler(req, res) {
+    const user = req.user;
+    const page = parseInt(req.params.page) || 1;
+
+    if (!user.admin) {
+        return res.status(401).send({
+            error: "Unauthorized",
+            details: "User not granted",
+        });
     }
 
     try {
-        const where = {}
-        const whereProject = {}
+        const where = {};
+        const whereProject = {};
 
-        if(req.query?.text)
+        if (req.query?.text) {
             where.text = {
-                [Op.like]: `%${req.query?.text}%`
-            }
-        if(req.query["scene.project.title"])
-            whereProject.title = {
-                [Op.like]: `%${req.query["scene.project.title"]}%`
-            }
+                [Op.like]: `%${req.query.text}%`,
+            };
+        }
 
+        if (req.query["scene.project.title"]) {
+            whereProject.title = {
+                [Op.like]: `%${req.query["scene.project.title"]}%`,
+            };
+        }
 
         const { count, rows } = await ArLabel.findAndCountAll({
             subQuery: false,
             attributes: ["id", "text", "timestampStart", "timestampEnd"],
             limit: LABELS_PAGE_LENGTH,
             offset: (page - 1) * LABELS_PAGE_LENGTH,
-            order: [['createdAt', 'ASC']],
-            include: [{
-                model: ArScene,
-                as: "scene",
-                required: true,
-                include: [{
-                    model: ArProject,
-                    as: "project",
-                    where: whereProject,
+            order: [["createdAt", "ASC"]],
+            include: [
+                {
+                    model: ArScene,
+                    as: "scene",
                     required: true,
-                }]
-            }],
-            where
+                    include: [
+                        {
+                            model: ArProject,
+                            as: "project",
+                            where: whereProject,
+                            required: true,
+                        },
+                    ],
+                },
+            ],
+            where,
         });
 
-        res.status(200);
-        res.send({
+        return res.status(200).send({
             labels: rows,
             totalPages: Math.ceil(count / LABELS_PAGE_LENGTH),
             currentPage: page,
         });
-    } catch (e){
+    } catch (e) {
         console.log(e);
-        res.status(400);
-        return res.send({error: 'Unable to fetch labels'});
+        return res.status(400).send({ error: "Unable to fetch labels" });
     }
-})
+}
 
 router.delete(baseUrl+"admin/labels/:labelId", authMiddleware, async (req, res) => {
     const authUser = req.user

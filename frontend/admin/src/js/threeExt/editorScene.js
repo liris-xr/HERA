@@ -284,27 +284,45 @@ export class EditorScene extends THREE.Scene {
         this.setSelected(object);
 
     }
+    
     setSelected(object, selected = true){
         this.deselectAll();
         this.selected.value = object;
-        if(object==null || selected === false){
+
+        const isInSceneGraph = (obj) => {
+            if (!obj) return false;
+            let current = obj;
+            while (current) {
+                if (current === this) return true;
+                current = current.parent;
+            }
+            return false;
+        };
+
+        if (object == null || selected === false) {
             this.#transformControls.detach();
         } else {
-
-            if(this.#meshSelectionMode.value) {
-                if(object.isMesh) {
-                    this.#transformControls.attach(object)
-                } else if(object.label) {
+            if (this.#meshSelectionMode.value) {
+                if (object.isMesh && isInSceneGraph(object)) {
+                    this.#transformControls.attach(object);
+                } else if (object.label && object.getObject && isInSceneGraph(object.getObject())) {
                     this.#transformControls.attach(object.getObject());
-                } else if(object.subMeshes) { // Object is an asset
-                    this.#transformControls.attach(object.subMeshes[0])
+                } else if (object.subMeshes && object.subMeshes[0] && isInSceneGraph(object.subMeshes[0])) {
+                    this.#transformControls.attach(object.subMeshes[0]);
+                } else {
+                    this.#transformControls.detach();
                 }
             } else {
-                this.#transformControls.attach(object.getObject())
-                object.setSelected(selected)
+                const obj = object.getObject?.();
+                if (obj && isInSceneGraph(obj)) {
+                    this.#transformControls.attach(obj);
+                    object.setSelected?.(selected);
+                } else {
+                    this.#transformControls.detach();
+                }
             }
-
         }
+
         this.#updateSelectedTransformValues();
         this.#updateSelectedMaterialValues();
     }

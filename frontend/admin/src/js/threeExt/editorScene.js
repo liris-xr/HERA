@@ -65,48 +65,72 @@ export class EditorScene extends THREE.Scene {
         this.currentMeshes = []
         this.transformBeforeChange = null
 
-        watch(() => this.currentSelectedTransformValues.value, (value) => {
-            if(this.selected.value == null) return;
+        watch(
+            () => this.currentSelectedTransformValues.value,
+            (value) => {
+                if (!value) return;
+                if (!this.selected.value) return;
+                if (!this.getTransformMode.value) return;
 
-            if(this.selected.value instanceof Asset) {
+                const targetKey = transformModeKeys[this.getTransformMode.value];
+                if (!targetKey) return;
 
-                this.selected.value.getObject()[transformModeKeys[this.getTransformMode.value]].set(value.value.x, value.value.y, value.value.z)
+                const x = Number(value.x ?? 0);
+                const y = Number(value.y ?? 0);
+                const z = Number(value.z ?? 0);
 
-                if(this.selected.value.id === "vrCamera") {
-                    if(this.getTransformMode.value === "translate") {
-                        this.vrStartPosition.position.x = this.selected.value.mesh.position.x
-                        this.vrStartPosition.position.y = this.selected.value.mesh.position.y
-                        this.vrStartPosition.position.z = this.selected.value.mesh.position.z
-                    } else if (this.getTransformMode.value === "rotate") {
-                        this.vrStartPosition.rotation.x = this.selected.value.mesh.rotation.x
-                        this.vrStartPosition.rotation.y = this.selected.value.mesh.rotation.y
-                        this.vrStartPosition.rotation.z = this.selected.value.mesh.rotation.z
+                if (this.selected.value instanceof Asset) {
+                    const obj = this.selected.value.getObject?.();
+                    if (!obj || !obj[targetKey] || typeof obj[targetKey].set !== "function") return;
+
+                    obj[targetKey].set(x, y, z);
+
+                    if (targetKey === "position") {
+                        this.selected.value.position = { x, y, z };
+                    } else if (targetKey === "rotation") {
+                        this.selected.value.rotation = { x, y, z };
+                    } else if (targetKey === "scale") {
+                        this.selected.value.scale = { x, y, z };
                     }
+
+                    if (this.selected.value.id === "vrCamera") {
+                        if (targetKey === "position") {
+                            this.vrStartPosition.position = { x, y, z };
+                        } else if (targetKey === "rotation") {
+                            this.vrStartPosition.rotation = { x, y, z };
+                        }
+                    }
+                } else {
+                    const obj = this.selected.value;
+                    if (!obj[targetKey]) return;
+
+                    obj[targetKey].x = x;
+                    obj[targetKey].y = y;
+                    obj[targetKey].z = z;
                 }
 
-            } else {
+                this.updatePlaygroundSize();
+                this.runOnChanged();
+            },
+            { deep: true }
+        );
 
-                this.selected.value[transformModeKeys[this.getTransformMode.value]].x = value.value.x
-                this.selected.value[transformModeKeys[this.getTransformMode.value]].y = value.value.y
-                this.selected.value[transformModeKeys[this.getTransformMode.value]].z = value.value.z
+        watch(
+            () => this.currentSelectedMaterialValues.value,
+            (value) => {
+                if (!value) return;
+                if (!this.selected.value) return;
 
-            }
-
-            this.updatePlaygroundSize();
-            this.runOnChanged();
-        },{deep:true});
-
-        watch(() =>this.currentSelectedMaterialValues, (value) => {
-            if(this.selected.value == null) return;
-
-            if(this.#meshSelectionMode.value && !this.selected.label){
-                this.selected.value.material.roughness = value.value.roughness;
-                this.selected.value.material.metalness = value.value.metalness;
-                this.selected.value.material.opacity = value.value.opacity;
-                this.selected.value.material.transparent = value.value.opacity < 1
-                this.selected.value.material.emissiveIntensity = value.value.emissiveIntensity;
-            }
-        },{deep:true});
+                if (this.#meshSelectionMode.value && !this.selected.value.label && this.selected.value.material) {
+                    this.selected.value.material.roughness = value.roughness;
+                    this.selected.value.material.metalness = value.metalness;
+                    this.selected.value.material.opacity = value.opacity;
+                    this.selected.value.material.transparent = value.opacity < 1;
+                    this.selected.value.material.emissiveIntensity = value.emissiveIntensity;
+                }
+            },
+            { deep: true }
+        );
 
         this.onChanged = null;
     }
@@ -184,7 +208,7 @@ export class EditorScene extends THREE.Scene {
         this.#transformControls.addEventListener('mouseUp', (event) => {
             this.#updateSelectedTransformValues();
 
-            if(this.selected.value.id === "vrCamera") {
+            if(this.selected.value?.id === "vrCamera") {
                 if(this.getTransformMode.value === "translate") {
                     this.vrStartPosition.position.x = this.selected.value.mesh.position.x
                     this.vrStartPosition.position.y = this.selected.value.mesh.position.y
@@ -334,7 +358,7 @@ export class EditorScene extends THREE.Scene {
             hideInViewer: false
         }
         const asset = new Asset(assetData);
-        this.assetManager.addToScene(this,asset,()=>{this.updatePlaygroundSize()},this.title);
+        this.assetManager.addToScene(this,asset,()=>{this.updatePlaygroundSize()});
     }
 
     removeAsset(asset){
@@ -347,20 +371,18 @@ export class EditorScene extends THREE.Scene {
         this.setSelected(null);
 
         const assetData = {
-            id:null,
+            id: null,
             url: asset.sourceUrl,
             name: asset.name,
-            hideInViewer: asset.hideInViewer,
-            position: asset.position,
-            rotation: asset.rotation,
-            scale: asset.scale,
+            hideInViewer: asset.hideInViewer?.value ?? false,
+            position: { ...asset.getResultPosition() },
+            rotation: { ...asset.getResultRotation() },
+            scale: { ...asset.getResultScale() },
             copiedUrl: asset.sourceUrl ?? asset.copiedUrl,
-        }
+        };
+
         const newAsset = new Asset(assetData);
-
-        this.assetManager.addToScene(this,newAsset,(newAsset)=>this.setSelected(newAsset));
-
-        // this.assetManager.duplicateFromScene(this,asset);
+        this.assetManager.addToScene(this, newAsset, (newAsset) => this.setSelected(newAsset));
     }
 
     removeSelected(){

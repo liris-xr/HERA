@@ -26,7 +26,6 @@ export const BASE_URL = import.meta.env.BASE_URL; // "/editor/" or "/viewer/" de
 const HOSTNAME = window.location.hostname;        // localhost OR 10.42... depending on URL you open
 const PROTOCOL = window.location.protocol;        // https: or http:
 
-// Backend origin (your API server)
 export const API_ORIGIN = `${PROTOCOL}//${HOSTNAME}:8080`;
 export const ENDPOINT = `${API_ORIGIN}/api/`;
 

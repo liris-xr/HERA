@@ -22,6 +22,8 @@ Rerun est un outil de visualisation de données pour le développement (Vision p
 #### Installation
 
 1. **Installer le SDK Rerun**
+
+Ouvrez un CMD :
 ```shell
 pip install rerun-sdk
 ```
@@ -29,20 +31,52 @@ pip install rerun-sdk
 2. Trouver l'emplacement de Rerun
 
 Copiez le chemin d'installation des scripts Rerun :
+
+Sur Windows :
 ```shell
-pip show -f rerun-sdk
+pip show rerun-sdk | Select-String "Location:"
 ```
-Note : Cherchez la ligne "Location", le dossier cible est généralement cet emplacement + \Scripts.
+
+Sur Linux, macOs :
+```shell
+pip show rerun-sdk | grep "Location:"
+```
+
+Note : Le dossier cible est généralement cet emplacement + \Scripts.
 
 3. Créer une variable d'environnement
+
+Sur Windows :
 - Appuyez sur la touche Windows, tapez "env", et sélectionnez Modifier les variables d'environnement système.
-- Cliquez sur le bouton Variables d'environnement... en bas à droite.- In the top section (User variables for [YourName]), find and select the variable named Path.
-- Dans la section du haut (Variables utilisateur pour [VotreNom]), trouvez et sélectionnez la variable nommée Path.
+- Cliquez sur le bouton Variables d'environnement... en bas à droite.
+- Dans la section du haut (Variables utilisateur pour [VotreNom]), trouvez et sélectionnez la variable nommée "Path".
 - Cliquez sur Modifier....
 - Cliquez sur Nouveau à droite.
 - Collez le chemin complet vers votre dossier Scripts (celui trouvé à l'étape 2).
 - Cliquez sur OK sur toutes les fenêtres pour les fermer.
 - Redémarrez tous vos terminaux (PowerShell, CMD, IDE) pour prendre en compte les changements.
+
+Sur Linux :
+- Tapez cette commande :
+```shell
+nano ~/.bashrc
+```
+- Ajoutez cette ligne à la fin du fichier (remplacez `YOUR_PATH` par le résultat de l'étape 2) :
+```shell
+export PATH="$PATH:YOUR_PATH"
+```
+- Redémarrez tous vos terminaux (CMD, IDE) pour prendre en compte les changements.
+
+Sur macOs :
+- Tapez cette commande :
+```shell
+nano ~/.zshrc
+```
+- Ajoutez cette ligne à la fin du fichier (remplacez `YOUR_PATH` par le résultat de l'étape 2) :
+```shell
+export PATH="$PATH:YOUR_PATH"
+```
+- Redémarrez tous vos terminaux (CMD, IDE) pour prendre en compte les changements.
 
 4. Lancer Rerun
 
@@ -53,12 +87,16 @@ rerun
 
 5. Script de Replay
 - Allez dans votre IDE et lancez le script `UserTrackingReplay`.
-- Changez `rawDbPath`, `rawRecordDbPath`, `rawBaseAssetPath` pour faire correspondre au chemin des BD et des assets.
+- Changez `rawDbPath`, `rawRecordDbPath`, `rawBaseAssetPath` pour faire correspondre au chemin des fichiers de BD et du dossier des assets.
 - Ouvrez `databaseRecords` et récuperer l'ID de la scene et du user dont vous voulez le replay
 - Executez le script
-- 
+
 6. Configuration de Rerun
 
 Une fois le script lancé, une nouvelle fenêtre s'ouvrira dans le visualiseur Rerun.
 - En bas de la fenêtre du visualiseur, changez `log_time` pour `stable_time`
+![SetTimeRerun.png](readme/SetTimeRerun.png)
+
+
 - Au centre gauche de la fenêtre, faites un clic droit sur `user_camera` et cliquez sur `set as eye tracked`
+![SetCameraRerun.png](readme/SetCameraRerun.png)

@@ -1,6 +1,7 @@
 import ArUser from './models/arUser.js'
 import ArProject from "./models/arProject.js";
 import ArScene from "./models/arScene.js";
+import ArAnalyticsConfig from './models/arAnalyticsConfig.js';
 
 import {sequelize, sequelizeRecords} from './database.js'
 import ArAsset from "./models/arAsset.js";
@@ -27,4 +28,4 @@ export async function initializeDatabase (options) {
     await sequelize.sync(options);
 }
 
-export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh}
+export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh, ArAnalyticsConfig}

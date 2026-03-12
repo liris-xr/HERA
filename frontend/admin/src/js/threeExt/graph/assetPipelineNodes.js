@@ -28,13 +28,14 @@ export function ResolveAssetUrlNode() {
                     variant: "original",
                 };
             }
-
+            //il demande le manifest  au backend
             const manifest = await fetchAssetManifest(asset.id);
+            //choisit variante à charger
             const chosen = pickVariantFromManifest(manifest, {
                 variantOverride,
                 allowFallback: true,
             });
-
+            //construit url final a charer
             const finalUrl = getResource(chosen.path);
 
             console.log("[ResolveAssetUrlNode] asset:", asset.id);
@@ -43,19 +44,104 @@ export function ResolveAssetUrlNode() {
             console.log("[ResolveAssetUrlNode] final url:", finalUrl);
 
             return {
+                manifest,
                 urlToLoad: finalUrl,
                 loadFromUpload: false,
                 variant: chosen.variant,
-                manifest,
             };
         },
     };
 }
 
+export function AssetMetricNode() {
+    return {
+        id: "AssetMetric",
+        async run(ctx, data) {
+            const manifestSize = data?.manifest?.metrics?.assetSizeBytes ?? null;
+            const uploadSize = data?.asset?.uploadData?.size ?? null;
+
+            const assetSizeBytes = manifestSize ?? uploadSize ?? null;
+
+            console.log("[AssetMetricNode]", {
+                manifestSize,
+                uploadSize,
+                final: assetSizeBytes,
+            });
+
+            return {
+                metrics: {
+                    assetSizeBytes,
+                },
+            };
+        },
+    };
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function lerp(a, b, t) {
+    return a + (b - a) * t;
+}
+
+function computeRecommendedSimplifyRatio(sizeBytes, options = {}) {
+
+    const {
+        minBytes = 5 * 1024 * 1024,
+        maxBytes = 200 * 1024 * 1024,
+        minRatio = 0.25,
+        maxRatio = 1.0,
+        fallbackRatio = 1.0,
+        roundDigits = 2,
+    } = options;
+
+    const size = Number(sizeBytes);
+
+    if (!Number.isFinite(size) || size <= 0) {
+        return fallbackRatio;
+    }
+
+    const t = clamp((size - minBytes) / (maxBytes - minBytes), 0, 1);
+
+    const ratio = lerp(maxRatio, minRatio, t);
+
+    return Number(ratio.toFixed(roundDigits));
+}
+
+export function SimplificationPolicyNode() {
+    return {
+        id: "SimplificationPolicy",
+        async run(ctx, data) {
+
+            const manifestRatio = data?.manifest?.policy?.recommendedSimplifyRatio ?? null;
+
+            const localRatio = computeRecommendedSimplifyRatio(
+                data?.metrics?.assetSizeBytes
+            );
+
+            const recommendedSimplifyRatio = manifestRatio ?? localRatio;
+
+            console.log("[SimplificationPolicyNode]", {
+                manifestRatio,
+                localRatio,
+                final: recommendedSimplifyRatio,
+            });
+
+            return {
+                policy: {
+                    recommendedSimplifyRatio,
+                },
+            };
+        },
+    };
+}
 export function DecodeNode() {
     return {
         id: "Decode",
+
         async run(ctx, data) {
+            console.log("[SimplificationPolicyNode]", data?.manifest?.policy);
             const asset = data?.asset ?? ctx.asset;
             if (!asset) throw new Error("[DecodeNode] asset missing");
 

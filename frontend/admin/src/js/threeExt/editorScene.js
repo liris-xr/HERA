@@ -284,7 +284,7 @@ export class EditorScene extends THREE.Scene {
         this.setSelected(object);
 
     }
-    
+
     setSelected(object, selected = true){
         this.deselectAll();
         this.selected.value = object;
@@ -479,9 +479,7 @@ export class EditorScene extends THREE.Scene {
             }else if(this.getTransformMode.value === "scale"){
                 this.currentSelectedTransformValues.value = {...this.selected.value.scale};
             }
-
         }
-
     }
     
     #updateSelectedMaterialValues() {
@@ -505,7 +503,6 @@ export class EditorScene extends THREE.Scene {
                 emissive:{r:"",g:"",b:""}
             }
         }
-        
     }
 }
 

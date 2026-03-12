@@ -5,6 +5,7 @@ import {ArAsset, ArScene, ArProject, ArUser, ArMesh, ArLabel} from "../orm/index
 import {deleteAsset} from "../utils/fileUpload.js";
 import {Sequelize} from "sequelize";
 import {sequelize} from "../orm/database.js";
+import {computeAssetMetrics, computeAssetPolicy} from "../socket/utils/assetMetrics.js";
 import path from "node:path";
 import fs from "node:fs";
 import { spawn } from "node:child_process";
@@ -56,6 +57,10 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
         const original = normalizePath(asset.url);
         const simplified = normalizePath(asset.simplifiedUrl);
 
+        const apiRoot = process.cwd();
+        const metrics = computeAssetMetrics(asset,apiRoot);
+        const policy = computeAssetPolicy(metrics);
+
         return res.status(200).send({
             assetId: asset.id,
             revision: asset.updatedAt ? new Date(asset.updatedAt).toISOString() : null,
@@ -65,6 +70,8 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
                 original:   { status: original ? "ready" : "missing", path: original },
                 simplified: { status: simplified ? "ready" : "missing", path: simplified },
             },
+            metrics,
+            policy,
         });
     } catch (e) {
         console.log("[ASSET MANIFEST ERROR]", e);

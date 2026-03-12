@@ -22,7 +22,8 @@ Here, we will assume that the files have been cloned in `/home/webadmin/hera`
 The SSL certificate can be easily generated with **mkcert**. Once **mkcert** has been installed, simply run the following commands:
 ```shell
 mkcert -install
-cd hera/backend/api
+mkdir /home/webadmin/HERA/backend/certificates
+cd /home/webadmin/HERA/backend/certificates
 mkcert -cert-file certificate.crt -key-file privatekey.key localhost
 ````
 
@@ -36,8 +37,8 @@ You will need to know the following information:
 In the rest of the document, the following values ​​will be used:
 - hostname: `https://hera.univ-lyon1.fr`
 - the location of the certificate files:
-- `/home/webadmin/certificate/certificate.crt`
-- `/home/webadmin/certificate/privatekey.key`
+- `/home/webadmin/hera/HERA/backend/certificates/certificate.crt`
+- `/home/webadmin/hera/HERA/backend/certificates/privatekey.key`
 - API port: `8080`
 
 Make sure you know this information before continuing.
@@ -47,18 +48,18 @@ Make sure you know this information before continuing.
 cd hera
 nano ./backend/api/app.js
 ```
-Modify line 47 to use your preferred value for the port used by the API, then save the changes:
+Modify line 71 in `/backend/app.js` to use your preferred value for the port used by the API, then save the changes:
 ```javascript
 https.createServer(options, app).listen(8080, () => {
 console.log('Server started on port 8080')
 })
 ```
 
-Also modify lines 26 and 27 to specify the path to the certificate files:
+Also modify lines 33 and 34 (if the path has been changed) to specify the path to the certificate files:
 ```javascript
 const options = {
-key: fs.readFileSync('/home/webadmin/certificate/privatekey.key'),
-cert: fs.readFileSync('/home/webadmin/certificate/certificate.crt')
+key: fs.readFileSync('/certificate/privatekey.key'),
+cert: fs.readFileSync('/certificate/certificate.crt')
 };
 ```
 

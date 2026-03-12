@@ -25,7 +25,8 @@ Ici, nous considérerons que les fichiers ont été clonés dans `/home/webadmin
 Le certificat SSL peut être généré facilement avec **mkcert**. Une fois **mkcert** installé, il vous suffira d’exécuter les commandes suivantes :
 ```shell
 mkcert -install
-cd hera/backend/api
+mkdir /home/webadmin/hera/HERA/backend/certificate
+cd /home/webadmin/hera/HERA/backend/certificate
 mkcert -cert-file certificate.crt -key-file privatekey.key localhost
 ```
 
@@ -42,8 +43,8 @@ Vous aurez besoin de connaitre les informations suivantes :
 Dans la suite du document, les valeurs suivantes seront utilisées :
 - nom d'hote : `https://hera.univ-lyon1.fr`
 - l'emplacement des fichiers du certificat :
-  - `/home/webadmin/certificate/certificate.crt`
-  - `/home/webadmin/certificate/privatekey.key`
+  - `/home/webadmin/hera/HERA/backend/certificates/certificate.crt`
+  - `/home/webadmin/hera/HERA/backend/certificates/privatekey.key`
 - port API : `8080`
 
 Assurez-vous de connaitre ces informations avant de continuer.
@@ -55,7 +56,7 @@ Assurez-vous de connaitre ces informations avant de continuer.
 cd hera
 nano ./backend/api/app.js
 ```
-Modifier la ligne 47 pour utiliser la valeur de votre choix pour le port utilisé par l'API, puis enregistrez les modifications :
+Modifier la ligne 71 dans `/backend/app.js` pour utiliser la valeur de votre choix pour le port utilisé par l'API, puis enregistrez les modifications :
 ```javascript 
 https.createServer(options, app).listen(8080, () => {
     console.log('Server started on port 8080')

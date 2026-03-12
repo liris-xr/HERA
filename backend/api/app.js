@@ -1,7 +1,5 @@
 import express from 'express';
 import {initializeDatabase} from "./src/orm/index.js";
-import {resetDatabase} from "./src/orm/defaults/reset.js";
-import {insertDefaults} from "./src/orm/defaults/insertDefaults.js";
 import project from "./src/routes/project.js";
 import auth from "./src/routes/auth.js";
 import user from "./src/routes/user.js";
@@ -10,6 +8,7 @@ import dev from "./src/routes/dev.js";
 import asset from "./src/routes/asset.js";
 import label from "./src/routes/label.js";
 import record from "./src/routes/record.js";
+import analyticsConfig from "./src/routes/analyticsConfig.js";
 import cors from 'cors'
 
 
@@ -53,6 +52,7 @@ async function main () {
     app.use(asset);
     app.use(label);
     app.use(record);
+    app.use(analyticsConfig);
     app.use('/public', express.static('public'));       //serving static files
 
     const httpsServer = https.createServer(options, app)

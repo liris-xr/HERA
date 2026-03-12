@@ -5,9 +5,11 @@ import ArAsset from "../models/arAsset.js";
 import ArMesh from "../models/arMesh.js";
 import ArLabel from "../models/arLabel.js";
 import ArRecord from "../models/arRecord.js";
+import ArAnalyticsConfig from "../models/arAnalyticsConfig.js";
 
 export async function resetDatabase() {
     console.log();
+    await ArAnalyticsConfig.destroy({where:{}})
     await ArUser.destroy({where:{}})
     await ArProject.destroy({where:{}})
     await ArScene.destroy({where:{}})

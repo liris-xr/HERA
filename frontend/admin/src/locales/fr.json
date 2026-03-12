@@ -317,7 +317,6 @@
       },
       "labels": {
         "h1": "Labels",
-        "edit": "Modifier le label",
         "delete": "Supprimer le label",
         "create": "Créer un label",
         "text": "Contenu",
@@ -328,6 +327,9 @@
             "title": "Projet"
           }
         }
+      },
+      "tracesConfig": {
+        "h1": "Traces"
       }
     }
   },

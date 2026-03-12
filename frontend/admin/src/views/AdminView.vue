@@ -1,23 +1,16 @@
 <script setup>
-import ProjectCard from "@/components/projectCard.vue"
 import {nextTick, onMounted, ref} from "vue"
-import {ENDPOINT} from "@/js/endpoints.js"
-import ButtonView from "@/components/button/buttonView.vue"
-import Notification from "@/components/notification/notification.vue"
 import {useAuthStore} from "@/store/auth.js"
 import {useRouter} from "vue-router/dist/vue-router"
-import FilledButtonView from "@/components/button/filledButtonView.vue"
-import TextInputModal from "@/components/modal/textInputModal.vue"
-import RedirectMessage from "@/components/notification/redirect-message.vue"
 import {useI18n} from "vue-i18n"
 import AccountManager from "@/components/admin/accountManager.vue";
 import ProjectManager from "@/components/admin/projectManager.vue";
 import SceneManager from "@/components/admin/sceneManager.vue";
 import AssetManager from "@/components/admin/assetManager.vue";
 import LabelManager from "@/components/admin/labelManager.vue";
+import TracesConfigManager from "@/components/admin/tracesConfigManager.vue";
 import 'vue3-toastify/dist/index.css';
 import TableOfContent from "@/components/admin/tableOfContent.vue";
-import scene from "three/addons/offscreen/scene.js";
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()
@@ -38,6 +31,7 @@ const projectManager = ref(null)
 const sceneManager = ref(null)
 const assetManager = ref(null)
 const labelManager = ref(null)
+const tracesConfigManager = ref(null)
 
 const sections = ref(null)
 
@@ -48,7 +42,8 @@ onMounted(async () => {
     projects: projectManager,
     scenes: sceneManager,
     assets: assetManager,
-    labels: labelManager
+    labels: labelManager,
+    tracesConfig: tracesConfigManager
   }
 })
 
@@ -113,6 +108,11 @@ onMounted(async () => {
           @edit-label="sceneManager.editLabel($event)"
       />
 
+      <traces-config-manager
+          ref="tracesConfigManager"
+          :token="token"
+      />
+
     </main>
 
     <table-of-content
@@ -156,28 +156,6 @@ table tr:hover {
   background-color: var(--darkerBackgroundColor);
 }
 
-.inline-flex {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  justify-content: center;
-  align-items: center;
-  gap: 10px
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 .modal > div {
   background-color: white;
   text-align: center;
@@ -213,38 +191,11 @@ table tr:hover {
   color: black;
 }
 
-.danger {
-  color: #FF4040;
-  text-align: center;
-}
-
-
-.list {
-  display: flex;
-  flex-direction: column;
-  align-content: center;
-  gap: 10px;
-
-  max-height: 200px;
-  overflow-y: scroll;
-}
-
-.item {
-  padding: 5px;
-  border-radius: 5px;
-  background: var(--darkerBackgroundColor);
-  display: flex;
-  justify-content: space-between;
-}
-
 .item span {
   word-break: keep-all;
   overflow: hidden;
 }
 
-.item .actions {
-  display: flex;
-}
 
 </style>
 

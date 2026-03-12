@@ -335,6 +335,9 @@
             "title": "Project"
           }
         }
+      },
+      "tracesConfig": {
+        "h1": "Traces"
       }
     }
   },

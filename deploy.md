@@ -234,5 +234,5 @@ In case of problems, it is possible to check the logs:
 - `cat /var/log/apache2/error.log` for site errors
 - `sudo journalctl -u hera` for API errors
 
-**Note**: Any changes made to the domain name or port in the `endpoint.js` files require a new build for `users` et `admin` parts.
-You will need to run `npm run build` again and replace the old files in the `/var/www/` directory with the contents of the new `dist` folders.
+**Note**: Any changes made to the domain name or port in the `endpoint.js` files require a new build for `users` and `admin` parts.
+You will need to run `npm run build` again and replace the old files in the `/var/www/` directory with the content of the new `dist` folders.

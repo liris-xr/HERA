@@ -179,7 +179,7 @@ Make sure to copy the build to `/var/www/hera/HERA/frontend/editor`.
 The last step is to create the Apache configuration file needed to put the two sites copied earlier online.
 A configuration template is provided in the files.
 ```shell
-cd /home/webadmin/hera/HERA/apache configs
+cd /home/webadmin/hera/HERA/apache\ configs
 nano apache.conf
 ```
 Edit it to change the following information:

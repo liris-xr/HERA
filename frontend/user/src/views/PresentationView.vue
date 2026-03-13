@@ -1,7 +1,7 @@
 <script setup>
 import ArView from "@/components/arView.vue";
-import {computed, onMounted, reactive, ref, watch} from "vue";
-import {useRoute} from "vue-router";
+import {computed, onBeforeUnmount, reactive, ref} from "vue";
+import {onBeforeRouteLeave, useRoute} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
@@ -11,9 +11,7 @@ import FilledButtonView from "@/components/button/filledButtonView.vue";
 import {SocketConnection} from "@/js/socket/socketConnection.js";
 import {useI18n} from "vue-i18n";
 import {QrcodeSvg} from "qrcode.vue";
-import * as THREE from 'three';
 import {SocketActionManager} from "@/js/socket/socketActionManager.js";
-import IconSvg from "@/components/icons/IconSvg.vue";
 import PresentationAsset from "@/components/items/PresentationAsset.vue";
 import PresentationLabel from "@/components/items/PresentationLabel.vue";
 import PresentationPreset from "@/components/items/PresentationPreset.vue";
@@ -21,9 +19,10 @@ import PresentationPresetItem from "@/components/items/PresentationPresetItem.vu
 import ButtonView from "@/components/button/buttonView.vue";
 import {toast} from "vue3-toastify";
 import {generateUUID} from "three/src/math/MathUtils.js";
+import RecordUserModal from "@/components/modal/recordUserModal.vue";
 
 
-const { isAuthenticated, token } = useAuthStore()
+const { isAuthenticated, token, userData } = useAuthStore()
 const {t} = useI18n()
 
 if (!isAuthenticated.value) {
@@ -67,6 +66,7 @@ let recordTarget = null
 const showTerminate = ref(false)
 const terminated = ref(false)
 
+const showRecordUserModal = ref(false)
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -81,21 +81,47 @@ async function fetchProject(projectId) {
     if(res.ok){
       return await res.json();
     }
-    throw new Error("ko");
+    error.value = true;
+    return null;
   } catch (e) {
     error.value = true;
+    return null;
   }
 }
 
 fetchProject(route.params.projectId).then((r)=>{
-  Object.assign(project, r)
+  if(r)
+    Object.assign(project, r)
   loading.value = false;
 });
+
+async function setRecordUserInDb(value) {
+  try {
+    await fetch(`${ENDPOINT}scenes/recordUser`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({
+        projectId: route.params.projectId,
+        recordUser: !!value,
+      })
+    })
+  } catch (e) {
+    // best-effort
+  }
+}
 
 function initSocket() {
   socket.socketActionManager = new SocketActionManager(arView.value.arSessionManager)
 
-  socket.send("presentation:create", {projectId: route.params.projectId}, (data) => {
+  const recordUser = recordUserEnabled.value
+
+  // Persistance BD via route Scene
+  setRecordUserInDb(recordUser)
+
+  socket.send("presentation:create", {projectId: route.params.projectId, recordUser}, (data) => {
     console.log(data)
     presentationId.value = data.id;
   })
@@ -120,11 +146,12 @@ function hideQr() {
 }
 
 async function endPresentation() {
-  socket.send("presentation:terminate", (data) => {
-    if (data.success)
-      terminated.value = true
-    console.log(data)
-  })
+  await setRecordUserInDb(false)
+   socket.send("presentation:terminate", (data) => {
+     if (data.success)
+       terminated.value = true
+     console.log(data)
+   })
 }
 
 function highlight(asset) {
@@ -227,6 +254,69 @@ const projectUrl = computed(() => {
   return `${window.location.origin}${href}?presentation=${presentationId.value}`
 })
 
+const recordUserEnabled = computed(() => route.query.recordUser === '1' || route.query.recordUser === 'true')
+
+let isEnding = false
+
+function cleanupAndResetRecordUser() {
+  // Best-effort: le temps de propagation du paquet n'est pas garanti en unload,
+  // mais route-leave/fin explicite couvrent le cas standard.
+  if (isEnding) return
+  isEnding = true
+  setRecordUserInDb(false)
+   try {
+     socket.send("presentation:terminate", (data) => {
+       terminated.value = !!data?.success
+     })
+   } catch (e) {
+     // ignore
+   }
+}
+
+onBeforeRouteLeave((to, from, next) => {
+  cleanupAndResetRecordUser()
+  if (to?.query && ('recordUser' in to.query)) {
+    const q = { ...to.query }
+    delete q.recordUser
+    next({ ...to, query: q, replace: true })
+    return
+  }
+  next()
+})
+
+
+onBeforeUnmount(() => {
+})
+
+
+async function confirmRestartPresentation(shouldRecord) {
+  showRecordUserModal.value = false
+
+  const target = {
+    name: 'presentation',
+    params: route.params,
+    query: { recordUser: shouldRecord ? '1' : '0' },
+  }
+
+  // `router.replace` est asynchrone; si on reload trop tôt, l'URL ne change pas.
+  // Ici, on force une navigation fiable en assignant l'URL résolue.
+  const { href } = router.resolve(target)
+  window.location.assign(href)
+}
+
+function restartPresentation(e) {
+  if (e?.preventDefault) e.preventDefault()
+
+  // Popup uniquement pour un admin connecté
+  if (isAuthenticated.value && userData?.value?.admin) {
+    showRecordUserModal.value = true
+    return
+  }
+
+  // comportement historique
+  router.go()
+}
+
 </script>
 
 <template>
@@ -254,6 +344,13 @@ const projectUrl = computed(() => {
     </section>
 
     <h1>{{project.title}}</h1>
+
+    <p class="traceInfo">
+      <span class="label">Traces utilisateur :</span>
+      <span :class="recordUserEnabled ? 'success' : 'danger'">
+        {{ recordUserEnabled ? 'activées' : 'désactivées' }}
+      </span>
+    </p>
 
     <section class="flex">
       <section class="controls">
@@ -510,13 +607,21 @@ const projectUrl = computed(() => {
 
   <div v-if="terminated" class="terminated">
     <h1>{{$t('presentation.terminated')}}</h1>
-    <a href="" @click="router.go()">
+    <a href="" @click="restartPresentation">
       {{$t('presentation.restart')}}
     </a>
     <RouterLink :to="{ name: 'project', params: route.params}">
       {{$t('presentation.seeProject')}}
     </RouterLink>
   </div>
+
+  <Teleport to="body">
+    <record-user-modal
+        v-if="isAuthenticated && userData?.admin"
+        :show="showRecordUserModal"
+        @close="showRecordUserModal = false"
+        @confirm="confirmRestartPresentation" />
+  </Teleport>
 
   <div class="modal" v-if="showTerminate">
     <div>
@@ -584,10 +689,6 @@ const projectUrl = computed(() => {
 
 .bottomActionBar>div>*{
   margin-left: 8px;
-}
-
-.center + .center {
-  margin-top: 10px;
 }
 
 .modal label + input {
@@ -692,10 +793,6 @@ section > h3 {
   color: var(--succesColor)
 }
 
-section:has(>.item) {
-  margin: 0 15px 15px 0;
-}
-
 label + select {
   margin-left: 5px;
 }
@@ -721,6 +818,15 @@ label + select {
 
 .scene button {
   font-size: 1.4em;
+}
+
+.traceInfo{
+  text-align: center;
+  margin: 8px 0 16px;
+}
+.traceInfo .label{
+  margin-right: 6px;
+  opacity: 0.9;
 }
 
 @media only screen and (max-width: 600px) { /* téléphone */

@@ -2,7 +2,7 @@ import ArUser from './models/arUser.js'
 import ArProject from "./models/arProject.js";
 import ArScene from "./models/arScene.js";
 
-import {sequelize} from './database.js'
+import {sequelize, sequelizeRecords} from './database.js'
 import ArAsset from "./models/arAsset.js";
 import ArMesh from "./models/arMesh.js";
 import ArLabel from "./models/arLabel.js";
@@ -23,7 +23,8 @@ ArLabel.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 
 
 export async function initializeDatabase (options) {
-    return await sequelize.sync(options);
+    await sequelizeRecords.sync(options);
+    await sequelize.sync(options);
 }
 
 export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh}

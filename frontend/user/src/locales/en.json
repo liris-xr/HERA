@@ -167,5 +167,11 @@
   "meshLoadError": {
     "title": "Loading error",
     "message": "Unable to load file "
+  },
+  "recordUserModal": {
+    "title": "User traces recording",
+    "body": "Do you want to enable user traces recording during this session?",
+    "no": "No",
+    "yes": "Yes"
   }
 }

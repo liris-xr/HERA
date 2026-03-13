@@ -13,3 +13,18 @@ export const sequelize = new Sequelize({
     },
     logging: false,
 });
+
+const databaseRecordsPath = 'src/database/databaseRecords.sqlite';
+
+export const sequelizeRecords = new Sequelize({
+    dialect: 'sqlite',
+    storage: databaseRecordsPath,
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+    },
+    logging: false,
+});
+

@@ -9,6 +9,7 @@ import { sequelize } from '../database.js'
  * @property {string} envmapUrl
  * @property {json} vrStartPosition
  * @property {string} projectId
+ * @property {boolean} recordUser
  */
 
 export default sequelize.define('ArScene', {
@@ -49,6 +50,12 @@ export default sequelize.define('ArScene', {
         type: DataTypes.JSON,
         allowNull: false,
         defaultValue: {position: {x: 0, y: 1.7, z: 0}, rotation: {x: 0, y: 0, z: 0}}
+    },
+
+    recordUser: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
     },
 
     projectId:{

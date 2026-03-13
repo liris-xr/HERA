@@ -8,7 +8,7 @@ Vous aurez besoin d'un serveur linux qui répond aux exigences suivantes :
 - Un serveur web Apache est installé
 - Mkcert est installé ou vous disposez d'un certificat SSL présent sous la forme de deux fichiers : `certificate.crt` et `privatekey.key`
 
-Dans la suite, nous considérerons qu'il existe un utilisateur 'webadmin' sur le serveur linux. 
+Dans la suite, nous considérerons qu'il existe un utilisateur 'webadmin' sur le serveur linux.
 
 
 ## Instructions
@@ -25,7 +25,8 @@ Ici, nous considérerons que les fichiers ont été clonés dans `/home/webadmin
 Le certificat SSL peut être généré facilement avec **mkcert**. Une fois **mkcert** installé, il vous suffira d’exécuter les commandes suivantes :
 ```shell
 mkcert -install
-cd hera/backend/api
+mkdir /home/webadmin/hera/HERA/backend/certificate
+cd /home/webadmin/hera/HERA/backend/certificate
 mkcert -cert-file certificate.crt -key-file privatekey.key localhost
 ```
 
@@ -42,8 +43,8 @@ Vous aurez besoin de connaitre les informations suivantes :
 Dans la suite du document, les valeurs suivantes seront utilisées :
 - nom d'hote : `https://hera.univ-lyon1.fr`
 - l'emplacement des fichiers du certificat :
-  - `/home/webadmin/certificate/certificate.crt`
-  - `/home/webadmin/certificate/privatekey.key`
+    - `/home/webadmin/hera/HERA/backend/certificates/certificate.crt`
+    - `/home/webadmin/hera/HERA/backend/certificates/privatekey.key`
 - port API : `8080`
 
 Assurez-vous de connaitre ces informations avant de continuer.
@@ -51,22 +52,23 @@ Assurez-vous de connaitre ces informations avant de continuer.
 
 
 #### Définition du port
+Revenez au dossier `webadmin`, puis :
 ```shell
-cd hera
+cd hera/HERA
 nano ./backend/api/app.js
 ```
-Modifier la ligne 47 pour utiliser la valeur de votre choix pour le port utilisé par l'API, puis enregistrez les modifications :
+Modifier la ligne 71 dans `/backend/api/app.js` pour utiliser la valeur de votre choix pour le port utilisé par l'API, puis enregistrez les modifications :
 ```javascript 
 https.createServer(options, app).listen(8080, () => {
     console.log('Server started on port 8080')
 })
 ```
 
-Modifiez également les lignes 26 et 27 pour indiquer le chemin d'accès des fichiers du certificat :
+Modifiez également les lignes 33 et 34 pour indiquer le chemin d'accès des fichiers du certificat :
 ```javascript
 const options = {
-    key: fs.readFileSync('/home/webadmin/certificate/privatekey.key'),
-    cert: fs.readFileSync('/home/webadmin/certificate/certificate.crt')
+  key: fs.readFileSync(path.join(DIRNAME, '../certificate/privatekey.key')),
+  cert: fs.readFileSync(path.join(DIRNAME, '../certificate/certificate.crt'))
 };
 ```
 
@@ -74,6 +76,7 @@ const options = {
 
 #### Modification de la configuration du site
 Vous devez maintenant modifier le fichier de configuration du site pour lui indiquer de communiquer avec l'API sur le port que vous avez défini.
+
 ```shell
 nano ./frontend/user/src/js/endpoint.js
 ```
@@ -102,14 +105,14 @@ Pour des raisons de simplicité, nous allons également stocker l'API a cet endr
 cd /var/www
 mkdir hera
 cd hera
-cp -r /home/webadmin/hera/backend/api ./backend
+cp -r /home/webadmin/hera/HERA/backend ./backend
 ```
 Remarque : la création du dossier peut nécessiter les droits admins. Dans ce cas, assurez-vous d'accorder l'accès au dossier à l'utilisateur webadmin avec la commande `chown`, et de définir les autorisations suffisantes avec `chmod`
 
 #### Installation
 Depuis le dossier créé précédemment, lancez l'installation des dépendances :
 ```shell
-cd backend
+cd backend/api
 npm install
 ```
 À présent, vous pouvez démarrer l'API :
@@ -162,7 +165,7 @@ Une fois l'API en place, nous allons mettre en ligne les deux sites web avec Apa
 #### Copie des fichiers
 
 ```shell
-cd /home/webadmin/hera/frontend/user
+cd /home/webadmin/hera/HERA/frontend/user
 ```
 
 Comme pour l'API, il est nécessaire d'installer les dépendances :
@@ -181,20 +184,22 @@ cp .htaccess ./dist
 À présent, le dossier `dist` continent tous les fichiers statiques pouvant être hébergés par Apache.
 Comme convenu plus tôt, nous allons stocker ces fichiers dans le dossier `/var/www`
 ```shell
+mkdir /var/www/hera/frontend
+mkdir /var/www/hera/frontend/viewer
 cp -r ./dist /var/www/hera/frontend/viewer
 ```
 Remarque : pour assurer le fonctionnement du fichier `.htaccess`, le dossier destination doit être nommé `viewer` pour le site de visualisation, et `editor` pour le site d'édition.
 
 
 Répétez les étapes précédentes (la section 'Copie des fichiers') pour le site d'édition, c'est-à-dire depuis le dossier `/home/webadmin/hera/frontend/admin`.
-Assurez-vous de copier le build vers `/var/www/hera/frontend/editor`.
+Assurez-vous de copier le build vers `/var/www/hera/HERA/frontend/editor`.
 
 
 #### Configuration Apache
 La dernière étape consiste à créer le fichier de configuration Apache nécessaire à la mise en ligne des deux sites copiés précédemment.
 Un template de configuration est fourni dans les fichiers.
 ```shell
-cd '/home/webadmin/hera/apache configs'
+cd /home/webadmin/hera/HERA/apache\ configs
 nano apache.conf
 ```
 Éditez-le pour modifier les informations suivantes :
@@ -217,8 +222,8 @@ nano apache.conf
 
         SSLEngine on
 
-        SSLCertificateFile      /home/webadmin/certificate/certificate.crt        <-- chemin vers les fichier .crt du certificat
-        SSLCertificateKeyFile   /home/webadmin/certificate/privatekey.key         <-- chemin vers les fichier .key du certificat
+        SSLCertificateFile      /home/webadmin/hera/HERA/backend/certificate/certificate.crt        <-- chemin vers les fichier .crt du certificat
+        SSLCertificateKeyFile   /home/webadmin/hera/HERA/backend/certificate/privatekey.key         <-- chemin vers les fichier .key du certificat
         <FilesMatch "\.(?:cgi|shtml|phtml|php)$">
                 SSLOptions +StdEnvVars
         </FilesMatch>
@@ -252,3 +257,6 @@ Vous pouvez supprimer le dossier `/home/webadmin/hera` pour libérer de l'espace
 En cas de problème, il est possible de vérifier les logs :
 - `cat /var/log/apache2/error.log` pour les erreurs du site
 - `sudo journalctl -u hera` pour les erreurs de l'API
+
+**Remarque** : Toute modification du nom de domaine ou du port dans les fichiers `endpoint.js` nécessite un nouveau build des fichiers `users` et `admin`.
+Vous devrez exécuter `npm run build` à nouveau, puis remplacer les anciens fichiers dans le dossier `/var/www/` par le contenu des nouveaux dossiers `dist`.

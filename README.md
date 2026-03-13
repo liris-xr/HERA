@@ -14,9 +14,9 @@ Finally, the editor and the visualization tool access a common database, through
 
 The project contains 3 main components:
 - Two websites
-- **An editing site** (administrator), allowing you to create your own augmented reality projects. The default port is `8080`
+- **An editing site** (administrator), allowing you to create your own augmented reality projects. The default port is `8082`
 - **A visualization site** (user), allowing you to view the projects created from the editor. The default port is `8081`
-- An **API**, allowing to connect the two previous sites to a common database. The default port is `3000`
+- An **API**, allowing to connect the two previous sites to a common database. The default port is `8080`
 
 The files are organized according to the following structure:
 ```
@@ -68,7 +68,7 @@ cd frontend/user
 ```
 
 2. You should now be in a folder containing all the files required to run the viewer site in AR.
-This folder contains notably `package.json`, which contains the list of required dependencies. Run the installation of these dependencies:
+   This folder contains notably `package.json`, which contains the list of required dependencies. Run the installation of these dependencies:
 ```shell
 npm install
 ```
@@ -82,8 +82,8 @@ An https web server will be launched on port `8081`. Check for this message in t
 ![image](./readme/viteHttps.png)
 
 4. Test your project by accessing the page https://localhost:8081.\
-If everything went well, the home page of the site should be displayed <ins>indicating an error</ins>. This is completely normal, the page is trying to retrieve data from the API, which we have not yet configured.\
-<ins>**Note**</ins>: Depending on the browser used, you may have to accept security risks. [Details](#bypass-security-restrictions-for-development)
+   If everything went well, the home page of the site should be displayed <ins>indicating an error</ins>. This is completely normal, the page is trying to retrieve data from the API, which we have not yet configured.\
+   <ins>**Note**</ins>: Depending on the browser used, you may have to accept security risks. [Details](#bypass-security-restrictions-for-development)
 
 #### Installing the API
 1. From the project root, navigate to the `backend/api` folder:
@@ -99,10 +99,10 @@ npm install
 ```shell
 npm run start
 ```
-The API is now reachable on port `3000`: https://localhost:3000 \
+The API is now reachable on port `8080`: https://localhost:8080 \
 <ins>**Note**</ins>: The first launch may take longer, and you will have to accept the creation of a self-signed certificate.
 
-4. Go to https://localhost:3000/api/dev/hello, and make sure that no errors are displayed.
+4. Go to https://localhost:8080/api/dev/hello, and make sure that no errors are displayed.
 
 The project should now be functional. Go back to the site and refresh the page.
 The error message should disappear, and the home page should display the default projects contained in the database.
@@ -112,7 +112,7 @@ Choose one, then try to display it in augmented reality [from your smartphone](#
 Repeat the steps previously performed for the "user" site (reminder below):
 1. Go todez to the `frontend/admin` folder:
 ```shell
-cd frontend/user
+cd frontend/admin
 ```
 
 2. Start the installation of these dependencies:
@@ -124,10 +124,10 @@ npm install
 ```shell
 npm run dev
 ```
-An https web server will be launched on port `8080`.
+An https web server will be launched on port `8082`.
 
-4. Test your project by accessing the page https://localhost:8080. \
-A login page is displayed. To connect, use the default account:
+4. Test your project by accessing the page https://localhost:8082. \
+   A login page is displayed. To connect, use the default account:
 - email: `admin@gmail.com`
 - password: `admin`
 
@@ -189,43 +189,43 @@ His email and password will be required to access the editor.
 The default values ​​are: email: `admin@gmail.com`, password: `admin`.
 
 #### Changing the port
-By default, the API can be reached on port `3000`.
+By default, the API can be reached on port `8080`.
 It is possible to change this value to start on the port of your choice.
 Here is an excerpt from the `backend/api/app.js` file:
 ```js
-https.createServer(options, app).listen(process.env.PORT || 3000, () => {
-console.log('Server started on port 3000')
+httpsServer.listen(8080, () => {
+    console.log('Server started on port 8080')
 })
 ```
-Replace `3000` with the value of your choice, then restart the API (`npm run start`).
+Replace `8080` with the value of your choice, then restart the API (`npm run start`).
 
-<ins>**Note:**</ins> After changing the port, the editing and viewing sites will still attempt to make requests on port `3000`, resulting in a 404 error.
+<ins>**Note:**</ins> After changing the port, the editing and viewing sites will still attempt to make requests on port `8080`, resulting in a 404 error.
 You must change their destination address in the `frontend/user/src/js/endpoints.js` and `frontend/admin/src/js/endpoints.js` files:
 ```js
-export const ENDPOINT = `${HOST}:3000/api/` //the site will still attempt to make requests on port 3000;
+export const ENDPOINT = `${HOST}:8080/api/` //the site will still attempt to make requests on port 8080;
 ```
-Replace `3000` to use the value you chose earlier.
+Replace `8080` to use the value you chose earlier.
 
 ### <ins>Web Server Modifications</ins>
 
 [//]: # (<ins>**Note:**</ins> The operations presented in this part are presented on the viewer site, but the steps can be reproduced with the editor site.)
 
 #### File Server Configuration
-For simplicity, resources such as 3D models and images are stored directly on the web server, in the `frontend/user/public/` folder
-If you want to use a custom file server, you will need to modify the `frontend/user/src/js/endpoints.js` and `frontend/admin/src/js/endpoints.js` :
+For simplicity, heavy resources such as 3D models and images are stored in the `public/` folder and served by the main server (on port 8080 by default).
+If you wish to use a custom file server, you will need to modify the `RESOURCES_SERVER` variable in the `frontend/user/src/js/endpoints.js` and `frontend/admin/src/js/endpoints.js files` :
 ```js
-const RESOURCES_SERVER = `${HOST}:8081/public`; //by default, resources are fetched from https://localhost:8081, which is the default port of the viewer site
+const RESOURCES_SERVER = `${HOST}:8080/public`; //by default, resources are fetched from https://localhost:8080, which is the default port
 ```
 You can change the URL to change the location from which the files are loaded.
 
 #### Changing the ports
-The Vite server is launched by default on ports `8080` and `8081` for the editing and viewer sites.
+The Vite server is launched by default on ports `8081` and `8082` for the editing and viewer sites.
 It is possible to change these values, by editing the `package.json` files for each of the two sites.
 Here is a snippet:
 ``` js
 ...
 "scripts": {
-"dev": "vite --host --port 8080", //change the port here
+"dev": "vite --host --port 8081", //change the port here
 "build": "vite build",
 ...
 ```
@@ -269,10 +269,11 @@ You can resolve this issue by trying one of the two methods below:
 You should see this message if you are trying to access the site for the first time.
 To continue, simply click "Continue to site" (after expanding the "Advanced settings" section)\
 However, the site should still display an error even after accepting the risk:
+
 ![image](./readme/fetchFail.png)\
 This is because the browser is trying to fetch data from the API, which is not considered a secure resource.
 The only solution to solve this problem is to manually make a request to the API, and click on "Continue to the site" (as in the previous step)\
-[Click here to make a request on the default port](https://localhost:3000/api/dev/hello)\
+[Click here to make a request on the default port](https://localhost:8080/api/dev/hello)\
 After this step, go back to the site and refresh the page. The problem should be solved.
 
 #### Disable the https plugin
@@ -282,7 +283,7 @@ Changes are needed to the code of both sites, and the API:
 
 - For both websites:
 - Access the `frontend/user/vite.config.js` and `frontend/admin/vite.config.js` files.
-Here is an excerpt of their content:
+  Here is an excerpt of their content:
 ```js
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
@@ -299,17 +300,17 @@ mkcert(), //delete this line
 })
 ```
 - Here, two lines concern the `mkcert` plugin. Delete (or comment out) these lines, then restart the server (`npm run dev`).
-Check the message in the console:\
-![image](./readme/viteHttp.png)\
-The server is now running in `http` mode. Repeat the previous steps for the second site.
+  Check the message in the console:\
+  ![image](./readme/viteHttp.png)\
+  The server is now running in `http` mode. Repeat the previous steps for the second site.
 - To completely uninstall the plugin (optional):
 ```shell
 npm uninstall vite-plugin-mkcert
 ```
 
 - For the API:\
-On the contraryt to both websites, the API is not started using the Vite server.
-So the plugin is not available, and the steps are different:
+  On the contraryt to both websites, the API is not started using the Vite server.
+  So the plugin is not available, and the steps are different:
 - Go to the `backend/api/app.js` file. Here is an excerpt of its content:
 ```js
 ...
@@ -327,20 +328,20 @@ cert: fs.readFileSync('certificate.crt') //
 
 async function main () {
 ...
-https.createServer(options, app).listen(process.env.PORT || 3000, () => { //modify this line
-console.log('Server started on port 3000')
-})
+    httpsServer.listen(8080, () => {
+        console.log('Server started on port 8080')
+    })
 }
 ```
 - Two important modifications are to be made:
 1. Delete the lines indicated by the comment concerning `https`.
 2. Modify the `main()` function: replace `https.createServer(options, app)` with `app`, to get the following result:
 ```js
-app.listen(process.env.PORT || 3000, () => {
-console.log('Server started on port 3000')
+app.listen(process.env.PORT || 8080, () => {
+console.log('Server started on port 8080')
 })
 ```
-- Restart the API (`npm run start`), and test a request in `http`, for example http://localhost:3000/api/dev/hello
+- Restart the API (`npm run start`), and test a request in `http`, for example http://localhost:8080/api/dev/hello
 
 <ins>**Note:**</ins> After changing the `http` mode, the editing and viewing sites will still try to make requests to the API in `https` mode, resulting in an error.
 You need to change their destination address in the `frontend/user/src/js/endpoints.js` and `frontend/admin/src/js/endpoints.js` files:
@@ -389,7 +390,7 @@ However, the phone must remain plugged in permanently to maintain the connection
 adb reverse tcp:8081 tcp:8081
 ```
 This command exposes the local port `8081` of the PC through the port `8081` of the phone.
-Start over with ports `8080` and `3000` (or whatever ports you used).
+Start over with ports `8082` and `8080` (or whatever ports you used).
 - On the phone, go to https://localhost:8081 in a browser. The site should workctionner.
 
 After applying one of the two previous methods, you will be able to test augmented reality on your Android phone, provided you use the Google Chrome browser.
@@ -402,7 +403,7 @@ It is possible to access it provided you use Google Chrome on the PC and on the 
 - Make sure you have followed [these instructions](#local-access) (your phone must be connected to the PC...)
 - From the PC, go to [chrome://inspect/#devices](chrome://inspect/#devices) (from the Chrome browser)
 - After a few seconds, the list of tabs open on the phone should appear.
-Find the tab you are interested in, then click on 'inspect'
+  Find the tab you are interested in, then click on 'inspect'
 - A new window opens, from which you can interact with the site, and access the console.
 
 #### Troubleshooting performance issues

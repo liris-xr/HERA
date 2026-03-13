@@ -168,5 +168,11 @@
   "meshLoadError": {
     "title": "Erreur de chargement",
     "message": "Impossible de charger le fichier "
+  },
+  "recordUserModal": {
+    "title": "Enregistrement des traces utilisateur",
+    "body": "Souhaitez-vous activer l’enregistrement des traces utilisateur pendant cette session ?",
+    "no": "Non",
+    "yes": "Oui"
   }
 }

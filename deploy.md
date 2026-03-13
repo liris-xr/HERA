@@ -22,7 +22,8 @@ Here, we will assume that the files have been cloned in `/home/webadmin/hera`
 The SSL certificate can be easily generated with **mkcert**. Once **mkcert** has been installed, simply run the following commands:
 ```shell
 mkcert -install
-cd hera/backend/api
+mkdir /home/webadmin/HERA/backend/certificates
+cd /home/webadmin/HERA/backend/certificates
 mkcert -cert-file certificate.crt -key-file privatekey.key localhost
 ````
 
@@ -33,32 +34,33 @@ You will need to know the following information:
 - the location of the `certificate.crt` and `privatekey.key` files
 - the port on which the API will be launched
 
-In the rest of the document, the following values ​​will be used:
+In the rest of the document, the following values will be used:
 - hostname: `https://hera.univ-lyon1.fr`
 - the location of the certificate files:
-- `/home/webadmin/certificate/certificate.crt`
-- `/home/webadmin/certificate/privatekey.key`
+- `/home/webadmin/hera/HERA/backend/certificates/certificate.crt`
+- `/home/webadmin/hera/HERA/backend/certificates/privatekey.key`
 - API port: `8080`
 
 Make sure you know this information before continuing.
 
 #### Port definition
+Come back to `webadmin` directory, then :
 ```shell
-cd hera
+cd hera/HERA
 nano ./backend/api/app.js
 ```
-Modify line 47 to use your preferred value for the port used by the API, then save the changes:
+Modify line 71 in `/backend/api/app.js` to use your preferred value for the port used by the API, then save the changes:
 ```javascript
 https.createServer(options, app).listen(8080, () => {
 console.log('Server started on port 8080')
 })
 ```
 
-Also modify lines 26 and 27 to specify the path to the certificate files:
+Also modify lines 33 and 34 (if the path has been changed) to specify the path to the certificate files:
 ```javascript
 const options = {
-key: fs.readFileSync('/home/webadmin/certificate/privatekey.key'),
-cert: fs.readFileSync('/home/webadmin/certificate/certificate.crt')
+    key: fs.readFileSync(path.join(DIRNAME, '../certificate/privatekey.key')),
+    cert: fs.readFileSync(path.join(DIRNAME, '../certificate/certificate.crt'))
 };
 ```
 
@@ -90,14 +92,14 @@ For simplicity, we will also store the API there.
 cd /var/www
 mkdir hera
 cd hera
-cp -r /home/webadmin/hera/backend/api ./backend
+cp -r /home/webadmin/hera/HERA/backend ./backend
 ```
 Note: creating the folder may require admin rights. In this case, make sure to grant access to the folder to the webadmin user with the `chown` command, and set sufficient permissions with `chmod`
 
 #### Installation
 From the folder created earlier, launch the dependencies installation:
 ```shell
-cd backend
+cd backend/api
 npm install
 ```
 Now, you can start the API:
@@ -145,7 +147,7 @@ Once the API is set up, we will upload the two websites with Apache.
 #### Copying the files
 
 ```shell
-cd /home/webadmin/hera/frontend/user
+cd /home/webadmin/hera/HERA/frontend/user
 ```
 
 As for the API, it is necessary to install the dependencies:
@@ -164,18 +166,20 @@ cp .htaccess ./dist
 Now, the `dist` folder contains all the static files that can be hosted by Apache.
 As agreed earlier, we will store these files in the `/var/www` folder
 ```shell
+mkdir /var/www/hera/frontend
+mkdir /var/www/hera/frontend/viewer
 cp -r ./dist /var/www/hera/frontend/viewer
 ```
 Note: to ensure the `.htaccess` file works, the destination folder must be named `viewer` for the viewer site, and `editor` for the editor site.
 
 Repeat the previous steps (the 'Copying files' section) for the editor site, i.e. from the `/home/webadmin/hera/frontend/admin` folder.
-Make sure to copy the build to `/var/www/hera/frontend/editor`.
+Make sure to copy the build to `/var/www/hera/HERA/frontend/editor`.
 
 #### Apache Configuration
 The last step is to create the Apache configuration file needed to put the two sites copied earlier online.
 A configuration template is provided in the files.
 ```shell
-cd '/home/webadmin/hera/apache configs'
+cd /home/webadmin/hera/HERA/apache\ configs
 nano apache.conf
 ```
 Edit it to change the following information:
@@ -198,8 +202,8 @@ Edit it to change the following information:
 
     SSLEngine on
 
-    SSLCertificateFile /home/webadmin/certificate/certificate.crt <-- path to certificate .crt files
-    SSLCertificateKeyFile /home/webadmin/certificate/privatekey.key <-- path to the certificate .key files
+    SSLCertificateFile      /home/webadmin/hera/HERA/backend/certificate/certificate.crt        <-- path to certificate .crt files
+    SSLCertificateKeyFile   /home/webadmin/hera/HERA/backend/certificate/privatekey.key         <-- path to the certificate .key files
     <FilesMatch "\.(?:cgi|shtml|phtml|php)$">
         SSLOptions +StdEnvVars
     </FilesMatch>
@@ -229,3 +233,6 @@ You can delete the folder `/home/webadmin/hera` to free up space.
 In case of problems, it is possible to check the logs:
 - `cat /var/log/apache2/error.log` for site errors
 - `sudo journalctl -u hera` for API errors
+
+**Note**: Any changes made to the domain name or port in the `endpoint.js` files require a new build for `users` and `admin` parts.
+You will need to run `npm run build` again and replace the old files in the `/var/www/` directory with the content of the new `dist` folders.

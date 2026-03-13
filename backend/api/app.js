@@ -9,6 +9,7 @@ import scene from "./src/routes/scene.js";
 import dev from "./src/routes/dev.js";
 import asset from "./src/routes/asset.js";
 import label from "./src/routes/label.js";
+import record from "./src/routes/record.js";
 import cors from 'cors'
 
 
@@ -29,10 +30,9 @@ import setupSocket from "./src/socket/index.js";
 import {errorHandler} from "./src/utils/errorHandler.js";
 import zip from 'express-easy-zip'
 const options = {
-    key: fs.readFileSync('privatekey.key'),
-    cert: fs.readFileSync('certificate.crt')
+    key: fs.readFileSync(path.join(DIRNAME, '../certificate/privatekey.key')),
+    cert: fs.readFileSync(path.join(DIRNAME, '../certificate/certificate.crt'))
 };
-
 
 const app = express()
 app.use(express.json())
@@ -42,16 +42,17 @@ app.use(errorHandler)
 
 async function main () {
     await initializeDatabase({force: false});
-        // await resetDatabase();
-        // await insertDefaults();
+    // await resetDatabase();
+    // await insertDefaults();
 
     app.use(project);
     app.use(auth);
     app.use(user);
-    app.use(scene)
-    app.use(dev)
-    app.use(asset)
-    app.use(label)
+    app.use(scene);
+    app.use(dev);
+    app.use(asset);
+    app.use(label);
+    app.use(record);
     app.use('/public', express.static('public'));       //serving static files
 
     const httpsServer = https.createServer(options, app)

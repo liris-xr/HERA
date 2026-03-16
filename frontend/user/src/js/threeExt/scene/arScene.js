@@ -115,12 +115,13 @@ export class ArScene extends AbstractScene {
     }
 
     async init(){
+        //charge chaque asset
         for (let assetData of this.#assets) {
             await assetData.load();
             if(assetData.hasError()){
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
             }
-            
+            //màj les sous meshes
             this.updateAssetSubMeshes(assetData);
             if(assetData.object) {
                 this.add(assetData.object);
@@ -175,7 +176,7 @@ export class ArScene extends AbstractScene {
         return this.#boundingSphere;
     }
 
-
+    //boucle de rendu xr
     onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer){
         worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
 

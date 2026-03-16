@@ -1,4 +1,4 @@
-import { ENDPOINT, getResource } from "@/js/endpoints.js";
+import { ENDPOINT } from "@/js/endpoints.js";
 
 export async function fetchAssetManifest(assetId, token = null) {
     const headers = {};
@@ -19,30 +19,36 @@ export async function fetchAssetManifest(assetId, token = null) {
     return json;
 }
 
-/**
- * options:
- * - variantOverride: "original" | "simplified"
- * - allowFallback: boolean (default true)
- */
 export function pickVariantFromManifest(manifest, options = {}) {
     const variantOverride = options.variantOverride ?? null;
     const allowFallback = options.allowFallback ?? true;
 
-    const preferred = variantOverride || manifest.preferredVariant || "original";
-    const v = manifest.variants || {};
-    const original = v.original;
-    const simplified = v.simplified;
+    const variants = manifest?.variants || {};
+    const preferred = variantOverride || manifest?.preferredVariant || "original";
 
-    function isReady(x) { return x && x.status === "ready" && x.path; }
-    function abs(p) { return p?.startsWith("/") ? p : `/${p}`; }
+    function isReady(v) {
+        return v && v.status === "ready" && v.path;
+    }
 
-    let chosen = preferred === "simplified" ? simplified : original;
+    function abs(p) {
+        return p?.startsWith("/") ? p : `/${p}`;
+    }
 
-    if (!isReady(chosen) && allowFallback) chosen = isReady(original) ? original : simplified;
-    if (!isReady(chosen)) throw new Error(`No ready variant for asset ${manifest.assetId}`);
+    let chosenKey = preferred;
+    let chosen = variants[chosenKey];
+
+    if (!isReady(chosen) && allowFallback) {
+        const fallbackOrder = ["original", "n1", "n2", "n3", "simplified"];
+        chosenKey = fallbackOrder.find((k) => isReady(variants[k]));
+        chosen = chosenKey ? variants[chosenKey] : null;
+    }
+
+    if (!isReady(chosen)) {
+        throw new Error(`No ready variant for asset ${manifest?.assetId}`);
+    }
 
     return {
-        variant: chosen === simplified ? "simplified" : "original",
+        variant: chosenKey,
         path: abs(chosen.path),
     };
 }

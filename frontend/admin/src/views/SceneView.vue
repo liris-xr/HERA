@@ -52,7 +52,7 @@ const ready = computed(() => !loading.value && !error.value);
 
 const container = ref(null);
 
-const useSimplified = ref(false);
+const selectedVariant = ref('original');
 
 // Envmap
 const uploadedEnvmap = ref({ rawData: null, tmpUrl: "" });
@@ -74,21 +74,27 @@ watch(
     { deep: true }
 );
 
-watch(useSimplified, async (val) => {
+let variantReloadToken = 0;
+
+watch(selectedVariant, async (val) => {
+  const myToken = ++variantReloadToken;
+
   try {
     const assets = editor.scene?.assetManager?.getAssets?.value ?? [];
     for (const a of assets) {
       if (!a || a.id === "vrCamera") continue;
+      if (a.uploadData) continue;
 
-      // reload every asset with override
+      if (myToken !== variantReloadToken) return;
+
       await editor.scene.assetManager.reloadAndSwap(editor.scene, a, {
-        variantOverride: val ? "simplified" : "original",
+        variantOverride: val,
       });
-    }
 
-    //saved.value = false;
+      a.preferredVariant = val;
+    }
   } catch (e) {
-    console.error("[toggle useSimplified] error:", e);
+    console.error("[toggle selectedVariant] error:", e);
   }
 });
 
@@ -105,7 +111,6 @@ async function fetchScene(sceneId) {
   throw new Error(json.error || "Unable to fetch scene");
 }
 
-// Lifecycle
 function handleKeydown(event) {
   if (
       (event.keyCode === 46 || event.keyCode === 8) &&
@@ -421,12 +426,9 @@ async function simplifyAsset(asset, ratio) {
     asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;
     asset.simplifyRatio = a.simplifyRatio ?? r;
 
-    // Persist simplified for this asset
-    asset.preferredVariant = "simplified";
-
-    // Show simplified immediately in editor
+    asset.preferredVariant = selectedVariant.value;
     await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
-      variantOverride: "simplified",
+      variantOverride: selectedVariant.value,
     });
 
     saved.value = false;
@@ -583,8 +585,13 @@ function markChang() {
             </div>
 
             <div class="inlineFlex" style="gap: 12px">
-              <label style="margin-right: 0">Use simplified</label>
-              <input type="checkbox" v-model="useSimplified" />
+              <label style="margin-right: 0">Variant</label>
+              <select v-model="selectedVariant">
+                <option value="original">original</option>
+                <option value="n1">n1</option>
+                <option value="n2">n2</option>
+                <option value="n3">n3</option>
+              </select>
             </div>
 
             <div id="assetList">

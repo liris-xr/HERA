@@ -81,6 +81,10 @@ export class Asset extends SceneElementInterface {
 
             const manifest = await fetchAssetManifest(this.id);
             const chosen = pickVariantFromManifest(manifest, options);
+            console.log("[Viewer Asset.load] asset:", this.id);
+            console.log("[Viewer Asset.load] preferredVariant from manifest:", manifest?.preferredVariant);
+            console.log("[Viewer Asset.load] chosen variant:", chosen?.variant);
+            console.log("[Viewer Asset.load] chosen path:", chosen?.path);
             //let url = chosen.url;
            // if (url && !/^https?:\/\//i.test(url) && !url.startsWith("/")) url = "/" + url;
             const urlToLoad = chosen?.path; // <-- IMPORTANT: on charge le PATH

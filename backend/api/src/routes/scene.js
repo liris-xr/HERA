@@ -17,7 +17,8 @@ function asJson(val, fallback) {
 
 function normalizeVariant(v) {
     const s = String(v ?? "").trim().toLowerCase();
-    return s === "simplified" ? "simplified" : "original";
+    if (["original", "simplified", "n1", "n2", "n3"].includes(s)) return s;
+    return "original";
 }
 function normalizeRatio(r) {
     const n = Number(r);

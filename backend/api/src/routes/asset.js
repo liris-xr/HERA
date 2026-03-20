@@ -2,8 +2,8 @@ import express from "express";
 import { baseUrl } from "./baseUrl.js";
 import authMiddleware, { optionnalAuthMiddleware } from "../middlewares/auth.js";
 import { ArAsset, ArScene, ArProject, ArUser, ArMesh, ArLabel } from "../orm/index.js";
-import { deleteAsset } from "../utils/fileUpload.js";
-import { Sequelize } from "sequelize";
+import { deleteAsset , adminUploadAsset} from "../utils/fileUpload.js";
+import { Sequelize , Op} from "sequelize";
 import { sequelize } from "../orm/database.js";
 import { computeAssetMetrics, computeAssetPolicy } from "../socket/utils/assetMetrics.js";
 import path from "node:path";
@@ -444,5 +444,195 @@ router.delete(baseUrl + "scenes/:sceneId", authMiddleware, async (req, res) => {
         return res.status(400).send({ error: "Unable to delete scene", details });
     }
 });
+const ASSETS_PAGE_LENGTH = 10;
 
+// Sans page -> page = 1
+router.get(baseUrl + "admin/assets", authMiddleware, async (req, res) => {
+    req.params.page = "1";
+    return adminAssetsHandler(req, res);
+});
+
+// Avec page explicite
+router.get(baseUrl + "admin/assets/:page", authMiddleware, async (req, res) => {
+    return adminAssetsHandler(req, res);
+});
+
+async function adminAssetsHandler(req, res) {
+    const user = req.user;
+    const page = parseInt(req.params.page) || 1;
+
+    if (!user.admin) {
+        return res.status(401).send({
+            error: "Unauthorized",
+            details: "User not granted"
+        });
+    }
+
+    try {
+        const where = {};
+        const whereProject = {};
+
+        if (req.query?.name) {
+            where.name = {
+                [Op.like]: `%${req.query.name}%`
+            };
+        }
+
+        if (req.query["scene.project.title"]) {
+            whereProject.title = {
+                [Op.like]: `%${req.query["scene.project.title"]}%`
+            };
+        }
+
+        const { count, rows } = await ArAsset.findAndCountAll({
+            subQuery: false,
+            attributes: [
+                "id",
+                "name",
+                "hideInViewer",
+                "url",
+                "simplifiedUrl",
+                "preferredVariant",
+                "simplifyRatio",
+                "activeAnimation",
+                "position",
+                "rotation",
+                "scale",
+                "createdAt",
+                "updatedAt",
+            ],
+            limit: ASSETS_PAGE_LENGTH,
+            offset: (page - 1) * ASSETS_PAGE_LENGTH,
+            order: [["createdAt", "ASC"]],
+            include: [
+                {
+                    model: ArScene,
+                    as: "scene",
+                    required: true,
+                    include: [
+                        {
+                            model: ArProject,
+                            as: "project",
+                            where: whereProject,
+                            required: true,
+                        }
+                    ]
+                }
+            ],
+            where
+        });
+
+        return res.status(200).send({
+            assets: rows,
+            totalPages: Math.ceil(count / ASSETS_PAGE_LENGTH),
+            currentPage: page,
+        });
+    } catch (e) {
+        console.log(e);
+        return res.status(400).send({ error: "Unable to fetch assets" });
+    }
+}
+
+router.delete(baseUrl + "admin/assets/:assetId", authMiddleware, async (req, res) => {
+    const authUser = req.user;
+    const assetId = req.params.assetId;
+
+    if (!authUser.admin) {
+        return res.status(401).send({
+            error: "Unauthorized",
+            details: "User not granted"
+        });
+    }
+
+    try {
+        const asset = await ArAsset.findOne({
+            where: { id: assetId },
+        });
+
+        if (!asset) {
+            return res.status(404).send({ error: "Asset not found" });
+        }
+
+        await deleteAsset(asset);
+        await asset.destroy();
+
+        return res.status(200).send();
+    } catch (e) {
+        console.log(e);
+        return res.status(400).send({ error: "Unable to delete asset" });
+    }
+});
+
+router.put(baseUrl + "admin/assets/:assetId", authMiddleware, async (req, res) => {
+    const authUser = req.user;
+    const assetId = req.params.assetId;
+
+    if (!authUser.admin) {
+        return res.status(401).send({
+            error: "Unauthorized",
+            details: "User not granted"
+        });
+    }
+
+    try {
+        const asset = await ArAsset.findOne({
+            where: { id: assetId },
+        });
+
+        if (!asset) {
+            return res.status(404).send({ error: "Asset not found" });
+        }
+
+        await asset.update({
+            name: req.body?.name,
+            hideInViewer: req.body?.hideInViewer,
+        }, {
+            returning: true
+        });
+
+        return res.status(200).send(asset);
+    } catch (e) {
+        console.log(e);
+        return res.status(400).send({ error: "Unable to save asset" });
+    }
+});
+
+router.post(
+    baseUrl + "admin/assets",
+    authMiddleware,
+    adminUploadAsset.single("asset"),
+    async (req, res) => {
+        const authUser = req.user;
+
+        if (!authUser.admin) {
+            return res.status(401).send({
+                error: "Unauthorized",
+                details: "User not granted"
+            });
+        }
+
+        try {
+            const fileUrl = req.uploadedFilenames?.[0];
+
+            if (!fileUrl) {
+                return res.status(400).send({ error: "Missing uploaded asset file" });
+            }
+
+            const newAsset = await ArAsset.create({
+                name: req.body.name,
+                hideInViewer: req.body?.hideInViewer,
+                url: fileUrl,
+                sceneId: req.body.sceneId,
+                simplifiedUrl: null,
+                preferredVariant: "original",
+                simplifyRatio: null,
+            });
+
+            return res.status(200).send(newAsset);
+        } catch (e) {
+            console.log(e);
+            return res.status(400).send({ error: "Unable to save asset" });
+        }
+    }
+);
 export default router;

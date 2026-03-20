@@ -420,7 +420,6 @@ async function simplifyAsset(asset, ratio) {
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.error || "Simplify failed");
 
-    // backend may return {asset:{...}} or directly {...}
     const a = json.asset ?? json;
 
     asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;

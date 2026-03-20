@@ -1,6 +1,5 @@
 <script setup>
-
-import {onMounted, ref} from "vue";
+import { onMounted, onBeforeUnmount, ref } from "vue";
 
 const props = defineProps({
   sections: { type: Object, required: true }
@@ -8,38 +7,48 @@ const props = defineProps({
 
 const activeSection = ref(null)
 
-function scrollTo(section) {
+function getSectionElement(sectionKey) {
+  return props.sections?.[sectionKey]?.value?.element ?? null
+}
 
-  const el = props.sections[section].element
-  window.scrollTo({top: el.offsetTop - 65, behavior: "smooth"})
+function scrollTo(sectionKey) {
+  const el = getSectionElement(sectionKey)
+  if (!el) return
 
+  window.scrollTo({
+    top: el.offsetTop - 65,
+    behavior: "smooth"
+  })
 }
 
 function handleScroll() {
-  for(const fieldName of Object.keys(props.sections)) {
-    const section = props.sections[fieldName];
-    const el = section.element
+  for (const fieldName of Object.keys(props.sections)) {
+    const el = getSectionElement(fieldName)
+    if (!el) continue
 
     const top = el.offsetTop
     const height = el.offsetHeight
 
-    if(window.scrollY + 125 >= top && window.scrollY + 125 <= top + height) {
+    if (window.scrollY + 125 >= top && window.scrollY + 125 <= top + height) {
       activeSection.value = el.getAttribute("section")
     }
-
   }
 }
 
 onMounted(() => {
-  for (const section of Object.keys(props.sections)) {
-    props.sections[section].element.setAttribute("section", section)
+  for (const sectionKey of Object.keys(props.sections)) {
+    const el = getSectionElement(sectionKey)
+    if (!el) continue
+    el.setAttribute("section", sectionKey)
   }
 
   window.addEventListener("scroll", handleScroll)
   handleScroll()
-
 })
 
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", handleScroll)
+})
 </script>
 
 <template>

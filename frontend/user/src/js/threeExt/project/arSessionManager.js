@@ -295,7 +295,6 @@ export class ArSessionManager {
     }
 
     onXrFrame(time, frame) {
-
         this.sceneManager.onXrFrame(time, frame, this.referenceSpace, this.arCamera, this.arRenderer);
         this.controls.update();
 

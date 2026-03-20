@@ -127,8 +127,10 @@ export class ArSceneManager{
 
     onXrFrame(time, frame, localSpace, camera, renderer){
         // this.#lightEstimate.onXrFrame(time, frame, lightProbe);
-        
+
         this.active.value.onXrFrame(time, frame, localSpace, this.scenePlacementManager.getWorldTransformMatrix(), camera, renderer);
+        //console.log("[ArSessionManager.onXrFrame", this.active.value?.sceneId);
+
     }
 
     onSceneClick(event){

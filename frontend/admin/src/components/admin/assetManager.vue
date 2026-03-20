@@ -2,10 +2,8 @@
 import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
-import * as sea from "node:sea";
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
-import IconSvg from "@/components/icons/IconSvg.vue";
 import Notification from "@/components/notification/notification.vue";
 import {toast} from "vue3-toastify";
 

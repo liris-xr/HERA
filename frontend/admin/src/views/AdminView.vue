@@ -17,7 +17,6 @@ import AssetManager from "@/components/admin/assetManager.vue";
 import LabelManager from "@/components/admin/labelManager.vue";
 import 'vue3-toastify/dist/index.css';
 import TableOfContent from "@/components/admin/tableOfContent.vue";
-import scene from "three/addons/offscreen/scene.js";
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()

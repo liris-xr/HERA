@@ -325,5 +325,98 @@ router.put(
         }
     }
 );
+const SCENES_PAGE_LENGTH = 10;
 
+// Sans page -> page = 1
+router.get(baseUrl + "admin/scenes", authMiddleware, async (req, res) => {
+    req.params.page = "1";
+    return adminScenesHandler(req, res);
+});
+
+// Avec page explicite
+router.get(baseUrl + "admin/scenes/:page", authMiddleware, async (req, res) => {
+    return adminScenesHandler(req, res);
+});
+
+async function adminScenesHandler(req, res) {
+    const token = req.user;
+    const page = parseInt(req.params.page) || 1;
+
+    if (!token.admin) {
+        return res.status(403).send({ error: "User not granted" });
+    }
+
+    try {
+        const where = {};
+        const whereProject = {};
+
+        if (req.query?.title) {
+            where.title = {
+                [Op.like]: `%${req.query.title}%`
+            };
+        }
+
+        if (req.query["project.title"]) {
+            whereProject.title = {
+                [Op.like]: `%${req.query["project.title"]}%`
+            };
+        }
+
+        const rows = await ArScene.findAll({
+            subQuery: false,
+            include: [
+                {
+                    model: ArMesh,
+                    separate: true,
+                    as: "meshes"
+                },
+                {
+                    model: ArAsset,
+                    separate: true,
+                    as: "assets",
+                    attributes: [
+                        "id", "name", "url", "simplifiedUrl",
+                        "preferredVariant", "simplifyRatio",
+                        "hideInViewer", "activeAnimation",
+                        "position", "rotation", "scale",
+                        "createdAt", "updatedAt",
+                    ],
+                },
+                {
+                    model: ArLabel,
+                    separate: true,
+                    as: "labels",
+                },
+                {
+                    model: ArProject,
+                    as: "project",
+                    attributes: ["id", "title", "unit", "displayMode"],
+                    where: whereProject,
+                    include: [
+                        {
+                            model: ArUser,
+                            as: "owner",
+                            attributes: ["id", "username"]
+                        }
+                    ]
+                }
+            ],
+            order: [["createdAt", "ASC"]],
+            limit: SCENES_PAGE_LENGTH,
+            offset: (page - 1) * SCENES_PAGE_LENGTH,
+            where
+        });
+
+        const count = await ArScene.count({ where });
+
+        return res.status(200).send({
+            scenes: rows,
+            totalPages: Math.ceil(count / SCENES_PAGE_LENGTH),
+            currentPage: page,
+        });
+    } catch (e) {
+        console.log(e);
+        return res.status(400).send({ error: "Unable to fetch scenes" });
+    }
+}
 export default router;

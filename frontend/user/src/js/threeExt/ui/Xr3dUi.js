@@ -1,7 +1,6 @@
 import * as ThreeMeshUI from "three-mesh-ui"
 import * as THREE from "three"
 import {watch} from "vue";
-import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {createButton} from "@/js/threeExt/ui/utils.js";
 import {generateUUID} from "three/src/math/MathUtils.js";
 import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.js";

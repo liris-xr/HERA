@@ -5,13 +5,38 @@ import {ArMeshLoadError} from "@/js/threeExt/error/arMeshLoadError.js";
 import {ShadowPlane} from "@/js/threeExt/lighting/shadowPlane.js";
 import {AbstractScene} from "@/js/threeExt/scene/abstractScene.js";
 import {LabelPlayer} from "@/js/threeExt/postProcessing/labelPlayer.js";
-import {Vector3} from "three";
 import {EmptyAsset} from "@/js/threeExt/modelManagement/emptyAsset.js";
 import {EXRLoader} from "three/addons";
 import {getResource} from "@/js/endpoints.js";
 import { MeshManager } from "../modelManagement/meshManager";
-import scene from "three/addons/offscreen/scene.js";
+import {buildAssetRuntimeMetrics} from "@/js/threeExt/runtimeLod/runtimeMetrics.js";
+import {selectAssetVariant} from "@/js/threeExt/runtimeLod/variantSelector.js";
+import {ensureAssetVariant} from "@/js/threeExt/runtimeLod/variantApplier.js";
 
+function ensureLodDebugOverlay() {
+    let el = document.getElementById("lod-debug-overlay");
+
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "lod-debug-overlay";
+        el.style.position = "fixed";
+        el.style.top = "12px";
+        el.style.left = "12px";
+        el.style.zIndex = "99999";
+        el.style.padding = "10px 12px";
+        el.style.borderRadius = "10px";
+        el.style.fontFamily = "monospace";
+        el.style.fontSize = "14px";
+        el.style.lineHeight = "1.4";
+        el.style.color = "white";
+        el.style.background = "rgba(0,0,0,0.8)";
+        el.style.pointerEvents = "none";
+        el.style.whiteSpace = "pre-line";
+        document.body.appendChild(el);
+    }
+
+    return el;
+}
 export class ArScene extends AbstractScene {
     sceneId
     title;
@@ -65,13 +90,23 @@ export class ArScene extends AbstractScene {
 
         this.clock = new THREE.Clock();
 
+        this._lastVariantUpdateTime = 0;
+        this._variantUpdateIntervalMs = 500;
+        this._lodConfig = {
+            near: 0.3,
+            medium: 0.7,
+            far: 1.2,
+        };
+        this.debugLod = {
+            distance: null,
+            current: null,
+            target: null,
+        };
     }
 
     getAssetSubMeshes(assetData) {
         let subMeshes = []
-
-        console.log(assetData);
-        
+        //console.log(assetData);
 
         const step = (child,transform) => {
             for(let children of child.children) {
@@ -115,24 +150,22 @@ export class ArScene extends AbstractScene {
     }
 
     async init(){
-        //charge chaque asset
         for (let assetData of this.#assets) {
             await assetData.load();
-            if(assetData.hasError()){
+
+            if (assetData.hasError() || !assetData.object) {
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
+                console.error(`[ArScene] Failed to load asset: ${assetData.sourceUrl}`);
+                continue;
             }
-            //màj les sous meshes
+
             this.updateAssetSubMeshes(assetData);
-            if(assetData.object) {
-                this.add(assetData.object);
-            } else {
-                this.add(assetData.mesh);
-            }
+            this.add(assetData.object);
         }
+
         this.computeBoundingSphere(true);
         this.#shadowPlane = new ShadowPlane(this.computeBoundingBox(false));
         this.#shadowPlane.pushToScene(this);
-
     }
 
     getErrors = computed(()=>{
@@ -160,6 +193,7 @@ export class ArScene extends AbstractScene {
         if(forceCompute || this.#boundingBox==null){
             const group = new THREE.Group();
             for (let asset of this.#assets) {
+                if (!asset?.object) continue;
                 group.add(asset.object.clone());
             }
             this.#boundingBox = new THREE.Box3().setFromObject(group);
@@ -177,17 +211,102 @@ export class ArScene extends AbstractScene {
     }
 
     //boucle de rendu xr
-    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer){
-        worldTransformMatrix.decompose( this.position, this.quaternion, this.scale );
+    async onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer) {
+        //console.log("[ArScene.onXrFrame", this.sceneId);
 
+        worldTransformMatrix.decompose(this.position, this.quaternion, this.scale);
+        if (!this._lastSceneDebugPos) {
+            this._lastSceneDebugPos = new THREE.Vector3();
+        }
+
+        const sceneMove = this.position.distanceTo(this._lastSceneDebugPos);
+
+        if (sceneMove > 0.02) {
+            console.log("[AR SCENE MOVE]",
+                "sceneId:", this.sceneId,
+                "position:", {
+                    x: Number(this.position.x.toFixed(3)),
+                    y: Number(this.position.y.toFixed(3)),
+                    z: Number(this.position.z.toFixed(3)),
+                },
+                "delta:", Number(sceneMove.toFixed(4))
+            );
+
+            this._lastSceneDebugPos.copy(this.position);
+        }
         // animation
         const delta = this.clock.getDelta()
-        for(let asset of this.#assets)
+        for (let asset of this.#assets)
             if (asset.animationMixer)
                 asset.animationMixer.update(delta)
 
-
+        const now = performance.now();
         this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer);
+
+        if (now - this._lastVariantUpdateTime >= this._variantUpdateIntervalMs) {
+            this._lastVariantUpdateTime = now;
+
+            for (const asset of this.#assets) {
+                if (!asset?.object) continue;
+                if (asset instanceof EmptyAsset) continue;
+
+                try {
+                    const manifest = await asset.getManifest().catch(() => null);
+                    if (!manifest) continue;
+                    //calcul métriques runtime
+                    const metrics = buildAssetRuntimeMetrics(asset, camera);
+                    const targetVariant = selectAssetVariant(manifest, metrics, this._lodConfig);
+
+                    asset.debugLod = {
+                        distance: Number(metrics.cameraDistance.toFixed(2)),
+                        current: asset.currentVariant,
+                        target: targetVariant,
+                    };
+
+                    if (this.#assets[0] === asset) {
+                        const overlay = ensureLodDebugOverlay();
+
+                        const colorMap = {
+                            original: "rgba(46, 204, 113, 0.9)",
+                            n1: "rgba(241, 196, 15, 0.9)",
+                            n2: "rgba(230, 126, 34, 0.9)",
+                            n3: "rgba(231, 76, 60, 0.9)",
+                            simplified: "rgba(52, 152, 219, 0.9)"
+                        };
+
+                        overlay.style.background = colorMap[targetVariant] || "rgba(0,0,0,0.8)";
+                        overlay.innerHTML = [
+                            `distance: ${metrics.cameraDistance.toFixed(2)}`,
+                            `current: ${asset.currentVariant ?? "-"}`,
+                            `target: ${targetVariant ?? "-"}`,
+                        ].join("<br>");
+                    }
+
+                    if (asset.lastDebugTargetVariant !== targetVariant) {
+                        console.log("[LOD CHANGE]",
+                            "asset:", asset.id,
+                            "distance:", metrics.cameraDistance.toFixed(2),
+                            "current:", asset.currentVariant,
+                            "target:", targetVariant
+                        );
+                        asset.lastDebugTargetVariant = targetVariant;
+                    }
+
+                    await ensureAssetVariant(asset, this, targetVariant);
+                    //this.postSwapAssetUpdate(asset);
+                    /*const changed = await ensureAssetVariant(asset, this, targetVariant);
+                    if (changed) {
+                        this.postSwapAssetUpdate(asset);
+                        this.#boundingBox = null;
+                        this.#boundingSphere = null;
+                    }*/
+
+                } catch (e) {
+                    console.error("[LOD LOOP ERROR]", asset?.id, e);
+                }
+            }
+        }
+        //console.log("[OnXRFrame] called");
     }
 
     hasAssets() {
@@ -203,5 +322,12 @@ export class ArScene extends AbstractScene {
             if(asset.id === id)
                 return asset
         return null
+    }
+
+    postSwapAssetUpdate(asset) {
+        if (!asset?.object) return;
+        this.updateAssetSubMeshes(asset);
+        this.#boundingBox = null;
+        this.#boundingSphere = null;
     }
 }

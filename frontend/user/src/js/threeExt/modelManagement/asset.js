@@ -4,6 +4,30 @@ import { reactive, ref } from "vue";
 import { ObjectManager } from "@/js/threeExt/modelManagement/objectManager.js";
 import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/assetManifest.js";
 
+function applyVariantDebugColor(object, variant) {
+    const colorMap = {
+        original: 0x000000,
+        n1: 0xffff00,
+        n2: 0xff8800,
+        n3: 0xff0000,
+    };
+
+    const color = colorMap[variant] ?? 0xffffff;
+
+    object.traverse((child) => {
+        if (child.isMesh && child.material) {
+            if (Array.isArray(child.material)) {
+                child.material.forEach(mat => {
+                    if (mat.color) mat.color.setHex(color);
+                });
+            } else {
+                if (child.material.color) {
+                    child.material.color.setHex(color);
+                }
+            }
+        }
+    });
+}
 function debugObjectAlignment(label, obj) {
     if (!obj) {
         console.log(`[${label}] no object`);
@@ -277,7 +301,6 @@ export class Asset extends SceneElementInterface {
 
             if (!chosen?.path) return;
             if (this.currentVariant === chosen.variant) return;
-
             const loaded = await manager.load(chosen.path);
             const newObject = loaded.object ?? loaded;
 
@@ -311,14 +334,15 @@ export class Asset extends SceneElementInterface {
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;
+            applyVariantDebugColor(newObject, this.currentVariant);
 
             scene.add(newObject);
             newObject.updateMatrixWorld(true);
             //debugFullObject(`after add ${chosen.variant}`, newObject);
-            if (typeof scene.postSwapAssetUpdate =="function") {
+            /*if (typeof scene.postSwapAssetUpdate =="function") {
                 scene.postSwapAssetUpdate(this);
 
-            }
+            }*/
         } catch (e) {
             console.error("[Asset.swapToVariant] failed", this.id, variantOverride, e);
         }

@@ -91,11 +91,12 @@ export class ArScene extends AbstractScene {
         this.clock = new THREE.Clock();
 
         this._lastVariantUpdateTime = 0;
-        this._variantUpdateIntervalMs = 500;
+        this._variantUpdateIntervalMs = 3000;
         this._lodConfig = {
-            near: 0.3,
-            medium: 0.7,
-            far: 1.2,
+            near: 2.0,
+            medium: 4.0,
+            far: 8.0,
+            hysteresis: 0.5,
         };
         this.debugLod = {
             distance: null,
@@ -133,7 +134,7 @@ export class ArScene extends AbstractScene {
         const step = (child,transform) => {
             for(let children of child.children) {
                 if ("material" in children) {
-                    children.applyMatrix4(transform)
+                    //children.applyMatrix4(transform)
                     const subMeshData = this.meshDataMap.get(children.name)
                     this.meshManager.updateSubMesh(children,subMeshData)
                     children.updateMatrixWorld()
@@ -255,7 +256,8 @@ export class ArScene extends AbstractScene {
                     if (!manifest) continue;
                     //calcul métriques runtime
                     const metrics = buildAssetRuntimeMetrics(asset, camera);
-                    const targetVariant = selectAssetVariant(manifest, metrics, this._lodConfig);
+                    console.log("METRICS", metrics);
+                    const targetVariant = selectAssetVariant(manifest, metrics, this._lodConfig,asset.currentVariant);
 
                     asset.debugLod = {
                         distance: Number(metrics.cameraDistance.toFixed(2)),
@@ -276,7 +278,9 @@ export class ArScene extends AbstractScene {
 
                         overlay.style.background = colorMap[targetVariant] || "rgba(0,0,0,0.8)";
                         overlay.innerHTML = [
-                            `distance: ${metrics.cameraDistance.toFixed(2)}`,
+                            `distance: ${(metrics.cameraDistance ?? Infinity).toFixed(2)}`,
+                            `radius: ${(metrics.boundingRadius ?? 0).toFixed(2)}`,
+                            `normDist: ${(metrics.normalizedDistance ?? Infinity).toFixed(2)}`,
                             `current: ${asset.currentVariant ?? "-"}`,
                             `target: ${targetVariant ?? "-"}`,
                         ].join("<br>");

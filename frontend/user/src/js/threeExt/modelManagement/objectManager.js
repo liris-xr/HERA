@@ -25,16 +25,33 @@ class ObjectManagerInstance {
         return this.#objects[this.#indexOf(url)];
     }
 
+    cloneCachedObjects(cachedObject) {
+        const clonedScene = cachedObject.object?.clone? cachedObject.object.clone(true) : cachedObject.object ;
+        if (clonedScene){
+            clonedScene.animations = cachedObject.animations ?? [];
+        }
+        return {
+            sourceUrl: cachedObject.sourceUrl,
+            object: clonedScene,
+            animations: cachedObject.animations ?? [] ,
+            hasError: () => cachedObject.hasError(),
+
+        };
+    }
     async load(url){
-        // if(this.isLoaded(url)) {
-        //     console.warn("object already loaded");
-        //     return this.getObject(url);
-        // }
+        if(this.isLoaded(url)) {
+
+             console.warn("[objectManager] cache hit :", url);
+             const cachedObject = this.getObject(url);
+             return this.cloneCachedObjects(cachedObject);
+         }
+        console.log("[objectManager] cache miss :", url);
+
         const object = new Object3D(url);
         await object.load();
         this.#objects.push(object);
         
-        return object;
+        return this.cloneCachedObjects(object);
     }
 }
 

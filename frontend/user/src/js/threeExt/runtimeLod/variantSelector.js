@@ -1,24 +1,36 @@
-//prend les métriques et variantes dispo puis choisis la meilleure
-export function selectAssetVariant(manifest, metrics, config = {}) {
+export function selectAssetVariant(manifest, metrics, config = {}, currentVariant = null) {
     const variants = manifest?.variants || {};
 
     const has = (k) => variants[k] && variants[k].status === "ready" && variants[k].path;
 
+    // seuils sur distance normalisée = distance / radius
     const {
-        near = 10,
-        medium = 20,
-        far = 30,
+        near = 2.0,
+        medium = 4.0,
+        far = 8.0,
+        hysteresis = 0.5,
     } = config;
 
-    const d = metrics?.cameraDistance ?? Infinity;
+    const nd = metrics?.normalizedDistance ?? Infinity;
 
-    let target = "original";
-    if (d >= far) target = "n3";
-    else if (d >= medium) target = "n2";
-    else if (d >= near) target = "n1";
-    else target = "original";
+    let target = currentVariant ?? "original";
 
-    // fallback intelligent
+    if (target === "simplified") target = "n1";
+
+    if (target === "original") {
+        if (nd >= near + hysteresis) target = "n1";
+    } else if (target === "n1") {
+        if (nd < near - hysteresis) target = "original";
+        else if (nd >= medium + hysteresis) target = "n2";
+    } else if (target === "n2") {
+        if (nd < medium - hysteresis) target = "n1";
+        else if (nd >= far + hysteresis) target = "n3";
+    } else if (target === "n3") {
+        if (nd < far - hysteresis) target = "n2";
+    } else {
+        target = "original";
+    }
+
     if (has(target)) return target;
     if (target === "n3" && has("n2")) return "n2";
     if ((target === "n3" || target === "n2") && has("n1")) return "n1";

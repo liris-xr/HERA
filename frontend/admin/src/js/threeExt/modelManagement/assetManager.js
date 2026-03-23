@@ -39,26 +39,26 @@ export class AssetManager {
 
     updateAssetSubMeshes(assetData, meshManager, scene) {
         const step = (child, transform) => {
-            for (let children of child.children) {
+            if (!child?.children) return;
+
+            for (const children of child.children) {
                 if ("material" in children) {
                     children.applyMatrix4(transform);
 
                     children.userData = children.userData ?? {};
                     children.userData.assetId = assetData.id;
 
-                    // stable unique mesh id
                     const subMeshId = `project-${this.projectId}-scene-${this.sceneTitle}-asset-${assetData.id}-mesh-${children.name}`;
                     children.userData.id = subMeshId;
 
                     const subMeshData = this.meshDataMap.get(assetData.id)?.[subMeshId];
-                    this.meshManagerMap.get(assetData.id).addSubMesh(scene, children, subMeshData);
+                    meshManager.addSubMesh(scene, children, subMeshData);
                 } else {
                     step(children, transform);
                 }
             }
         };
 
-        if (assetData.mesh) step(assetData.mesh, new THREE.Matrix4());
         const root = assetData.object ?? assetData.mesh;
         if (root) step(root, new THREE.Matrix4());
     }
@@ -75,64 +75,77 @@ export class AssetManager {
             this.runOnChanged();
         }
 
-        // this.applyVariantToAssetForLoading(asset, options);
-
         const ctx = { scene, asset, onAdd, options: { ...options } };
 
         return runLinearGraph(ctx, createDefaultAssetGraph())
             .then(() => {
-                if (decomposeMesh) this.updateAssetSubMeshes(asset, this.meshManagerMap.get(asset.id), scene);
+                if (decomposeMesh) {
+                    this.updateAssetSubMeshes(asset, this.meshManagerMap.get(asset.id), scene);
+                }
                 if (onAdd) onAdd(asset);
                 return asset;
             })
-            .catch(() => {
+            .catch((e) => {
+                console.error("[addToScene] failed", e);
                 scene.appendError(new MeshLoadError(asset.sourceUrl));
+                return null;
             });
     }
 
     async reloadAndSwap(scene, asset, options = {}) {
         if (!asset) return false;
 
-        const wasSelected = scene?.getSelected?.() === asset;
-        if (wasSelected && scene?.transformControls?.detach) {
-            scene.transformControls.detach();
+        const currentSelected = scene?.getSelected?.();
+        const wasAssetSelected = currentSelected === asset;
+        const wasSubMeshSelected = currentSelected?.userData?.assetId === asset.id;
+        const shouldClearSelection = wasAssetSelected || wasSubMeshSelected;
+
+        if (shouldClearSelection) {
+            scene?.setSelected?.(null);
         }
 
-        const oldObj = asset.object ?? asset.mesh ?? null;
+        const oldObj = asset.getObject?.() ?? asset.object ?? asset.mesh ?? null;
 
         if (oldObj) {
             scene.remove(oldObj);
 
             oldObj.traverse((obj) => {
                 if (!obj) return;
+
                 if (obj.geometry) obj.geometry.dispose?.();
+
                 const mat = obj.material;
-                if (Array.isArray(mat)) mat.forEach((m) => m?.dispose?.());
-                else mat?.dispose?.();
+                if (Array.isArray(mat)) {
+                    mat.forEach((m) => m?.dispose?.());
+                } else {
+                    mat?.dispose?.();
+                }
             });
         }
 
+        // Important: kill stale references before reload
+        asset.object = null;
+        asset.mesh = null;
+
         this.meshManagerMap.delete(asset.id);
         this.meshManagerMap.set(asset.id, new MeshManager());
-
-        //this.applyVariantToAssetForLoading(asset, options);
 
         const ctx = { scene, asset, onAdd: null, options: { ...options } };
 
         try {
             await runLinearGraph(ctx, createDefaultAssetGraph());
 
-            asset.mesh = asset.object ?? asset.mesh;
+            const newRoot = asset.getObject?.() ?? asset.object ?? asset.mesh ?? null;
+            if (!newRoot) {
+                throw new Error("[reloadAndSwap] new asset root missing after graph run");
+            }
 
             this.updateAssetSubMeshes(asset, this.meshManagerMap.get(asset.id), scene);
 
-            // re-attach transform controls if needed
-            if (wasSelected) {
+            if (wasAssetSelected) {
                 scene?.setSelected?.(asset);
-                const obj = asset.object ?? asset.mesh;
-                if (obj && scene?.transformControls?.attach) {
-                    scene.transformControls.attach(obj);
-                }
+            } else {
+                scene?.setSelected?.(null);
             }
 
             this.runOnChanged();
@@ -140,6 +153,7 @@ export class AssetManager {
         } catch (e) {
             console.error("[reloadAndSwap] failed", e);
             scene.appendError(new MeshLoadError(asset.sourceUrl));
+            scene?.setSelected?.(null);
             return false;
         }
     }
@@ -152,14 +166,13 @@ export class AssetManager {
         this.#assets.splice(idx, 1);
         this.runOnChanged();
 
-        if (currentAsset.mesh) scene.remove(currentAsset.mesh);
-        this.meshManagerMap.delete(asset.id);
+        const root = currentAsset.getObject?.() ?? currentAsset.object ?? currentAsset.mesh ?? null;
+        if (root) scene.remove(root);
 
+        this.meshManagerMap.delete(asset.id);
         return true;
     }
 
-    // ---------------------------
-    // Mesh sa
     getResultMeshes() {
         const result = [];
         const seen = new Set();
@@ -208,7 +221,7 @@ export class AssetManager {
 
     getResultAssets() {
         const result = [];
-        for (let asset of this.#assets) {
+        for (const asset of this.#assets) {
             if (asset.id === "vrCamera") continue;
 
             const preferredVariant =
@@ -240,8 +253,10 @@ export class AssetManager {
 
     getSceneBoundingBox() {
         const boundingGroup = [];
+
         this.meshManagerMap.forEach((meshManager) => {
-            for (let mesh of meshManager.getMeshes.value) {
+            for (const mesh of meshManager.getMeshes.value) {
+                if (!mesh) continue;
                 const meshBoundingBox = new THREE.Box3().setFromObject(mesh);
                 boundingGroup.push(meshBoundingBox);
             }
@@ -249,10 +264,12 @@ export class AssetManager {
 
         let vMin = new Vector3(0, 0, 0);
         let vMax = new Vector3(0, 0, 0);
-        for (let boundingBox of boundingGroup) {
+
+        for (const boundingBox of boundingGroup) {
             vMin.min(boundingBox.min);
             vMax.max(boundingBox.max);
         }
+
         return new THREE.Box3(vMin, vMax);
     }
 
@@ -305,12 +322,8 @@ export class AssetManager {
             const db = dbMap.get(asset.id);
             if (!db) continue;
 
-            // store original db url safely
             asset.__originalSourceUrl = db.url ?? asset.__originalSourceUrl ?? asset.sourceUrl;
-
-            // set active sourceUrl = original by default; loader will override when needed
             asset.sourceUrl = asset.__originalSourceUrl;
-
             asset.simplifiedUrl = db.simplifiedUrl ?? asset.simplifiedUrl ?? null;
             asset.preferredVariant = db.preferredVariant ?? asset.preferredVariant ?? "original";
             asset.simplifyRatio = db.simplifyRatio ?? asset.simplifyRatio ?? null;

@@ -51,8 +51,6 @@ for asset in sceneAssets:
     fullPath = os.path.join(rawBaseAssetPath, cleanAssetUrlPath)
     rr.log(f"{entity_root}/mesh", rr.Asset3D(path = fullPath), static=True)
 
-dbConnexion.close()
-
 # ---- 3. FRAME RECOVERY AND PROCESSING ----
 
 # -- Raw path to db (temporary - will be changed once the interface is complete) --
@@ -98,7 +96,12 @@ else:
 
 # -- Replay parameter --
 TARGET_FPS = 60          
-SECONDS_PER_KEYFRAME = 2.0 
+cursor.execute("SELECT frame FROM ArRecords WHERE sceneId = ? AND userId = ? ORDER BY time ASC;", (rawSceneID, rawUserID))
+frames = cursor.fetchall()
+if len(frames) >= 2:
+    firstFrame = frames[0][0]
+    secondFrame = frames[1][0]
+    SECONDS_PER_KEYFRAME = int(secondFrame) - int(firstFrame)
 
 # Coordinate System Fix: WebXR cameras face -Z, while Rerun expects +Z.
 # A 180° rotation around X is required to align the forward direction.
@@ -141,5 +144,6 @@ for i in range(len(keyframes) - 1):
         )
         global_time += (1.0 / TARGET_FPS)
 
+dbConnexion.close()
 dbRecordConnexion.close()
 print(f"Finished, please find the replay ({global_time:.2f} s) on rerun." + "\n" + "WARNING : Don't forget to set 'stable_time' and follow the 'player_camera' element")

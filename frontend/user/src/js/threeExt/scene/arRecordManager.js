@@ -10,11 +10,22 @@ export class ArRecordManager {
     intervalRecordId = -1;
     intervalSendRecordsId = -1;
 
-    constructor(recordTimerMs = 2000, sendRecordsTimerMs = 30000) {
-        this.recordTimerMs = recordTimerMs;
-        this.sendRecordsTimerMs = sendRecordsTimerMs;
+    constructor() {
         const userSession = new UserSession();
         this.userTempId = userSession.getUserId();
+    }
+
+    async fetchAnalyticsConfig() {
+        try {
+            const res = await fetch(`${ENDPOINT}config/analytics`);
+            if (res.ok) {
+                const config = await res.json();
+                this.recordTimerMs = config.recordTimerMs || 2000;
+                this.sendRecordsTimerMs = config.sendRecordsTimerMs || 30000;
+            }
+        } catch (e) {
+            console.warn(e);
+        }
     }
 
     async addToBuffer(data){

@@ -60,13 +60,13 @@ export class ArSceneManager{
     })
 
     async init(){
+        await this.recordManager.fetchAnalyticsConfig();
         await this.scenePlacementManager.init()
         for (let scene of this.scenes) {
             await scene.init();
         }
         this.setFirstActive();
         this.#updateLighting();
-
     }
 
     startRecordingScene(){

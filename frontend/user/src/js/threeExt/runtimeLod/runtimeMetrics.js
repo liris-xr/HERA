@@ -2,6 +2,7 @@ import * as THREE from "three";
 
 const _assetWorldPos = new THREE.Vector3();
 const _sphere = new THREE.Sphere();
+const _cameraWorldPos = new THREE.Vector3();
 
 export function buildAssetRuntimeMetrics(asset, camera) {
     if (!asset?.object || !camera) {
@@ -13,8 +14,9 @@ export function buildAssetRuntimeMetrics(asset, camera) {
     }
 
     asset.object.getWorldPosition(_assetWorldPos);
+    camera.getWorldPosition(_cameraWorldPos);
 
-    const cameraDistance = camera.position.distanceTo(_assetWorldPos);
+    const cameraDistance = _cameraWorldPos.distanceTo(_assetWorldPos);
 
     const box = new THREE.Box3().setFromObject(asset.object);
     box.getBoundingSphere(_sphere);

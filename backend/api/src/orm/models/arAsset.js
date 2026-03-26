@@ -75,5 +75,10 @@ export default sequelize.define('ArAsset', {
     simplifyRatio: {
         type: DataTypes.FLOAT,
         allowNull: true,
+    },
+    lodMeta : {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: null,
     }
 })

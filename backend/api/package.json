@@ -11,6 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@gltf-transform/core": "^4.3.0",
+    "@gltf-transform/extensions": "^4.3.0",
+    "@gltf-transform/functions": "^4.3.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
@@ -19,6 +22,7 @@
     "express-easy-zip": "^1.1.5",
     "jsonwebtoken": "^9.0.3",
     "mariadb": "^3.5.1",
+    "meshoptimizer": "^1.0.1",
     "multer": "^2.0.2",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.3",

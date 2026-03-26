@@ -40,7 +40,7 @@ router.get(baseUrl + "scenes/:sceneId", authMiddleware, async (req, res) => {
                     as: "assets",
                     attributes: [
                         "id", "name", "url", "simplifiedUrl",
-                        "preferredVariant", "simplifyRatio",
+                        "preferredVariant", "simplifyRatio", "lodMeta",
                         "hideInViewer", "activeAnimation",
                         "position", "rotation", "scale",
                         "createdAt", "updatedAt",
@@ -376,7 +376,7 @@ async function adminScenesHandler(req, res) {
                     as: "assets",
                     attributes: [
                         "id", "name", "url", "simplifiedUrl",
-                        "preferredVariant", "simplifyRatio",
+                        "preferredVariant", "simplifyRatio", "lodMeta",
                         "hideInViewer", "activeAnimation",
                         "position", "rotation", "scale",
                         "createdAt", "updatedAt",

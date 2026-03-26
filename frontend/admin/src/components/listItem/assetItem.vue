@@ -1,74 +1,89 @@
 <script setup>
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
-import {getFileExtension} from "@/js/utils/fileUtils.js";
-import {computed, onMounted, ref, watch} from "vue";
-import {MeshManager} from "@/js/threeExt/modelManagement/meshManager.js";
-import {Asset} from "@/js/threeExt/modelManagement/asset.js";
-import {useI18n} from "vue-i18n";
-import object3DNode from "three/addons/nodes/accessors/Object3DNode.js";
-import {right} from "vuedraggable/dist/vuedraggable.common.js";
+import { getFileExtension } from "@/js/utils/fileUtils.js";
+import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
-  index: {type: Number, required: false},
-  text: {type: String, required: true},
-  downloadUrl: {type: String, required: false},
-  hideInViewer: {type: Boolean, default: false},
-  active: {type: Boolean, default: false},
-  error: {type: Boolean, default: false},
-  loading: {type: Boolean, default: false},
-  activeAnimation: {type: String, default: null},
-  asset: {type: Object, default: null},
-  rightMenu: {type: Boolean, default: true},
-  reset: {type: Boolean, default: false},
-})
+  index: { type: Number, required: false },
+  text: { type: String, required: true },
+  downloadUrl: { type: String, required: false },
+  hideInViewer: { type: Boolean, default: false },
+  active: { type: Boolean, default: false },
+  error: { type: Boolean, default: false },
+  loading: { type: Boolean, default: false },
+  simplifying: { type: Boolean, default: false },
+  activeAnimation: { type: String, default: null },
+  asset: { type: Object, default: null },
+  rightMenu: { type: Boolean, default: true },
+  reset: { type: Boolean, default: false },
+});
 
-const emit = defineEmits(['select','delete','duplicate','hideInViewer', 'animationChanged', 'reset' , 'simplify', 'changed'])
+const emit = defineEmits([
+  "select",
+  "delete",
+  "duplicate",
+  "hideInViewer",
+  "animationChanged",
+  "reset",
+  "simplify",
+  "changed",
+]);
 
 const onClick = (cb) => {
-  if(!(props.loading)) cb()
-}
+  if (!props.loading && !props.simplifying) cb();
+};
 
-
-let animations = ref([])
-let hasAnimations = computed(() => animations.value.length > 0)
+let animations = ref([]);
+let hasAnimations = computed(() => animations.value.length > 0);
 
 watch(
-    ()=>props.asset,
-    (asset)=> {
-      animations.value = asset.animations.map((el) => el.name)
+    () => props.asset,
+    (asset) => {
+      animations.value = asset?.animations?.map((el) => el.name) ?? [];
     },
-    {immediate: true, deep: true}
-)
+    { immediate: true, deep: true }
+);
 
-const selectedOption = ref(null)
-const simplifyRatio = ref(0.25)
+const selectedOption = ref(null);
+const simplifyRatio = ref(0.25);
 
-const canSimplify = computed(() => props.rightMenu && !props.loading && !props.error && !!props.asset?.id)
-onMounted(async () => {
-  selectedOption.value = props.activeAnimation ?? "none"
-})
+const canSimplify = computed(
+    () =>
+        props.rightMenu &&
+        !props.loading &&
+        !props.error &&
+        !!props.asset?.id
+);
+
+onMounted(() => {
+  selectedOption.value = props.activeAnimation ?? "none";
+});
 
 watch(simplifyRatio, () => {
-  emit('changed')
-})
-
+  emit("changed");
+});
 </script>
 
 <template>
-  <div class="item" :class="{active: active}" @click.stop="onClick(()=>{$emit('select')})">
+  <div class="item" :class="{ active: active }" @click.stop="onClick(() => $emit('select'))">
     <div class="inlineFlex">
-      <span v-if="index != undefined">{{index+1}}</span>
-      <span :class="{textStrike: hideInViewer||error}">{{text}}</span>
-      <span v-if="hideInViewer" class="notDisplayedInfo">{{$t("sceneView.leftSection.sceneAssets.assetNotDisplayed")}}</span>
+      <span v-if="index != undefined">{{ index + 1 }}</span>
+      <span :class="{ textStrike: hideInViewer || error }">{{ text }}</span>
+      <span v-if="hideInViewer" class="notDisplayedInfo">
+        {{$t("sceneView.leftSection.sceneAssets.assetNotDisplayed")}}
+      </span>
     </div>
 
     <div class="inlineFlex">
-      <icon-svg url="/icons/warning.svg" theme="danger" v-if="rightMenu && error" :title="$t('sceneView.leftSection.sceneAssets.assetLoadFailed')" class="iconAction"/>
-      <icon-svg url="/icons/spinner.svg" theme="default" v-if="rightMenu && loading"/>
+      <icon-svg url="/icons/warning.svg" theme="danger" v-if="rightMenu && error" class="iconAction"/>
+      <icon-svg url="/icons/spinner.svg" theme="default" v-if="rightMenu && (loading || simplifying)"/>
 
       <div v-if="rightMenu && hasAnimations">
-        <select v-model="selectedOption" @change="$emit('animationChanged', selectedOption === 'none' ? null : selectedOption)">
+        <select
+            v-model="selectedOption"
+            @change="$emit('animationChanged', selectedOption === 'none' ? null : selectedOption)"
+        >
           <option value="none">{{ $t("none") }}</option>
           <option v-for="option in animations" :key="option" :value="option">
             {{ option }}
@@ -76,14 +91,25 @@ watch(simplifyRatio, () => {
         </select>
       </div>
 
-      <tag v-if="rightMenu" :text="'3D/'+getFileExtension(text)" icon="/icons/3d.svg"/>
+      <tag v-if="rightMenu" :text="'3D/' + getFileExtension(text)" icon="/icons/3d.svg"/>
 
-      <a v-if="rightMenu && downloadUrl && !error && !loading" target="_blank" rel="noopener noreferrer" :href="downloadUrl">
-        <icon-svg url="/icons/download.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop=""/>
+      <a v-if="rightMenu && downloadUrl && !error && !loading" target="_blank" :href="downloadUrl">
+        <icon-svg url="/icons/download.svg" theme="text" class="iconAction"/>
       </a>
 
-      <icon-svg v-if="rightMenu && hideInViewer" url="/icons/display_off.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer',true)})"/>
-      <icon-svg v-else-if="rightMenu" url="/icons/display_on.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('hideInViewer', false)})"/>
+      <icon-svg
+          v-if="rightMenu && hideInViewer"
+          url="/icons/display_off.svg"
+          class="iconAction"
+          @click.stop="onClick(() => $emit('hideInViewer', true))"
+      />
+      <icon-svg
+          v-else-if="rightMenu"
+          url="/icons/display_on.svg"
+          class="iconAction"
+          @click.stop="onClick(() => $emit('hideInViewer', false))"
+      />
+
       <div v-if="canSimplify" class="simplifyBox" @click.stop="">
         <input
             class="simplifyRange"
@@ -92,101 +118,50 @@ watch(simplifyRatio, () => {
             max="1"
             step="0.01"
             v-model.number="simplifyRatio"
+            :disabled="simplifying"
         />
+
         <span class="simplifyValue">{{ simplifyRatio.toFixed(2) }}</span>
 
         <button
             class="simplifyBtn"
             type="button"
+            :disabled="simplifying"
             @click.stop="() => {
-              console.log('BUTTON CLICK', simplifyRatio)
-              emit('simplify', { ratio: simplifyRatio })
-            }">
-          Simplify
+            if (simplifying) return;
+            emit('simplify', { ratio: simplifyRatio });
+          }"
+        >
+          {{ simplifying ? "Simplifying..." : "Simplify" }}
         </button>
       </div>
 
-      <icon-svg v-if="rightMenu" url="/icons/duplicate.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('duplicate')})"/>
-      <icon-svg v-if="rightMenu" url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('delete')})"/>
-      <icon-svg v-if="reset" url="/icons/restart.svg" theme="text" class="iconAction" :hover-effect="true" @click.stop="onClick(()=>{$emit('reset')})"/>
+      <icon-svg url="/icons/duplicate.svg" v-if="rightMenu" class="iconAction" @click.stop="onClick(() => $emit('duplicate'))"/>
+      <icon-svg url="/icons/delete.svg" v-if="rightMenu" class="iconAction" @click.stop="onClick(() => $emit('delete'))"/>
+      <icon-svg url="/icons/restart.svg" v-if="reset" class="iconAction" @click.stop="onClick(() => $emit('reset'))"/>
     </div>
   </div>
 </template>
 
 <style scoped>
-
-.inlineFlex {
-  width: 100%;
+.simplifyBox {
   display: flex;
-  justify-content: flex-start;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 8px;
 }
 
-
-.item > div {
-  align-items: center;
-  height: 100%;
-  width: fit-content;
-  margin-bottom: 0;
-}
-
-.item > div:last-child {
-  justify-content: flex-end;
-}
-
-.iconAction {
-  cursor: pointer;
-}
-
-.item > div > * {
-  margin-right: 8px;
-}
-
-.active{
-  outline: solid 2px var(--accentColor);
-}
-
-.textStrike{
-  text-decoration: line-through;
-}
-
-.notDisplayedInfo{
-  font-size: 10pt;
-  font-style: italic;
-  color: var(--textImportantColor);
-}
-
-select {
-  width: 100px;
-}
-.simplifyBox{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-right: 8px;
-}
-
-.simplifyRange{
+.simplifyRange {
   width: 120px;
 }
 
-.simplifyValue{
-  font-size: 10pt;
-  min-width: 40px;
-  text-align: right;
-  opacity: 0.9;
+.simplifyBtn {
+  padding: 4px 8px;
+  cursor: pointer;
 }
 
-.simplifyBtn{
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--darkerBackgroundColor);
-  background: var(--backgroundColor);
-  cursor: pointer;
-  color: var(--textImportantColor);
-}
-.simplifyBtn:hover{
-  outline: solid 1px var(--accentColor);
+.simplifyBtn:disabled,
+.simplifyRange:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

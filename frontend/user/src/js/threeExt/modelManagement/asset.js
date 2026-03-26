@@ -28,6 +28,17 @@ function applyVariantDebugColor(object, variant) {
         }
     });
 }
+
+function debugMeshNames(label, obj) {
+    const names = [];
+    obj?.traverse((child) => {
+        if (child.isMesh) {
+            names.push(child.name);
+        }
+    });
+    console.log(`[${label}] mesh names`, names);
+}
+
 function debugObjectAlignment(label, obj) {
     if (!obj) {
         console.log(`[${label}] no object`);
@@ -261,6 +272,29 @@ export class Asset extends SceneElementInterface {
 
             this.object.updateMatrixWorld(true);
 
+            const box = new THREE.Box3().setFromObject(this.object);
+
+            /* tried to fix model of woman position
+            if(!box.isEmpty() && Number.isFinite(box.min.y)) {
+                this.object.positiony -= box.min.y;
+                this.object.updateMatrixWorld(true);
+            }*/
+
+
+            const center = new THREE.Vector3();
+            const worldPos = new THREE.Vector3();
+
+            box.getCenter(center);
+            this.object.getWorldPosition(worldPos);
+
+            console.log("[ASSET HEIGHT DEBUG]", this.name, {
+                rootY: this.object.position.y,
+                worldY: worldPos.y,
+                bboxMinY: box.min.y,
+                bboxMaxY: box.max.y,
+                bboxCenterY: center.y,
+                offsetFromRootToBottom: box.min.y - worldPos.y,
+            });
             debugFullObject(`INITIAL ${chosen?.variant ?? "unknown"}`, this.object);
 
             if (this.object?.animations?.length > 0) {
@@ -306,43 +340,54 @@ export class Asset extends SceneElementInterface {
 
             if (!newObject) return;
 
-            console.log("[swapToVariant]",
-                "asset:", this.id,
-                "from:", this.currentVariant,
-                "to:", chosen.variant,
-                "path:", chosen.path
-            );
-
             newObject.userData.assetId = this.id;
 
-            newObject.position.set(this.position.x, this.position.y, this.position.z);
-            newObject.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
-            newObject.scale.set(this.scale.x, this.scale.y, this.scale.z);
+            // 1. Preserve current transform from the scene (avoids jumping)
+            if (this.object) {
+                newObject.position.copy(this.object.position);
+                newObject.quaternion.copy(this.object.quaternion);
+                newObject.scale.copy(this.object.scale);
+            } else {
+                newObject.position.set(this.position.x, this.position.y, this.position.z);
+                newObject.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
+                newObject.scale.set(this.scale.x, this.scale.y, this.scale.z);
+            }
 
             newObject.castShadow = true;
             newObject.receiveShadow = true;
             newObject.isAsset = true;
 
-            newObject.updateMatrixWorld(true);
+            const parent = this.object?.parent ?? scene;
 
-            debugFullObject(`SWAP ${chosen.variant}`, newObject);
-
-            if (this.object && this.object.parent === scene) {
-                scene.remove(this.object);
+            // 2. Clean up old object to free memory and prevent site from closing/crashing
+            if (this.object) {
+                if (this.object.parent) {
+                    this.object.parent.remove(this.object);
+                }
+                
+                /*this.object.traverse((child) => {
+                    if (child.isMesh) {
+                        child.geometry.dispose();
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(m => m.dispose());
+                            } else {
+                                child.material.dispose();
+                            }
+                        }
+                    }
+                });*/
             }
 
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;
-            applyVariantDebugColor(newObject, this.currentVariant);
+            //applyVariantDebugColor(newObject, this.currentVariant);
 
-            scene.add(newObject);
+            if (parent) {
+                parent.add(newObject);
+            }
             newObject.updateMatrixWorld(true);
-            //debugFullObject(`after add ${chosen.variant}`, newObject);
-            /*if (typeof scene.postSwapAssetUpdate =="function") {
-                scene.postSwapAssetUpdate(this);
-
-            }*/
         } catch (e) {
             console.error("[Asset.swapToVariant] failed", this.id, variantOverride, e);
         }

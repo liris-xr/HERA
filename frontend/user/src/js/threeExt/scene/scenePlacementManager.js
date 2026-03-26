@@ -8,6 +8,32 @@ import { classes } from "@/js/utils/extender.js";
 import { AbstractScene } from "@/js/threeExt/scene/abstractScene.js";
 import { extractYawQuaternion } from "@/js/utils/extractYawQuaternion.js";
 
+
+function ensurePlacementDebugOverlay() {
+    let el = document.getElementById("placement-debug-overlay");
+
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "placement-debug-overlay";
+        el.style.position = "fixed";
+        el.style.top = "120px";
+        el.style.left = "12px";
+        el.style.zIndex = "99999";
+        el.style.padding = "10px 12px";
+        el.style.borderRadius = "10px";
+        el.style.fontFamily = "monospace";
+        el.style.fontSize = "14px";
+        el.style.lineHeight = "1.4";
+        el.style.color = "white";
+        el.style.background = "rgba(0,0,0,0.8)";
+        el.style.pointerEvents = "none";
+        el.style.whiteSpace = "pre-line";
+        document.body.appendChild(el);
+    }
+
+    return el;
+}
+
 export class ScenePlacementManager extends classes(AbstractScene, ToggleableInterface) {
     pointerObject;
     #pointerUrl;
@@ -129,8 +155,10 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
             }
 
             // direction horizontale (yaw) recalculée
-            const unit = new THREE.Vector3().subVectors(position, camera.position);
-
+            //const unit = new THREE.Vector3().subVectors(position, camera.position);
+            const cameraWorldPos = new THREE.Vector3();
+            camera.getWorldPosition(cameraWorldPos);
+            const unit = new THREE.Vector3().subVectors(position, cameraWorldPos);
             // Guard: éviter normalize() sur un vecteur quasi nul
             if (unit.lengthSq() < 1e-12) {
                 this.#foundPlane.value = false;
@@ -169,11 +197,19 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
             }
 
             matrix.compose(position, direction, scale);
+            //debugging
+            /*const overlay = ensurePlacementDebugOverlay();
+            overlay.innerHTML = [
+                `hitY: ${position.y.toFixed(3)}`,
+                `scaleY: ${scale.y.toFixed(3)}`,
+                `foundPlane: ${this.#foundPlane.value}`,
+            ].join("<br>");*/
 
             this.pointerObject.matrix.copy(matrix);
             this.pointerObject.updateWorldMatrix(true);
 
             this.#shadowPlane.visible = true;
+
             this.#shadowPlane.matrixAutoUpdate = false;
             this.#shadowPlane.matrix.copy(matrix);
 

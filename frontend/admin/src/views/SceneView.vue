@@ -388,8 +388,60 @@ function cancelLeave() {
   nextRoute = null;
 }
 
-const simplifying = ref(false);
+const simplifyingAssetIds = ref(new Set());
+function isAssetSimplifying(assetId) {
+  return simplifyingAssetIds.value.has(assetId);
+}
 
+async function simplifyAsset(asset, ratio) {
+  if (!asset?.id) return;
+  if (isAssetSimplifying(asset.id)) return;
+
+  const r = Number.isFinite(Number(ratio))
+      ? Math.max(0.01, Math.min(1.0, Number(ratio)))
+      : 0.25;
+
+  if (String(asset.id).startsWith("new-asset")) {
+    await saveAll();
+    if (String(asset.id).startsWith("new-asset")) {
+      alert("Asset not saved. Please save and try again.");
+      return;
+    }
+  }
+
+  simplifyingAssetIds.value.add(asset.id);
+
+  try {
+    const res = await fetch(`${ENDPOINT}assets/${asset.id}/simplify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({ ratio: r }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || "Simplify failed");
+
+    const a = json.asset ?? json;
+
+    asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;
+    asset.simplifyRatio = a.simplifyRatio ?? r;
+    asset.preferredVariant = selectedVariant.value;
+
+    await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
+      variantOverride: selectedVariant.value,
+    });
+
+    saved.value = false;
+  } catch (e) {
+    alert(e.message || e);
+  } finally {
+    simplifyingAssetIds.value.delete(asset.id);
+  }
+}
+/*
 async function simplifyAsset(asset, ratio) {
   if (!asset?.id) return;
 
@@ -437,7 +489,7 @@ async function simplifyAsset(asset, ratio) {
     simplifying.value = false;
   }
 }
-
+*/
 function markChang() {
   saved.value = false;
 }
@@ -571,7 +623,6 @@ function markChang() {
             />
           </Teleport>
 
-          <!-- ASSETS -->
           <div class="multilineField">
             <div class="inlineFlex">
               <span>{{ $t("sceneView.leftSection.sceneAssets.label") }}</span>

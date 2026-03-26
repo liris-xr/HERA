@@ -216,6 +216,14 @@ export class ArScene extends AbstractScene {
         //console.log("[ArScene.onXrFrame", this.sceneId);
 
         worldTransformMatrix.decompose(this.position, this.quaternion, this.scale);
+        let el = document.getElementById("placement-debug-overlay");
+        if (el) {
+            el.innerHTML += "<br>" + [
+                `sceneY: ${this.position.y.toFixed(3)}`,
+                `sceneX: ${this.position.x.toFixed(3)}`,
+                `sceneZ: ${this.position.z.toFixed(3)}`
+            ].join("<br>");
+        }
         if (!this._lastSceneDebugPos) {
             this._lastSceneDebugPos = new THREE.Vector3();
         }
@@ -245,6 +253,7 @@ export class ArScene extends AbstractScene {
         this.labelPlayer.onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer);
 
         if (now - this._lastVariantUpdateTime >= this._variantUpdateIntervalMs) {
+
             this._lastVariantUpdateTime = now;
 
             for (const asset of this.#assets) {
@@ -256,7 +265,7 @@ export class ArScene extends AbstractScene {
                     if (!manifest) continue;
                     //calcul métriques runtime
                     const metrics = buildAssetRuntimeMetrics(asset, camera);
-                    console.log("METRICS", metrics);
+                    //console.log("METRICS", metrics);
                     const targetVariant = selectAssetVariant(manifest, metrics, this._lodConfig,asset.currentVariant);
 
                     asset.debugLod = {
@@ -296,14 +305,14 @@ export class ArScene extends AbstractScene {
                         asset.lastDebugTargetVariant = targetVariant;
                     }
 
-                    await ensureAssetVariant(asset, this, targetVariant);
+                    //await ensureAssetVariant(asset, this, targetVariant);
                     //this.postSwapAssetUpdate(asset);
-                    /*const changed = await ensureAssetVariant(asset, this, targetVariant);
+                    const changed = await ensureAssetVariant(asset, this, targetVariant);
                     if (changed) {
                         this.postSwapAssetUpdate(asset);
                         this.#boundingBox = null;
                         this.#boundingSphere = null;
-                    }*/
+                    }
 
                 } catch (e) {
                     console.error("[LOD LOOP ERROR]", asset?.id, e);

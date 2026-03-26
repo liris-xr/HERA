@@ -2,15 +2,22 @@ import express from "express";
 import { baseUrl } from "./baseUrl.js";
 import authMiddleware, { optionnalAuthMiddleware } from "../middlewares/auth.js";
 import { ArAsset, ArScene, ArProject, ArUser, ArMesh, ArLabel } from "../orm/index.js";
-import { deleteAsset , adminUploadAsset} from "../utils/fileUpload.js";
-import { Sequelize , Op} from "sequelize";
+import { deleteAsset, adminUploadAsset } from "../utils/fileUpload.js";
+import { Sequelize, Op } from "sequelize";
 import { sequelize } from "../orm/database.js";
-import { computeAssetMetrics, computeAssetPolicy } from "../socket/utils/assetMetrics.js";
+import {
+    computeAssetMetrics,
+    computeAssetPolicy,
+    computeGeometryMetricsFromFile,
+} from "../socket/utils/assetMetrics.js";
 import path from "node:path";
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 
 const router = express.Router();
+
+// Prevent concurrent simplify jobs on same asset
+const activeSimplifyJobs = new Set();
 
 const normalizePath = (p) => {
     if (!p) return null;
@@ -24,10 +31,6 @@ function normalizeRatio(r) {
     const n = Number(r);
     if (!Number.isFinite(n)) return 0.25;
     return Math.max(0.01, Math.min(1.0, n));
-}
-
-function ratioTag(r) {
-    return `r${Math.round(r * 100)}`; // 0.25 -> r25
 }
 
 function fileExists(p) {
@@ -49,9 +52,11 @@ function run(cmd, args, cwd) {
 
         let out = "";
         let err = "";
+
         child.stdout.on("data", (d) => (out += d.toString()));
         child.stderr.on("data", (d) => (err += d.toString()));
         child.on("error", reject);
+
         child.on("close", (code) => {
             if (code === 0) return resolve({ out, err });
             reject(new Error(`command failed (code=${code})\n${err || out}`));
@@ -61,6 +66,25 @@ function run(cmd, args, cwd) {
 
 function toInputRel(url) {
     return String(url ?? "").replaceAll("\\", "/").replace(/^\/+/, "");
+}
+
+function ensureParentDir(filePath) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+}
+
+function safeUnlink(filePath) {
+    try {
+        fs.unlinkSync(filePath);
+    } catch {}
+}
+
+function withDefaultMetricShape(metrics = {}) {
+    return {
+        assetSizeBytes: metrics.assetSizeBytes ?? null,
+        triangleCount: metrics.triangleCount ?? null,
+        vertexCount: metrics.vertexCount ?? null,
+        meshCount: metrics.meshCount ?? null,
+    };
 }
 
 /**
@@ -75,8 +99,15 @@ function makeVariantRel(inputRel, suffix) {
     return path.posix.join(dirRel, `${base}_${suffix}${ext}`);
 }
 
+const LOD_PRESETS = {
+    n1: { ratio: 0.75, error: 0.001 },
+    n2: { ratio: 0.50, error: 0.005 },
+    n3: { ratio: 0.25, error: 0.01 },
+};
+
 function buildVariantSet(asset, apiRoot) {
     const originalRel = toInputRel(asset?.url);
+
     if (!originalRel) {
         return {
             original: { status: "missing", path: null },
@@ -88,6 +119,7 @@ function buildVariantSet(asset, apiRoot) {
     }
 
     const originalDisk = path.resolve(apiRoot, originalRel);
+
     const n1Rel = makeVariantRel(originalRel, "n1");
     const n2Rel = makeVariantRel(originalRel, "n2");
     const n3Rel = makeVariantRel(originalRel, "n3");
@@ -111,7 +143,6 @@ function buildVariantSet(asset, apiRoot) {
             status: originalReady ? "ready" : "missing",
             path: originalReady ? originalPath : null,
         },
-        // backward compatibility: simplified points to N1
         simplified: {
             status: n1Ready ? "ready" : "missing",
             path: n1Ready ? n1Path : null,
@@ -131,18 +162,49 @@ function buildVariantSet(asset, apiRoot) {
     };
 }
 
+async function runWeld({
+                           gltfTransformCmd,
+                           apiRoot,
+                           inputDisk,
+                           outputDisk,
+                       }) {
+    ensureParentDir(outputDisk);
+
+    const args = ["weld", inputDisk, outputDisk];
+
+    console.log("[WELD] input =", inputDisk);
+    console.log("[WELD] output =", outputDisk);
+
+    await run(gltfTransformCmd, args, apiRoot);
+
+    if (!fileExists(outputDisk)) {
+        throw new Error(`weld did not produce output file: ${outputDisk}`);
+    }
+}
+
 async function runSimplifyLevel({
                                     gltfTransformCmd,
                                     apiRoot,
                                     inputDisk,
                                     outputDisk,
                                     ratio,
+                                    error,
+                                    lockBorder = false,
                                 }) {
-    const args = ["simplify", inputDisk, outputDisk, "--ratio", String(ratio)];
+    ensureParentDir(outputDisk);
 
-    console.log("[SIMPLIFY LEVEL] ratio=", ratio);
+    const args = [
+        "simplify",
+        inputDisk,
+        outputDisk,
+        "--ratio", String(ratio),
+        "--error", String(error),
+        "--lock-border", String(lockBorder),
+    ];
+
+    console.log("[SIMPLIFY LEVEL] ratio =", ratio, "error =", error);
     console.log("[SIMPLIFY LEVEL] input =", inputDisk);
-    console.log("[SIMPLIFY LEVEL] output=", outputDisk);
+    console.log("[SIMPLIFY LEVEL] output =", outputDisk);
 
     await run(gltfTransformCmd, args, apiRoot);
 
@@ -174,7 +236,10 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
         });
 
         res.set({ "Content-Type": "application/json" });
-        if (!asset) return res.status(404).send({ error: "Asset not found" });
+
+        if (!asset) {
+            return res.status(404).send({ error: "Asset not found" });
+        }
 
         const project = asset.scene?.project;
         const ownerId = project?.owner?.id;
@@ -187,22 +252,19 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
         }
 
         const apiRoot = process.cwd();
-        const metrics = computeAssetMetrics(asset, apiRoot);
+        const metrics = await computeAssetMetrics(asset, apiRoot);
         const policy = computeAssetPolicy(metrics);
         const variants = buildVariantSet(asset, apiRoot);
 
         return res.status(200).send({
             assetId: asset.id,
             revision: asset.updatedAt ? new Date(asset.updatedAt).toISOString() : null,
-
-            // keep old fields for compatibility
             preferredVariant: asset.preferredVariant ?? "original",
             simplifyRatio: asset.simplifyRatio ?? null,
-
-            // new richer set
             variants,
             metrics,
             policy,
+            lodMeta: asset.lodMeta ?? null,
         });
     } catch (e) {
         console.log("[ASSET MANIFEST ERROR]", e);
@@ -213,6 +275,16 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
 router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, res) => {
     const token = req.user;
     const assetId = req.params.assetId;
+
+    let weldedDisk = null;
+
+    if (activeSimplifyJobs.has(assetId)) {
+        return res.status(409).send({
+            error: "Simplify already running for this asset",
+        });
+    }
+
+    activeSimplifyJobs.add(assetId);
 
     try {
         const asset = await ArAsset.findOne({
@@ -229,24 +301,29 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
         });
 
         res.set({ "Content-Type": "application/json" });
-        if (!asset) return res.status(404).send({ error: "Asset not found" });
+
+        if (!asset) {
+            return res.status(404).send({ error: "Asset not found" });
+        }
 
         const ownerId = asset.scene?.project?.owner?.id;
         if (ownerId !== token.id && !req.user.admin) {
             return res.status(403).send({ error: "User not granted" });
         }
 
-        if (!asset.url) return res.status(400).send({ error: "Asset url missing" });
+        if (!asset.url) {
+            return res.status(400).send({ error: "Asset url missing" });
+        }
 
         const apiRoot = process.cwd();
 
         const inputRel = toInputRel(asset.url);
-        const inputDisk = path.resolve(apiRoot, inputRel);
+        const originalDisk = path.resolve(apiRoot, inputRel);
 
-        if (!fileExists(inputDisk)) {
+        if (!fileExists(originalDisk)) {
             return res.status(400).send({
                 error: "Original file not found on disk",
-                details: { inputRel, inputDisk, apiRoot },
+                details: { inputRel, originalDisk, apiRoot },
             });
         }
 
@@ -262,17 +339,21 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
             });
         }
 
-        // Heuristic N1 from current metric/policy
-        const metrics = computeAssetMetrics(asset, apiRoot);
-        const policy = computeAssetPolicy(metrics);
+        const originalMetrics = withDefaultMetricShape(
+            await computeAssetMetrics(asset, apiRoot)
+        );
 
-        // optional manual override for N1 if sent
         const manualRatio =
             req.body?.ratio != null ? normalizeRatio(req.body.ratio) : null;
 
-        const n1Ratio = manualRatio ?? normalizeRatio(policy?.recommendedSimplifyRatio ?? 0.25);
-        const n2Ratio = 0.25;
-        const n3Ratio = 0.25;
+        const presets = {
+            n1: {
+                ratio: manualRatio ?? LOD_PRESETS.n1.ratio,
+                error: LOD_PRESETS.n1.error,
+            },
+            n2: { ...LOD_PRESETS.n2 },
+            n3: { ...LOD_PRESETS.n3 },
+        };
 
         const n1Rel = makeVariantRel(inputRel, "n1");
         const n2Rel = makeVariantRel(inputRel, "n2");
@@ -283,44 +364,116 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
         const n3Disk = path.resolve(apiRoot, n3Rel);
 
         console.log("[LOD generation] request received for asset", assetId);
-        console.log("[LOD generation] input original:", inputDisk);
-        console.log("[LOD generation] N1 ratio:", n1Ratio, "->", n1Disk);
-        console.log("[LOD generation] N2 ratio:", n2Ratio, "->", n2Disk);
-        console.log("[LOD generation] N3 ratio:", n3Ratio, "->", n3Disk);
+        console.log("[LOD generation] original:", originalDisk);
+        console.log("[LOD generation] presets:", presets);
 
-        // N1 from original using heuristic
+        safeUnlink(n1Disk);
+        safeUnlink(n2Disk);
+        safeUnlink(n3Disk);
+
+        const tmpDir = path.join(apiRoot, ".tmp-lod");
+        fs.mkdirSync(tmpDir, { recursive: true });
+        weldedDisk = path.join(tmpDir, `${asset.id}-${Date.now()}-welded.glb`);
+
+        await runWeld({
+            gltfTransformCmd,
+            apiRoot,
+            inputDisk: originalDisk,
+            outputDisk: weldedDisk,
+        });
+
         await runSimplifyLevel({
             gltfTransformCmd,
             apiRoot,
-            inputDisk,
+            inputDisk: weldedDisk,
             outputDisk: n1Disk,
-            ratio: n1Ratio,
+            ratio: presets.n1.ratio,
+            error: presets.n1.error,
         });
 
-        // N2 from N1
         await runSimplifyLevel({
             gltfTransformCmd,
             apiRoot,
-            inputDisk: n1Disk,
+            inputDisk: weldedDisk,
             outputDisk: n2Disk,
-            ratio: n2Ratio,
+            ratio: presets.n2.ratio,
+            error: presets.n2.error,
         });
 
-        // N3 from N2
         await runSimplifyLevel({
             gltfTransformCmd,
             apiRoot,
-            inputDisk: n2Disk,
+            inputDisk: weldedDisk,
             outputDisk: n3Disk,
-            ratio: n3Ratio,
+            ratio: presets.n3.ratio,
+            error: presets.n3.error,
         });
+
+        const n1Metrics = withDefaultMetricShape(
+            await computeGeometryMetricsFromFile(n1Disk)
+        );
+        const n2Metrics = withDefaultMetricShape(
+            await computeGeometryMetricsFromFile(n2Disk)
+        );
+        const n3Metrics = withDefaultMetricShape(
+            await computeGeometryMetricsFromFile(n3Disk)
+        );
 
         asset.simplifiedUrl = n1Rel;
-        asset.simplifyRatio = n1Ratio;
+        asset.simplifyRatio = presets.n1.ratio;
         asset.preferredVariant = "simplified";
+
+        asset.lodMeta = {
+            generator: "gltf-transform",
+            mode: "ratio+error",
+            generatedAt: new Date().toISOString(),
+            original: originalMetrics,
+            variants: {
+                n1: {
+                    path: normalizePath(n1Rel),
+                    requestedRatio: presets.n1.ratio,
+                    requestedError: presets.n1.error,
+                    resultingError: null,
+                    ...n1Metrics,
+                    status: fileExists(n1Disk) ? "ready" : "missing",
+                },
+                n2: {
+                    path: normalizePath(n2Rel),
+                    requestedRatio: presets.n2.ratio,
+                    requestedError: presets.n2.error,
+                    resultingError: null,
+                    ...n2Metrics,
+                    status: fileExists(n2Disk) ? "ready" : "missing",
+                },
+                n3: {
+                    path: normalizePath(n3Rel),
+                    requestedRatio: presets.n3.ratio,
+                    requestedError: presets.n3.error,
+                    resultingError: null,
+                    ...n3Metrics,
+                    status: fileExists(n3Disk) ? "ready" : "missing",
+                },
+            },
+        };
+
         await asset.save();
 
+        safeUnlink(weldedDisk);
+        weldedDisk = null;
+
+        const metrics = await computeAssetMetrics(asset, apiRoot);
+        const policy = computeAssetPolicy(metrics);
         const variants = buildVariantSet(asset, apiRoot);
+
+        console.log("[SIMPLIFY RESPONSE]", JSON.stringify({
+            asset: {
+                id: asset.id,
+                simplifiedUrl: asset.simplifiedUrl,
+                preferredVariant: asset.preferredVariant,
+                simplifyRatio: asset.simplifyRatio,
+            },
+            lodMeta: asset.lodMeta,
+        }, null, 2));
 
         return res.status(200).send({
             asset: {
@@ -329,22 +482,43 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
                 simplifiedUrl: asset.simplifiedUrl,
                 preferredVariant: asset.preferredVariant,
                 simplifyRatio: asset.simplifyRatio,
+                lodMeta: asset.lodMeta,
             },
             lods: {
-                n1: { path: normalizePath(n1Rel), ratio: n1Ratio },
-                n2: { path: normalizePath(n2Rel), ratio: n2Ratio },
-                n3: { path: normalizePath(n3Rel), ratio: n3Ratio },
+                n1: {
+                    path: normalizePath(n1Rel),
+                    ratio: presets.n1.ratio,
+                    error: presets.n1.error,
+                },
+                n2: {
+                    path: normalizePath(n2Rel),
+                    ratio: presets.n2.ratio,
+                    error: presets.n2.error,
+                },
+                n3: {
+                    path: normalizePath(n3Rel),
+                    ratio: presets.n3.ratio,
+                    error: presets.n3.error,
+                },
             },
             metrics,
             policy,
             variants,
+            lodMeta: asset.lodMeta,
         });
     } catch (e) {
         console.log("[ASSET SIMPLIFY ERROR]", e);
+
+        if (weldedDisk) {
+            safeUnlink(weldedDisk);
+        }
+
         return res.status(400).send({
             error: "Simplify failed",
             details: e?.message || String(e),
         });
+    } finally {
+        activeSimplifyJobs.delete(assetId);
     }
 });
 
@@ -444,15 +618,14 @@ router.delete(baseUrl + "scenes/:sceneId", authMiddleware, async (req, res) => {
         return res.status(400).send({ error: "Unable to delete scene", details });
     }
 });
+
 const ASSETS_PAGE_LENGTH = 10;
 
-// Sans page -> page = 1
 router.get(baseUrl + "admin/assets", authMiddleware, async (req, res) => {
     req.params.page = "1";
     return adminAssetsHandler(req, res);
 });
 
-// Avec page explicite
 router.get(baseUrl + "admin/assets/:page", authMiddleware, async (req, res) => {
     return adminAssetsHandler(req, res);
 });
@@ -494,6 +667,7 @@ async function adminAssetsHandler(req, res) {
                 "simplifiedUrl",
                 "preferredVariant",
                 "simplifyRatio",
+                "lodMeta",
                 "activeAnimation",
                 "position",
                 "rotation",
@@ -626,6 +800,7 @@ router.post(
                 simplifiedUrl: null,
                 preferredVariant: "original",
                 simplifyRatio: null,
+                lodMeta: null,
             });
 
             return res.status(200).send(newAsset);
@@ -635,4 +810,5 @@ router.post(
         }
     }
 );
+
 export default router;

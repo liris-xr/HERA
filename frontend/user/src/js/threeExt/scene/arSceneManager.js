@@ -73,7 +73,7 @@ export class ArSceneManager{
 
         if(this.scenePlacementManager.isEnabled.value) return
         const bounds = this.active.value.computeBoundingBox(false);
-
+        //const boundsMin = bounds.min.clone().negate();
         const boundsMin = bounds.min.negate();
         const boundsMax = bounds.max;
 

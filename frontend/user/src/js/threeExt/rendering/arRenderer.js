@@ -21,14 +21,11 @@ export class ArRenderer extends classes(THREE.WebGLRenderer, DomElementInterface
         this.shadowMap.height = shadowMapSize;
     }
 
-
     setDomSize(width, height) {
         this.#domWidth = width;
         this.#domHeight = height;
         this.updateSize()
     }
-
-
 
     updateSize(){
         this.setSize(this.#domWidth, this.#domHeight);

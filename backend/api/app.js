@@ -29,8 +29,8 @@ import setupSocket from "./src/socket/index.js";
 import {errorHandler} from "./src/utils/errorHandler.js";
 import zip from 'express-easy-zip'
 const options = {
-    key: fs.readFileSync('privatekey.key'),
-    cert: fs.readFileSync('certificate.crt')
+    key: fs.readFileSync('/home/webadmin/certificate/privatekey.key'),
+    cert: fs.readFileSync('/home/webadmin/certificate/certificate.crt')
 };
 
 

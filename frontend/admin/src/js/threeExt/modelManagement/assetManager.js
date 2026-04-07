@@ -65,7 +65,9 @@ export class AssetManager {
 
     addToScene(scene, asset, onAdd, decomposeMesh = true, options = {}) {
         if (!asset.id) asset.id = "new-asset" + currentAssetId++;
-
+        console.log("[addToScene] asset.id =", asset.id);
+        console.log("[addToScene] options =", options);
+        console.log("[addToScene] token present =", !!options?.token);
         if (!this.meshManagerMap.has(asset.id)) {
             this.meshManagerMap.set(asset.id, new MeshManager());
         }

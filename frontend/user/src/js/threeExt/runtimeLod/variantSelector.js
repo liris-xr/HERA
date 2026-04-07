@@ -3,37 +3,52 @@ export function selectAssetVariant(manifest, metrics, config = {}, currentVarian
 
     const has = (k) => variants[k] && variants[k].status === "ready" && variants[k].path;
 
-    // seuils sur distance normalisée = distance / radius
     const {
-        near = 2.0,
-        medium = 4.0,
-        far = 8.0,
-        hysteresis = 0.5,
+        originalMin = 0.20,
+        n1Min = 0.10,
+        n2Min = 0.04,
+        hysteresis = 0.01,
     } = config;
 
-    const nd = metrics?.normalizedDistance ?? Infinity;
+    //calcul visible coverage
+    const size = metrics?.visibleCoverage ?? 0;
 
-    let target = currentVariant ?? "original";
+    let current = currentVariant ?? "original";
+    if (current === "simplified") current = "n1";
 
-    if (target === "simplified") target = "n1";
+    let stay = false;
 
-    if (target === "original") {
-        if (nd >= near + hysteresis) target = "n1";
-    } else if (target === "n1") {
-        if (nd < near - hysteresis) target = "original";
-        else if (nd >= medium + hysteresis) target = "n2";
-    } else if (target === "n2") {
-        if (nd < medium - hysteresis) target = "n1";
-        else if (nd >= far + hysteresis) target = "n3";
-    } else if (target === "n3") {
-        if (nd < far - hysteresis) target = "n2";
+    if (current === "original") {
+        stay = size >= (originalMin - hysteresis);
+    } else if (current === "n1") {
+        stay = size < (originalMin + hysteresis) && size >= (n1Min - hysteresis);
+    } else if (current === "n2") {
+        stay = size < (n1Min + hysteresis) && size >= (n2Min - hysteresis);
+    } else if (current === "n3") {
+        stay = size < (n2Min + hysteresis);
+    }
+
+    let target;
+    if (stay) {
+        target = current;
     } else {
-        target = "original";
+        if (size >= originalMin) target = "original";
+        else if (size >= n1Min) target = "n1";
+        else if (size >= n2Min) target = "n2";
+        else target = "n3";
     }
 
     if (has(target)) return target;
-    if (target === "n3" && has("n2")) return "n2";
-    if ((target === "n3" || target === "n2") && has("n1")) return "n1";
+
+    const order = ["n3", "n2", "n1", "original"];
+    const targetIdx = order.indexOf(target);
+
+    if (targetIdx !== -1) {
+        for (let i = targetIdx + 1; i < order.length; i++) {
+            if (has(order[i])) return order[i];
+        }
+    }
+
     if (has("original")) return "original";
 
     return target;

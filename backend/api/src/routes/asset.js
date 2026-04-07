@@ -5,11 +5,7 @@ import { ArAsset, ArScene, ArProject, ArUser, ArMesh, ArLabel } from "../orm/ind
 import { deleteAsset, adminUploadAsset } from "../utils/fileUpload.js";
 import { Sequelize, Op } from "sequelize";
 import { sequelize } from "../orm/database.js";
-import {
-    computeAssetMetrics,
-    computeAssetPolicy,
-    computeGeometryMetricsFromFile,
-} from "../socket/utils/assetMetrics.js";
+import {computeAssetMetrics, computeAssetPolicy, computeGeometryMetricsFromFile, computeFileSizeBytes} from "../socket/utils/assetMetrics.js";
 import path from "node:path";
 import fs from "node:fs";
 import { spawn } from "node:child_process";
@@ -98,12 +94,14 @@ function makeVariantRel(inputRel, suffix) {
     const ext = path.posix.extname(inputRel) || ".glb";
     return path.posix.join(dirRel, `${base}_${suffix}${ext}`);
 }
-
+/*
 const LOD_PRESETS = {
     n1: { ratio: 0.75, error: 0.001 },
     n2: { ratio: 0.50, error: 0.005 },
     n3: { ratio: 0.25, error: 0.01 },
 };
+*/
+
 
 function buildVariantSet(asset, apiRoot) {
     const originalRel = toInputRel(asset?.url);
@@ -255,7 +253,20 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
         const metrics = await computeAssetMetrics(asset, apiRoot);
         const policy = computeAssetPolicy(metrics);
         const variants = buildVariantSet(asset, apiRoot);
+        console.log("[MANIFEST TYPE]", typeof asset.lodMeta, asset.lodMeta);
+        let parsedLodMeta = null;
 
+        try {
+            parsedLodMeta =
+                typeof asset.lodMeta === "string"
+                    ? JSON.parse(asset.lodMeta)
+                    : asset.lodMeta;
+        } catch (e) {
+            console.warn("[lodMeta parse failed]", e);
+        }
+        console.log("[MANIFEST] req.user =", req.user);
+        console.log("[MANIFEST] ownerId =", ownerId);
+        console.log("[MANIFEST] published =", project?.published);
         return res.status(200).send({
             assetId: asset.id,
             revision: asset.updatedAt ? new Date(asset.updatedAt).toISOString() : null,
@@ -264,12 +275,13 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
             variants,
             metrics,
             policy,
-            lodMeta: asset.lodMeta ?? null,
+            lodMeta:parsedLodMeta,
         });
     } catch (e) {
         console.log("[ASSET MANIFEST ERROR]", e);
         return res.status(400).send({ error: "Unable to fetch manifest" });
     }
+
 });
 
 router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, res) => {
@@ -343,16 +355,11 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
             await computeAssetMetrics(asset, apiRoot)
         );
 
-        const manualRatio =
-            req.body?.ratio != null ? normalizeRatio(req.body.ratio) : null;
-
+        // ERROR-ONLY presets
         const presets = {
-            n1: {
-                ratio: manualRatio ?? LOD_PRESETS.n1.ratio,
-                error: LOD_PRESETS.n1.error,
-            },
-            n2: { ...LOD_PRESETS.n2 },
-            n3: { ...LOD_PRESETS.n3 },
+            n1: { ratio: 0, error: 0.001 },
+            n2: { ratio: 0, error: 0.005 },
+            n3: { ratio: 0, error: 0.02 },
         };
 
         const n1Rel = makeVariantRel(inputRel, "n1");
@@ -419,13 +426,17 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
             await computeGeometryMetricsFromFile(n3Disk)
         );
 
+        console.log("[N1 Metrics]", n1Metrics);
+        console.log("[N2 Metrics]", n2Metrics);
+        console.log("[N3 Metrics]", n3Metrics);
+
         asset.simplifiedUrl = n1Rel;
-        asset.simplifyRatio = presets.n1.ratio;
+        asset.simplifyRatio = null;
         asset.preferredVariant = "simplified";
 
         asset.lodMeta = {
             generator: "gltf-transform",
-            mode: "ratio+error",
+            mode: "error-only",
             generatedAt: new Date().toISOString(),
             original: originalMetrics,
             variants: {
@@ -521,7 +532,6 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
         activeSimplifyJobs.delete(assetId);
     }
 });
-
 router.post(baseUrl + "scenes", authMiddleware, async (req, res) => {
     const token = req.user;
 

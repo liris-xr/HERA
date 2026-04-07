@@ -1,3 +1,4 @@
+//stocke les objets déjà chargés dans #objects
 import {Object3D} from "@/js/threeExt/modelManagement/object3D.js";
 
 class ObjectManagerInstance {
@@ -39,19 +40,21 @@ class ObjectManagerInstance {
         };
     }
     async load(url){
-        if(this.isLoaded(url)) {
+        /*if(this.isLoaded(url)) {
 
              console.warn("[objectManager] cache hit :", url);
              const cachedObject = this.getObject(url);
              return this.cloneCachedObjects(cachedObject);
          }
         console.log("[objectManager] cache miss :", url);
-
+*/
         const object = new Object3D(url);
         await object.load();
         this.#objects.push(object);
         
-        return this.cloneCachedObjects(object);
+
+        //return this.cloneCachedObjects(object);
+        return object;
     }
 }
 

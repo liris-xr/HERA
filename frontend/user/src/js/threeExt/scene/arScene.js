@@ -91,12 +91,12 @@ export class ArScene extends AbstractScene {
         this.clock = new THREE.Clock();
 
         this._lastVariantUpdateTime = 0;
-        this._variantUpdateIntervalMs = 3000;
+        this._variantUpdateIntervalMs = 1000;
         this._lodConfig = {
-            near: 2.0,
-            medium: 4.0,
-            far: 8.0,
-            hysteresis: 0.5,
+            originalMin: 0.22,
+            n1Min: 0.11,
+            n2Min: 0.05,
+            hysteresis: 0.04,
         };
         this.debugLod = {
             distance: null,
@@ -264,12 +264,14 @@ export class ArScene extends AbstractScene {
                     const manifest = await asset.getManifest().catch(() => null);
                     if (!manifest) continue;
                     //calcul métriques runtime
-                    const metrics = buildAssetRuntimeMetrics(asset, camera);
+                    const metrics = buildAssetRuntimeMetrics(asset, camera, renderer);
                     //console.log("METRICS", metrics);
                     const targetVariant = selectAssetVariant(manifest, metrics, this._lodConfig,asset.currentVariant);
 
                     asset.debugLod = {
-                        distance: Number(metrics.cameraDistance.toFixed(2)),
+                        depth: Number((metrics.cameraDepth ?? Infinity).toFixed(2)),
+                        visibleCoverage: Number((metrics.visibleCoverage ?? 0).toFixed(4)),
+                        rawCoverage: Number((metrics.rawCoverage ?? 0).toFixed(4)),
                         current: asset.currentVariant,
                         target: targetVariant,
                     };
@@ -287,9 +289,15 @@ export class ArScene extends AbstractScene {
 
                         overlay.style.background = colorMap[targetVariant] || "rgba(0,0,0,0.8)";
                         overlay.innerHTML = [
-                            `distance: ${(metrics.cameraDistance ?? Infinity).toFixed(2)}`,
-                            `radius: ${(metrics.boundingRadius ?? 0).toFixed(2)}`,
-                            `normDist: ${(metrics.normalizedDistance ?? Infinity).toFixed(2)}`,
+                            `depth: ${(metrics.cameraDepth ?? Infinity).toFixed(2)}`,
+                            `rawCover: ${((metrics.rawCoverage ?? 0) * 100).toFixed(1)}%`,
+                            `visCover: ${((metrics.visibleCoverage ?? 0) * 100).toFixed(1)}%`,
+                            `hVis: ${((metrics.visibleHeightRatio ?? 0) * 100).toFixed(1)}%`,
+                            `wVis: ${((metrics.visibleWidthRatio ?? 0) * 100).toFixed(1)}%`,
+                            `hPx: ${(metrics.screenHeightPx ?? 0).toFixed(0)}px`,
+                            `wPx: ${(metrics.screenWidthPx ?? 0).toFixed(0)}px`,
+                            `front: ${metrics.frontCornerCount ?? 0}`,
+                            `behind: ${metrics.behindCornerCount ?? 0}`,
                             `current: ${asset.currentVariant ?? "-"}`,
                             `target: ${targetVariant ?? "-"}`,
                         ].join("<br>");
@@ -298,20 +306,34 @@ export class ArScene extends AbstractScene {
                     if (asset.lastDebugTargetVariant !== targetVariant) {
                         console.log("[LOD CHANGE]",
                             "asset:", asset.id,
-                            "distance:", metrics.cameraDistance.toFixed(2),
+                            "depth:", Number((metrics.cameraDepth ?? Infinity).toFixed(2)),
+                            "rawCoverage:", Number((metrics.rawCoverage ?? 0).toFixed(4)),
+                            "visibleCoverage:", Number((metrics.visibleCoverage ?? 0).toFixed(4)),
+                            "frontCorners:", metrics.frontCornerCount ?? 0,
+                            "behindCorners", metrics.behindCornerCount ?? 0,
                             "current:", asset.currentVariant,
                             "target:", targetVariant
-                        );
+                    );
                         asset.lastDebugTargetVariant = targetVariant;
                     }
 
                     //await ensureAssetVariant(asset, this, targetVariant);
-                    //this.postSwapAssetUpdate(asset);
                     const changed = await ensureAssetVariant(asset, this, targetVariant);
                     if (changed) {
                         this.postSwapAssetUpdate(asset);
-                        this.#boundingBox = null;
-                        this.#boundingSphere = null;
+
+                        const obj = asset.object;
+
+                        console.log("[LOD SWAP]",
+                            "asset:", asset.id,
+                            "from:", asset.previousVariant,
+                            "to:", targetVariant,
+                            "localPos:", obj ? {
+                                x: obj.position.x.toFixed(2),
+                                y: obj.position.y.toFixed(2),
+                                z: obj.position.z.toFixed(2),
+                            } : null
+                        );
                     }
 
                 } catch (e) {

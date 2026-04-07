@@ -10,7 +10,6 @@ export function InputAssetNode() {
         },
     };
 }
-
 export function ResolveAssetUrlNode() {
     return {
         id: "ResolveAssetUrl",
@@ -19,7 +18,11 @@ export function ResolveAssetUrlNode() {
             if (!asset) throw new Error("[ResolveAssetUrlNode] asset missing");
 
             const variantOverride = ctx?.options?.variantOverride ?? null;
-
+            const token = ctx?.options?.token ?? null;
+            console.log("[ResolveAssetUrlNode] asset.id =", asset.id);
+            console.log("[ResolveAssetUrlNode] variantOverride =", variantOverride);
+            console.log("[ResolveAssetUrlNode] token present =", !!token);
+            console.log("[ResolveAssetUrlNode] ctx.options =", ctx?.options);
             if (asset.uploadData) {
                 console.log("[ResolveAssetUrlNode] upload asset -> load from upload");
                 return {
@@ -28,14 +31,14 @@ export function ResolveAssetUrlNode() {
                     variant: "original",
                 };
             }
-            //il demande le manifest  au backend
-            const manifest = await fetchAssetManifest(asset.id);
-            //choisit variante à charger
+
+            const manifest = await fetchAssetManifest(asset.id, token);
+
             const chosen = pickVariantFromManifest(manifest, {
                 variantOverride,
                 allowFallback: true,
             });
-            //construit url final a charer
+
             const finalUrl = getResource(chosen.path);
 
             console.log("[ResolveAssetUrlNode] asset:", asset.id);

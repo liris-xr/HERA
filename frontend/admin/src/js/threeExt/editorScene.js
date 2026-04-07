@@ -185,7 +185,9 @@ export class EditorScene extends THREE.Scene {
         this.sceneTitle = title;
     }
 
-    async init(sceneData) {
+    async init(sceneData, options = {}) {
+        console.log("[Editor.init] options =", options);
+        console.log("[Editor.init] token present =", !!options?.token);
         this.projectId = sceneData.projectId;
 
         if (sceneData.meshes) {
@@ -200,10 +202,13 @@ export class EditorScene extends THREE.Scene {
         const assetPromises = [];
         for (const assetData of sceneData.assets) {
             const asset = new Asset(assetData);
+            console.log("[EditorScene.init] loading asset =", assetData.id);
+            console.log("[EditorScene.init] passing options =", options);
+
             assetPromises.push(
                 this.assetManager.addToScene(this, asset, () => {
                     this.updatePlaygroundSize();
-                })
+                }, true, options)
             );
         }
 
@@ -245,7 +250,7 @@ export class EditorScene extends THREE.Scene {
                         this.vrStartPosition.rotation.y,
                         this.vrStartPosition.rotation.z
                     );
-                }, false)
+                }, false, options)
             );
 
             this.vrCamera = camera;

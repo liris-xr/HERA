@@ -33,8 +33,10 @@ export class Editor {
         window.addEventListener("resize", this.onWindowResize.bind(this));
     }
 
-    async init(json, container) {
-        await this.scene.init(json);
+    async init(json, container, options ={}) {
+        console.log("[Editor.init] options =", options);
+        console.log("[Editor.init] token present =", !!options?.token);
+        await this.scene.init(json,options);
 
         container.appendChild(this.renderer.domElement);
         container.appendChild(this.labelRenderer.domElement);

@@ -89,6 +89,7 @@ watch(selectedVariant, async (val) => {
 
       await editor.scene.assetManager.reloadAndSwap(editor.scene, a, {
         variantOverride: val,
+        token: token.value,
       });
 
       a.preferredVariant = val;
@@ -138,7 +139,7 @@ onMounted(async () => {
 
     if (!container.value) throw new Error("container is null");
 
-    await editor.init(scene.value, container.value);
+    await editor.init(scene.value, container.value, {token: token.value});
 
     editor.scene.labelManager.onChanged = () => {
       saved.value = false;
@@ -393,13 +394,9 @@ function isAssetSimplifying(assetId) {
   return simplifyingAssetIds.value.has(assetId);
 }
 
-async function simplifyAsset(asset, ratio) {
+async function simplifyAsset(asset) {
   if (!asset?.id) return;
   if (isAssetSimplifying(asset.id)) return;
-
-  const r = Number.isFinite(Number(ratio))
-      ? Math.max(0.01, Math.min(1.0, Number(ratio)))
-      : 0.25;
 
   if (String(asset.id).startsWith("new-asset")) {
     await saveAll();
@@ -418,7 +415,7 @@ async function simplifyAsset(asset, ratio) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token.value}`,
       },
-      body: JSON.stringify({ ratio: r }),
+      body: JSON.stringify({}),
     });
 
     const json = await res.json().catch(() => ({}));
@@ -427,11 +424,12 @@ async function simplifyAsset(asset, ratio) {
     const a = json.asset ?? json;
 
     asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;
-    asset.simplifyRatio = a.simplifyRatio ?? r;
+    asset.simplifyRatio = a.simplifyRatio ?? null;
     asset.preferredVariant = selectedVariant.value;
 
     await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
       variantOverride: selectedVariant.value,
+      token : token.value,
     });
 
     saved.value = false;
@@ -664,7 +662,7 @@ function markChang() {
                     @animationChanged="(val) => { asset.activeAnimation = val; saved.value = false; }"
                     @hide-in-viewer="() => { asset.switchViewerDisplayStatus(); saved.value = false; }"
                     @changed="markChang"
-                    @simplify="({ ratio }) => simplifyAsset(asset, ratio)"
+                    @simplify="() => simplifyAsset(asset)"
                 />
               </template>
 

@@ -4,14 +4,13 @@ export function selectAssetVariant(manifest, metrics, config = {}, currentVarian
     const has = (k) => variants[k] && variants[k].status === "ready" && variants[k].path;
 
     const {
-        originalMin = 0.20,
-        n1Min = 0.10,
-        n2Min = 0.04,
-        hysteresis = 0.01,
+        originalMin = 0.9,
+        n1Min = 0.75,
+        n2Min = 0.68,
+        hysteresis = 0.05,
     } = config;
 
-    //calcul visible coverage
-    const size = metrics?.visibleCoverage ?? 0;
+    const lodMetric = metrics?.visibleCoverage ?? 0;
 
     let current = currentVariant ?? "original";
     if (current === "simplified") current = "n1";
@@ -19,22 +18,22 @@ export function selectAssetVariant(manifest, metrics, config = {}, currentVarian
     let stay = false;
 
     if (current === "original") {
-        stay = size >= (originalMin - hysteresis);
+        stay = lodMetric >= (originalMin - hysteresis);
     } else if (current === "n1") {
-        stay = size < (originalMin + hysteresis) && size >= (n1Min - hysteresis);
+        stay = lodMetric < (originalMin + hysteresis) && lodMetric >= (n1Min - hysteresis);
     } else if (current === "n2") {
-        stay = size < (n1Min + hysteresis) && size >= (n2Min - hysteresis);
+        stay = lodMetric < (n1Min + hysteresis) && lodMetric >= (n2Min - hysteresis);
     } else if (current === "n3") {
-        stay = size < (n2Min + hysteresis);
+        stay = lodMetric < (n2Min + hysteresis);
     }
 
     let target;
     if (stay) {
         target = current;
     } else {
-        if (size >= originalMin) target = "original";
-        else if (size >= n1Min) target = "n1";
-        else if (size >= n2Min) target = "n2";
+        if (lodMetric >= originalMin) target = "original";
+        else if (lodMetric >= n1Min) target = "n1";
+        else if (lodMetric >= n2Min) target = "n2";
         else target = "n3";
     }
 

@@ -6,7 +6,7 @@ import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/asset
 
 function applyVariantDebugColor(object, variant) {
     const colorMap = {
-        original: 0x000000,
+        original: 0x073763,
         n1: 0xffff00,
         n2: 0xff8800,
         n3: 0xff0000,
@@ -382,7 +382,7 @@ export class Asset extends SceneElementInterface {
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;
-            //applyVariantDebugColor(newObject, this.currentVariant);
+            applyVariantDebugColor(newObject, this.currentVariant);
 
             if (parent) {
                 parent.add(newObject);

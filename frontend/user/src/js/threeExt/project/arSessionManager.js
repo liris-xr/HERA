@@ -8,6 +8,7 @@ import {Xr3dUi} from "@/js/threeExt/ui/Xr3dUi.js";
 import * as THREE from "three";
 import {extractYawQuaternion} from "@/js/utils/extractYawQuaternion.js";
 import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.js";
+import {buildSimpleDevicePolicy} from "@/js/threeExt/DeviceProfile/devicePolicy.js";
 
 export class ArSessionManager {
     sceneManager;
@@ -47,6 +48,7 @@ export class ArSessionManager {
                 this.xr3dUi.addToScene(this.sceneManager.active.value)
             this.applyVrCameraPosition()
         }.bind(this);
+        this.devicePolicy=null;
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
     }
@@ -59,6 +61,13 @@ export class ArSessionManager {
 
         this.controls = new OrbitControls( this.arCamera, this.arRenderer.domElement);
         this.onWindowResize();
+        this.devicePolicy = buildSimpleDevicePolicy();
+        console.log("device policy",this.devicePolicy);
+        for (const scene of this.sceneManager.scenes) {
+            if (typeof scene.setDevicePolicy === "function"){
+                scene.setDevicePolicy(this.devicePolicy);
+            }
+        }
 
         this.domOverlay = arOverlay;
         this.arRenderer.setAnimationLoop(this.onXrFrame.bind(this));

@@ -91,19 +91,18 @@ export class ArScene extends AbstractScene {
         this.clock = new THREE.Clock();
 
         this._lastVariantUpdateTime = 0;
-        this._variantUpdateIntervalMs = 1000;
+        this._variantUpdateIntervalMs = 100;
         this._lodConfig = {
-            originalMin: 0.22,
-            n1Min: 0.11,
-            n2Min: 0.05,
-            hysteresis: 0.04,
+            originalMin: 0.20,
+            n1Min: 0.10,
+            n2Min: 0.04,
+            hysteresis: 0.01,
         };
-        this.debugLod = {
-            distance: null,
-            current: null,
-            target: null,
-        };
+        this.debugLod = {distance: null, current: null, target: null };
+        this.devicePolicy = null;
     }
+
+    //sub mesh helpers
 
     getAssetSubMeshes(assetData) {
         let subMeshes = []
@@ -130,6 +129,8 @@ export class ArScene extends AbstractScene {
         return subMeshes
     }
 
+    //walks the asset's object graph and applies data based sourced overrides to each sub mesh then refreshes normals
+    //called after initial load and after every lod variant swpa to keep the sub mesh config consistent across model changes
     updateAssetSubMeshes(assetData) {
         const step = (child,transform) => {
             for(let children of child.children) {
@@ -271,7 +272,10 @@ export class ArScene extends AbstractScene {
                     asset.debugLod = {
                         depth: Number((metrics.cameraDepth ?? Infinity).toFixed(2)),
                         visibleCoverage: Number((metrics.visibleCoverage ?? 0).toFixed(4)),
-                        rawCoverage: Number((metrics.rawCoverage ?? 0).toFixed(4)),
+                        widthPx: Number((metrics.screenWidthPx ?? 0).toFixed(0)),
+                        heightPx: Number((metrics.screenHeightPx ?? 0).toFixed(0)),
+                        sphereRadius: Number((metrics.sphereRadius ?? 0).toFixed(3)),
+                        isBehindCamera: !!metrics.isBehindCamera,
                         current: asset.currentVariant,
                         target: targetVariant,
                     };
@@ -290,14 +294,13 @@ export class ArScene extends AbstractScene {
                         overlay.style.background = colorMap[targetVariant] || "rgba(0,0,0,0.8)";
                         overlay.innerHTML = [
                             `depth: ${(metrics.cameraDepth ?? Infinity).toFixed(2)}`,
-                            `rawCover: ${((metrics.rawCoverage ?? 0) * 100).toFixed(1)}%`,
                             `visCover: ${((metrics.visibleCoverage ?? 0) * 100).toFixed(1)}%`,
                             `hVis: ${((metrics.visibleHeightRatio ?? 0) * 100).toFixed(1)}%`,
                             `wVis: ${((metrics.visibleWidthRatio ?? 0) * 100).toFixed(1)}%`,
                             `hPx: ${(metrics.screenHeightPx ?? 0).toFixed(0)}px`,
                             `wPx: ${(metrics.screenWidthPx ?? 0).toFixed(0)}px`,
-                            `front: ${metrics.frontCornerCount ?? 0}`,
-                            `behind: ${metrics.behindCornerCount ?? 0}`,
+                            `sphereR: ${(metrics.sphereRadius ?? 0).toFixed(3)}`,
+                            `behind: ${metrics.isBehindCamera ? "yes" : "no"}`,
                             `current: ${asset.currentVariant ?? "-"}`,
                             `target: ${targetVariant ?? "-"}`,
                         ].join("<br>");
@@ -307,13 +310,14 @@ export class ArScene extends AbstractScene {
                         console.log("[LOD CHANGE]",
                             "asset:", asset.id,
                             "depth:", Number((metrics.cameraDepth ?? Infinity).toFixed(2)),
-                            "rawCoverage:", Number((metrics.rawCoverage ?? 0).toFixed(4)),
                             "visibleCoverage:", Number((metrics.visibleCoverage ?? 0).toFixed(4)),
-                            "frontCorners:", metrics.frontCornerCount ?? 0,
-                            "behindCorners", metrics.behindCornerCount ?? 0,
+                            "widthPx:", Number((metrics.screenWidthPx ?? 0).toFixed(0)),
+                            "heightPx:", Number((metrics.screenHeightPx ?? 0).toFixed(0)),
+                            "sphereRadius:", Number((metrics.sphereRadius ?? 0).toFixed(3)),
+                            "isBehindCamera:", !!metrics.isBehindCamera,
                             "current:", asset.currentVariant,
                             "target:", targetVariant
-                    );
+                        );
                         asset.lastDebugTargetVariant = targetVariant;
                     }
 
@@ -364,5 +368,29 @@ export class ArScene extends AbstractScene {
         this.updateAssetSubMeshes(asset);
         this.#boundingBox = null;
         this.#boundingSphere = null;
+    }
+
+    setDevicePolicy(policy) {
+        this.devicePolicy = policy;
+
+        if (!policy) return;
+
+        if (policy.variantUpdateIntervalMs != null) {
+            this._variantUpdateIntervalMs = policy.variantUpdateIntervalMs;
+        }
+
+        if (policy.lodConfig) {
+            this._lodConfig = {
+                ...this._lodConfig,
+                ...policy.lodConfig,
+            };
+        }
+
+        console.log("[HERA][scenePolicyApplied]", {
+            sceneId: this.sceneId,
+            variantUpdateIntervalMs: this._variantUpdateIntervalMs,
+            lodConfig: this._lodConfig,
+            deviceClass: policy.deviceClass,
+        });
     }
 }

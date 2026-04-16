@@ -2,35 +2,7 @@
 import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/assetManifest.js";
 import { getResource } from "@/js/endpoints.js";
 
-function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-}
 
-function lerp(a, b, t) {
-    return a + (b - a) * t;
-}
-
-function computeRecommendedSimplifyRatio(sizeBytes, options = {}) {
-    const {
-        minBytes = 5 * 1024 * 1024,
-        maxBytes = 200 * 1024 * 1024,
-        minRatio = 0.25,
-        maxRatio = 1.0,
-        fallbackRatio = 1.0,
-        roundDigits = 2,
-    } = options;
-
-    const size = Number(sizeBytes);
-
-    if (!Number.isFinite(size) || size <= 0) {
-        return fallbackRatio;
-    }
-
-    const t = clamp((size - minBytes) / (maxBytes - minBytes), 0, 1);
-    const ratio = lerp(maxRatio, minRatio, t);
-
-    return Number(ratio.toFixed(roundDigits));
-}
 
 export function InputAssetNode() {
     return {
@@ -138,37 +110,6 @@ export function AssetMetricNode() {
     };
 }
 
-export function SimplificationPolicyNode() {
-    return {
-        id: "SimplificationPolicy",
-        requires: [],
-        provides: ["policy.recommendedSimplifyRatio"],
-
-        async run(ctx, state) {
-            const manifestRatio =
-                state?.source?.manifest?.policy?.recommendedSimplifyRatio ?? null;
-
-            const localRatio = computeRecommendedSimplifyRatio(
-                state?.metrics?.assetSizeBytes
-            );
-
-            const recommendedSimplifyRatio = manifestRatio ?? localRatio;
-
-            console.log("[SimplificationPolicyNode]", {
-                manifestRatio,
-                localRatio,
-                final: recommendedSimplifyRatio,
-            });
-
-            return {
-                policy: {
-                    recommendedSimplifyRatio,
-                },
-            };
-        },
-    };
-}
-
 export function DecodeNode() {
     return {
         id: "Decode",
@@ -186,7 +127,6 @@ export function DecodeNode() {
                 variant: state?.source?.variant ?? null,
             });
 
-            console.log("[DecodeNode] policy =", state?.policy ?? null);
 
             const object3D = await services.resourceLoader.load({
                 asset,

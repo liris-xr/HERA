@@ -1,9 +1,4 @@
-// resourceLoader.js
-// Transitional loader service for HERA.
-// Important:
-// - for now it still delegates to asset.load()
-// - this keeps current behavior stable
-// - later you can move real loader logic here progressively
+import { Mesh } from "@/js/threeExt/modelManagement/mesh.js";
 
 export class ResourceLoader {
     async load({ asset, url, fromUpload }) {
@@ -11,14 +6,51 @@ export class ResourceLoader {
             throw new Error("[ResourceLoader] Missing asset.");
         }
 
-        if (typeof asset.load !== "function") {
-            throw new Error("[ResourceLoader] asset.load() is not available.");
-        }
+        asset.setLoading?.(true);
+        asset.setHasError?.(false);
 
-        return asset.load({
-            urlOverride: url ?? null,
-            forceUpload: !!fromUpload,
-        });
+        try {
+            let meshLoader;
+
+            if (fromUpload && asset.uploadData) {
+                meshLoader = new Mesh(null, asset.uploadData);
+            } else {
+                const finalUrl = url ?? asset.sourceUrl;
+                if (!finalUrl) {
+                    throw new Error("[ResourceLoader] No URL to load.");
+                }
+                meshLoader = new Mesh(finalUrl, null);
+            }
+
+            const object3D = await meshLoader.load();
+
+            object3D.position.set(
+                asset.position.x,
+                asset.position.y,
+                asset.position.z
+            );
+
+            object3D.rotation.set(
+                asset.rotation.x,
+                asset.rotation.y,
+                asset.rotation.z
+            );
+
+            object3D.scale.set(
+                asset.scale.x,
+                asset.scale.y,
+                asset.scale.z
+            );
+
+            asset.mesh = object3D;
+            asset.animations = object3D.animations ?? [];
+            asset.markLoaded?.();
+
+            return object3D;
+        } catch (e) {
+            asset.markLoadFailed?.();
+            throw e;
+        }
     }
 }
 

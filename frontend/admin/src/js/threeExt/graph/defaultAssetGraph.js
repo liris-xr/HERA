@@ -3,8 +3,7 @@ import {
     ResolveAssetUrlNode,
     DecodeNode,
     RenderNode,
-    AssetMetricNode,
-    SimplificationPolicyNode
+    AssetMetricNode
 } from "./assetPipelineNodes.js";
 
 export function createDefaultAssetGraph() {
@@ -12,7 +11,6 @@ export function createDefaultAssetGraph() {
         InputAssetNode(),
         ResolveAssetUrlNode(),
         AssetMetricNode(),
-        SimplificationPolicyNode(),
         DecodeNode(),
         RenderNode(),
     ];

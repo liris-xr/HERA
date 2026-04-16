@@ -133,7 +133,7 @@ export class AssetManager {
         this.meshManagerMap.delete(asset.id);
         this.meshManagerMap.set(asset.id, new MeshManager());
 
-        const ctx = { scene, asset, onAdd: null, options: { ...options } };
+        const ctx = { scene, asset, onAdd: null, options: { ...options }, services: {resourceLoader: defaultResourceLoader,}, };
 
         try {
             await runLinearGraph(ctx, createDefaultAssetGraph());
@@ -230,8 +230,7 @@ export class AssetManager {
             const preferredVariant =
                 (asset.preferredVariant?.value ?? asset.preferredVariant ?? "original");
 
-            const simplifyRatio =
-                (asset.simplifyRatio?.value ?? asset.simplifyRatio ?? null);
+
 
             result.push({
                 id: asset.id,
@@ -243,7 +242,6 @@ export class AssetManager {
                 copiedUrl: asset?.copiedUrl,
                 activeAnimation: asset.activeAnimation,
                 preferredVariant,
-                simplifyRatio,
             });
         }
         return result;
@@ -329,7 +327,6 @@ export class AssetManager {
             asset.sourceUrl = asset.__originalSourceUrl;
             asset.simplifiedUrl = db.simplifiedUrl ?? asset.simplifiedUrl ?? null;
             asset.preferredVariant = db.preferredVariant ?? asset.preferredVariant ?? "original";
-            asset.simplifyRatio = db.simplifyRatio ?? asset.simplifyRatio ?? null;
 
             if (asset.uploadData) asset.uploadData = null;
         }

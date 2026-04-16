@@ -52,7 +52,7 @@ const ready = computed(() => !loading.value && !error.value);
 
 const container = ref(null);
 
-const selectedVariant = ref('original');
+const selectedVariant = ref("original");
 
 // Envmap
 const uploadedEnvmap = ref({ rawData: null, tmpUrl: "" });
@@ -94,6 +94,8 @@ watch(selectedVariant, async (val) => {
 
       a.preferredVariant = val;
     }
+
+    saved.value = false;
   } catch (e) {
     console.error("[toggle selectedVariant] error:", e);
   }
@@ -139,7 +141,12 @@ onMounted(async () => {
 
     if (!container.value) throw new Error("container is null");
 
-    await editor.init(scene.value, container.value, {token: token.value});
+    await editor.init(scene.value, container.value, { token: token.value });
+
+    // initialize global variant selector from first asset if available
+    const firstAssetVariant =
+        scene.value.assets?.find((a) => a.id !== "vrCamera")?.preferredVariant ?? "original";
+    selectedVariant.value = firstAssetVariant;
 
     editor.scene.labelManager.onChanged = () => {
       saved.value = false;
@@ -424,12 +431,11 @@ async function simplifyAsset(asset) {
     const a = json.asset ?? json;
 
     asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;
-    asset.simplifyRatio = a.simplifyRatio ?? null;
     asset.preferredVariant = selectedVariant.value;
 
     await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
       variantOverride: selectedVariant.value,
-      token : token.value,
+      token: token.value,
     });
 
     saved.value = false;
@@ -439,55 +445,7 @@ async function simplifyAsset(asset) {
     simplifyingAssetIds.value.delete(asset.id);
   }
 }
-/*
-async function simplifyAsset(asset, ratio) {
-  if (!asset?.id) return;
 
-  const r = Number.isFinite(Number(ratio))
-      ? Math.max(0.01, Math.min(1.0, Number(ratio)))
-      : 0.25;
-
-  // must be saved in DB first
-  if (String(asset.id).startsWith("new-asset")) {
-    await saveAll();
-    if (String(asset.id).startsWith("new-asset")) {
-      alert("Asset not saved. Please save and try again.");
-      return;
-    }
-  }
-
-  simplifying.value = true;
-  try {
-    const res = await fetch(`${ENDPOINT}assets/${asset.id}/simplify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token.value}`,
-      },
-      body: JSON.stringify({ ratio: r }),
-    });
-
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json.error || "Simplify failed");
-
-    const a = json.asset ?? json;
-
-    asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;
-    asset.simplifyRatio = a.simplifyRatio ?? r;
-
-    asset.preferredVariant = selectedVariant.value;
-    await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
-      variantOverride: selectedVariant.value,
-    });
-
-    saved.value = false;
-  } catch (e) {
-    alert(e.message || e);
-  } finally {
-    simplifying.value = false;
-  }
-}
-*/
 function markChang() {
   saved.value = false;
 }
@@ -666,7 +624,7 @@ function markChang() {
                 />
               </template>
 
-              <div v-if="scene.assets.length === 0">
+              <div v-if="editor.scene.assetManager.getAssets.value.filter(a => a.id !== 'vrCamera').length === 0">
                 {{ $t("sceneView.leftSection.sceneAssets.noAssetsInfo") }}
               </div>
             </div>

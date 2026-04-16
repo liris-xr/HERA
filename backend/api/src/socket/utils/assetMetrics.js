@@ -85,28 +85,3 @@ export async function computeAssetMetrics(asset, apiRoot) {
     return await computeGeometryMetricsFromFile(inputDisk);
 }
 
-export function computeAssetPolicy(metrics, options = {}) {
-    const {
-        minBytes = 5 * 1024 * 1024,
-        maxBytes = 200 * 1024 * 1024,
-        minRatio = 0.25,
-        maxRatio = 1.0,
-        fallbackRatio = 1.0,
-        roundDigits = 2,
-    } = options;
-
-    const size = Number(metrics?.assetSizeBytes);
-
-    if (!Number.isFinite(size) || size <= 0) {
-        return {
-            recommendedSimplifyRatio: fallbackRatio,
-        };
-    }
-
-    const t = clamp((size - minBytes) / (maxBytes - minBytes), 0, 1);
-    const ratio = lerp(maxRatio, minRatio, t);
-
-    return {
-        recommendedSimplifyRatio: Number(ratio.toFixed(roundDigits)),
-    };
-}

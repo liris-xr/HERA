@@ -40,7 +40,7 @@ router.get(baseUrl + "scenes/:sceneId", authMiddleware, async (req, res) => {
                     as: "assets",
                     attributes: [
                         "id", "name", "url", "simplifiedUrl",
-                        "preferredVariant", "simplifyRatio", "lodMeta",
+                        "preferredVariant", "lodMeta",
                         "hideInViewer", "activeAnimation",
                         "position", "rotation", "scale",
                         "createdAt", "updatedAt",
@@ -195,7 +195,6 @@ router.put(
                                 activeAnimation: asset.activeAnimation,
 
                                 preferredVariant: normalizeVariant(asset.preferredVariant),
-                                simplifyRatio: normalizeRatio(asset.simplifyRatio),
                             },
                             { where: { id: asset.id }, transaction: t }
                         );
@@ -213,7 +212,6 @@ router.put(
                             hideInViewer: asset.hideInViewer ?? false,
 
                             preferredVariant: normalizeVariant(asset.preferredVariant),
-                            simplifyRatio: normalizeRatio(asset.simplifyRatio),
                             simplifiedUrl: null,
                         };
 
@@ -376,7 +374,7 @@ async function adminScenesHandler(req, res) {
                     as: "assets",
                     attributes: [
                         "id", "name", "url", "simplifiedUrl",
-                        "preferredVariant", "simplifyRatio", "lodMeta",
+                        "preferredVariant", "lodMeta",
                         "hideInViewer", "activeAnimation",
                         "position", "rotation", "scale",
                         "createdAt", "updatedAt",

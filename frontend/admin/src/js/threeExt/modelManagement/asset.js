@@ -4,6 +4,7 @@ import { classes } from "@/js/utils/extender.js";
 import { computed, ref } from "vue";
 import { Mesh } from "@/js/threeExt/modelManagement/mesh.js";
 import * as THREE from "three";
+
 export class Asset extends classes(SelectableInterface, LoadableInterface) {
     id;
     subMeshes;
@@ -70,7 +71,28 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
         this.sourceUrl = url;
     }
 
+    setLoading(value) {
+        this.#isLoading.value = !!value;
+    }
+
+    setHasError(value) {
+        this.#hasError.value = !!value;
+    }
+
+    markLoaded() {
+        this.#isLoading.value = false;
+        this.#hasError.value = false;
+    }
+
+    markLoadFailed() {
+        this.#isLoading.value = false;
+        this.#hasError.value = true;
+    }
+
+    // ⚠️ LEGACY: should not be used anymore by pipeline
     load(options = {}) {
+        console.warn("[Asset.load] deprecated - use ResourceLoader instead");
+
         const urlOverride = options.urlOverride ?? null;
         const forceUpload = !!options.forceUpload;
 

@@ -1,8 +1,9 @@
 /**
+ * fixed list of 6 possible categories
  * frozen enum of the six device tiers
  * using Object.freeze prevents accidental mutation at runtime
  * six tiers split mobile and desktop into low/mid/high which gives LOD system 6 # performance budgets to target
- *  @type {Readonly<{LOW_MOBILE: string, MID_MOBILE: string, HIGH_MOBILE: string, LOW_DESKTOP: string, MID_DESKTOP: string, HIGH_DESKTOP: string}>}
+ *
  */
 export const DEVICE_CLASSES = Object.freeze({
     LOW_MOBILE: "low-mobile",
@@ -15,17 +16,18 @@ export const DEVICE_CLASSES = Object.freeze({
 
 //reads raw browser signals to build a lightweight device profiles
 export function collectSimpleDeviceInfo() {
-    //touch detection
+    //touch detection / essaie de savoir si le device est tactile
     const touch = !!(
         navigator.maxTouchPoints > 0 ||
         navigator.msMaxTouchPoints > 0 ||
         "ontouchstart" in window
     );
-
+    //width of viewport
     const width = window.innerWidth || window.screen?.width || 0;
+    //ratio of the picture width to the viewport/ mesure combien de pixels physiques sont rendus pour 1 pixel CSS
     const dpr = window.devicePixelRatio || 1;
 
-    //device is mobile mosstly if its UA string says so or if its touch capable with a narrow viewport (small tablet/phone)
+    //device is mobile mostly if its UA string says so or if its touch capable with a narrow viewport (small tablet/phone)
     const isMobileLike =
         /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) ||
         (touch && width < 900);
@@ -46,19 +48,16 @@ export function collectSimpleDeviceInfo() {
         cpuLogicalCores: Number.isFinite(Number(navigator.hardwareConcurrency))
             ? Number(navigator.hardwareConcurrency)
             : null,
-        dpr, //device pixel ratio, affects render cost
+        dpr,
         touch,
-        width, //viewport width in CSS pixels
+        width,
         height: window.innerHeight || window.screen?.height || 0,
     };
 }
 
-/**
- * converts a raw device info object into one of the six device_classes
- *
- * @param info
- * @returns {string}
- */
+// converts a raw device info object into one of the six device_classes
+
+
 export function classifySimpleDevice(info) {
     //safe defaults if info is missing
     const ram = info?.ramGbApprox ?? 0;
@@ -109,7 +108,7 @@ export function getLodPolicyForDeviceClass(deviceClass) {
         case DEVICE_CLASSES.LOW_MOBILE:
             return {
                 deviceClass,
-                variantUpdateIntervalMs: 2500, //evaluate only every 2.5s
+                variantUpdateIntervalMs: 2000, //evaluate only every 2.5s
                 lodConfig: {
                     originalMin: 0.28, //needs > 28% screen coverage for full mesh
                     n1Min: 0.14,

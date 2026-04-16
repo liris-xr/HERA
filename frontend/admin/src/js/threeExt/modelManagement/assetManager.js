@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Vector3 } from "three";
 import { runLinearGraph } from "@/js/threeExt/graph/graphRuntime.js";
 import { createDefaultAssetGraph } from "@/js/threeExt/graph/defaultAssetGraph.js";
+import { defaultResourceLoader } from "@/js/threeExt/graph/resourceLoader.js";
 
 let currentAssetId = 0;
 
@@ -77,7 +78,7 @@ export class AssetManager {
             this.runOnChanged();
         }
 
-        const ctx = { scene, asset, onAdd, options: { ...options } };
+        const ctx = { scene, asset, onAdd, options: { ...options }, services: {resourceLoader: defaultResourceLoader,}, };
 
         return runLinearGraph(ctx, createDefaultAssetGraph())
             .then(() => {

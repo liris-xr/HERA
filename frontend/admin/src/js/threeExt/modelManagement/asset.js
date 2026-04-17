@@ -50,6 +50,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
 
         this.#hasError = ref(false);
         this.#isLoading = ref(true);
+        this.kind = assetData.kind ?? null;
 
         if (assetData?.copiedUrl) this.copiedUrl = assetData.copiedUrl;
     }
@@ -89,7 +90,6 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
         this.#hasError.value = true;
     }
 
-    // ⚠️ LEGACY: should not be used anymore by pipeline
     load(options = {}) {
         console.warn("[Asset.load] deprecated - use ResourceLoader instead");
 

@@ -1,7 +1,29 @@
 import { Mesh } from "@/js/threeExt/modelManagement/mesh.js";
 
+async function loadGltfResource({ asset, url, fromUpload }) {
+    let meshLoader;
+
+    if (fromUpload && asset.uploadData) {
+        meshLoader = new Mesh(null, asset.uploadData);
+    } else {
+        const finalUrl = url ?? asset.sourceUrl;
+        if (!finalUrl) {
+            throw new Error("[loadGltfResource] No URL to load.");
+        }
+        meshLoader = new Mesh(finalUrl, null);
+    }
+
+    return await meshLoader.load();
+}
+
+const LOADERS_BY_KIND = {
+    gltf: loadGltfResource,
+    // pointcloud: loadPointcloudResource,
+    // splat: loadSplatResource,
+};
+
 export class ResourceLoader {
-    async load({ asset, url, fromUpload }) {
+    async load({ asset, url, fromUpload, kind = "gltf" }) {
         if (!asset) {
             throw new Error("[ResourceLoader] Missing asset.");
         }
@@ -10,19 +32,12 @@ export class ResourceLoader {
         asset.setHasError?.(false);
 
         try {
-            let meshLoader;
-
-            if (fromUpload && asset.uploadData) {
-                meshLoader = new Mesh(null, asset.uploadData);
-            } else {
-                const finalUrl = url ?? asset.sourceUrl;
-                if (!finalUrl) {
-                    throw new Error("[ResourceLoader] No URL to load.");
-                }
-                meshLoader = new Mesh(finalUrl, null);
+            const loader = LOADERS_BY_KIND[kind];
+            if (!loader) {
+                throw new Error(`[ResourceLoader] Unsupported asset kind: ${kind}`);
             }
 
-            const object3D = await meshLoader.load();
+            const object3D = await loader({ asset, url, fromUpload });
 
             object3D.position.set(
                 asset.position.x,

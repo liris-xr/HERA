@@ -152,36 +152,42 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
             outputDisk: weldedDisk,
         });
 
-        await runSimplifyLevel({
-            gltfTransformCmd,
-            apiRoot,
-            inputDisk: weldedDisk,
-            outputDisk: n1Disk,
-            ratio: presets.n1.ratio ?? 0,
-            error: presets.n1.error,
-        });
+        await Promise.all([
+            runSimplifyLevel({
+                gltfTransformCmd,
+                apiRoot,
+                inputDisk: weldedDisk,
+                outputDisk: n1Disk,
+                ratio: presets.n1.ratio ?? 0,
+                error: presets.n1.error,
+            }),
+            runSimplifyLevel({
+                gltfTransformCmd,
+                apiRoot,
+                inputDisk: weldedDisk,
+                outputDisk: n2Disk,
+                ratio: presets.n2.ratio ?? 0,
+                error: presets.n2.error,
+            }),
+            runSimplifyLevel({
+                gltfTransformCmd,
+                apiRoot,
+                inputDisk: weldedDisk,
+                outputDisk: n3Disk,
+                ratio: presets.n3.ratio ?? 0,
+                error: presets.n3.error,
+            }),
+        ]);
 
-        await runSimplifyLevel({
-            gltfTransformCmd,
-            apiRoot,
-            inputDisk: weldedDisk,
-            outputDisk: n2Disk,
-            ratio: presets.n2.ratio ?? 0,
-            error: presets.n2.error,
-        });
+        const [n1MetricsRaw, n2MetricsRaw, n3MetricsRaw] = await Promise.all([
+            computeGeometryMetricsFromFile(n1Disk),
+            computeGeometryMetricsFromFile(n2Disk),
+            computeGeometryMetricsFromFile(n3Disk),
+        ]);
 
-        await runSimplifyLevel({
-            gltfTransformCmd,
-            apiRoot,
-            inputDisk: weldedDisk,
-            outputDisk: n3Disk,
-            ratio: presets.n3.ratio ?? 0,
-            error: presets.n3.error,
-        });
-
-        const n1Metrics = withDefaultMetricShape(await computeGeometryMetricsFromFile(n1Disk));
-        const n2Metrics = withDefaultMetricShape(await computeGeometryMetricsFromFile(n2Disk));
-        const n3Metrics = withDefaultMetricShape(await computeGeometryMetricsFromFile(n3Disk));
+        const n1Metrics = withDefaultMetricShape(n1MetricsRaw);
+        const n2Metrics = withDefaultMetricShape(n2MetricsRaw);
+        const n3Metrics = withDefaultMetricShape(n3MetricsRaw);
 
         asset.simplifiedUrl = n1Rel;
         asset.preferredVariant = "original";

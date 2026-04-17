@@ -1,8 +1,7 @@
 // assetPipelineNodes.js
 import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/assetManifest.js";
 import { getResource } from "@/js/endpoints.js";
-
-
+import { detectAssetKind } from "@/js/threeExt/graph/resourceKinds.js";
 
 export function InputAssetNode() {
     return {
@@ -35,6 +34,7 @@ export function ResolveAssetUrlNode() {
             "source.url",
             "source.variant",
             "source.fromUpload",
+            "source.kind",
         ],
 
         async run(ctx, state) {
@@ -66,6 +66,7 @@ export function ResolveAssetUrlNode() {
             });
 
             const finalUrl = getResource(chosen.path);
+            const kind = detectAssetKind(asset, { url: finalUrl });
 
             console.log("[ResolveAssetUrlNode] asset:", asset.id);
             console.log("[ResolveAssetUrlNode] chosen variant:", chosen.variant);
@@ -78,6 +79,7 @@ export function ResolveAssetUrlNode() {
                     url: finalUrl,
                     fromUpload: false,
                     variant: chosen.variant,
+                    kind: detectAssetKind(asset,null),
                 },
             };
         },
@@ -121,10 +123,15 @@ export function DecodeNode() {
             const url = state?.source?.url ?? null;
             const fromUpload = !!state?.source?.fromUpload;
 
+            const kind = state?.source?.kind ?? "gltf";
+            if (!state?.source?.kind) {
+                console.warn("[DecodeNode] missing kind → fallback to gltf");
+            }
             console.log("[DecodeNode] source =", {
                 url,
                 fromUpload,
                 variant: state?.source?.variant ?? null,
+                kind,
             });
 
 
@@ -132,6 +139,7 @@ export function DecodeNode() {
                 asset,
                 url,
                 fromUpload,
+                kind,
                 state,
                 ctx,
             });

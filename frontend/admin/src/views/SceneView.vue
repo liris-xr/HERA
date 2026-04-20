@@ -445,6 +445,64 @@ async function simplifyAsset(asset) {
     simplifyingAssetIds.value.delete(asset.id);
   }
 }
+async function compressAsset(asset, params) {
+  if (!asset?.id) return;
+  if (isAssetSimplifying(asset.id)) return;
+
+  if (String(asset.id).startsWith("new-asset")) {
+    await saveAll();
+    if (String(asset.id).startsWith("new-asset")) {
+      alert("Asset not saved. Please save and try again.");
+      return;
+    }
+  }
+
+  simplifyingAssetIds.value.add(asset.id);
+
+  try {
+    const res = await fetch(`${ENDPOINT}assets/${asset.id}/process`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({
+        strategy: "compressTextures",
+        params: { format: params.format }
+      }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || "Compression failed");
+
+    const a = json.asset ?? json;
+    asset.lodMeta = a.lodMeta ?? asset.lodMeta;
+
+    // Switch to the newly compressed variant immediately
+    selectedVariant.value = params.format;
+
+    await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
+      variantOverride: params.format,
+      token: token.value,
+    });
+
+    saved.value = false;
+  } catch (e) {
+    alert(e.message || e);
+  } finally {
+    simplifyingAssetIds.value.delete(asset.id);
+  }
+}
+
+const availableVariants = computed(() => {
+  const variants = new Set(["original", "n1", "n2", "n3"]);
+  scene.value.assets?.forEach(a => {
+    if (a.lodMeta?.variants) {
+      Object.keys(a.lodMeta.variants).forEach(v => variants.add(v));
+    }
+  });
+  return Array.from(variants);
+});
 
 function markChang() {
   saved.value = false;
@@ -593,10 +651,7 @@ function markChang() {
             <div class="inlineFlex" style="gap: 12px">
               <label style="margin-right: 0">Variant</label>
               <select v-model="selectedVariant">
-                <option value="original">original</option>
-                <option value="n1">n1</option>
-                <option value="n2">n2</option>
-                <option value="n3">n3</option>
+                <option v-for="v in availableVariants" :key="v" :value="v">{{ v }}</option>
               </select>
             </div>
 
@@ -621,6 +676,7 @@ function markChang() {
                     @hide-in-viewer="() => { asset.switchViewerDisplayStatus(); saved.value = false; }"
                     @changed="markChang"
                     @simplify="() => simplifyAsset(asset)"
+                    @compress="(params) => compressAsset(asset, params)"
                 />
               </template>
 

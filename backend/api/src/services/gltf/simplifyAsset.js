@@ -2,13 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 import { computeAssetMetrics, computeGeometryMetricsFromFile } from "../../socket/utils/assetMetrics.js";
-import {
-    normalizePath,
-    fileExists,
-    toInputRel,
-    makeVariantRel,
-    buildVariantSet,
-} from "./variantSet.js";
+import {normalizePath, fileExists, toInputRel, makeVariantRel, buildVariantSet,} from "./variantSet.js";
 
 function run(cmd, args, cwd) {
     return new Promise((resolve, reject) => {
@@ -51,12 +45,7 @@ function withDefaultMetricShape(metrics = {}) {
     };
 }
 
-async function runWeld({
-                           gltfTransformCmd,
-                           apiRoot,
-                           inputDisk,
-                           outputDisk,
-                       }) {
+async function runWeld({gltfTransformCmd, apiRoot, inputDisk, outputDisk,}) {
     ensureParentDir(outputDisk);
 
     const args = ["weld", inputDisk, outputDisk];
@@ -68,15 +57,7 @@ async function runWeld({
     }
 }
 
-async function runSimplifyLevel({
-                                    gltfTransformCmd,
-                                    apiRoot,
-                                    inputDisk,
-                                    outputDisk,
-                                    ratio,
-                                    error,
-                                    lockBorder = false,
-                                }) {
+async function runSimplifyLevel({gltfTransformCmd, apiRoot, inputDisk, outputDisk, ratio, error, lockBorder = false,}) {
     ensureParentDir(outputDisk);
 
     const args = [

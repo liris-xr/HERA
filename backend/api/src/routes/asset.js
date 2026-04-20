@@ -86,7 +86,7 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
 
     if (activeSimplifyJobs.has(assetId)) {
         return res.status(409).send({
-            error: "Simplify already running for this asset",
+            error: "Simplify already running for this asset ",
         });
     }
 
@@ -141,6 +141,58 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
         });
     } finally {
         activeSimplifyJobs.delete(assetId);
+    }
+});
+router.post(baseUrl + "assets/:assetId/process", authMiddleware, async (req, res) => {
+    const token = req.user;
+    const assetId = req.params.assetId;
+    const strategy = req.body?.strategy;
+
+    try {
+        const asset = await ArAsset.findOne({
+            where: { id: assetId },
+            include: [{
+                model: ArScene,
+                as: "scene",
+                include: [{
+                    model: ArProject,
+                    as: "project",
+                    include: [{ model: ArUser, as: "owner", attributes: ["id"] }],
+                }],
+            }],
+        });
+
+        res.set({ "Content-Type": "application/json" });
+
+        if (!asset) {
+            return res.status(404).send({ error: "Asset not found" });
+        }
+
+        const ownerId = asset.scene?.project?.owner?.id;
+        if (ownerId !== token.id && !req.user.admin) {
+            return res.status(403).send({ error: "User not granted" });
+        }
+
+        if (!strategy) {
+            return res.status(400).send({ error: "Missing strategy" });
+        }
+
+        const apiRoot = process.cwd();
+
+        const result = await processAsset({
+            asset,
+            strategy,
+            params: req.body?.params ?? {},
+            apiRoot,
+        });
+
+        return res.status(200).send(result);
+    } catch (e) {
+        console.log("[ASSET PROCESS ERROR]", e);
+        return res.status(400).send({
+            error: "Process failed",
+            details: e?.message || String(e),
+        });
     }
 });
 

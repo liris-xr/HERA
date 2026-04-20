@@ -49,7 +49,7 @@ export class AssetManager {
                     children.userData = children.userData ?? {};
                     children.userData.assetId = assetData.id;
 
-                    const subMeshId = `project-${this.projectId}-scene-${this.sceneTitle}-asset-${assetData.id}-mesh-${children.name}`;
+                    const subMeshId = `project-${this.projectId}-scene-asset-${assetData.id}-mesh-${children.name}`;
                     children.userData.id = subMeshId;
 
                     const subMeshData = this.meshDataMap.get(assetData.id)?.[subMeshId];
@@ -191,7 +191,7 @@ export class AssetManager {
                 const name = mesh?.name ?? "mesh";
                 const meshId =
                     mesh?.userData?.id ??
-                    `project-${this.projectId}-scene-${this.sceneTitle}-asset-${finalAssetId}-mesh-${name}`;
+                    `project-${this.projectId}-scene-asset-${finalAssetId}-mesh-${name}`;
 
                 const key = `${meshId}::${finalAssetId}`;
                 if (seen.has(key)) continue;

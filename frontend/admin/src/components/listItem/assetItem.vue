@@ -27,6 +27,7 @@ const emit = defineEmits([
   "animationChanged",
   "reset",
   "simplify",
+  "compress",
   "changed",
 ]);
 
@@ -47,8 +48,9 @@ watch(
 
 const selectedOption = ref(null);
 const simplifyRatio = ref(0.25);
+const compressFormat = ref("webp");
 
-const canSimplify = computed(
+const canProcess = computed(
     () =>
         props.rightMenu &&
         !props.loading &&
@@ -60,7 +62,7 @@ onMounted(() => {
   selectedOption.value = props.activeAnimation ?? "none";
 });
 
-watch(simplifyRatio, () => {
+watch([simplifyRatio, compressFormat], () => {
   emit("changed");
 });
 </script>
@@ -110,30 +112,35 @@ watch(simplifyRatio, () => {
           @click.stop="onClick(() => $emit('hideInViewer', false))"
       />
 
-      <div v-if="canSimplify" class="simplifyBox" @click.stop="">
-        <input
-            class="simplifyRange"
-            type="range"
-            min="0.01"
-            max="1"
-            step="0.01"
-            v-model.number="simplifyRatio"
-            :disabled="simplifying"
-        />
+      <div v-if="canProcess" class="processingBox" @click.stop="">
+        <!-- Simplify Section -->
+        <div class="actionGroup">
+          <button
+              class="actionBtn"
+              type="button"
+              :disabled="simplifying"
+              @click.stop="emit('simplify', { ratio: 0.25 })"
+          >
+            {{ simplifying ? "..." : "Simplify" }}
+          </button>
+        </div>
 
-        <span class="simplifyValue">{{ simplifyRatio.toFixed(2) }}</span>
-
-        <button
-            class="simplifyBtn"
-            type="button"
-            :disabled="simplifying"
-            @click.stop="() => {
-            if (simplifying) return;
-            emit('simplify', { ratio: simplifyRatio });
-          }"
-        >
-          {{ simplifying ? "Simplifying..." : "Simplify" }}
-        </button>
+        <!-- Compress Section (New Node) -->
+        <div class="actionGroup">
+          <select v-model="compressFormat" :disabled="simplifying" class="formatSelect">
+            <option value="webp">WebP</option>
+            <option value="etc1s">ETC1S (KTX)</option>
+            <option value="uastc">UASTC (KTX)</option>
+          </select>
+          <button
+              class="actionBtn"
+              type="button"
+              :disabled="simplifying"
+              @click.stop="emit('compress', { format: compressFormat })"
+          >
+            {{ simplifying ? "..." : "Compress" }}
+          </button>
+        </div>
       </div>
 
       <icon-svg url="/icons/duplicate.svg" v-if="rightMenu" class="iconAction" @click.stop="onClick(() => $emit('duplicate'))"/>
@@ -144,23 +151,47 @@ watch(simplifyRatio, () => {
 </template>
 
 <style scoped>
-.simplifyBox {
+.processingBox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0,0,0,0.05);
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.actionGroup {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .simplifyRange {
-  width: 120px;
+  width: 60px;
 }
 
-.simplifyBtn {
-  padding: 4px 8px;
+.valueLabel {
+  font-size: 10px;
+  min-width: 25px;
+}
+
+.formatSelect {
+  font-size: 10px;
+  padding: 2px;
+}
+
+.actionBtn {
+  padding: 2px 6px;
   cursor: pointer;
+  font-size: 10px;
+  background: var(--darkerBackgroundColor);
+  border: 1px solid var(--borderColor);
+  border-radius: 4px;
 }
 
-.simplifyBtn:disabled,
-.simplifyRange:disabled {
+.actionBtn:disabled,
+.simplifyRange:disabled,
+.formatSelect:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

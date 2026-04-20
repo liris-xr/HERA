@@ -138,15 +138,15 @@ const getEditedLabel = computed(()=>{
               <div class="inlineFlex">
                 <label for="AdvancedEditTimestampStart">{{$t("labelEditModal.animation.in.label")}}</label>
                 <input type="text" id="AdvancedEditTimestampStart" :placeholder="$t('labelEditModal.animation.in.placeholder')" v-model="timestampStart" min="0">
-                <Button class="updateValueButton" @click="updateStartTimestamp('start',1)">↑</Button>
-                <Button class="updateValueButton" @click="updateStartTimestamp('start',-1)">↓</Button>
+                <button class="updateValueButton" @click="updateStartTimestamp('start',1)">↑</button>
+                <button class="updateValueButton" @click="updateStartTimestamp('start',-1)">↓</button>
               </div>
 
             <div class="inlineFlex">
               <label for="AdvancedEditTimestampEnd">{{$t("labelEditModal.animation.out.label")}}</label>
               <input type="text" id="AdvancedEditTimestampEnd" :placeholder="$t('labelEditModal.animation.out.placeholder')" v-model="timestampEnd" min="timestampStart">
-              <Button class="updateValueButton" @click="updateStartTimestamp('end',1)">↑</Button>
-              <Button class="updateValueButton" @click="updateStartTimestamp('end',-1)">↓</Button>
+              <button class="updateValueButton" @click="updateStartTimestamp('end',1)">↑</button>
+              <button class="updateValueButton" @click="updateStartTimestamp('end',-1)">↓</button>
             </div>
 
           </div>

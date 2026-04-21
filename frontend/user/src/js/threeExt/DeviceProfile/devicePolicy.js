@@ -1,10 +1,3 @@
-/**
- * fixed list of 6 possible categories
- * frozen enum of the six device tiers
- * using Object.freeze prevents accidental mutation at runtime
- * six tiers split mobile and desktop into low/mid/high which gives LOD system 6 # performance budgets to target
- *
- */
 export const DEVICE_CLASSES = Object.freeze({
     LOW_MOBILE: "low-mobile",
     MID_MOBILE: "mid-mobile",
@@ -14,15 +7,13 @@ export const DEVICE_CLASSES = Object.freeze({
     HIGH_DESKTOP: "high-desktop",
 });
 
-//reads raw browser signals to build a lightweight device profiles
 export function collectSimpleDeviceInfo() {
-    //touch detection / essaie de savoir si le device est tactile
+    //essayer de savoir si le device est tactile
     const touch = !!(
         navigator.maxTouchPoints > 0 ||
         navigator.msMaxTouchPoints > 0 ||
         "ontouchstart" in window
     );
-    //width of viewport
     const width = window.innerWidth || window.screen?.width || 0;
     //ratio of the picture width to the viewport/ mesure combien de pixels physiques sont rendus pour 1 pixel CSS
     const dpr = window.devicePixelRatio || 1;
@@ -55,9 +46,8 @@ export function collectSimpleDeviceInfo() {
     };
 }
 
+
 // converts a raw device info object into one of the six device_classes
-
-
 export function classifySimpleDevice(info) {
     //safe defaults if info is missing
     const ram = info?.ramGbApprox ?? 0;
@@ -94,15 +84,6 @@ export function classifySimpleDevice(info) {
     return DEVICE_CLASSES.HIGH_DESKTOP;
 }
 
-/**
- * maps a device class to a concrete LOD policy
- * two levers per tier :
- * 1- VariantUpdateIntervalMs : how often (ms) the XR frame loop re-evalutes which mesh variant to show
- *    weaker devices get longer intervals
- * 2-lodConfig (all values are fractions of screen coverage 0-1
- *  biggerCoverage = closer to camera = higher LOD
- *  lower end devices use higher minimum thresholds meaning they stay on simplified meshes for longer before upgrading to the full model.
- */
 export function getLodPolicyForDeviceClass(deviceClass) {
     switch (deviceClass) {
         case DEVICE_CLASSES.LOW_MOBILE:
@@ -181,7 +162,6 @@ export function getLodPolicyForDeviceClass(deviceClass) {
     }
 }
 
-// runs full pipeline
 export function buildSimpleDevicePolicy() {
     const info = collectSimpleDeviceInfo();
     const deviceClass = classifySimpleDevice(info);

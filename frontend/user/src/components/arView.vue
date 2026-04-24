@@ -1,6 +1,6 @@
 <script setup>
-import {computed, onMounted, reactive, ref} from "vue";
-import {ArSessionManager} from "@/js/threeExt/project/arSessionManager.js";
+import { computed, onMounted, reactive, ref } from "vue";
+import { ArSessionManager } from "@/js/threeExt/project/arSessionManager.js";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
 import ArNotification from "@/components/notification/arNotification.vue";
@@ -9,132 +9,190 @@ import ToggleableContextMenuItem from "@/components/utils/ToggleableContextMenuI
 import IconContextMenuItem from "@/components/utils/IconContextMenuItem.vue";
 import ActionBubble from "@/components/utils/actionBubble.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
-import QuestionnairePopup from '@/components/utils/QuestionnairePopup.vue';
-import {useI18n} from "vue-i18n";
+import QuestionnairePopup from "@/components/utils/QuestionnairePopup.vue";
+import { useI18n } from "vue-i18n";
 
-const {t} = useI18n()
+const { t } = useI18n();
 
 const props = defineProps({
-  json: {type: Object, required: true}
-})
+  json: { type: Object, required: true }
+});
 
-const emit = defineEmits(["loaded"])
+const emit = defineEmits(["loaded"]);
 
 const arSessionManager = new ArSessionManager(props.json);
-const overlayBottom = ref(true)
+const overlayBottom = ref(true);
 
 defineExpose({
-  arSessionManager: reactive(arSessionManager), // on expose une version reactive pour uniformiser l'acces aux champs
-                                                // dans les pages presentation et project, car sur la 1ere, on utilise
-                                                // une ref pour le socket (car il peut ne pas etre utilisé), alors que
-                                                // sur l'autre, c'est un reactive car toujours utilisé, donc pas besoin
-                                                // de le reaffecter
+  arSessionManager: reactive(arSessionManager),
   overlayBottom
-})
+});
 
 const container = ref(null);
 const arOverlay = ref(null);
 const labelContainer = ref(null);
-
 const contextMenu = ref(null);
 
 const xrCompatible = ref(false);
 xrCompatible.value = await arSessionManager.isXrCompatible(props.json.displayMode);
-const loaded = ref(false);
-const showQuestionnairePopup = ref(false)
 
+const loaded = ref(false);
+const showQuestionnairePopup = ref(false);
 
 onMounted(async () => {
   await arSessionManager.init(container.value, arOverlay.value);
   loaded.value = true;
-  emit("loaded")
-})
+  emit("loaded");
+});
 
-
-function toggleContextMenuStatus(){
-  contextMenu.value.toggleStatus()
+function toggleContextMenuStatus() {
+  contextMenu.value.toggleStatus();
 }
 
 async function handleStopArSession() {
-  await arSessionManager.stop()
+  await arSessionManager.stop();
   if (props.json && props.json.quitUrl) {
-    showQuestionnairePopup.value = true
+    showQuestionnairePopup.value = true;
   }
 }
-const buttonText = computed(() => {
-  if(props.json.displayMode === "ar")
-    return t('projectView.arView.startAr.button')
-  return t('projectView.arView.startVr.button')
-})
 
+function getActiveExperimentScene() {
+  return arSessionManager.sceneManager.getActiveContentScene();
+}
+
+//active/désactive mode manual du LOD
+function toggleLodManualMode() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.toggleLodManualMode !== "function") return;
+  scene.toggleLodManualMode();
+}
+
+async function cycleLodVariant() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.cycleExperimentVariant !== "function") return;
+  await scene.cycleExperimentVariant();
+}
+
+//prend un "snapshot" de l'état actuel et le logue
+async function logLodSnapshot() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.logCurrentExperimentSnapshot !== "function") return;
+
+  await scene.logCurrentExperimentSnapshot({
+    source: "ar-overlay-button",
+    displayMode: props.json.displayMode
+  });
+}
+
+function exportLodLogs() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.exportExperimentLogs !== "function") return;
+  scene.exportExperimentLogs();
+}
+
+const buttonText = computed(() => {
+  if (props.json.displayMode === "ar") {
+    return t("projectView.arView.startAr.button");
+  }
+  return t("projectView.arView.startVr.button");
+});
 </script>
 
 <template>
-
   <div id="startButton">
     <button-view
-      icon="/icons/ar.svg"
-      :text="buttonText"
-      @click="arSessionManager.start(json.displayMode)"
-      :disabled="!loaded || !xrCompatible"
-      :class="{buttonDisabled:!loaded || !xrCompatible }"
-      v-if="loaded"
+        v-if="loaded"
+        icon="/icons/ar.svg"
+        :text="buttonText"
+        @click="arSessionManager.start(json.displayMode)"
+        :disabled="!loaded || !xrCompatible"
+        :class="{ buttonDisabled: !loaded || !xrCompatible }"
     />
     <span v-if="!loaded">
-      {{$t("projectView.arView.startAr.loading")}}
-      <icon-svg url="/icons/spinner.svg"></icon-svg>
+      {{ $t("projectView.arView.startAr.loading") }}
+      <icon-svg url="/icons/spinner.svg" />
     </span>
-    <span v-if="loaded && !xrCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
+    <span v-if="loaded && !xrCompatible">
+      {{ $t("projectView.arView.startAr.incompatibleDevice") }}
+    </span>
   </div>
 
   <div>
-
     <div ref="container" id="container"></div>
 
     <section
-      ref="arOverlay"
-      id="arOverlay"
-      :class="{overlayInvisible:!arSessionManager.isArRunning.value, overlayVisible: arSessionManager.isArRunning.value}"
+        ref="arOverlay"
+        id="arOverlay"
+        :class="{
+        overlayInvisible: !arSessionManager.isArRunning.value,
+        overlayVisible: arSessionManager.isArRunning.value
+      }"
     >
       <div ref="labelContainer" id="labelContainer"></div>
+
       <div id="overlayTop" class="overlayBlur">
         <button @click="handleStopArSession">
-          <icon-svg url="/icons/close.svg" theme="text"/>
+          <icon-svg url="/icons/close.svg" theme="text" />
         </button>
-        <h2>{{props.json.title}}</h2>
+
+        <h2>{{ props.json.title }}</h2>
 
         <hot-dog-menu ref="contextMenu">
-          <IconContextMenuItem icon="/icons/restart.svg"
-                               :text="$t('projectView.arView.arOverlay.contextMenu.reset')"
-                               @click="()=>{
-                                  toggleContextMenuStatus();
-                                  arSessionManager.reset()
-                               }"/>
-          <toggleable-context-menu-item :text="$t('projectView.arView.arOverlay.contextMenu.showLabels')"
-                                        :checked="arSessionManager.labelRenderer.isEnabled.value"
-                                        @click="()=>{
-                                          toggleContextMenuStatus();
-                                          arSessionManager.labelRenderer.toggleStatus()
-                                        }"/>
+          <IconContextMenuItem
+              icon="/icons/restart.svg"
+              :text="$t('projectView.arView.arOverlay.contextMenu.reset')"
+              @click="() => {
+              toggleContextMenuStatus();
+              arSessionManager.reset();
+            }"
+          />
+
+          <toggleable-context-menu-item
+              :text="$t('projectView.arView.arOverlay.contextMenu.showLabels')"
+              :checked="arSessionManager.labelRenderer.isEnabled.value"
+              @click="() => {
+              toggleContextMenuStatus();
+              arSessionManager.labelRenderer.toggleStatus();
+            }"
+          />
         </hot-dog-menu>
       </div>
 
-      
       <div id="overlayMiddle" @click="arSessionManager.sceneManager.onSceneClick($event)">
-        <ar-notification icon="/icons/info.svg" :visible="!arSessionManager.sceneManager.scenePlacementManager.isStabilized.value">
-        <template #content><p>{{$t("projectView.arView.arOverlay.slowMoveMessage")}}</p></template>
+        <ar-notification
+            icon="/icons/info.svg"
+            :visible="!arSessionManager.sceneManager.scenePlacementManager.isStabilized.value"
+        >
+          <template #content>
+            <p>{{ $t("projectView.arView.arOverlay.slowMoveMessage") }}</p>
+          </template>
         </ar-notification>
 
-        <ar-notification icon="/icons/3d.svg" :visible="arSessionManager.sceneManager.scenePlacementManager.isStabilized.value && arSessionManager.sceneManager.scenePlacementManager.isEnabled.value">
-          <template #content><p>{{props.json.calibrationMessage}}</p></template>
+        <ar-notification
+            icon="/icons/3d.svg"
+            :visible="arSessionManager.sceneManager.scenePlacementManager.isStabilized.value && arSessionManager.sceneManager.scenePlacementManager.isEnabled.value"
+        >
+          <template #content>
+            <p>{{ props.json.calibrationMessage }}</p>
+          </template>
         </ar-notification>
 
-        <expandable-ar-notification v-if="arSessionManager.sceneManager.active.value.hasDescription()" :title="$t('projectView.arView.arOverlay.scene.descriptionTitle')" :text="arSessionManager.sceneManager.active.value.description"></expandable-ar-notification>
-        <expandable-ar-notification v-for="error in arSessionManager.sceneManager.active.value.getErrors.value" :title="error.title" :text="error.message"></expandable-ar-notification>
+        <expandable-ar-notification
+            v-if="arSessionManager.sceneManager.active.value.hasDescription()"
+            :title="$t('projectView.arView.arOverlay.scene.descriptionTitle')"
+            :text="arSessionManager.sceneManager.active.value.description"
+        />
 
+        <expandable-ar-notification
+            v-for="error in arSessionManager.sceneManager.active.value.getErrors.value"
+            :key="error.title + error.message"
+            :title="error.title"
+            :text="error.message"
+        />
 
         <div id="playerActions">
           <template v-if="arSessionManager.sceneManager.active.value.hasAnimation.value">
+
             <action-bubble
                 :icon="arSessionManager.sceneManager.active.value.labelPlayer.isPlaying.value ? '/icons/pause.svg' : '/icons/play.svg'"
                 @click="arSessionManager.sceneManager.active.value.labelPlayer.togglePlaying()"
@@ -152,81 +210,104 @@ const buttonText = computed(() => {
               @click="arSessionManager.sceneManager.scenePlacementManager.reset()"
           />
 
+          <action-bubble
+              icon="/icons/settings.svg"
+              @click="toggleLodManualMode()"
+          />
+
+          <action-bubble
+              icon="/icons/next.svg"
+              @click="cycleLodVariant()"
+          />
+
+          <action-bubble
+              icon="/icons/info.svg"
+              @click="logLodSnapshot()"
+          />
+
+          <action-bubble
+              icon="/icons/download.svg"
+              @click="exportLodLogs()"
+          />
         </div>
-
-
-
       </div>
 
       <div id="overlayBottom" class="overlayBlur" v-if="overlayBottom">
-        <button class="arrowButton"
-                id="arrowButtonPrevious"
-                :class="{buttonDisabled:!arSessionManager.sceneManager.hasPrevious.value}"
-                @click="arSessionManager.sceneManager.setPreviousActive()"
-                :disabled="!arSessionManager.sceneManager.hasPrevious.value">
+        <button
+            id="arrowButtonPrevious"
+            class="arrowButton"
+            :class="{ buttonDisabled: !arSessionManager.sceneManager.hasPrevious.value }"
+            :disabled="!arSessionManager.sceneManager.hasPrevious.value"
+            @click="arSessionManager.sceneManager.setPreviousActive()"
+        >
           <div>
-            <icon-svg url="/icons/previous.svg" theme="text"/>
-            <span>{{$t("projectView.arView.arOverlay.scene.previousButton")}}</span>
+            <icon-svg url="/icons/previous.svg" theme="text" />
+            <span>{{ $t("projectView.arView.arOverlay.scene.previousButton") }}</span>
           </div>
-          <span v-if="arSessionManager.sceneManager.hasPrevious.value"> {{arSessionManager.sceneManager.previous.value.title}}</span>
+          <span v-if="arSessionManager.sceneManager.hasPrevious.value">
+            {{ arSessionManager.sceneManager.previous.value.title }}
+          </span>
         </button>
 
-
-
         <div id="overlayBottomSelector">
-          <h3>{{props.json.unit}}</h3>
+          <h3>{{ props.json.unit }}</h3>
           <select v-model="arSessionManager.sceneManager.activeSceneId.value">
-            <option v-for="scene in arSessionManager.sceneManager.scenes" :value="scene.sceneId">
-              {{scene.title}}
+            <option
+                v-for="scene in arSessionManager.sceneManager.scenes"
+                :key="scene.sceneId"
+                :value="scene.sceneId"
+            >
+              {{ scene.title }}
             </option>
           </select>
         </div>
 
-
-        <button class="arrowButton"
-                id="arrowButtonNext"
-                :class="{buttonDisabled:!arSessionManager.sceneManager.hasNext.value}"
-                @click="arSessionManager.sceneManager.setNextActive()"
-                :disabled="!arSessionManager.sceneManager.hasNext.value">
+        <button
+            id="arrowButtonNext"
+            class="arrowButton"
+            :class="{ buttonDisabled: !arSessionManager.sceneManager.hasNext.value }"
+            :disabled="!arSessionManager.sceneManager.hasNext.value"
+            @click="arSessionManager.sceneManager.setNextActive()"
+        >
           <div>
-            <span>{{$t("projectView.arView.arOverlay.scene.nextButton")}}</span>
-            <icon-svg url="/icons/next.svg" theme="text"/>
+            <span>{{ $t("projectView.arView.arOverlay.scene.nextButton") }}</span>
+            <icon-svg url="/icons/next.svg" theme="text" />
           </div>
-          <span v-if="arSessionManager.sceneManager.hasNext.value"> {{arSessionManager.sceneManager.next.value.title}}</span>
+          <span v-if="arSessionManager.sceneManager.hasNext.value">
+            {{ arSessionManager.sceneManager.next.value.title }}
+          </span>
         </button>
       </div>
-
     </section>
-
   </div>
 
-  <!-- Popup questionnaire affichée après fermeture de la session AR -->
   <QuestionnairePopup
-    :visible="showQuestionnairePopup"
-    @update:visible="val => showQuestionnairePopup = val"
-    :title="$t ? $t('projectView.arView.questionnairePopup.title') : 'Liens vers notre questionnaire'"
-    cancel-label="Fermer"
-    :confirm-label="'Ouvrir le questionnaire'"
-    :quit-message="props.json.quitMessage"
-    :quit-url="props.json.quitUrl"
+      :visible="showQuestionnairePopup"
+      @update:visible="val => showQuestionnairePopup = val"
+      :title="$t ? $t('projectView.arView.questionnairePopup.title') : 'Liens vers notre questionnaire'"
+      cancel-label="Fermer"
+      :confirm-label="'Ouvrir le questionnaire'"
+      :quit-message="props.json.quitMessage"
+      :quit-url="props.json.quitUrl"
   />
 </template>
 
 <style scoped>
-
-h2{
+h2 {
   overflow: hidden;
   white-space: nowrap;
+  color: var(--textImportantColor);
+  font-weight: bold;
 }
 
-#container{
+#container {
   width: 100%;
   border-radius: 16px;
   overflow: hidden;
   position: relative;
 }
 
-#labelContainer{
+#labelContainer {
   position: absolute;
   top: 0;
   left: 0;
@@ -235,32 +316,33 @@ h2{
   pointer-events: none;
 }
 
-.overlayInvisible{
-  display:none;
+.overlayInvisible {
+  display: none;
 }
 
-.overlayVisible{
+.overlayVisible {
   display: flex;
 }
 
-#arOverlay{
+#arOverlay {
   flex-direction: column;
   justify-content: space-between;
   z-index: 100;
 }
 
-#overlayTop, #overlayBottom{
+#overlayTop,
+#overlayBottom {
   z-index: 999;
 }
 
-#arOverlay>div:not(#overlayMiddle){
+#arOverlay > div:not(#overlayMiddle) {
   display: flex;
   justify-content: space-between;
   width: 100%;
   padding: 16px;
 }
 
-#overlayMiddle{
+#overlayMiddle {
   flex: auto;
   display: flex;
   flex-direction: column;
@@ -270,60 +352,53 @@ h2{
   padding: 16px;
 }
 
-#overlayMiddle>*{
+#overlayMiddle > * {
   z-index: 256;
 }
 
-.overlayBlur{
+.overlayBlur {
   background-color: var(--backgroundColor);
   backdrop-filter: blur(64px);
   color: var(--textImportantColor);
   box-shadow: var(--defaultUniformShadow);
 }
 
-h2{
-  color: var(--textImportantColor);
-  font-weight: bold;
-}
-
-
-#arOverlay button{
+#arOverlay button {
   padding: 4px;
-  border : none;
+  border: none;
   background: none;
 }
 
-
-.arrowButton{
+.arrowButton {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
 
-.arrowButton>div{
+.arrowButton > div {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.arrowButton>span{
+.arrowButton > span {
   color: var(--accentColor);
   font-weight: 300;
 }
-.buttonDisabled{
+
+.buttonDisabled {
   opacity: 0.48;
 }
 
-#arrowButtonPrevious{
+#arrowButtonPrevious {
   align-items: flex-start;
 }
 
-#arrowButtonNext{
+#arrowButtonNext {
   align-items: flex-end;
 }
 
-
-#overlayBottomSelector{
+#overlayBottomSelector {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -335,27 +410,33 @@ h2{
   top: 50%;
 }
 
-#overlayBottomSelector>select{
+#overlayBottomSelector > select {
   border-color: var(--textColor);
   padding: 4px;
   border-radius: 4px;
   background: var(--darkerBackgroundColor);
 }
-#overlayBottomSelector>h3{
+
+#overlayBottomSelector > h3 {
   color: var(--textImportantColor);
 }
 
-#startButton{
+#startButton {
   padding: 16px;
   display: flex;
   justify-content: center;
 }
-#startButton>span{
+
+#startButton > span {
   padding: 4px;
+  display: flex;
 }
 
+#startButton > span > * {
+  margin-left: 8px;
+}
 
-#playerActions{
+#playerActions {
   width: 100%;
   flex-grow: 1;
   display: flex;
@@ -365,17 +446,8 @@ h2{
   pointer-events: none;
 }
 
-#playerActions>*{
+#playerActions > * {
   margin-top: 8px;
   pointer-events: auto;
-}
-
-
-#startButton>span{
-  display: flex;
-}
-
-#startButton>span>*{
-  margin-left: 8px;
 }
 </style>

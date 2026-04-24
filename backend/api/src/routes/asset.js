@@ -124,9 +124,9 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
             strategy: "simplify",
             params: {
                 errorPresets: {
-                    n1: { ratio: 0, error: 0.001 },
-                    n2: { ratio: 0, error: 0.005 },
-                    n3: { ratio: 0, error: 0.02 },
+                    n1: { ratio: 0, error: 0.002 },
+                    n2: { ratio: 0, error: 0.004 },
+                    n3: { ratio: 0, error: 0.006 },
                 },
             },
             apiRoot,

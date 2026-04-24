@@ -141,6 +141,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 outputDisk: n1Disk,
                 ratio: presets.n1.ratio ?? 0,
                 error: presets.n1.error,
+                lockBorder: true,
             }),
             runSimplifyLevel({
                 gltfTransformCmd,
@@ -149,6 +150,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 outputDisk: n2Disk,
                 ratio: presets.n2.ratio ?? 0,
                 error: presets.n2.error,
+                lockBorder: true,
             }),
             runSimplifyLevel({
                 gltfTransformCmd,
@@ -157,6 +159,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 outputDisk: n3Disk,
                 ratio: presets.n3.ratio ?? 0,
                 error: presets.n3.error,
+                lockBorder: true,
             }),
         ]);
 

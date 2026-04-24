@@ -119,9 +119,7 @@ function debugGeometryStats(label, obj) {
 
     obj.traverse((child) => {
         if (!child.isMesh || !child.geometry) return;
-
         meshCount++;
-
         const geom = child.geometry;
         const pos = geom.attributes?.position;
 
@@ -226,7 +224,36 @@ export class Asset extends SceneElementInterface {
             this.playingAction = action;
         }
     }
+    async preloadVariants() {
+        try {
+            const manager = ObjectManager.getInstance();
+            const manifest = await this.getManifest();
 
+            const variants = manifest?.variants || {};
+            const keys = ["original", "n1", "n2", "n3"];
+
+            for (const key of keys) {
+                const variant = variants[key];
+
+                if (!variant || variant.status !== "ready" || !variant.path) {
+                    continue;
+                }
+
+                const path = variant.path.startsWith("/")
+                    ? variant.path
+                    : `/${variant.path}`;
+
+                await manager.load(path);
+            }
+
+            console.log("[Asset] variants preloaded", {
+                assetId: this.id,
+                assetName: this.name,
+            });
+        } catch (e) {
+            console.warn("[Asset] preloadVariants failed", this.id, e);
+        }
+    }
     async load(options = {}) {
         try {
             const manager = ObjectManager.getInstance();
@@ -379,6 +406,7 @@ export class Asset extends SceneElementInterface {
                 });*/
             }
 
+            this.previousVariant = this.currentVariant;
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;

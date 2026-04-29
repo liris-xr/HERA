@@ -104,9 +104,9 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
     );
 
     const presets = params.errorPresets ?? {
-        n1: { ratio: 0.5, error: 0.02, lockBorder: true },
-        n2: { ratio: 0.25, error: 0.05, lockBorder: true },
-        n3: { ratio: 0.1, error: 0.1, lockBorder: true },
+        n1: { ratio: 0.3, error: 0.002, lockBorder: true },
+        n2: { ratio: 0.5, error: 0.05, lockBorder: true },
+        n3: { ratio: 0.0, error: 1, lockBorder: true },
     };
 
     const n1Rel = makeVariantRel(inputRel, "n1");

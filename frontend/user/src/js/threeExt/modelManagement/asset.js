@@ -5,6 +5,27 @@ import { ObjectManager } from "@/js/threeExt/modelManagement/objectManager.js";
 import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/assetManifest.js";
 import {getResource} from "@/js/endpoints.js";
 
+function safeNumber(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function safeVec3(value, fallback) {
+    return {
+        x: safeNumber(value?.x, fallback.x),
+        y: safeNumber(value?.y, fallback.y),
+        z: safeNumber(value?.z, fallback.z),
+    };
+}
+
+function isValidVec3(value) {
+    return (
+        value &&
+        Number.isFinite(value.x) &&
+        Number.isFinite(value.y) &&
+        Number.isFinite(value.z)
+    );
+}
 function applyVariantDebugColor(object, variant) {
     const colorMap = {
         original: 0x073763,
@@ -183,9 +204,9 @@ export class Asset extends SceneElementInterface {
         this.hidden = ref(false);
         this.animations = reactive([]);
 
-        this.position = assetData.position ?? { x: 0, y: 0, z: 0 };
-        this.rotation = assetData.rotation ?? { x: 0, y: 0, z: 0 };
-        this.scale = assetData.scale ?? { x: 1, y: 1, z: 1 };
+        this.position = safeVec3(assetData.position, { x: 0, y: 0, z: 0 });
+        this.rotation = safeVec3(assetData.rotation, { x: 0, y: 0, z: 0 });
+        this.scale = safeVec3(assetData.scale, { x: 1, y: 1, z: 1 });
 
         this.#error = false;
 
@@ -294,10 +315,33 @@ export class Asset extends SceneElementInterface {
 
             this.object.userData.assetId = this.id;
 
+            if (!isValidVec3(this.position)) {
+                console.warn("[Asset.load] invalid position, fallback to 0", {
+                    assetId: this.id,
+                    position: this.position,
+                });
+                this.position = { x: 0, y: 0, z: 0 };
+            }
+
+            if (!isValidVec3(this.rotation)) {
+                console.warn("[Asset.load] invalid rotation, fallback to 0", {
+                    assetId: this.id,
+                    rotation: this.rotation,
+                });
+                this.rotation = { x: 0, y: 0, z: 0 };
+            }
+
+            if (!isValidVec3(this.scale)) {
+                console.warn("[Asset.load] invalid scale, fallback to 1", {
+                    assetId: this.id,
+                    scale: this.scale,
+                });
+                this.scale = { x: 1, y: 1, z: 1 };
+            }
+
             this.object.position.set(this.position.x, this.position.y, this.position.z);
             this.object.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
             this.object.scale.set(this.scale.x, this.scale.y, this.scale.z);
-
             this.object.castShadow = true;
             this.object.receiveShadow = true;
             this.object.isAsset = true;
@@ -327,7 +371,7 @@ export class Asset extends SceneElementInterface {
                 bboxCenterY: center.y,
                 offsetFromRootToBottom: box.min.y - worldPos.y,
             });
-            debugFullObject(`INITIAL ${chosen?.variant ?? "unknown"}`, this.object);
+            //debugFullObject(`INITIAL ${chosen?.variant ?? "unknown"}`, this.object);
 
             if (this.object?.animations?.length > 0) {
                 this.animationMixer = new THREE.AnimationMixer(this.object);
@@ -436,7 +480,7 @@ export class Asset extends SceneElementInterface {
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;
-            //applyVariantDebugColor(newObject, this.currentVariant);
+            applyVariantDebugColor(newObject, this.currentVariant);
 
             if (parent) {
                 parent.add(newObject);

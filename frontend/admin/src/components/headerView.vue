@@ -21,6 +21,7 @@ function logoutAndRedirect(){
 
       <div>
         <locale-changer></locale-changer>
+        <RouterLink :to="{name:'viewer'}" v-if="isAuthenticated">{{$t("header.viewer")}}</RouterLink>
         <RouterLink :to="{name:'admin'}" v-if="userData?.admin">{{$t("header.administration")}}</RouterLink>
 
         <RouterLink :to="{name:'account'}" v-if="isAuthenticated">

@@ -65,6 +65,15 @@ const router = createRouter({
       path: '/account',
       name: 'account',
       component: AccountView
+    },
+
+    {
+      path: '/viewer',
+      name: 'viewer',
+      beforeEnter() {
+        window.location.href = '/viewer/'
+      },
+      component: { render: () => null }
     }
   ]
 })

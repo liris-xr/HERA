@@ -3,7 +3,8 @@
   "header": {
     "home": "Mes projets",
     "logout": "Déconnexion",
-    "administration": "Administration"
+    "administration": "Administration",
+    "viewer": "Visualiseur"
   },
 
   "none": "Aucun",

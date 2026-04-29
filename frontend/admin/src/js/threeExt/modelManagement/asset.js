@@ -44,7 +44,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
 
         this.mesh = new THREE.Mesh();
 
-        this.position = assetData.position ?? { x: 0, y: 0, z: 0 };
+        this.position = assetData.position ?? { x: 0, yw: 0, z: 0 };
         this.rotation = assetData.rotation ?? { x: 0, y: 0, z: 0 };
         this.scale = assetData.scale ?? { x: 1, y: 1, z: 1 };
 

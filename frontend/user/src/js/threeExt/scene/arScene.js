@@ -10,7 +10,7 @@ import { EXRLoader } from "three/addons";
 import { getResource } from "@/js/endpoints.js";
 import { MeshManager } from "../modelManagement/meshManager";
 import { buildAssetRuntimeMetrics } from "@/js/threeExt/runtimeLod/runtimeMetrics.js";
-import { selectAssetVariant } from "@/js/threeExt/runtimeLod/variantSelector.js";
+import { selectAssetVariant, limitAutoUpgradeStep } from "@/js/threeExt/runtimeLod/variantSelector.js";
 import { ensureAssetVariant } from "@/js/threeExt/runtimeLod/variantApplier.js";
 
 function ensureLodDebugOverlay() {
@@ -126,6 +126,13 @@ export class ArScene extends AbstractScene {
             samples: [],
             maxSamples: 60,
         };
+
+        this._experimentLogs = [];
+        this._calibrationScaleStep = 1.15;
+        this._calibrationMinScaleFactor = 0.25;
+        this._calibrationMaxScaleFactor = 4.0;
+        this._calibrationOriginalScaleByAssetId = new Map();
+        this._calibrationScaleFactorByAssetId = new Map();
     }
 
     getAssetSubMeshes(assetData) {
@@ -179,15 +186,13 @@ export class ArScene extends AbstractScene {
     async init() {
         for (const assetData of this.#assets) {
             await assetData.load();
-
-            assetData.preloadVariants?.();
             if (assetData.hasError() || !assetData.object) {
                 this.#errors.push(new ArMeshLoadError(assetData.sourceUrl));
                 console.error(`[ArScene] Failed to load asset: ${assetData.sourceUrl}`);
                 continue;
             }
 
-            this.updateAssetSubMeshes(assetData);
+           // this.updateAssetSubMeshes(assetData);
             this.add(assetData.object);
         }
 
@@ -310,36 +315,42 @@ export class ArScene extends AbstractScene {
             return null;
         }
 
-        if (asset.isVariantSwapPending || this._lodSwapInProgress) {
-            console.warn("[LOD UI] swap already in progress");
-            return null;
+        // Si on clique sur Next LOD, on considère qu'on veut contrôler manuellement.
+        if (!this._lodManualMode) {
+            this._lodManualMode = true;
+            console.log("[LOD UI] manual mode enabled by Next LOD button");
         }
 
-        const nextVariant = this.getNextVariantInCycle(asset.currentVariant);
+        const baseVariant =
+            asset.queuedTargetVariant ??
+            asset.pendingTargetVariant ??
+            asset.currentVariant;
+
+        const nextVariant = this.getNextVariantInCycle(baseVariant);
         this._forcedVariantByAssetId.set(asset.id, nextVariant);
 
-        this._lodSwapInProgress = true;
+        if (asset.isVariantSwapPending) {
+            asset.queuedTargetVariant = nextVariant;
 
-        try {
-            const changed = await ensureAssetVariant(asset, this, nextVariant);
-
-            if (changed) {
-                //this.postSwapAssetUpdate(asset);
-                this.#boundingBox=null;
-                this.#boundingSphere=null;
-            }
-
-            console.log("[LOD UI] next LOD applied", {
+            console.log("[LOD UI] next LOD queued", {
                 assetId: asset.id,
                 currentVariant: asset.currentVariant,
-                forcedVariant: nextVariant,
-                changed,
+                pendingTargetVariant: asset.pendingTargetVariant,
+                queuedTargetVariant: asset.queuedTargetVariant,
             });
 
             return nextVariant;
-        } finally {
-            this._lodSwapInProgress = false;
         }
+
+        this.startVariantSwap(asset, nextVariant);
+
+        console.log("[LOD UI] next LOD requested", {
+            assetId: asset.id,
+            currentVariant: asset.currentVariant,
+            requestedVariant: nextVariant,
+        });
+
+        return nextVariant;
     }
 
     getCurrentLodPolicySnapshot() {
@@ -365,34 +376,30 @@ export class ArScene extends AbstractScene {
         }
 
         const record = {
-            //timestamp: new Date().toISOString(),
             mode: this._lodManualMode ? "manual" : "auto",
-            //assetId: asset.id,
             assetName: asset.name,
-            //manualMode: this._lodManualMode,
 
-            currentVariant: asset.currentVariant,
+            currentVariant: asset.currentVariant ?? null,
             autoTargetVariant: latest.autoTargetVariant,
             forcedVariant: latest.forcedVariant,
             finalTargetVariant: latest.finalTargetVariant,
 
+            swapPending: latest.swapPending,
+            pendingTargetVariant: latest.pendingTargetVariant,
+            queuedTargetVariant: latest.queuedTargetVariant,
+
             visibleCoverage: latest.visibleCoverage,
             screenPx: {
-                w:latest.screenWidthPx,
-                h:latest.screenHeightPx,
+                w: latest.screenWidthPx,
+                h: latest.screenHeightPx,
             },
 
             cameraDepth: latest.cameraDepth,
-            //isBehindCamera: latest.isBehindCamera,
 
             fps: {
                 instantFps: latest.instantFps,
                 avgFps: latest.avgFps,
             },
-
-            //variantUpdateIntervalMs: this._variantUpdateIntervalMs,
-            //lodConfig: { ...this._lodConfig },
-            //deviceClass: this.devicePolicy?.deviceClass ?? null,
 
             extra,
         };
@@ -436,7 +443,207 @@ export class ArScene extends AbstractScene {
         return this._experimentLogs.length;
     }
 
-    async onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer) {
+    startVariantSwap(asset, targetVariant) {
+        if (!asset || !targetVariant) return;
+
+        if (asset.currentVariant === targetVariant) {
+            return;
+        }
+
+        if (asset.isVariantSwapPending) {
+            asset.queuedTargetVariant = targetVariant;
+            return;
+        }
+
+        ensureAssetVariant(asset, this, targetVariant)
+            .then((changed) => {
+                if (changed) {
+                    this.#boundingBox = null;
+                    this.#boundingSphere = null;
+
+                    const obj = asset.object;
+
+                    console.log("[LOD SWAP DONE]", {
+                        assetId: asset.id,
+                        from: asset.previousVariant ?? null,
+                        current: asset.currentVariant,
+                        requested: targetVariant,
+                        queued: asset.queuedTargetVariant ?? null,
+                        localPos: obj ? {
+                            x: obj.position.x.toFixed(2),
+                            y: obj.position.y.toFixed(2),
+                            z: obj.position.z.toFixed(2),
+                        } : null,
+                    });
+                }
+
+                const queued = asset.queuedTargetVariant;
+                asset.queuedTargetVariant = null;
+
+                if (queued && queued !== asset.currentVariant) {
+                    this.startVariantSwap(asset, queued);
+                }
+            })
+            .catch((e) => {
+                console.error("[LOD SWAP ERROR]", {
+                    assetId: asset.id,
+                    requestedVariant: targetVariant,
+                    error: e,
+                });
+            });
+    }
+    getCalibrationTargetAsset() {
+        return this.getExperimentTargetAsset();
+    }
+
+    ensureCalibrationBaseScale(asset) {
+        if (!asset?.object) return null;
+
+        if (!this._calibrationOriginalScaleByAssetId.has(asset.id)) {
+            this._calibrationOriginalScaleByAssetId.set(asset.id, {
+                x: asset.object.scale.x,
+                y: asset.object.scale.y,
+                z: asset.object.scale.z,
+            });
+
+            this._calibrationScaleFactorByAssetId.set(asset.id, 1);
+        }
+
+        return this._calibrationOriginalScaleByAssetId.get(asset.id);
+    }
+
+    applyCalibrationScale(asset, factor) {
+        if (!asset?.object) return null;
+
+        const baseScale = this.ensureCalibrationBaseScale(asset);
+        if (!baseScale) return null;
+
+        const clampedFactor = THREE.MathUtils.clamp(
+            factor,
+            this._calibrationMinScaleFactor,
+            this._calibrationMaxScaleFactor
+        );
+
+        asset.object.scale.set(
+            baseScale.x * clampedFactor,
+            baseScale.y * clampedFactor,
+            baseScale.z * clampedFactor
+        );
+
+        asset.object.updateMatrixWorld(true);
+
+        this._calibrationScaleFactorByAssetId.set(asset.id, clampedFactor);
+
+        this.#boundingBox = null;
+        this.#boundingSphere = null;
+
+        console.log("[LOD CALIBRATION] scale changed", {
+            assetId: asset.id,
+            assetName: asset.name,
+            scaleFactor: clampedFactor,
+        });
+
+        return clampedFactor;
+    }
+
+    increaseCalibrationSize() {
+        const asset = this.getCalibrationTargetAsset();
+        if (!asset) return null;
+
+        const current = this._calibrationScaleFactorByAssetId.get(asset.id) ?? 1;
+        return this.applyCalibrationScale(asset, current * this._calibrationScaleStep);
+    }
+
+    decreaseCalibrationSize() {
+        const asset = this.getCalibrationTargetAsset();
+        if (!asset) return null;
+
+        const current = this._calibrationScaleFactorByAssetId.get(asset.id) ?? 1;
+        return this.applyCalibrationScale(asset, current / this._calibrationScaleStep);
+    }
+
+    resetCalibrationSize() {
+        const asset = this.getCalibrationTargetAsset();
+        if (!asset?.object) return null;
+
+        const baseScale = this._calibrationOriginalScaleByAssetId.get(asset.id);
+
+        if (!baseScale) {
+            return this.applyCalibrationScale(asset, 1);
+        }
+
+        asset.object.scale.set(baseScale.x, baseScale.y, baseScale.z);
+        asset.object.updateMatrixWorld(true);
+
+        this._calibrationScaleFactorByAssetId.set(asset.id, 1);
+
+        this.#boundingBox = null;
+        this.#boundingSphere = null;
+
+        console.log("[LOD CALIBRATION] scale reset", {
+            assetId: asset.id,
+            assetName: asset.name,
+        });
+
+        return 1;
+    }
+
+    async logCalibrationJudgement(qualityJudgement, extra = {}) {
+        const asset = this.getCalibrationTargetAsset();
+
+        if (!asset) {
+            console.warn("[LOD CALIBRATION] no target asset");
+            return null;
+        }
+
+        const latest = this._latestLodStateByAssetId.get(asset.id) ?? null;
+
+        if (!latest) {
+            console.warn("[LOD CALIBRATION] no latest LOD state yet");
+            return null;
+        }
+
+        const record = {
+            type: "calibration-judgement",
+
+            mode: this._lodManualMode ? "manual" : "auto",
+            assetName: asset.name,
+
+            qualityJudgement, // "acceptable" or "reject"
+
+            currentVariant: asset.currentVariant ?? null,
+            autoTargetVariant: latest.autoTargetVariant,
+            forcedVariant: latest.forcedVariant,
+            finalTargetVariant: latest.finalTargetVariant,
+
+            swapPending: latest.swapPending,
+            pendingTargetVariant: latest.pendingTargetVariant,
+            queuedTargetVariant: latest.queuedTargetVariant,
+
+            calibrationScaleFactor: this._calibrationScaleFactorByAssetId.get(asset.id) ?? 1,
+
+            visibleCoverage: latest.visibleCoverage,
+            screenPx: {
+                w: latest.screenWidthPx,
+                h: latest.screenHeightPx,
+            },
+            cameraDepth: latest.cameraDepth,
+            fps: {
+                instantFps: latest.instantFps,
+                avgFps: latest.avgFps,
+            },
+
+            extra,
+        };
+
+        this._experimentLogs.push(record);
+
+        console.log("[LOD CALIBRATION][JUDGEMENT]", record);
+
+        return record;
+    }
+
+    onXrFrame(time, frame, localReferenceSpace, worldTransformMatrix, camera, renderer) {
         worldTransformMatrix.decompose(this.position, this.quaternion, this.scale);
 
         const el = document.getElementById("placement-debug-overlay");
@@ -475,6 +682,7 @@ export class ArScene extends AbstractScene {
         }
 
         this.updateFpsStats(time);
+
         this.labelPlayer.onXrFrame(
             time,
             frame,
@@ -496,129 +704,152 @@ export class ArScene extends AbstractScene {
             if (!asset?.object) continue;
             if (asset instanceof EmptyAsset) continue;
 
-            try {
-                const manifest = await asset.getManifest().catch(() => null);
-                if (!manifest) continue;
+            asset.getManifest()
+                .then((manifest) => {
+                    if (!manifest) return;
 
-                const metrics = buildAssetRuntimeMetrics(asset, camera, renderer);
+                    const metrics = buildAssetRuntimeMetrics(asset, camera, renderer);
 
-                const autoTargetVariant = selectAssetVariant(
-                    manifest,
-                    metrics,
-                    this._lodConfig,
-                    asset.currentVariant
-                );
+                    const autoTargetVariant = selectAssetVariant(
+                        manifest,
+                        metrics,
+                        this._lodConfig,
+                        asset.currentVariant
+                    );
 
-                const forcedVariant = this._lodManualMode
-                    ? (this._forcedVariantByAssetId.get(asset.id) ?? null)
-                    : null;
+                    const forcedVariant = this._lodManualMode ? (this._forcedVariantByAssetId.get(asset.id) ?? null) : null;
 
-                const finalTargetVariant = forcedVariant || autoTargetVariant;
-                const fps = this.getFpsStats();
+                    let finalTargetVariant = forcedVariant || autoTargetVariant;
 
-                this._latestLodStateByAssetId.set(asset.id, {
-                    currentVariant: asset.currentVariant ?? null,
-                    autoTargetVariant,
-                    forcedVariant,
-                    finalTargetVariant,
+                    /*
+                      En AUTO on évite les gros sauts inutiles MAIS si l'objet devient vraiment grand à l'écran
+                      limitAutoUpgradeStep autorise le jump direct vers original.
+                     */
+                    if (!this._lodManualMode) {
+                        finalTargetVariant = limitAutoUpgradeStep(
+                            asset.currentVariant,
+                            finalTargetVariant,
+                            metrics,
+                            this._lodConfig
+                        );
+                    }
 
-                    visibleCoverage: Number((metrics.visibleCoverage ?? 0).toFixed(6)),
-                    screenWidthPx: Number((metrics.screenWidthPx ?? 0).toFixed(0)),
-                    screenHeightPx: Number((metrics.screenHeightPx ?? 0).toFixed(0)),
-                    cameraDepth: Number((metrics.cameraDepth ?? 0).toFixed(4)),
-                    sphereRadius: Number((metrics.sphereRadius ?? 0).toFixed(4)),
-                    isBehindCamera: !!metrics.isBehindCamera,
+                    const fps = this.getFpsStats();
 
-                    instantFps: fps.instantFps,
-                    avgFps: fps.avgFps,
-                });
-
-                asset.debugLod = {
-                    depth: Number((metrics.cameraDepth ?? Infinity).toFixed(2)),
-                    visibleCoverage: Number((metrics.visibleCoverage ?? 0).toFixed(4)),
-                    widthPx: Number((metrics.screenWidthPx ?? 0).toFixed(0)),
-                    heightPx: Number((metrics.screenHeightPx ?? 0).toFixed(0)),
-                    sphereRadius: Number((metrics.sphereRadius ?? 0).toFixed(3)),
-                    isBehindCamera: !!metrics.isBehindCamera,
-                    current: asset.currentVariant ?? null,
-                    auto: autoTargetVariant ?? null,
-                    forced: forcedVariant ?? null,
-                    final: finalTargetVariant ?? null,
-                };
-
-                if (this.#assets[0] === asset) {
-                    const overlay = ensureLodDebugOverlay();
-
-                    const colorMap = {
-                        original: "rgba(46, 204, 113, 0.9)",
-                        n1: "rgba(241, 196, 15, 0.9)",
-                        n2: "rgba(230, 126, 34, 0.9)",
-                        n3: "rgba(231, 76, 60, 0.9)",
-                        simplified: "rgba(52, 152, 219, 0.9)",
-                    };
-
-                    overlay.style.background = colorMap[finalTargetVariant] || "rgba(0,0,0,0.8)";
-                    overlay.innerHTML = [
-                        `mode: ${this._lodManualMode ? "manual" : "auto"}`,
-                        `swap: ${this._lodSwapInProgress ? "loading" : "ready"}`,
-                        `fps: ${fps.instantFps.toFixed(1)} / avg ${fps.avgFps.toFixed(1)}`,
-                        `depth: ${(metrics.cameraDepth ?? Infinity).toFixed(2)}`,
-                        `visCover: ${((metrics.visibleCoverage ?? 0) * 100).toFixed(1)}%`,
-                        `hPx: ${(metrics.screenHeightPx ?? 0).toFixed(0)}px`,
-                        `wPx: ${(metrics.screenWidthPx ?? 0).toFixed(0)}px`,
-                        `sphereR: ${(metrics.sphereRadius ?? 0).toFixed(3)}`,
-                        `behind: ${metrics.isBehindCamera ? "yes" : "no"}`,
-                        `current: ${asset.currentVariant ?? "-"}`,
-                        `auto: ${autoTargetVariant ?? "-"}`,
-                        `forced: ${forcedVariant ?? "-"}`,
-                        `final: ${finalTargetVariant ?? "-"}`,
-                    ].join("<br>");
-                }
-
-                const debugSignature =
-                    `${asset.currentVariant}|${autoTargetVariant}|${forcedVariant}|${finalTargetVariant}`;
-
-                if (asset.lastDebugTargetVariant !== debugSignature) {
-                    console.log("[LOD CHANGE]", {
-                        assetId: asset.id,
+                    this._latestLodStateByAssetId.set(asset.id, {
                         currentVariant: asset.currentVariant ?? null,
                         autoTargetVariant,
                         forcedVariant,
                         finalTargetVariant,
-                        cameraDepth: Number((metrics.cameraDepth ?? 0).toFixed(4)),
+
+                        swapPending: !!asset.isVariantSwapPending,
+                        pendingTargetVariant: asset.pendingTargetVariant ?? null,
+                        queuedTargetVariant: asset.queuedTargetVariant ?? null,
+
                         visibleCoverage: Number((metrics.visibleCoverage ?? 0).toFixed(6)),
                         screenWidthPx: Number((metrics.screenWidthPx ?? 0).toFixed(0)),
                         screenHeightPx: Number((metrics.screenHeightPx ?? 0).toFixed(0)),
+                        cameraDepth: Number((metrics.cameraDepth ?? 0).toFixed(4)),
                         sphereRadius: Number((metrics.sphereRadius ?? 0).toFixed(4)),
                         isBehindCamera: !!metrics.isBehindCamera,
-                        manualMode: this._lodManualMode,
+
+                        instantFps: fps.instantFps,
+                        avgFps: fps.avgFps,
                     });
 
-                    asset.lastDebugTargetVariant = debugSignature;
-                }
+                    asset.debugLod = {
+                        depth: Number((metrics.cameraDepth ?? Infinity).toFixed(2)),
+                        visibleCoverage: Number((metrics.visibleCoverage ?? 0).toFixed(4)),
+                        widthPx: Number((metrics.screenWidthPx ?? 0).toFixed(0)),
+                        heightPx: Number((metrics.screenHeightPx ?? 0).toFixed(0)),
+                        sphereRadius: Number((metrics.sphereRadius ?? 0).toFixed(3)),
+                        isBehindCamera: !!metrics.isBehindCamera,
+                        current: asset.currentVariant ?? null,
+                        auto: autoTargetVariant ?? null,
+                        forced: forcedVariant ?? null,
+                        final: finalTargetVariant ?? null,
+                    };
 
-                const changed = await ensureAssetVariant(asset, this, finalTargetVariant);
-                if (changed) {
-                    //this.postSwapAssetUpdate(asset);
-                    this.#boundingBox= null;
-                    this.#boundingSphere= null;
+                    if (this.#assets[0] === asset) {
+                        const overlay = ensureLodDebugOverlay();
 
-                    const obj = asset.object;
+                        const colorMap = {
+                            original: "rgba(46, 204, 113, 0.9)",
+                            n1: "rgba(241, 196, 15, 0.9)",
+                            n2: "rgba(230, 126, 34, 0.9)",
+                            n3: "rgba(231, 76, 60, 0.9)",
+                            simplified: "rgba(52, 152, 219, 0.9)",
+                        };
 
-                    console.log("[LOD SWAP]", {
-                        assetId: asset.id,
-                        from: asset.previousVariant ?? null,
-                        to: finalTargetVariant,
-                        localPos: obj ? {
-                            x: obj.position.x.toFixed(2),
-                            y: obj.position.y.toFixed(2),
-                            z: obj.position.z.toFixed(2),
-                        } : null,
-                    });
-                }
-            } catch (e) {
-                console.error("[LOD LOOP ERROR]", asset?.id, e);
-            }
+                        overlay.style.background = colorMap[finalTargetVariant] || "rgba(0,0,0,0.8)";
+                        overlay.innerHTML = [
+                            `mode: ${this._lodManualMode ? "manual" : "auto"}`,
+                            `pending: ${asset.isVariantSwapPending ? "yes" : "no"}`,
+                            `loading: ${asset.pendingTargetVariant ?? "-"}`,
+                            `queued: ${asset.queuedTargetVariant ?? "-"}`,
+                            `calibScale: ${(this._calibrationScaleFactorByAssetId.get(asset.id) ?? 1).toFixed(2)}x`,
+                            `fps: ${fps.instantFps.toFixed(1)} / avg ${fps.avgFps.toFixed(1)}`,
+                            `depth: ${(metrics.cameraDepth ?? Infinity).toFixed(2)}`,
+                            `visCover: ${((metrics.visibleCoverage ?? 0) * 100).toFixed(1)}%`,
+                            `hPx: ${(metrics.screenHeightPx ?? 0).toFixed(0)}px`,
+                            `wPx: ${(metrics.screenWidthPx ?? 0).toFixed(0)}px`,
+                            `sphereR: ${(metrics.sphereRadius ?? 0).toFixed(3)}`,
+                            `behind: ${metrics.isBehindCamera ? "yes" : "no"}`,
+                            `current: ${asset.currentVariant ?? "-"}`,
+                            `auto: ${autoTargetVariant ?? "-"}`,
+                            `forced: ${forcedVariant ?? "-"}`,
+                            `final: ${finalTargetVariant ?? "-"}`,
+                        ].join("<br>");
+                    }
+
+                    const debugSignature =
+                        `${asset.currentVariant}|${autoTargetVariant}|${forcedVariant}|${finalTargetVariant}|${asset.pendingTargetVariant}|${asset.queuedTargetVariant}`;
+
+                    if (asset.lastDebugTargetVariant !== debugSignature) {
+                        console.log("[LOD CHANGE]", {
+                            assetId: asset.id,
+                            currentVariant: asset.currentVariant ?? null,
+                            autoTargetVariant,
+                            forcedVariant,
+                            finalTargetVariant,
+                            swapPending: !!asset.isVariantSwapPending,
+                            pendingTargetVariant: asset.pendingTargetVariant ?? null,
+                            queuedTargetVariant: asset.queuedTargetVariant ?? null,
+                            cameraDepth: Number((metrics.cameraDepth ?? 0).toFixed(4)),
+                            visibleCoverage: Number((metrics.visibleCoverage ?? 0).toFixed(6)),
+                            screenWidthPx: Number((metrics.screenWidthPx ?? 0).toFixed(0)),
+                            screenHeightPx: Number((metrics.screenHeightPx ?? 0).toFixed(0)),
+                            sphereRadius: Number((metrics.sphereRadius ?? 0).toFixed(4)),
+                            isBehindCamera: !!metrics.isBehindCamera,
+                            manualMode: this._lodManualMode,
+                        });
+
+                        asset.lastDebugTargetVariant = debugSignature;
+                    }
+
+                    /* Si un swap est déjà en cours, on ne lance pas un autre swap auto.
+                     En AUTO, on ne queue pas les targets car ils peuvent devenir obsolètes en AR.
+                     En MANUAL, on garde la dernière demande utilisateur.
+                     */
+                    if (asset.isVariantSwapPending) {
+                        if (
+                            this._lodManualMode &&
+                            forcedVariant &&
+                            forcedVariant !== asset.pendingTargetVariant
+                        ) {
+                            asset.queuedTargetVariant = forcedVariant;
+                        }
+
+                        return;
+                    }
+
+                    if (finalTargetVariant && finalTargetVariant !== asset.currentVariant) {
+                        this.startVariantSwap(asset, finalTargetVariant);
+                    }
+                })
+                .catch((e) => {
+                    console.error("[LOD LOOP ERROR]", asset?.id, e);
+                });
         }
     }
 

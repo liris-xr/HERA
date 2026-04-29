@@ -104,9 +104,9 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
     );
 
     const presets = params.errorPresets ?? {
-        n1: { ratio: 0, error: 0.001 },
-        n2: { ratio: 0, error: 0.005 },
-        n3: { ratio: 0, error: 0.02 },
+        n1: { ratio: 0.5, error: 0.02, lockBorder: true },
+        n2: { ratio: 0.25, error: 0.05, lockBorder: true },
+        n3: { ratio: 0.1, error: 0.1, lockBorder: true },
     };
 
     const n1Rel = makeVariantRel(inputRel, "n1");
@@ -141,7 +141,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 outputDisk: n1Disk,
                 ratio: presets.n1.ratio ?? 0,
                 error: presets.n1.error,
-                lockBorder: true,
+                lockBorder: presets.n1.lockBorder ?? true,
             }),
             runSimplifyLevel({
                 gltfTransformCmd,
@@ -150,7 +150,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 outputDisk: n2Disk,
                 ratio: presets.n2.ratio ?? 0,
                 error: presets.n2.error,
-                lockBorder: true,
+                lockBorder: presets.n2.lockBorder ?? true,
             }),
             runSimplifyLevel({
                 gltfTransformCmd,
@@ -159,7 +159,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 outputDisk: n3Disk,
                 ratio: presets.n3.ratio ?? 0,
                 error: presets.n3.error,
-                lockBorder: true,
+                lockBorder: presets.n3.lockBorder ?? true,
             }),
         ]);
 
@@ -186,6 +186,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 n1: {
                     path: normalizePath(n1Rel),
                     requestedError: presets.n1.error,
+                    requestedLockBorder: presets.n1.lockBorder ?? true,
                     requestedRatio: presets.n1.ratio ?? 0,
                     ...n1Metrics,
                     status: fileExists(n1Disk) ? "ready" : "missing",
@@ -193,6 +194,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 n2: {
                     path: normalizePath(n2Rel),
                     requestedError: presets.n2.error,
+                    requestedLockBorder: presets.n2.lockBorder ?? true,
                     requestedRatio: presets.n2.ratio ?? 0,
                     ...n2Metrics,
                     status: fileExists(n2Disk) ? "ready" : "missing",
@@ -200,6 +202,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
                 n3: {
                     path: normalizePath(n3Rel),
                     requestedError: presets.n3.error,
+                    requestedLockBorder: presets.n3.lockBorder ?? true,
                     requestedRatio: presets.n3.ratio ?? 0,
                     ...n3Metrics,
                     status: fileExists(n3Disk) ? "ready" : "missing",

@@ -52,3 +52,41 @@ export function selectAssetVariant(manifest, metrics, config = {}, currentVarian
 
     return target;
 }
+
+
+export function limitAutoUpgradeStep(currentVariant, targetVariant, metrics = {}, config = {}) {
+    const order = ["n3", "n2", "n1", "original"];
+
+    let current = currentVariant ?? targetVariant;
+    let target = targetVariant;
+
+    if (current === "simplified") current = "n1";
+    if (target === "simplified") target = "n1";
+
+    const currentIndex = order.indexOf(current);
+    const targetIndex = order.indexOf(target);
+
+    if (currentIndex === -1 || targetIndex === -1) {
+        return targetVariant;
+    }
+
+    const coverage = metrics?.visibleCoverage ?? 0;
+
+    const {
+        originalMin = 0.22,
+        urgentOriginalMin = Math.max(originalMin + 0.18, 0.40),
+    } = config;
+
+    // si l'objet devient vraiment grand à l'écran, on autorise le jump direct vers original. Exemple : n3 à original directement.
+    if (target === "original" && coverage >= urgentOriginalMin) {
+        return "original";
+    }
+
+    //Sinon, en auto, on monte progressivement pour éviter les gros chargements inutiles.
+
+    if (targetIndex > currentIndex + 1) {
+        return order[currentIndex + 1];
+    }
+
+    return targetVariant;
+}

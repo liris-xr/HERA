@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { reactive, ref } from "vue";
 import { ObjectManager } from "@/js/threeExt/modelManagement/objectManager.js";
 import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/assetManifest.js";
+import {getResource} from "@/js/endpoints.js";
 
 function applyVariantDebugColor(object, variant) {
     const colorMap = {
@@ -187,7 +188,11 @@ export class Asset extends SceneElementInterface {
         this.scale = assetData.scale ?? { x: 1, y: 1, z: 1 };
 
         this.#error = false;
+
         this.currentVariant = null;
+        this.previousVariant = null;
+        this.pendingTargetVariant = null;
+        this.queuedTargetVariant = null;
         this.isVariantSwapPending = false;
         this.manifestCache = null;
         this.lastDebugTargetVariant = null;
@@ -349,7 +354,28 @@ export class Asset extends SceneElementInterface {
             return null;
         }
     }
+    async prefetchVariantFile(variantKey) {
+        try {
+            const manifest = await this.getManifest();
+            const variant = manifest?.variants?.[variantKey];
 
+            if (!variant || variant.status !== "ready" || !variant.path) return;
+
+            const path = variant.path.startsWith("/")
+                ? variant.path
+                : `/${variant.path}`;
+
+            await fetch(getResource(path), {
+                cache: "force-cache",
+            });
+        } catch (e) {
+            console.warn("[Asset] prefetchVariantFile failed", {
+                assetId: this.id,
+                variantKey,
+                error: e,
+            });
+        }
+    }
     async swapToVariant(scene, variantOverride) {
         try {
             const manager = ObjectManager.getInstance();
@@ -410,7 +436,7 @@ export class Asset extends SceneElementInterface {
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;
-            applyVariantDebugColor(newObject, this.currentVariant);
+            //applyVariantDebugColor(newObject, this.currentVariant);
 
             if (parent) {
                 parent.add(newObject);

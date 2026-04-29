@@ -72,6 +72,43 @@ async function cycleLodVariant() {
   if (!scene || typeof scene.cycleExperimentVariant !== "function") return;
   await scene.cycleExperimentVariant();
 }
+function increaseCalibrationSize() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.increaseCalibrationSize !== "function") return;
+  scene.increaseCalibrationSize();
+}
+
+function decreaseCalibrationSize() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.decreaseCalibrationSize !== "function") return;
+  scene.decreaseCalibrationSize();
+}
+
+function resetCalibrationSize() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.resetCalibrationSize !== "function") return;
+  scene.resetCalibrationSize();
+}
+
+async function acceptCalibrationLod() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.logCalibrationJudgement !== "function") return;
+
+  await scene.logCalibrationJudgement("acceptable", {
+    source: "ar-overlay-calibration-button",
+    displayMode: props.json.displayMode,
+  });
+}
+
+async function rejectCalibrationLod() {
+  const scene = getActiveExperimentScene();
+  if (!scene || typeof scene.logCalibrationJudgement !== "function") return;
+
+  await scene.logCalibrationJudgement("reject", {
+    source: "ar-overlay-calibration-button",
+    displayMode: props.json.displayMode,
+  });
+}
 
 //prend un "snapshot" de l'état actuel et le logue
 async function logLodSnapshot() {
@@ -219,9 +256,33 @@ const buttonText = computed(() => {
               icon="/icons/next.svg"
               @click="cycleLodVariant()"
           />
+          <action-bubble
+              icon="/icons/plus.svg"
+              @click="increaseCalibrationSize()"
+          />
 
           <action-bubble
-              icon="/icons/info.svg"
+              icon="/icons/minus.svg"
+              @click="decreaseCalibrationSize()"
+          />
+
+          <action-bubble
+              icon="/icons/restart.svg"
+              @click="resetCalibrationSize()"
+          />
+
+          <action-bubble
+              icon="/icons/check.svg"
+              @click="acceptCalibrationLod()"
+          />
+
+          <action-bubble
+              icon="/icons/close.svg"
+              @click="rejectCalibrationLod()"
+          />
+
+          <action-bubble
+              icon="/icons/image.svg"
               @click="logLodSnapshot()"
           />
 

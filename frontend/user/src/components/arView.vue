@@ -363,9 +363,17 @@ h2 {
 
 #container {
   width: 100%;
+  height: 100%;
+  min-height: inherit;
   border-radius: 16px;
   overflow: hidden;
   position: relative;
+}
+
+#container :deep(canvas) {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 
 #labelContainer {

@@ -223,7 +223,8 @@ fetchRecentProjects();
   }
 
   .searchWrapper {
-    width: 100%;
+    width: min(360px, 100%);
+    flex-shrink: 0;
   }
 }
 

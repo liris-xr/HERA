@@ -785,11 +785,9 @@ export class ArScene extends AbstractScene {
                         overlay.innerHTML = [
                             `mode: ${this._lodManualMode ? "manual" : "auto"}`,
                             `pending: ${asset.isVariantSwapPending ? "yes" : "no"}`,
-                            `loading: ${asset.pendingTargetVariant ?? "-"}`,
-                            `queued: ${asset.queuedTargetVariant ?? "-"}`,
                             `calibScale: ${(this._calibrationScaleFactorByAssetId.get(asset.id) ?? 1).toFixed(2)}x`,
                             `fps: ${fps.instantFps.toFixed(1)} / avg ${fps.avgFps.toFixed(1)}`,
-                            `depth: ${(metrics.cameraDepth ?? Infinity).toFixed(2)}`,
+                            //`depth: ${(metrics.cameraDepth ?? Infinity).toFixed(2)}`,
                             `visCover: ${((metrics.visibleCoverage ?? 0) * 100).toFixed(1)}%`,
                             `hPx: ${(metrics.screenHeightPx ?? 0).toFixed(0)}px`,
                             `wPx: ${(metrics.screenWidthPx ?? 0).toFixed(0)}px`,

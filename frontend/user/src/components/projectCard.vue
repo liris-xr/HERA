@@ -1,92 +1,180 @@
 <script setup>
-import ButtonView from "@/components/utils/buttonView.vue";
-import {ref} from "vue";
-import {getResource} from "@/js/endpoints.js";
-import {useI18n} from "vue-i18n";
-const {t} = useI18n()
+import { computed } from "vue";
+import { getResource } from "@/js/endpoints.js";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const props = defineProps({
-  projectInfo:{type:Object,required:true},
+  projectInfo: {
+    type: Object,
+    required: true,
+  },
 });
 
-const project = ref(props.projectInfo);
+const project = computed(() => props.projectInfo);
 
-const date = new Date(project.value.updatedAt);
+const formattedDate = computed(() => {
+  if (!project.value.updatedAt) {
+    return "";
+  }
 
-const sceneDescription = t("projectCard.scene", project.value.sceneCount);
+  const date = new Date(project.value.updatedAt);
+  return date.toLocaleDateString(t("locale"));
+});
 
+const sceneDescription = computed(() => {
+  return t("projectCard.scene", project.value.sceneCount);
+});
 
+const pictureSrc = computed(() => {
+  if (!project.value.pictureUrl) {
+    return null;
+  }
+
+  return getResource(project.value.pictureUrl);
+});
 </script>
 
 <template>
-  <section>
-    <div id="picture">
-      <img :src="getResource(project.pictureUrl)" :alt="$t('projectCard.pictureAlt')">
+  <section class="projectCard">
+    <div class="picture">
+      <img
+          v-if="pictureSrc"
+          :src="pictureSrc"
+          :alt="$t('projectCard.pictureAlt')"
+      />
+
+      <div v-else class="placeholder">
+        <img src="/icons/cube.svg" alt="" />
+      </div>
     </div>
 
-    <div id="content">
+    <div class="content">
       <RouterLink :to="{ name: 'project', params: { projectId: project.id } }">
-        <h2>{{project.title}}</h2>
+        <h2>{{ project.title }}</h2>
       </RouterLink>
-      <span>{{$t("projectCard.updatedOn") + date.toLocaleDateString($t('locale'))}}</span>
-      <br>
-      <span>{{project.sceneCount + " " +sceneDescription}}</span>
 
+      <span class="date">
+        {{ $t("projectCard.updatedOn") }} {{ formattedDate }}
+      </span>
 
+      <span class="sceneCount">
+        {{ project.sceneCount }} {{ sceneDescription }}
+      </span>
     </div>
   </section>
 </template>
 
 <style scoped>
-
-section{
+.projectCard {
   width: 100%;
+  min-height: 140px;
   background-color: var(--backgroundColor);
   border-radius: 16px;
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  gap: 14px;
   padding: 16px;
+  box-shadow: none;
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
-h2{
-  margin-bottom: 4px;
+.projectCard:hover {
+  background-color: #ffffff;
+  transform: translateY(-1px);
 }
 
-img{
+.picture {
+  width: 118px;
+  height: 118px;
+  flex-shrink: 0;
+}
+
+.picture > img,
+.placeholder {
   width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
+  height: 100%;
+  border-radius: 9px;
+}
+
+.picture > img {
   object-fit: cover;
   object-position: center;
+  background-color: #e8eef5;
 }
 
-#picture{
-  width: 33%;
+.placeholder {
+  background-color: #e8eef5;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
 }
 
-#content{
-  padding-left: 8px;
-  width: 67%;
-  position: relative;
+.placeholder img {
+  width: 32px;
+  height: 32px;
+  opacity: 0.75;
+}
+
+.content {
+  min-width: 0;
+  flex: 1;
+  padding-top: 2px;
+  text-align: left;
+}
+
+.content a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.content a:hover h2 {
+  color: var(--accentColor);
+}
+
+.content h2 {
+  margin: 0 0 6px;
+  color: var(--textColor, #102a43);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.15;
   word-break: break-word;
 }
 
-button{
-  position: absolute;
-  right: 0;
-  bottom: 0;
+.date,
+.sceneCount {
+  display: block;
   margin: 0;
+  color: #64748b;
+  font-size: 0.98rem;
+  line-height: 1.25;
+  text-align: left;
 }
 
-a{
-  text-decoration: none;
+.date {
+  white-space: normal;
 }
 
-a:hover{
-  text-decoration: underline;
+@media screen and (max-width: 700px) {
+  .projectCard {
+    min-height: 126px;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .picture {
+    width: 98px;
+    height: 98px;
+  }
+
+  .content h2 {
+    font-size: 1.2rem;
+  }
+
+  .date,
+  .sceneCount {
+    font-size: 0.92rem;
+  }
 }
 </style>

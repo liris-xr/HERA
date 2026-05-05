@@ -297,8 +297,8 @@ const buttonText = computed(() => {
         <button
             id="arrowButtonPrevious"
             class="arrowButton"
-            :class="{ buttonDisabled: !arSessionManager.sceneManager.hasPrevious.value }"
-            :disabled="!arSessionManager.sceneManager.hasPrevious.value"
+            :class="{ buttonDisabled: !arSessionManager.sceneManager.hasPrevious.value || arSessionManager.sceneManager.isSceneLoading.value }"
+            :disabled="!arSessionManager.sceneManager.hasPrevious.value || arSessionManager.sceneManager.isSceneLoading.value"
             @click="arSessionManager.sceneManager.setPreviousActive()"
         >
           <div>
@@ -312,7 +312,11 @@ const buttonText = computed(() => {
 
         <div id="overlayBottomSelector">
           <h3>{{ props.json.unit }}</h3>
-          <select v-model="arSessionManager.sceneManager.activeSceneId.value">
+          <select
+              :value="arSessionManager.sceneManager.activeSceneId.value"
+              :disabled="arSessionManager.sceneManager.isSceneLoading.value"
+              @change="arSessionManager.sceneManager.setActiveById($event.target.value)"
+          >
             <option
                 v-for="scene in arSessionManager.sceneManager.scenes"
                 :key="scene.sceneId"
@@ -326,8 +330,8 @@ const buttonText = computed(() => {
         <button
             id="arrowButtonNext"
             class="arrowButton"
-            :class="{ buttonDisabled: !arSessionManager.sceneManager.hasNext.value }"
-            :disabled="!arSessionManager.sceneManager.hasNext.value"
+            :class="{ buttonDisabled: !arSessionManager.sceneManager.hasNext.value || arSessionManager.sceneManager.isSceneLoading.value }"
+            :disabled="!arSessionManager.sceneManager.hasNext.value || arSessionManager.sceneManager.isSceneLoading.value"
             @click="arSessionManager.sceneManager.setNextActive()"
         >
           <div>

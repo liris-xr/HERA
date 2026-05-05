@@ -1,5 +1,18 @@
 import { Mesh } from "@/js/threeExt/modelManagement/mesh.js";
 
+function safeNumber(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function safeVec3(value, fallback) {
+    return {
+        x: safeNumber(value?.x, fallback.x),
+        y: safeNumber(value?.y, fallback.y),
+        z: safeNumber(value?.z, fallback.z),
+    };
+}
+
 async function loadGltfResource({ asset, url, fromUpload }) {
     let meshLoader;
 
@@ -39,23 +52,13 @@ export class ResourceLoader {
 
             const object3D = await loader({ asset, url, fromUpload });
 
-            object3D.position.set(
-                asset.position.x,
-                asset.position.y,
-                asset.position.z
-            );
+            asset.position = safeVec3(asset.position, { x: 0, y: 0, z: 0 });
+            asset.rotation = safeVec3(asset.rotation, { x: 0, y: 0, z: 0 });
+            asset.scale = safeVec3(asset.scale, { x: 1, y: 1, z: 1 });
 
-            object3D.rotation.set(
-                asset.rotation.x,
-                asset.rotation.y,
-                asset.rotation.z
-            );
-
-            object3D.scale.set(
-                asset.scale.x,
-                asset.scale.y,
-                asset.scale.z
-            );
+            object3D.position.set(asset.position.x, asset.position.y, asset.position.z);
+            object3D.rotation.set(asset.rotation.x, asset.rotation.y, asset.rotation.z);
+            object3D.scale.set(asset.scale.x, asset.scale.y, asset.scale.z);
 
             asset.mesh = object3D;
             asset.animations = object3D.animations ?? [];

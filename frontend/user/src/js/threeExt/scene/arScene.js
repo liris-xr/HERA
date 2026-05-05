@@ -10,7 +10,7 @@ import { EXRLoader } from "three/addons";
 import { getResource } from "@/js/endpoints.js";
 import { MeshManager } from "../modelManagement/meshManager";
 import { buildAssetRuntimeMetrics } from "@/js/threeExt/runtimeLod/runtimeMetrics.js";
-import { selectAssetVariant, limitAutoUpgradeStep } from "@/js/threeExt/runtimeLod/variantSelector.js";
+import { selectAssetVariant } from "@/js/threeExt/runtimeLod/variantSelector.js";
 import { ensureAssetVariant } from "@/js/threeExt/runtimeLod/variantApplier.js";
 
 function ensureLodDebugOverlay() {
@@ -52,7 +52,7 @@ export class ArScene extends AbstractScene {
     clock;
     vrStartPosition;
 
-    constructor(sceneData) {
+    constructor(sceneData, xr = false) {
         super();
 
         this.sceneId = sceneData.id;
@@ -62,12 +62,18 @@ export class ArScene extends AbstractScene {
         this.meshDataMap = new Map();
         this.meshManager = new MeshManager();
         this.vrStartPosition = sceneData?.vrStartPosition ?? null;
+        this.isLoaded = false;
+        this.isLoading = false;
+        this._initPromise = null;
+        this._labelData = sceneData.labels ?? [];
+        this._envmapUrl = sceneData.envmapUrl ?? null;
+        this._xr = xr;
 
-        for (const assetData of sceneData.assets) {
+        for (const assetData of sceneData.assets ?? []) {
             this.#assets.push(new Asset(assetData));
         }
 
-        for (const meshData of sceneData.meshes) {
+        for (const meshData of sceneData.meshes ?? []) {
             this.meshDataMap.set(meshData.name, meshData);
         }
 
@@ -76,22 +82,10 @@ export class ArScene extends AbstractScene {
         }
 
         this.labelPlayer = new LabelPlayer();
-        for (const labelData of sceneData.labels) {
-            this.labelPlayer.addToScene(this, labelData);
-        }
 
         this.#errors = [];
         this.#boundingSphere = null;
         this.#boundingBox = null;
-
-        if (sceneData.envmapUrl) {
-            this.environment = new EXRLoader().load(
-                getResource(sceneData.envmapUrl),
-                (texture) => {
-                    texture.mapping = THREE.EquirectangularReflectionMapping;
-                }
-            );
-        }
 
         this.clock = new THREE.Clock();
 
@@ -184,6 +178,39 @@ export class ArScene extends AbstractScene {
     }
 
     async init() {
+        if (this.isLoaded) return;
+        if (this._initPromise) return this._initPromise;
+
+        this.isLoading = true;
+        this._initPromise = this.#initInternal()
+            .then(() => {
+                this.isLoaded = true;
+            })
+            .finally(() => {
+                this.isLoading = false;
+                this._initPromise = null;
+            });
+
+        return this._initPromise;
+    }
+
+    async #initInternal() {
+        if (this._envmapUrl) {
+            this.environment = new EXRLoader().load(
+                getResource(this._envmapUrl),
+                (texture) => {
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                }
+            );
+        }
+
+        await Promise.all(
+            this._labelData.map((labelData) => this.labelPlayer.addToScene(this, labelData))
+        );
+        if (this._xr) {
+            await this.labelPlayer.setXr(this._xr);
+        }
+
         for (const assetData of this.#assets) {
             await assetData.load();
             if (assetData.hasError() || !assetData.object) {
@@ -358,6 +385,7 @@ export class ArScene extends AbstractScene {
             deviceClass: this.devicePolicy?.deviceClass ?? null,
             variantUpdateIntervalMs: this._variantUpdateIntervalMs,
             lodConfig: { ...this._lodConfig },
+            variantCache: { ...(this.devicePolicy?.variantCache ?? {}) },
             deviceInfo: this.devicePolicy?.info ?? null,
         };
     }
@@ -719,21 +747,12 @@ export class ArScene extends AbstractScene {
 
                     const forcedVariant = this._lodManualMode ? (this._forcedVariantByAssetId.get(asset.id) ?? null) : null;
 
-                    let finalTargetVariant = forcedVariant || autoTargetVariant;
+                    const finalTargetVariant = forcedVariant || autoTargetVariant;
 
                     /*
                       En AUTO on évite les gros sauts inutiles MAIS si l'objet devient vraiment grand à l'écran
                       limitAutoUpgradeStep autorise le jump direct vers original.
                      */
-                    if (!this._lodManualMode) {
-                        finalTargetVariant = limitAutoUpgradeStep(
-                            asset.currentVariant,
-                            finalTargetVariant,
-                            metrics,
-                            this._lodConfig
-                        );
-                    }
-
                     const fps = this.getFpsStats();
 
                     this._latestLodStateByAssetId.set(asset.id, {
@@ -781,8 +800,8 @@ export class ArScene extends AbstractScene {
                             simplified: "rgba(52, 152, 219, 0.9)",
                         };
 
-                        overlay.style.background = colorMap[finalTargetVariant] || "rgba(0,0,0,0.8)";
-                        overlay.innerHTML = [
+                        //overlay.style.background = colorMap[finalTargetVariant] || "rgba(0,0,0,0.8)";
+                        /*overlay.innerHTML = [
                             `mode: ${this._lodManualMode ? "manual" : "auto"}`,
                             `pending: ${asset.isVariantSwapPending ? "yes" : "no"}`,
                             `calibScale: ${(this._calibrationScaleFactorByAssetId.get(asset.id) ?? 1).toFixed(2)}x`,
@@ -797,7 +816,7 @@ export class ArScene extends AbstractScene {
                             `auto: ${autoTargetVariant ?? "-"}`,
                             `forced: ${forcedVariant ?? "-"}`,
                             `final: ${finalTargetVariant ?? "-"}`,
-                        ].join("<br>");
+                        ].join("<br>");*/
                     }
 
                     const debugSignature =
@@ -825,17 +844,16 @@ export class ArScene extends AbstractScene {
                         asset.lastDebugTargetVariant = debugSignature;
                     }
 
-                    /* Si un swap est déjà en cours, on ne lance pas un autre swap auto.
-                     En AUTO, on ne queue pas les targets car ils peuvent devenir obsolètes en AR.
-                     En MANUAL, on garde la dernière demande utilisateur.
+                    /* Keep the latest target while a swap is loading.
+                     If the loaded variant becomes stale, the asset discards it before display.
                      */
                     if (asset.isVariantSwapPending) {
                         if (
-                            this._lodManualMode &&
-                            forcedVariant &&
-                            forcedVariant !== asset.pendingTargetVariant
+                            finalTargetVariant &&
+                            finalTargetVariant !== asset.pendingTargetVariant &&
+                            finalTargetVariant !== asset.currentVariant
                         ) {
-                            asset.queuedTargetVariant = forcedVariant;
+                            asset.queuedTargetVariant = finalTargetVariant;
                         }
 
                         return;
@@ -873,6 +891,13 @@ export class ArScene extends AbstractScene {
         this.#boundingSphere = null;
     }
 
+    setXr(xr) {
+        this._xr = xr;
+        if (this.isLoaded) {
+            return this.labelPlayer.setXr(xr);
+        }
+    }
+
     setDevicePolicy(policy) {
         this.devicePolicy = policy;
 
@@ -889,10 +914,21 @@ export class ArScene extends AbstractScene {
             };
         }
 
+        for (const asset of this.#assets) {
+            if (typeof asset.setVariantCachePolicy === "function") {
+                asset.setVariantCachePolicy(policy.variantCache);
+            }
+
+            if (typeof asset.warmLikelyVariants === "function") {
+                asset.warmLikelyVariants();
+            }
+        }
+
         console.log("[HERA][scenePolicyApplied]", {
             sceneId: this.sceneId,
             variantUpdateIntervalMs: this._variantUpdateIntervalMs,
             lodConfig: this._lodConfig,
+            variantCache: policy.variantCache,
             deviceClass: policy.deviceClass,
         });
     }

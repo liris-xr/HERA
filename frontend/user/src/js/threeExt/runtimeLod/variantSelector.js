@@ -74,11 +74,10 @@ export function limitAutoUpgradeStep(currentVariant, targetVariant, metrics = {}
 
     const {
         originalMin = 0.22,
-        urgentOriginalMin = Math.max(originalMin + 0.18, 0.40),
     } = config;
 
-    // si l'objet devient vraiment grand à l'écran, on autorise le jump direct vers original. Exemple : n3 à original directement.
-    if (target === "original" && coverage >= urgentOriginalMin) {
+    // If the selector says the asset is close enough for full detail, do not step through n1/n2.
+    if (target === "original" && coverage >= originalMin) {
         return "original";
     }
 

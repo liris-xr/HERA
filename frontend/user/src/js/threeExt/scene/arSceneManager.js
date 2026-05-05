@@ -10,13 +10,17 @@ export class ArSceneManager {
     scenePlacementManager;
     #lightEstimate;
     isArRunning;
+    isSceneLoading;
 
     onSceneChanged;
 
     constructor(scenes, shadowMapSize, xr = false) {
         this.isArRunning = ref(false);
+        this.isSceneLoading = ref(false);
         this.#lightEstimate = new LightSet(shadowMapSize);
         this.scenePlacementManager = new ScenePlacementManager();
+        this._sceneLoadRequestId = 0;
+        this.xr = xr;
 
         this.scenes = [];
         for (const sceneData of scenes) {
@@ -54,17 +58,15 @@ export class ArSceneManager {
     async init() {
         await this.scenePlacementManager.init();
 
-        for (const scene of this.scenes) {
-            await scene.init();
-        }
-
-        this.setFirstActive();
+        const first = this.scenes[0];
+        await this.loadScene(first);
+        this.activeSceneId.value = first.sceneId;
         this.#updateLighting();
     }
 
-    reset() {
+    async reset() {
         this.scenePlacementManager.reset();
-        this.setFirstActive();
+        await this.setFirstActive();
     }
 
     getBoundingSphere() {
@@ -72,6 +74,8 @@ export class ArSceneManager {
     }
 
     #updateLighting() {
+        if (!this.active.value?.isLoaded && this.active.value !== this.scenePlacementManager) return;
+
         this.#lightEstimate.pushToScene(this.active.value);
 
         if (this.scenePlacementManager.isEnabled.value) return;
@@ -87,20 +91,46 @@ export class ArSceneManager {
         this.#lightEstimate.setLightPosition(double, double, double);
     }
 
-    setFirstActive() {
-        const first = this.scenes[0];
-        this.activeSceneId.value = first.sceneId;
+    async loadScene(scene) {
+        if (!scene) return;
+        await scene.init();
     }
 
-    setPreviousActive() {
-        if (this.hasPrevious.value) {
-            this.activeSceneId.value = this.previous.value.sceneId;
+    async setActiveById(sceneId) {
+        const scene = this.scenes.find((s) => String(s.sceneId) === String(sceneId));
+        if (!scene) return false;
+
+        const requestId = ++this._sceneLoadRequestId;
+        this.isSceneLoading.value = true;
+
+        try {
+            await this.loadScene(scene);
+
+            if (requestId !== this._sceneLoadRequestId) return false;
+
+            this.activeSceneId.value = scene.sceneId;
+            return true;
+        } finally {
+            if (requestId === this._sceneLoadRequestId) {
+                this.isSceneLoading.value = false;
+            }
         }
     }
 
-    setNextActive() {
+    async setFirstActive() {
+        const first = this.scenes[0];
+        return this.setActiveById(first.sceneId);
+    }
+
+    async setPreviousActive() {
+        if (this.hasPrevious.value) {
+            await this.setActiveById(this.previous.value.sceneId);
+        }
+    }
+
+    async setNextActive() {
         if (this.hasNext.value) {
-            this.activeSceneId.value = this.next.value.sceneId;
+            await this.setActiveById(this.next.value.sceneId);
         }
     }
 
@@ -157,8 +187,9 @@ export class ArSceneManager {
     }
 
     setXr(xr) {
+        this.xr = xr;
         for (const scene of this.scenes) {
-            scene.labelPlayer.setXr(xr);
+            scene.setXr(xr);
         }
     }
 }

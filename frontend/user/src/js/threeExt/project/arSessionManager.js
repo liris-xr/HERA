@@ -9,12 +9,14 @@ import * as THREE from "three";
 import { extractYawQuaternion } from "@/js/utils/extractYawQuaternion.js";
 import { ScenePlacementManager } from "@/js/threeExt/scene/scenePlacementManager.js";
 import { buildSimpleDevicePolicy } from "@/js/threeExt/DeviceProfile/devicePolicy.js";
+import { createPerfDebugLogger } from "@/js/threeExt/performance/perfDebugLogger.js";
 
 export class ArSessionManager {
     sceneManager;
     arCamera;
     arRenderer;
     labelRenderer;
+    perfDebugLogger;
 
     shadowMapSize;
     controls;
@@ -31,7 +33,8 @@ export class ArSessionManager {
     domHeight;
 
     constructor(json) {
-        this.shadowMapSize = 4096;
+        this.devicePolicy = buildSimpleDevicePolicy();
+        this.shadowMapSize = this.devicePolicy.shadowMapSize;
         this.domContainer = null;
         this.domWidth = 380;
         this.domHeight = 280;
@@ -43,6 +46,12 @@ export class ArSessionManager {
 
         this.arRenderer = new ArRenderer(this.shadowMapSize, 1);
         this.labelRenderer = new LabelRenderer();
+        this.perfDebugLogger = createPerfDebugLogger({
+            name: "viewer-ar",
+            renderer: this.arRenderer,
+            getScene: () => this.sceneManager.active.value,
+            getCamera: () => this.arCamera,
+        });
 
         this.sceneManager.onSceneChanged = function () {
             this.labelRenderer.clear();
@@ -54,8 +63,6 @@ export class ArSessionManager {
             this.applyVrCameraPosition();
             this.#resetCameraPosition();
         }.bind(this);
-
-        this.devicePolicy = null;
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
     }
@@ -71,8 +78,8 @@ export class ArSessionManager {
         this.controls = new OrbitControls(this.arCamera, this.arRenderer.domElement);
 
         this.onWindowResize();
+        //this.perfDebugLogger.logInitial();
 
-        this.devicePolicy = buildSimpleDevicePolicy();
         console.log("device policy", this.devicePolicy);
 
         for (const scene of this.sceneManager.scenes) {
@@ -393,6 +400,7 @@ export class ArSessionManager {
         this.controls.update();
 
         this.arRenderer.render(this.sceneManager.active.value, this.arCamera);
+        //this.perfDebugLogger.logFrame(time);
 
         if (
             this.sceneManager.active.value.hasLabels.value &&

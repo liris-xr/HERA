@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import {OutlinePass} from "three/addons";
-import {isRef, toRaw, unref} from "vue";
+import {toRaw} from "vue";
 
 export class SocketActionManager {
 
@@ -10,15 +10,29 @@ export class SocketActionManager {
         this.arSessionManager = arSessionManager;
     }
 
+    getScene(sceneId = null) {
+        if (sceneId) {
+            return toRaw(
+                this.arSessionManager.sceneManager.scenes.find(
+                    (s) => String(s.sceneId) === String(sceneId)
+                )
+            );
+        }
+
+        return toRaw(this.arSessionManager.sceneManager.getActiveContentScene());
+    }
+
     highlight(data) {
 
-        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
+        const scene = this.getScene(data.sceneId);
+        if (!scene) return;
 
         const asset = scene.findAssetById(data.assetId)
 
         if(!asset) return
 
         asset.highlight.value = data.value
+        if (!asset.object) return;
 
         asset.object.traverse((child) => {
 
@@ -41,23 +55,29 @@ export class SocketActionManager {
     }
 
     toggleAsset(data) {
-        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
+        const scene = this.getScene(data.sceneId);
+        if (!scene) return;
         const asset = scene.findAssetById(data.assetId)
 
         if(!asset) return
 
         asset.hidden.value = !data.value
-        asset.object.visible = !asset.hidden.value
+        if (asset.object) {
+            asset.object.visible = !asset.hidden.value
+        }
     }
 
-    scene(data) {
-
-        this.arSessionManager.sceneManager.activeSceneId = data.sceneId
-
+    async scene(data) {
+        try {
+            await this.arSessionManager.sceneManager.setActiveById(data.sceneId);
+        } catch (e) {
+            console.error("[SocketActionManager] unable to switch scene", e);
+        }
     }
 
     setActiveAnimation(data) {
-        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
+        const scene = this.getScene(data.sceneId);
+        if (!scene) return;
         const asset = scene.findAssetById(data.assetId)
 
         if(!asset) return
@@ -66,7 +86,8 @@ export class SocketActionManager {
     }
 
     toggleLabel(data) {
-        const scene = data.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
+        const scene = this.getScene(data.sceneId);
+        if (!scene) return;
         const label = scene.labelPlayer.findLabelById(data.labelId)
 
         if(!label) return
@@ -78,36 +99,38 @@ export class SocketActionManager {
         for(let sceneProxy of this.arSessionManager.sceneManager.getScenes()) {
             const scene = toRaw(sceneProxy)
             for(const asset of scene.getAssets()) {
-                this.highlight({sceneId: scene.id, assetId: asset.id, value: false})
-                this.toggleAsset({sceneId: scene.id, assetId: asset.id, value: true})
-                this.setActiveAnimation({sceneId: scene.id, assetId: asset.id, value: null})
+                this.highlight({sceneId: scene.sceneId, assetId: asset.id, value: false})
+                this.toggleAsset({sceneId: scene.sceneId, assetId: asset.id, value: true})
+                this.setActiveAnimation({sceneId: scene.sceneId, assetId: asset.id, value: null})
             }
 
             for(const label of scene.labelPlayer.getLabels()) {
-                this.toggleLabel({sceneId: scene.id, labelId: label.id, value: true})
+                this.toggleLabel({sceneId: scene.sceneId, labelId: label.id, value: true})
             }
         }
-        this.arSessionManager.sceneManager.activeSceneId = this.arSessionManager.sceneManager.scenes[0].sceneId
+        void this.arSessionManager.sceneManager.setFirstActive()
     }
 
     hideAll(data) {
-        const scene = data?.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
+        const scene = this.getScene(data?.sceneId);
+        if (!scene) return;
 
         for(const asset of scene.getAssets())
-            this.toggleAsset({assetId: asset.id, value: false})
+            this.toggleAsset({sceneId: scene.sceneId, assetId: asset.id, value: false})
 
         for(const label of scene.labelPlayer.getLabels())
-            this.toggleLabel({labelId: label.id, value: false})
+            this.toggleLabel({sceneId: scene.sceneId, labelId: label.id, value: false})
     }
 
     showAll(data) {
-        const scene = data?.sceneId ? toRaw(this.arSessionManager.sceneManager.scenes.find(s => s.id === data.sceneId)) : this.arSessionManager.sceneManager.active
+        const scene = this.getScene(data?.sceneId);
+        if (!scene) return;
 
         for(const asset of scene.getAssets())
-            this.toggleAsset({assetId: asset.id, value: true})
+            this.toggleAsset({sceneId: scene.sceneId, assetId: asset.id, value: true})
 
         for(const label of scene.labelPlayer.getLabels())
-            this.toggleLabel({labelId: label.id, value: true})
+            this.toggleLabel({sceneId: scene.sceneId, labelId: label.id, value: true})
     }
 
 

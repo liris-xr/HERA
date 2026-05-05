@@ -7,6 +7,63 @@ export const DEVICE_CLASSES = Object.freeze({
     HIGH_DESKTOP: "high-desktop",
 });
 
+const VARIANT_CACHE_POLICIES = Object.freeze({
+    LOW_MOBILE: Object.freeze({
+        decodedLimit: 1,
+        allowBytePrefetch: true,
+        disposeOldVariant: true,
+    }),
+    MID_MOBILE: Object.freeze({
+        decodedLimit: 2,
+        allowBytePrefetch: true,
+        disposeOldVariant: true,
+    }),
+    HIGH_MOBILE: Object.freeze({
+        decodedLimit: 2,
+        allowBytePrefetch: true,
+        disposeOldVariant: true,
+    }),
+    LOW_DESKTOP: Object.freeze({
+        decodedLimit: 2,
+        allowBytePrefetch: true,
+        disposeOldVariant: true,
+    }),
+    MID_DESKTOP: Object.freeze({
+        decodedLimit: 2,
+        allowBytePrefetch: true,
+        disposeOldVariant: false,
+    }),
+    //machine puissante, on peut garder 2 variantes prêtes en mémoire
+    HIGH_DESKTOP: Object.freeze({
+        decodedLimit: 3,
+        allowBytePrefetch: true,
+        disposeOldVariant: false,
+    }),
+});
+
+function getVariantCachePolicyForDeviceClass(deviceClass) {
+    switch (deviceClass) {
+        case DEVICE_CLASSES.LOW_MOBILE:
+            return VARIANT_CACHE_POLICIES.LOW_MOBILE;
+
+        case DEVICE_CLASSES.MID_MOBILE:
+            return VARIANT_CACHE_POLICIES.MID_MOBILE;
+
+        case DEVICE_CLASSES.HIGH_MOBILE:
+            return VARIANT_CACHE_POLICIES.HIGH_MOBILE;
+
+        case DEVICE_CLASSES.LOW_DESKTOP:
+            return VARIANT_CACHE_POLICIES.LOW_DESKTOP;
+
+        case DEVICE_CLASSES.MID_DESKTOP:
+            return VARIANT_CACHE_POLICIES.MID_DESKTOP;
+
+        case DEVICE_CLASSES.HIGH_DESKTOP:
+        default:
+            return VARIANT_CACHE_POLICIES.HIGH_DESKTOP;
+    }
+}
+
 export function collectSimpleDeviceInfo() {
     //essayer de savoir si le device est tactile
     const touch = !!(
@@ -89,7 +146,8 @@ export function getLodPolicyForDeviceClass(deviceClass) {
         case DEVICE_CLASSES.LOW_MOBILE:
             return {
                 deviceClass,
-                variantUpdateIntervalMs: 2000, //evaluate only every 2.5s
+                variantUpdateIntervalMs: 200, //evaluate only every 2.5s
+                variantCache: getVariantCachePolicyForDeviceClass(deviceClass),
                 lodConfig: {
                     originalMin: 0.28, //needs > 28% screen coverage for full mesh
                     n1Min: 0.14,
@@ -101,7 +159,8 @@ export function getLodPolicyForDeviceClass(deviceClass) {
         case DEVICE_CLASSES.MID_MOBILE:
             return {
                 deviceClass,
-                variantUpdateIntervalMs: 1800,
+                variantUpdateIntervalMs: 100,
+                variantCache: getVariantCachePolicyForDeviceClass(deviceClass),
                 lodConfig: {
                     originalMin: 0.24,
                     n1Min: 0.12,
@@ -113,7 +172,8 @@ export function getLodPolicyForDeviceClass(deviceClass) {
         case DEVICE_CLASSES.HIGH_MOBILE:
             return {
                 deviceClass,
-                variantUpdateIntervalMs: 1200,
+                variantUpdateIntervalMs: 200,
+                variantCache: getVariantCachePolicyForDeviceClass(deviceClass),
                 lodConfig: {
                     originalMin: 0.22,
                     n1Min: 0.11,
@@ -126,7 +186,8 @@ export function getLodPolicyForDeviceClass(deviceClass) {
             //interval similar to high mobile
             return {
                 deviceClass,
-                variantUpdateIntervalMs: 1500,
+                variantUpdateIntervalMs: 100,
+                variantCache: getVariantCachePolicyForDeviceClass(deviceClass),
                 lodConfig: {
                     originalMin: 0.22,
                     n1Min: 0.11,
@@ -138,7 +199,8 @@ export function getLodPolicyForDeviceClass(deviceClass) {
         case DEVICE_CLASSES.MID_DESKTOP:
             return {
                 deviceClass,
-                variantUpdateIntervalMs: 1000,
+                variantUpdateIntervalMs: 100,
+                variantCache: getVariantCachePolicyForDeviceClass(deviceClass),
                 lodConfig: {
                     originalMin: 0.20,
                     n1Min: 0.10,
@@ -151,7 +213,8 @@ export function getLodPolicyForDeviceClass(deviceClass) {
         default:
             return {
                 deviceClass,
-                variantUpdateIntervalMs: 700,
+                variantUpdateIntervalMs: 100,
+                variantCache: getVariantCachePolicyForDeviceClass(deviceClass),
                 lodConfig: {
                     originalMin: 0.18,
                     n1Min: 0.09,
@@ -162,6 +225,23 @@ export function getLodPolicyForDeviceClass(deviceClass) {
     }
 }
 
+export function getShadowMapSizeForDeviceClass(deviceClass) {
+    switch (deviceClass) {
+        case DEVICE_CLASSES.LOW_MOBILE:
+            return 1024;
+
+        case DEVICE_CLASSES.MID_MOBILE:
+        case DEVICE_CLASSES.HIGH_MOBILE:
+        case DEVICE_CLASSES.LOW_DESKTOP:
+        case DEVICE_CLASSES.MID_DESKTOP:
+            return 2048;
+
+        case DEVICE_CLASSES.HIGH_DESKTOP:
+        default:
+            return 4096;
+    }
+}
+
 export function buildSimpleDevicePolicy() {
     const info = collectSimpleDeviceInfo();
     const deviceClass = classifySimpleDevice(info);
@@ -169,6 +249,7 @@ export function buildSimpleDevicePolicy() {
 
     return {
         info,
+        shadowMapSize: getShadowMapSizeForDeviceClass(deviceClass),
         ...policy,
     };
 }

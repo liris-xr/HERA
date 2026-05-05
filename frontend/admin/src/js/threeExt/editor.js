@@ -4,12 +4,14 @@ import { LabelRenderer } from "@/js/threeExt/rendering/labelRenderer.js";
 import { EditorScene } from "@/js/threeExt/editorScene.js";
 import { EditorCamera } from "@/js/threeExt/lighting/editorCamera.js";
 import { runOnNonDraggingClick } from "@/js/utils/click.js";
+import { createPerfDebugLogger } from "@/js/threeExt/performance/perfDebugLogger.js";
 
 export class Editor {
     scene;
     camera;
     renderer;
     labelRenderer;
+    perfDebugLogger;
 
     shadowMapSize;
     orbitControls;
@@ -29,6 +31,12 @@ export class Editor {
 
         this.renderer = new EditorRenderer(this.shadowMapSize, 1);
         this.labelRenderer = new LabelRenderer();
+        this.perfDebugLogger = createPerfDebugLogger({
+            name: "admin-editor",
+            renderer: this.renderer,
+            getScene: () => this.scene,
+            getCamera: () => this.camera,
+        });
 
         window.addEventListener("resize", this.onWindowResize.bind(this));
     }
@@ -61,6 +69,7 @@ export class Editor {
 
         this.onWindowResize();
         this.#resetCameraPosition();
+        this.perfDebugLogger.logInitial();
 
         this.renderer.setAnimationLoop(this.onFrame.bind(this));
     }
@@ -95,6 +104,7 @@ export class Editor {
         this.scene.onFrame(time, frame, this.camera.position);
         this.orbitControls.update();
         this.renderer.render(this.scene, this.camera);
+        this.perfDebugLogger.logFrame(time);
 
         if (this.scene.labelManager.hasLabels.value && this.labelRenderer.isEnabled.value) {
             this.labelRenderer.render(this.scene, this.camera);

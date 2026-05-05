@@ -5,6 +5,19 @@ import { computed, ref } from "vue";
 import { Mesh } from "@/js/threeExt/modelManagement/mesh.js";
 import * as THREE from "three";
 
+function safeNumber(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function safeVec3(value, fallback) {
+    return {
+        x: safeNumber(value?.x, fallback.x),
+        y: safeNumber(value?.y, fallback.y),
+        z: safeNumber(value?.z, fallback.z),
+    };
+}
+
 export class Asset extends classes(SelectableInterface, LoadableInterface) {
     id;
     subMeshes;
@@ -44,9 +57,9 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
 
         this.mesh = new THREE.Mesh();
 
-        this.position = assetData.position ?? { x: 0, yw: 0, z: 0 };
-        this.rotation = assetData.rotation ?? { x: 0, y: 0, z: 0 };
-        this.scale = assetData.scale ?? { x: 1, y: 1, z: 1 };
+        this.position = safeVec3(assetData.position, { x: 0, y: 0, z: 0 });
+        this.rotation = safeVec3(assetData.rotation, { x: 0, y: 0, z: 0 });
+        this.scale = safeVec3(assetData.scale, { x: 1, y: 1, z: 1 });
 
         this.#hasError = ref(false);
         this.#isLoading = ref(true);

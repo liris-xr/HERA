@@ -100,9 +100,8 @@ export class LabelPlayer extends RenderLoopInterface{
         return null
     }
 
-    setXr(xr) {
-        for(const label of this.#labels)
-            label.setXr(xr);
+    async setXr(xr) {
+        await Promise.all(this.#labels.map((label) => label.setXr(xr)));
     }
 
     stop() {

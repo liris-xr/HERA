@@ -9,6 +9,7 @@ import ToggleableContextMenuItem from "@/components/utils/ToggleableContextMenuI
 import IconContextMenuItem from "@/components/utils/IconContextMenuItem.vue";
 import ActionBubble from "@/components/utils/actionBubble.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
+import QuestionnairePopup from '@/components/utils/QuestionnairePopup.vue';
 import {useI18n} from "vue-i18n";
 
 const {t} = useI18n()
@@ -40,6 +41,7 @@ const contextMenu = ref(null);
 const xrCompatible = ref(false);
 xrCompatible.value = await arSessionManager.isXrCompatible(props.json.displayMode);
 const loaded = ref(false);
+const showQuestionnairePopup = ref(false)
 
 
 onMounted(async () => {
@@ -53,6 +55,12 @@ function toggleContextMenuStatus(){
   contextMenu.value.toggleStatus()
 }
 
+async function handleStopArSession() {
+  await arSessionManager.stop()
+  if (props.json && props.json.quitUrl) {
+    showQuestionnairePopup.value = true
+  }
+}
 const buttonText = computed(() => {
   if(props.json.displayMode === "ar")
     return t('projectView.arView.startAr.button')
@@ -64,24 +72,33 @@ const buttonText = computed(() => {
 <template>
 
   <div id="startButton">
-    <button-view icon="/icons/ar.svg" :text="buttonText" @click="arSessionManager.start(json.displayMode)" :disabled="!loaded || !xrCompatible" :class="{buttonDisabled:!loaded || !xrCompatible }" v-if="loaded"></button-view>
+    <button-view
+      icon="/icons/ar.svg"
+      :text="buttonText"
+      @click="arSessionManager.start(json.displayMode)"
+      :disabled="!loaded || !xrCompatible"
+      :class="{buttonDisabled:!loaded || !xrCompatible }"
+      v-if="loaded"
+    />
     <span v-if="!loaded">
       {{$t("projectView.arView.startAr.loading")}}
       <icon-svg url="/icons/spinner.svg"></icon-svg>
     </span>
     <span v-if="loaded && !xrCompatible">{{$t("projectView.arView.startAr.incompatibleDevice")}}</span>
-
   </div>
-
 
   <div>
 
     <div ref="container" id="container"></div>
 
-    <section ref="arOverlay" id="arOverlay" :class="{overlayInvisible:!arSessionManager.isArRunning.value, overlayVisible: arSessionManager.isArRunning.value}">
+    <section
+      ref="arOverlay"
+      id="arOverlay"
+      :class="{overlayInvisible:!arSessionManager.isArRunning.value, overlayVisible: arSessionManager.isArRunning.value}"
+    >
       <div ref="labelContainer" id="labelContainer"></div>
       <div id="overlayTop" class="overlayBlur">
-        <button @click="arSessionManager.stop()">
+        <button @click="handleStopArSession">
           <icon-svg url="/icons/close.svg" theme="text"/>
         </button>
         <h2>{{props.json.title}}</h2>
@@ -183,6 +200,16 @@ const buttonText = computed(() => {
 
   </div>
 
+  <!-- Popup questionnaire affichée après fermeture de la session AR -->
+  <QuestionnairePopup
+    :visible="showQuestionnairePopup"
+    @update:visible="val => showQuestionnairePopup = val"
+    :title="$t ? $t('projectView.arView.questionnairePopup.title') : 'Liens vers notre questionnaire'"
+    cancel-label="Fermer"
+    :confirm-label="'Ouvrir le questionnaire'"
+    :quit-message="props.json.quitMessage"
+    :quit-url="props.json.quitUrl"
+  />
 </template>
 
 <style scoped>

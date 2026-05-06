@@ -95,6 +95,14 @@
         "label": "Imagen:",
         "alt": "Imagen del proyecto"
       },
+      "projectQuitMessage": {
+        "label": "Mensaje antès de salir",
+        "placeholder": "El mensaje usuarios van a ver antès de salir"
+      },
+      "projectQuitUrl": {
+        "label": "Enlace de Formulario",
+        "placeholder": "Enlace de un formulario para los comentarios de los usuarios"
+      },
       "projectEnvmap": {
         "label": "Envmap:",
         "current": "Envmap actuelle:",
@@ -155,6 +163,15 @@
         "save": "Guardar",
         "saved": "Guardado",
         "saving": "Guardando"
+      }
+    },
+    "arView": {
+      "questionnairePopup": {
+        "title": "¡Tu opinión cuenta!",
+        "cancel": "Cerrar",
+        "confirm": "Abrir el cuestionario",
+        "defaultMessage": "Vas a ser redirigido a un cuestionario externo.",
+        "defaultUrl": "https://www.youtube.com/"
       }
     }
   },

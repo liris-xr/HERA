@@ -476,17 +476,86 @@ async function compressAsset(asset, params) {
     if (!res.ok) throw new Error(json.error || "Compression failed");
 
     const a = json.asset ?? json;
+    asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;
+    asset.preferredVariant = a.preferredVariant ?? "original";
     asset.lodMeta = a.lodMeta ?? asset.lodMeta;
 
-    // Switch to the newly compressed variant immediately
-    selectedVariant.value = params.format;
+    selectedVariant.value = "original";
 
     await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
-      variantOverride: params.format,
+      variantOverride: "original",
       token: token.value,
     });
 
     saved.value = false;
+  } catch (e) {
+    alert(e.message || e);
+  } finally {
+    simplifyingAssetIds.value.delete(asset.id);
+  }
+}
+
+async function optimizeAsset(asset) {
+  if (!asset?.id) return;
+  if (isAssetSimplifying(asset.id)) return;
+
+  if (String(asset.id).startsWith("new-asset")) {
+    await saveAll();
+    if (String(asset.id).startsWith("new-asset")) {
+      alert("Asset not saved. Please save and try again.");
+      return;
+    }
+  }
+
+  simplifyingAssetIds.value.add(asset.id);
+
+  try {
+    const res = await fetch(`${ENDPOINT}assets/${asset.id}/process`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({
+        strategy: "optimizeAsset",
+        params: {
+          generateVariants: true,
+          texture: {
+            format: "webp",
+            maxTextureSize: 2048,
+            textureBytesThreshold: 2 * 1024 * 1024,
+            quality: 82,
+            effort: 75,
+          },
+          geometry: {
+            triangleThreshold: 10000,
+          },
+        },
+      }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.details || json.error || "Optimize failed");
+
+    const a = json.asset ?? json;
+    asset.simplifiedUrl = a.simplifiedUrl ?? asset.simplifiedUrl ?? null;
+    asset.preferredVariant = a.preferredVariant ?? "original";
+    asset.lodMeta = a.lodMeta ?? json.lodMeta ?? asset.lodMeta;
+
+    selectedVariant.value = "original";
+
+    await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
+      variantOverride: "original",
+      token: token.value,
+    });
+
+    saved.value = false;
+    console.log("[ASSET OPTIMIZE DONE]", {
+      assetId: asset.id,
+      result: json.strategyResult,
+      outputs: json.outputs,
+      variants: json.variants,
+    });
   } catch (e) {
     alert(e.message || e);
   } finally {
@@ -668,6 +737,7 @@ function markChang() {
                     :active="asset.isSelected.value"
                     :error="asset.hasError.value"
                     :loading="asset.isLoading.value"
+                    :simplifying="isAssetSimplifying(asset.id)"
                     :asset="asset"
                     @select="editor.scene.setSelected(asset)"
                     @delete="editor.scene.removeAsset(asset)"
@@ -675,6 +745,7 @@ function markChang() {
                     @animationChanged="(val) => { asset.activeAnimation = val; saved.value = false; }"
                     @hide-in-viewer="() => { asset.switchViewerDisplayStatus(); saved.value = false; }"
                     @changed="markChang"
+                    @optimize="() => optimizeAsset(asset)"
                     @simplify="() => simplifyAsset(asset)"
                     @compress="(params) => compressAsset(asset, params)"
                 />

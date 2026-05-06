@@ -19,12 +19,7 @@ function safeVec3(value, fallback) {
 }
 
 function isValidVec3(value) {
-    return (
-        value &&
-        Number.isFinite(value.x) &&
-        Number.isFinite(value.y) &&
-        Number.isFinite(value.z)
-    );
+    return (value && Number.isFinite(value.x) && Number.isFinite(value.y) && Number.isFinite(value.z));
 }
 function applyVariantDebugColor(object, variant) {
     const colorMap = {
@@ -174,6 +169,8 @@ const DEFAULT_VARIANT_CACHE_POLICY = Object.freeze({
     decodedLimit: 0,
     allowBytePrefetch: false,
     disposeOldVariant: false,
+    maxStoredCacheWeight: Infinity,
+    maxWarmCacheWeight: Infinity,
 });
 
 function queueTextureDisposal(texture, jobs, disposedTextures) {
@@ -341,6 +338,7 @@ export class Asset extends SceneElementInterface {
         this.variantObjectCache = new Map();
         this.variantCacheOrder = [];
         this.variantWarmPromises = new Map();
+        this.variantWarmQueuePromise = null;
     }
 
     setVariantCachePolicy(policy = {}) {
@@ -353,6 +351,28 @@ export class Asset extends SceneElementInterface {
 
     getVariantCacheLimit() {
         return Math.max(0, Number(this.variantCachePolicy.decodedLimit) || 0);
+    }
+
+    getVariantCacheWeight(variantKey) {
+        const weight = this.manifestCache?.variants?.[variantKey]?.cacheWeight;
+        const n = Number(weight);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    canStoreVariant(variantKey) {
+        const maxWeight = Number(this.variantCachePolicy.maxStoredCacheWeight);
+        if (!Number.isFinite(maxWeight)) return true;
+
+        const weight = this.getVariantCacheWeight(variantKey);
+        return weight == null || weight <= maxWeight;
+    }
+
+    canWarmVariant(variantKey) {
+        const maxWeight = Number(this.variantCachePolicy.maxWarmCacheWeight);
+        if (!Number.isFinite(maxWeight)) return true;
+
+        const weight = this.getVariantCacheWeight(variantKey);
+        return weight == null || weight <= maxWeight;
     }
 
     touchCachedVariant(variantKey) {
@@ -378,6 +398,15 @@ export class Asset extends SceneElementInterface {
 
     cacheDetachedVariant(variantKey, object) {
         if (!variantKey || !object || this.getVariantCacheLimit() <= 0) return false;
+        if (!this.canStoreVariant(variantKey)) {
+            console.log("[LOD CACHE SKIP STORE]", {
+                assetId: this.id,
+                variant: variantKey,
+                cacheWeight: this.getVariantCacheWeight(variantKey),
+                maxStoredCacheWeight: this.variantCachePolicy.maxStoredCacheWeight,
+            });
+            return false;
+        }
 
         if (!object.userData) object.userData = {};
         object.userData.disposalQueued = false;
@@ -444,6 +473,7 @@ export class Asset extends SceneElementInterface {
 
         return (priorityByCurrent[current] ?? ["original", "n3", "n2", "n1"])
             .filter((variantKey) => variantKey !== current)
+            .filter((variantKey) => this.canWarmVariant(variantKey))
             .slice(0, limit);
     }
 
@@ -463,6 +493,16 @@ export class Asset extends SceneElementInterface {
                 });
 
                 if (!chosen?.path || chosen.variant !== variantKey) return false;
+                if (!this.canWarmVariant(variantKey)) {
+                    console.log("[LOD CACHE SKIP WARM]", {
+                        assetId: this.id,
+                        variant: variantKey,
+                        cacheWeight: this.getVariantCacheWeight(variantKey),
+                        maxWarmCacheWeight: this.variantCachePolicy.maxWarmCacheWeight,
+                    });
+                    return false;
+                }
+
                 if (this.currentVariant === variantKey || this.variantObjectCache.has(variantKey)) return true;
 
                 console.log("[LOD CACHE WARM START]", {
@@ -514,10 +554,30 @@ export class Asset extends SceneElementInterface {
         const variantKeys = this.getWarmVariantKeys();
         if (variantKeys.length === 0) return false;
 
+        if (this.variantWarmQueuePromise) return true;
+
+        let resolveWarmQueue;
+        this.variantWarmQueuePromise = new Promise((resolve) => {
+            resolveWarmQueue = resolve;
+        });
+
         requestDeferredWork(() => {
-            for (const variantKey of variantKeys) {
-                this.warmVariant(variantKey);
-            }
+            (async () => {
+                try {
+                    if (this.variantCachePolicy.allowBytePrefetch) {
+                        for (const variantKey of variantKeys) {
+                            this.prefetchVariantFile(variantKey);
+                        }
+                    }
+
+                    for (const variantKey of variantKeys) {
+                        await this.warmVariant(variantKey);
+                    }
+                } finally {
+                    resolveWarmQueue?.();
+                    this.variantWarmQueuePromise = null;
+                }
+            })();
         });
 
         return true;
@@ -807,7 +867,7 @@ export class Asset extends SceneElementInterface {
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;
-            applyVariantDebugColor(newObject, this.currentVariant);
+            //applyVariantDebugColor(newObject, this.currentVariant);
 
             if (parent) {
                 parent.add(newObject);

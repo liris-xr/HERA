@@ -12,32 +12,44 @@ const VARIANT_CACHE_POLICIES = Object.freeze({
         decodedLimit: 1,
         allowBytePrefetch: true,
         disposeOldVariant: true,
+        maxStoredCacheWeight: 8,
+        maxWarmCacheWeight: 3,
     }),
     MID_MOBILE: Object.freeze({
         decodedLimit: 2,
         allowBytePrefetch: true,
         disposeOldVariant: true,
+        maxStoredCacheWeight: 16,
+        maxWarmCacheWeight: 6,
     }),
     HIGH_MOBILE: Object.freeze({
-        decodedLimit: 2,
+        decodedLimit: 3,
         allowBytePrefetch: true,
         disposeOldVariant: true,
+        maxStoredCacheWeight: 40,
+        maxWarmCacheWeight: 12,
     }),
     LOW_DESKTOP: Object.freeze({
-        decodedLimit: 2,
+        decodedLimit: 3,
         allowBytePrefetch: true,
         disposeOldVariant: true,
+        maxStoredCacheWeight: 32,
+        maxWarmCacheWeight: 12,
     }),
     MID_DESKTOP: Object.freeze({
-        decodedLimit: 2,
+        decodedLimit: 3,
         allowBytePrefetch: true,
         disposeOldVariant: false,
+        maxStoredCacheWeight: 64,
+        maxWarmCacheWeight: 24,
     }),
     //machine puissante, on peut garder 2 variantes prêtes en mémoire
     HIGH_DESKTOP: Object.freeze({
         decodedLimit: 3,
         allowBytePrefetch: true,
         disposeOldVariant: false,
+        maxStoredCacheWeight: Infinity,
+        maxWarmCacheWeight: Infinity,
     }),
 });
 

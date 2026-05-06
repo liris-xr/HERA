@@ -1,7 +1,11 @@
 import { compressTexturesAsset } from "../gltf/compressTexturesAsset.js";
+import { optimizeAsset } from "../gltf/optimizeAsset.js";
 import {simplifyAsset} from "../gltf/simplifyAsset.js";
+import { planAssetOptimization } from "./optimizationPlan.js";
 
 const PROCESSING_STRATEGIES = {
+    optimizationPlan: planAssetOptimization,
+    optimizeAsset,
     simplify: simplifyAsset,
     compressTextures: compressTexturesAsset,
 };

@@ -29,10 +29,42 @@ export function fileExists(p) {
     }
 }
 
-export function buildVariantSet(asset, apiRoot) {
-    const originalRel = toInputRel(asset?.url);
+function parseLodMeta(raw) {
+    if (!raw) return {};
+    if (typeof raw === "string") {
+        try {
+            return JSON.parse(raw) ?? {};
+        } catch {
+            return {};
+        }
+    }
+    return typeof raw === "object" ? raw : {};
+}
 
-    if (!originalRel) {
+function cleanMetricMeta(meta) {
+    if (!meta || typeof meta !== "object") return {};
+    const { path: _path, status: _status, ...rest } = meta;
+    return rest;
+}
+
+function relFromMeta(meta, fallbackRel) {
+    const metaRel = toInputRel(meta?.path);
+    return metaRel || fallbackRel;
+}
+
+function buildVariantEntry({ ready, rel, meta = {} }) {
+    return {
+        ...cleanMetricMeta(meta),
+        status: ready ? "ready" : "missing",
+        path: ready ? normalizePath(rel) : null,
+    };
+}
+
+export function buildVariantSet(asset, apiRoot) {
+    const sourceRel = toInputRel(asset?.url);
+    const lodMeta = parseLodMeta(asset?.lodMeta);
+
+    if (!sourceRel) {
         return {
             original: { status: "missing", path: null },
             simplified: { status: "missing", path: null },
@@ -42,11 +74,12 @@ export function buildVariantSet(asset, apiRoot) {
         };
     }
 
+    const originalRel = relFromMeta(lodMeta.original, sourceRel);
     const originalDisk = path.resolve(apiRoot, originalRel);
 
-    const n1Rel = makeVariantRel(originalRel, "n1");
-    const n2Rel = makeVariantRel(originalRel, "n2");
-    const n3Rel = makeVariantRel(originalRel, "n3");
+    const n1Rel = relFromMeta(lodMeta.variants?.n1, makeVariantRel(sourceRel, "n1"));
+    const n2Rel = relFromMeta(lodMeta.variants?.n2, makeVariantRel(sourceRel, "n2"));
+    const n3Rel = relFromMeta(lodMeta.variants?.n3, makeVariantRel(sourceRel, "n3"));
 
     const n1Disk = path.resolve(apiRoot, n1Rel);
     const n2Disk = path.resolve(apiRoot, n2Rel);
@@ -58,25 +91,30 @@ export function buildVariantSet(asset, apiRoot) {
     const n3Ready = fileExists(n3Disk);
 
     return {
-        original: {
-            status: originalReady ? "ready" : "missing",
-            path: originalReady ? normalizePath(originalRel) : null,
-        },
-        simplified: {
-            status: n1Ready ? "ready" : "missing",
-            path: n1Ready ? normalizePath(n1Rel) : null,
-        },
-        n1: {
-            status: n1Ready ? "ready" : "missing",
-            path: n1Ready ? normalizePath(n1Rel) : null,
-        },
-        n2: {
-            status: n2Ready ? "ready" : "missing",
-            path: n2Ready ? normalizePath(n2Rel) : null,
-        },
-        n3: {
-            status: n3Ready ? "ready" : "missing",
-            path: n3Ready ? normalizePath(n3Rel) : null,
-        },
+        original: buildVariantEntry({
+            ready: originalReady,
+            rel: originalRel,
+            meta: lodMeta.original,
+        }),
+        simplified: buildVariantEntry({
+            ready: n1Ready,
+            rel: n1Rel,
+            meta: lodMeta.variants?.n1,
+        }),
+        n1: buildVariantEntry({
+            ready: n1Ready,
+            rel: n1Rel,
+            meta: lodMeta.variants?.n1,
+        }),
+        n2: buildVariantEntry({
+            ready: n2Ready,
+            rel: n2Rel,
+            meta: lodMeta.variants?.n2,
+        }),
+        n3: buildVariantEntry({
+            ready: n3Ready,
+            rel: n3Rel,
+            meta: lodMeta.variants?.n3,
+        }),
     };
 }

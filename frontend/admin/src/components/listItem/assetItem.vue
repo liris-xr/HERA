@@ -26,6 +26,7 @@ const emit = defineEmits([
   "hideInViewer",
   "animationChanged",
   "reset",
+  "optimize",
   "simplify",
   "compress",
   "changed",
@@ -113,7 +114,19 @@ watch([simplifyRatio, compressFormat], () => {
       />
 
       <div v-if="canProcess" class="processingBox" @click.stop="">
-        <!-- Simplify Section -->
+        <!-- Full optimize: texture policy + LOD variants -->
+        <div class="actionGroup">
+          <button
+              class="actionBtn"
+              type="button"
+              :disabled="simplifying"
+              @click.stop="emit('optimize')"
+          >
+            {{ simplifying ? "..." : "Optimize" }}
+          </button>
+        </div>
+
+        <!-- Geometry-only LODs -->
         <div class="actionGroup">
           <button
               class="actionBtn"
@@ -121,16 +134,14 @@ watch([simplifyRatio, compressFormat], () => {
               :disabled="simplifying"
               @click.stop="emit('simplify', { ratio: 0.25 })"
           >
-            {{ simplifying ? "..." : "Simplify" }}
+            {{ simplifying ? "..." : "Simplify Geometry" }}
           </button>
         </div>
 
-        <!-- Compress Section (New Node) -->
+        <!-- Texture-only LODs -->
         <div class="actionGroup">
           <select v-model="compressFormat" :disabled="simplifying" class="formatSelect">
             <option value="webp">WebP</option>
-            <option value="etc1s">ETC1S (KTX)</option>
-            <option value="uastc">UASTC (KTX)</option>
           </select>
           <button
               class="actionBtn"
@@ -138,7 +149,7 @@ watch([simplifyRatio, compressFormat], () => {
               :disabled="simplifying"
               @click.stop="emit('compress', { format: compressFormat })"
           >
-            {{ simplifying ? "..." : "Compress" }}
+            {{ simplifying ? "..." : "Compress Textures" }}
           </button>
         </div>
       </div>

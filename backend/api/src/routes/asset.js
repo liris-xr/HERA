@@ -13,6 +13,7 @@ const router = express.Router();
 
 // Prevent concurrent simplify jobs on same asset
 const activeSimplifyJobs = new Set();
+const activeProcessJobs = new Set();
 
 router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async (req, res) => {
     const assetId = req.params.assetId;
@@ -123,10 +124,10 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
             asset,
             strategy: "simplify",
             params: {
-                errorPresets: {
-                    n1: { ratio: 0.3, error: 0.002, lockBorder: true },
-                    n2: { ratio: 0.5, error: 0.05, lockBorder: true },
-                    n3: { ratio: 0.0, error: 1, lockBorder: true },
+                targetTriangles: {
+                    n1: 120000,
+                    n2: 60000,
+                    n3: 25000,
                 },
             },
             apiRoot,
@@ -147,6 +148,14 @@ router.post(baseUrl + "assets/:assetId/process", authMiddleware, async (req, res
     const token = req.user;
     const assetId = req.params.assetId;
     const strategy = req.body?.strategy;
+
+    if (activeProcessJobs.has(assetId)) {
+        return res.status(409).send({
+            error: "Process already running for this asset",
+        });
+    }
+
+    activeProcessJobs.add(assetId);
 
     try {
         const asset = await ArAsset.findOne({
@@ -193,6 +202,8 @@ router.post(baseUrl + "assets/:assetId/process", authMiddleware, async (req, res
             error: "Process failed",
             details: e?.message || String(e),
         });
+    } finally {
+        activeProcessJobs.delete(assetId);
     }
 });
 

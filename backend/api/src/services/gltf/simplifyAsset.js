@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 import { computeAssetMetrics, computeGeometryMetricsFromFile } from "../../socket/utils/assetMetrics.js";
+import { buildDefaultGeometryPresets } from "../assetProcessing/optimizationPlan.js";
 import {normalizePath, fileExists, toInputRel, makeVariantRel, buildVariantSet,} from "./variantSet.js";
 
 function run(cmd, args, cwd) {
@@ -42,6 +43,12 @@ function withDefaultMetricShape(metrics = {}) {
         triangleCount: metrics.triangleCount ?? null,
         vertexCount: metrics.vertexCount ?? null,
         meshCount: metrics.meshCount ?? null,
+        textureCount: metrics.textureCount ?? null,
+        textureBytes: metrics.textureBytes ?? null,
+        maxTextureWidth: metrics.maxTextureWidth ?? null,
+        maxTextureHeight: metrics.maxTextureHeight ?? null,
+        maxTexturePixels: metrics.maxTexturePixels ?? null,
+        cacheWeight: metrics.cacheWeight ?? null,
     };
 }
 
@@ -103,11 +110,10 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
         await computeAssetMetrics(asset, apiRoot)
     );
 
-    const presets = params.errorPresets ?? {
-        n1: { ratio: 0.3, error: 0.002, lockBorder: true },
-        n2: { ratio: 0.5, error: 0.05, lockBorder: true },
-        n3: { ratio: 0.0, error: 1, lockBorder: true },
-    };
+    const presets = params.errorPresets ?? buildDefaultGeometryPresets(
+        originalMetrics.triangleCount,
+        params
+    );
 
     const n1Rel = makeVariantRel(inputRel, "n1");
     const n2Rel = makeVariantRel(inputRel, "n2");
@@ -179,7 +185,7 @@ export async function simplifyAsset({ asset, params = {}, apiRoot }) {
         asset.lodMeta = {
             generator: "gltf-transform",
             strategy: "simplify",
-            mode: "error-only",
+            mode: params.errorPresets ? "custom-presets" : "adaptive-presets",
             generatedAt: new Date().toISOString(),
             original: originalMetrics,
             variants: {

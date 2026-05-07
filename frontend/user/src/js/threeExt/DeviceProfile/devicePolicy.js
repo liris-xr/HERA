@@ -87,7 +87,6 @@ export function collectSimpleDeviceInfo() {
     //ratio of the picture width to the viewport/ mesure combien de pixels physiques sont rendus pour 1 pixel CSS
     const dpr = window.devicePixelRatio || 1;
 
-    //device is mobile mostly if its UA string says so or if its touch capable with a narrow viewport (small tablet/phone)
     const isMobileLike =
         /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) ||
         (touch && width < 900);
@@ -164,7 +163,7 @@ export function getLodPolicyForDeviceClass(deviceClass) {
                     originalMin: 0.28, //needs > 28% screen coverage for full mesh
                     n1Min: 0.14,
                     n2Min: 0.06,
-                    hysteresis: 0.03, //wider dead band = more stable on slow devices
+                    hysteresis: 0.03,
                 },
             };
 

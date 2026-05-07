@@ -6,6 +6,7 @@ import ArNotification from "@/components/notification/arNotification.vue";
 import ButtonView from "@/components/utils/buttonView.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import { useAuthStore } from "@/store/auth.js";
+import { includesSearchText, normalizeSearchText } from "@/js/utils/search.js";
 
 const { isAuthenticated, token } = useAuthStore();
 
@@ -19,7 +20,7 @@ const PAGE_LENGTH = 20;
 const hasNextPage = ref(false);
 
 const filteredProjects = computed(() => {
-  const query = search.value.trim().toLowerCase();
+  const query = normalizeSearchText(search.value).trim();
 
   if (!query) {
     return projects.value;
@@ -27,7 +28,7 @@ const filteredProjects = computed(() => {
 
   return projects.value.filter((project) => {
     const projectName = project.title || project.name || "";
-    return projectName.toLowerCase().includes(query);
+    return includesSearchText(projectName, query);
   });
 });
 

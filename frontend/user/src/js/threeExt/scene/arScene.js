@@ -178,7 +178,7 @@ export class ArScene extends AbstractScene {
     }
 
     async init() {
-        if (this.isLoaded) return;
+        if (this.isLoaded) return ;
         if (this._initPromise) return this._initPromise;
 
         this.isLoading = true;
@@ -193,7 +193,7 @@ export class ArScene extends AbstractScene {
 
         return this._initPromise;
     }
-
+    //on charge glb,labels, envmap que quand scene.init est appelé
     async #initInternal() {
         if (this._envmapUrl) {
             this.environment = new EXRLoader().load(
@@ -788,7 +788,7 @@ export class ArScene extends AbstractScene {
                         forced: forcedVariant ?? null,
                         final: finalTargetVariant ?? null,
                     };
-
+/*
                     if (this.#assets[0] === asset) {
                         const overlay = ensureLodDebugOverlay();
 
@@ -800,8 +800,8 @@ export class ArScene extends AbstractScene {
                             simplified: "rgba(52, 152, 219, 0.9)",
                         };
 
-                        //overlay.style.background = colorMap[finalTargetVariant] || "rgba(0,0,0,0.8)";
-                        /*overlay.innerHTML = [
+                        overlay.style.background = colorMap[finalTargetVariant] || "rgba(0,0,0,0.8)";
+                        overlay.innerHTML = [
                             `mode: ${this._lodManualMode ? "manual" : "auto"}`,
                             `pending: ${asset.isVariantSwapPending ? "yes" : "no"}`,
                             `calibScale: ${(this._calibrationScaleFactorByAssetId.get(asset.id) ?? 1).toFixed(2)}x`,
@@ -816,8 +816,9 @@ export class ArScene extends AbstractScene {
                             `auto: ${autoTargetVariant ?? "-"}`,
                             `forced: ${forcedVariant ?? "-"}`,
                             `final: ${finalTargetVariant ?? "-"}`,
-                        ].join("<br>");*/
+                        ].join("<br>");
                     }
+                    */
 
                     const debugSignature =
                         `${asset.currentVariant}|${autoTargetVariant}|${forcedVariant}|${finalTargetVariant}|${asset.pendingTargetVariant}|${asset.queuedTargetVariant}`;

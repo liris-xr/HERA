@@ -717,11 +717,20 @@ function markChang() {
               />
             </div>
 
-            <div class="inlineFlex" style="gap: 12px">
-              <label style="margin-right: 0">Variant</label>
-              <select v-model="selectedVariant">
-                <option v-for="v in availableVariants" :key="v" :value="v">{{ v }}</option>
-              </select>
+            <div class="variantSelector">
+              <div class="variantSelectorHeader">
+                <label>Preview variant</label>
+
+                <select v-model="selectedVariant">
+                  <option v-for="v in availableVariants" :key="v" :value="v">
+                    {{ v }}
+                  </option>
+                </select>
+              </div>
+
+              <p>
+                Choose which generated version is displayed in the editor preview.
+              </p>
             </div>
 
             <div id="assetList">
@@ -1021,4 +1030,33 @@ textarea{
 
 .invisible{ display: none !important; }
 strong{ color: var(--accentColor); }
+.variantSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 12px 0;
+}
+
+.variantSelectorHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.variantSelector label {
+  font-weight: 500;
+  margin-right: 0;
+}
+
+.variantSelector select {
+  width: fit-content;
+  max-width: 180px;
+}
+
+.variantSelector p {
+  margin: 0;
+  color: var(--textColor);
+  font-size: 13px;
+  opacity: 0.75;
+}
 </style>

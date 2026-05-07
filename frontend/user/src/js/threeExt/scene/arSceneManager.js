@@ -57,7 +57,7 @@ export class ArSceneManager {
 
     async init() {
         await this.scenePlacementManager.init();
-
+        //on charge que 1ere scène
         const first = this.scenes[0];
         await this.loadScene(first);
         this.activeSceneId.value = first.sceneId;

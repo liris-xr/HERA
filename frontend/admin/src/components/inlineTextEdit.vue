@@ -15,7 +15,7 @@ const id = getCurrentInstance().uid
 
 <template>
   <div class="parent">
-    <input :id="id" type="text" v-model="text" :placeholder="props.placeholder" :maxLength="props.maxLength">
+    <input :id="id" type="text" v-model="text" :placeholder="props.placeholder" :maxLength="props.maxLength > 0 ? props.maxLength : undefined">
     <label :for="id">
       <icon-svg url="/icons/edit.svg" theme="default" :hover-effect="true"></icon-svg>
     </label>

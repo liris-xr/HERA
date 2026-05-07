@@ -8,10 +8,15 @@ import {Label} from "@/js/threeExt/postprocessing/label.js";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Editor from "primevue/editor"
 import NotificationComponent from '@/components/notification/notification.vue'
+import {ENDPOINT} from "@/js/endpoints.js";
+import {useAuthStore} from "@/store/auth.js";
+
+const {token} = useAuthStore();
 
 const props = defineProps({
   show: {type: Boolean, default: false},
   label: {type: Label},
+  projectId: {type: String},
 })
 
 const labelText = ref("");
@@ -38,12 +43,51 @@ function clampValue(value){
   return Math.round(Number(value))
 }
 
-function editedLabelValidation($emit){
+async function processBase64Images(htmlContent) {
+  if (!htmlContent) return htmlContent;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlContent, 'text/html');
+  const images = doc.querySelectorAll('img[src^="data:image"]');
+  
+  for (let img of images) {
+    const src = img.getAttribute('src');
+    try {
+        const res = await fetch(src);
+        const blob = await res.blob();
+        
+        const projectId = props.projectId;
+        const formData = new FormData();
+        formData.append('id', projectId);
+        formData.append('image', blob, 'image.jpg');
+        
+        const uploadRes = await fetch(`${ENDPOINT}project/${projectId}/image`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token.value}`
+          },
+          body: formData
+        });
+        
+        if (uploadRes.ok) {
+          const data = await uploadRes.json();
+          img.setAttribute('src', data.url);
+        }
+    } catch(e) {
+        console.error("Failed to upload image", e);
+    }
+  }
+  
+  return doc.body.innerHTML;
+}
+
+async function editedLabelValidation($emit){
   if(!validateTimestamps())
     return
 
   if(timestampStart.value === null && timestampEnd.value !== null)
     timestampStart.value = 0
+
+  labelText.value = await processBase64Images(labelText.value);
 
   $emit('confirm', getEditedLabel.value)
 }
@@ -138,15 +182,15 @@ const getEditedLabel = computed(()=>{
               <div class="inlineFlex">
                 <label for="AdvancedEditTimestampStart">{{$t("labelEditModal.animation.in.label")}}</label>
                 <input type="text" id="AdvancedEditTimestampStart" :placeholder="$t('labelEditModal.animation.in.placeholder')" v-model="timestampStart" min="0">
-                <Button class="updateValueButton" @click="updateStartTimestamp('start',1)">↑</Button>
-                <Button class="updateValueButton" @click="updateStartTimestamp('start',-1)">↓</Button>
+                <button class="updateValueButton" @click="updateStartTimestamp('start',1)">↑</button>
+                <button class="updateValueButton" @click="updateStartTimestamp('start',-1)">↓</button>
               </div>
 
             <div class="inlineFlex">
               <label for="AdvancedEditTimestampEnd">{{$t("labelEditModal.animation.out.label")}}</label>
               <input type="text" id="AdvancedEditTimestampEnd" :placeholder="$t('labelEditModal.animation.out.placeholder')" v-model="timestampEnd" min="timestampStart">
-              <Button class="updateValueButton" @click="updateStartTimestamp('end',1)">↑</Button>
-              <Button class="updateValueButton" @click="updateStartTimestamp('end',-1)">↓</Button>
+              <button class="updateValueButton" @click="updateStartTimestamp('end',1)">↑</button>
+              <button class="updateValueButton" @click="updateStartTimestamp('end',-1)">↓</button>
             </div>
 
           </div>

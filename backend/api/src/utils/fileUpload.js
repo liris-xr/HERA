@@ -8,17 +8,16 @@ import {ArAsset, ArMesh, ArProject, ArScene} from "../orm/index.js";
 
 
 
-export const uploadCover = multer({ storage: multer.diskStorage({
+export const uploadCover = multer({ 
+    storage: multer.diskStorage({
         destination: (req, file, cb) => {
             const projectId = req.body.id;
             if(!projectId) throw new Error('Project Id is missing');
 
             const uploadDirectory = path.join(DIRNAME, getImagesDirectory(projectId))
-            if (!fs.existsSync(uploadDirectory)) {
-                fs.mkdirSync(uploadDirectory, { recursive: true });
-            }
-
-            cb(null, uploadDirectory);
+            fs.promises.mkdir(uploadDirectory, { recursive: true })
+                .then(() => cb(null, uploadDirectory))
+                .catch(err => cb(err));
         },
         filename: (req, file, cb) => {
             const ext = path.extname(file.originalname);
@@ -33,25 +32,22 @@ export const uploadCover = multer({ storage: multer.diskStorage({
 
 
 
-export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
+export const uploadEnvmapAndAssets = multer({ 
+    storage: multer.diskStorage({
         destination: (req, file, cb) => {
             const projectId = req.projectId;
             if(!projectId) throw new Error('Project Id is missing');
 
             if(file.fieldname === 'uploadedEnvmap') {
                 const uploadDirectory = path.join(DIRNAME, getEnvmapsDirectory(projectId))
-                if (!fs.existsSync(uploadDirectory)) {
-                    fs.mkdirSync(uploadDirectory, { recursive: true });
-                }
-
-                cb(null, uploadDirectory);
+                fs.promises.mkdir(uploadDirectory, { recursive: true })
+                    .then(() => cb(null, uploadDirectory))
+                    .catch(err => cb(err));
             } else if (file.fieldname === "uploads") {
                 const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId))
-                if (!fs.existsSync(uploadDirectory)) {
-                    fs.mkdirSync(uploadDirectory, { recursive: true });
-                }
-
-                cb(null, uploadDirectory);
+                fs.promises.mkdir(uploadDirectory, { recursive: true })
+                    .then(() => cb(null, uploadDirectory))
+                    .catch(err => cb(err));
             } else cb(null, "")
         },
         filename: (req, file, cb) => {
@@ -84,17 +80,16 @@ export const uploadEnvmapAndAssets = multer({ storage: multer.diskStorage({
 
 
 
-export const uploadAsset = multer({ storage: multer.diskStorage({
+export const uploadAsset = multer({ 
+    storage: multer.diskStorage({
         destination: (req, file, cb) => {
             const projectId = req.projectId;
             if(!projectId) throw new Error('Project Id is missing');
 
             const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId))
-            if (!fs.existsSync(uploadDirectory)) {
-                fs.mkdirSync(uploadDirectory, { recursive: true });
-            }
-
-            cb(null, uploadDirectory);
+            fs.promises.mkdir(uploadDirectory, { recursive: true })
+                .then(() => cb(null, uploadDirectory))
+                .catch(err => cb(err));
         },
         filename: (req, file, cb) => {
             const ext = path.extname(file.originalname);
@@ -114,7 +109,8 @@ export const uploadAsset = multer({ storage: multer.diskStorage({
     })});
 
 
-export const adminUploadAsset = multer({ storage: multer.diskStorage({
+export const adminUploadAsset = multer({ 
+    storage: multer.diskStorage({
         destination: async (req, file, cb) => {
             const sceneId = req.body.sceneId
 
@@ -134,11 +130,9 @@ export const adminUploadAsset = multer({ storage: multer.diskStorage({
             if(!projectId) throw new Error('Project Id is missing');
 
             const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId))
-            if (!fs.existsSync(uploadDirectory)) {
-                fs.mkdirSync(uploadDirectory, { recursive: true });
-            }
-
-            cb(null, uploadDirectory);
+            fs.promises.mkdir(uploadDirectory, { recursive: true })
+                .then(() => cb(null, uploadDirectory))
+                .catch(err => cb(err));
         },
         filename: (req, file, cb) => {
             const ext = path.extname(file.originalname);
@@ -158,15 +152,14 @@ export const adminUploadAsset = multer({ storage: multer.diskStorage({
     })});
 
 
-export const uploadProject = multer({ storage: multer.diskStorage({
+export const uploadProject = multer({ 
+    storage: multer.diskStorage({
         destination: (req, file, cb) => {
 
             const uploadDirectory = path.join(DIRNAME, 'public', 'files', 'temp')
-            if (!fs.existsSync(uploadDirectory)) {
-                fs.mkdirSync(uploadDirectory, { recursive: true })
-            }
-
-            cb(null, uploadDirectory)
+            fs.promises.mkdir(uploadDirectory, { recursive: true })
+                .then(() => cb(null, uploadDirectory))
+                .catch(err => cb(err));
         },
 
         filename: (req, file, cb) => {
@@ -202,21 +195,22 @@ function getEnvmapsDirectory(projectId){
 
 
 function isUploadedFilePath(pathFromServerRoot){
-    const splitPath = pathFromServerRoot.split(path.sep);
-    return !(splitPath[1] != "files" || splitPath.length < 2);
-
+    if(!pathFromServerRoot) return false;
+    return pathFromServerRoot.split('/')[1] === 'files'
 }
 
-export function deleteFile(pathFromServerRoot){
+export async function deleteFile(pathFromServerRoot){
     if(!isUploadedFilePath(pathFromServerRoot)){
         console.error("This file cannot be deleted");
         return;
     }
     const filePath = path.join(DIRNAME, pathFromServerRoot);
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-    }else{
-        console.error("unable to delete file");
+    try {
+        await fs.promises.unlink(filePath);
+    } catch(err) {
+        if(err.code !== 'ENOENT') {
+            console.error("unable to delete file", err);
+        }
     }
 }
 
@@ -256,9 +250,9 @@ export function getUpdatedPath(currentPath, oldId, newId){
 
 
 export async function deleteAsset(asset) {
+    if (!asset || !asset.url) return;
 
-
-    let assetsUsingSameUrl = await arAsset.findAll({
+    let assetsUsingSameUrl = await ArAsset.findAll({
         where:{
             url:asset.url,
             id:{
@@ -268,23 +262,5 @@ export async function deleteAsset(asset) {
     })
 
     if (assetsUsingSameUrl.length === 0)
-        deleteFile(asset.url);
+        await deleteFile(asset.url);
 }
-/*
-
-
-public/
-    abc-123/
-        images/
-            projectCover.jpg
-        assets/
-            a.glb
-            b.glb
-            c.glb
-            ...
-            //autres assets
-    def-456
-    ghi-789
-
-
- */

@@ -50,7 +50,8 @@ const router = createRouter({
       path: '/project/:projectId/presentation',
       name: 'presentation',
       component: PresentationView
-    }
+    },
+
   ]
 })
 

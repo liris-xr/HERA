@@ -26,11 +26,13 @@ import {generateUUID} from "three/src/math/MathUtils.js";
 const { isAuthenticated, token } = useAuthStore()
 const {t} = useI18n()
 
-if (!isAuthenticated.value) {
-  router.push({ name: "login" })
+const route = useRoute();
+const urlToken = new URLSearchParams(window.location.search).get('token');
+
+if (!isAuthenticated.value && !urlToken) {
+  router.push({ name: "login", query: { redirect: route.fullPath } })
 }
 
-const route = useRoute();
 const project = reactive({});
 const loading = ref(true);
 const error = ref(false);
@@ -109,7 +111,7 @@ function initSocket() {
 async function showQr() {
   showQrcode.value = true
 
-  // faire en sorte que l'écran ne s'éteigne pas
+  // prevent screen from turning off
   wakeLock = await navigator.wakeLock.request("screen")
 }
 

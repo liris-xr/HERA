@@ -2,7 +2,7 @@
 import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
-import * as sea from "node:sea";
+
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
@@ -47,13 +47,12 @@ async function confirmLabelCreate() {
     const data = await res.json()
     labels.value.push(data)
     emit("newLabel", data)
+    creatingLabel.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  creatingLabel.value = null
 }
 
 async function confirmLabelDelete() {
@@ -71,13 +70,12 @@ async function confirmLabelDelete() {
     if(index !== -1)
       labels.value.splice(index, 1)
     emit("supprLabel", deletingLabel.value)
+    deletingLabel.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  deletingLabel.value = null
 }
 
 async function confirmLabelEdit() {
@@ -98,13 +96,12 @@ async function confirmLabelEdit() {
       labels.value[index] = { ...editingLabel.value }
 
     emit("editLabel", editingLabel.value)
+    editingLabel.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  editingLabel.value = null
 }
 
 async function fetchLabels(data=null) {
@@ -130,7 +127,7 @@ async function fetchLabels(data=null) {
 
       totalPages.value = data.totalPages
 
-      if(table.value.currentPage > totalPages.value)
+      if(table.value && table.value.currentPage > totalPages.value)
         table.value.currentPage = totalPages.value
     } else
       error.value = true
@@ -183,7 +180,7 @@ onMounted(async () => {
 
     </generic-table>
 
-  <!-- Interfaces modales -->
+  <!-- modals -->
 
   <generic-modal
       title="edit"

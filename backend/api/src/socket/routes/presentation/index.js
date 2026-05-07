@@ -44,4 +44,4 @@ export function sendUserCount(presentationId) {
     }
 }
 
-//TODO intervalle pour supprimer les présentations inactives
+// todo delete inactive presentations

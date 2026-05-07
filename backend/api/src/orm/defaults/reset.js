@@ -6,7 +6,6 @@ import ArMesh from "../models/arMesh.js";
 import ArLabel from "../models/arLabel.js";
 
 export async function resetDatabase() {
-    console.log();
     await ArUser.destroy({where:{}})
     await ArProject.destroy({where:{}})
     await ArScene.destroy({where:{}})

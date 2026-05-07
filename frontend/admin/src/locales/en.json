@@ -3,7 +3,7 @@
   "header": {
     "home": "My projects",
     "logout": "Logout",
-    "administration": "Admin pannel"
+    "administration": "Admin panel"
   },
 
   "none": "None",
@@ -14,7 +14,7 @@
     "passwordLabel": "Password",
     "passwordPlaceholder": "Your password",
     "login": "Login",
-    "loginIn": "Login in",
+    "loginIn": "Logging in",
     "noAccount": "Don't have an account?",
     "register": "To sign up, please contact an administrator :",
     "createAccount": "Create one"
@@ -125,7 +125,7 @@
       "delete": {
         "title": "Delete project",
         "body": {
-          "part1": "Your are about to delete project ",
+          "part1": "You are about to delete project ",
           "part2": "This action cannot be undone. Are you sure you want to continue?"
         }
       },
@@ -137,7 +137,7 @@
       "deleteScene": {
         "title": "Delete scene",
         "body": {
-          "part1": "Your are about to delete scene ",
+          "part1": "You are about to delete scene ",
           "part2": "This action cannot be undone. Are you sure you want to continue?"
         }
       }
@@ -157,6 +157,10 @@
         "buttonText": "Add",
         "noSceneInfo": "This project does not have any scenes",
         "assetCount": "asset | assets"
+      },
+      "projectPresets": {
+        "label": "Presets:",
+        "noPresetInfo": "This project does not have any presets"
       }
     },
     "bottomActionBar": {
@@ -227,7 +231,7 @@
       "delete": {
         "title": "Delete scene",
         "body": {
-          "part1": "Your are about to delete scene ",
+          "part1": "You are about to delete scene ",
           "part2": "This action cannot be undone. Are you sure you want to continue?"
         }
       }
@@ -259,14 +263,16 @@
   },
 
   "admin": {
-    "title": "Admin pannel",
+    "title": "Admin panel",
     "loading": "Loading...",
-    "loadingError": "An error occured while loading the data",
+    "loadingError": "An error occurred while loading the data",
     "required": "This field is required",
     "research": "Research",
     "noResult": "No result",
     "deleteConfirm": "Are you sure you want to delete",
     "irreversibleAction": "This action can't be undone",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
     "sections": {
       "accounts": {
         "h1": "Accounts",
@@ -335,6 +341,12 @@
             "title": "Project"
           }
         }
+      },
+      "presets": {
+        "h1": "Presets",
+        "bigText": "Title",
+        "text": "Text",
+        "projectTitle": "Project"
       }
     }
   },
@@ -401,7 +413,8 @@
     },
     "buttons": {
       "cancel": "Cancel",
-      "confirm": "Confirm"
+      "confirm": "Confirm",
+      "saving": "Saving..."
     }
   }
 }

@@ -28,23 +28,23 @@ router.post(baseUrl+'auth/register', authMiddleware, async (req, res) => {
         const reqBody = req.body
         const { username, email, unhashedPassword } = reqBody
 
-        const password = passwordHash(unhashedPassword)
+        const password = await passwordHash(unhashedPassword)
 
-        // Vérifier si l'utilisateur existe déjà
+        // check if user exists
         const userWithSameEmail = await ArUser.findOne({ where: { email }})
 
         if (userWithSameEmail) {
             return res.status(409).json({ error: 'E-mail already used' })
         }
 
-        // Créer le nouvel utilisateur
+        // create user
         const newUser = await ArUser.create({
             username,
             email,
             password
         })
 
-        // Générer un token JWT pour l'authentification future
+        // generate token
         const payload = {
             id: newUser.id,
             username,
@@ -53,7 +53,7 @@ router.post(baseUrl+'auth/register', authMiddleware, async (req, res) => {
 
         const token = jwt.sign(payload, JWT_SECRET)
 
-        // Renvoyer l'utilisateur et le token
+        // return user and token
         res.status(201).json({ access_token: token })
     } catch (e) {
         console.log(e)
@@ -74,7 +74,7 @@ router.post(baseUrl+'auth/login', async (req, res) => {
     const { email, password } = reqBody
 
     try {
-        // Vérifier si l'utilisateur existe
+        // check user
         const user = await ArUser.findOne({
             where: { email }
         })
@@ -84,12 +84,12 @@ router.post(baseUrl+'auth/login', async (req, res) => {
         }
 
 
-        // Vérifier le mot de passe de l'utilisateur
-        if (!passwordVerify(password, user.password)) {
+        // verify password
+        if (!(await passwordVerify(password, user.password))) {
             return res.status(401).json({ error: 'Invalid credentials.' })
         }
 
-        // Générer un token JWT pour l'authentification future
+        // generate token
         const payload = {
             id: user.id,
             username: user.username,
@@ -98,7 +98,7 @@ router.post(baseUrl+'auth/login', async (req, res) => {
         }
         const token = jwt.sign(payload, JWT_SECRET)
 
-        // Renvoyer le token
+        // return token
         res.status(200).json({ access_token: token })
     } catch (e) {
         res.status(401).json({ error: 'Invalid credentials', details: getDetails(e) })

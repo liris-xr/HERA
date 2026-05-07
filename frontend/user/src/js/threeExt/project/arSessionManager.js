@@ -132,7 +132,7 @@ export class ArSessionManager {
 
         } catch(e) {
             if(e.name === "NotSupportedError") {
-                // le dom-overlay n'est pas supporté
+                // dom-overlay not supported
                 if(options.requiredFeatures && options.requiredFeatures.includes('dom-overlay'))
                     options.requiredFeatures.splice(options.requiredFeatures.indexOf('dom-overlay'), 1)
 
@@ -170,7 +170,7 @@ export class ArSessionManager {
             this.sceneManager.scenePlacementManager.hitTestSource = await this.arSession.requestHitTestSource({space: this.viewerSpace});
             this.arSession.addEventListener('select', this.sceneManager.onSceneClick.bind(this.sceneManager));
         } catch(e) {
-            // pas supporté
+            // not supported
             this.sceneManager.scenePlacementManager.disable()
         }
 
@@ -183,7 +183,7 @@ export class ArSessionManager {
         }
 
         if(this.xrMode === "vr" && this.sceneManager.active.value.vrStartPosition) {
-            // timeout nécessaire car le apple vision pro réhausse la scène lors du premier tick sans qu'on lui demande
+            // apple vision pro fix
             setTimeout(() => this.applyVrCameraPosition(), 100)
         }
 

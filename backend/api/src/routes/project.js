@@ -180,7 +180,7 @@ router.put(baseUrl+'projects/:projectId', authMiddleware, uploadCover.single('up
 
         let updatedUrl = req.body.pictureUrl;
         if(uploadedUrl){
-            deleteFile(req.body.pictureUrl);
+            await deleteFile(req.body.pictureUrl);
             updatedUrl = uploadedUrl
         }
 
@@ -252,6 +252,15 @@ router.post(baseUrl+'project', authMiddleware, async (req, res) => {
         return res.send({ error: 'Unable to create project'});
     }
 })
+
+router.post(baseUrl+'project/:projectId/image', authMiddleware, uploadCover.single('image'), async (req, res) => {
+    try {
+        const fullUrl = req.protocol + '://' + req.get('host') + '/' + req.uploadedUrl.replace(/\\/g, '/');
+        return res.status(200).send({ url: fullUrl });
+    } catch(e) {
+        return res.status(400).send({ error: 'Upload failed' });
+    }
+});
 
 
 
@@ -360,45 +369,61 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
             });
 
             //copy all scenes related to project
+            const oldSceneIdToNew = {};
+            const oldAssetIdToNew = {};
+            const oldLabelIdToNew = {};
+
             const newScenes = await Promise.all(project.scenes.map(async scene => {
                 const newScene = await ArScene.create({
                     ...scene.get({ plain: true }),
-                    id: undefined, // générer un nouvel id
-                    projectId: newProject.id // lier la scène au nouveau projet
+                    id: undefined, // new id
+                    projectId: newProject.id // link to project
                 },{
                     transaction:t
                 });
+                
+                oldSceneIdToNew[scene.id] = newScene.id;
 
                 await Promise.all(scene.meshes.map(async mesh => {
                     return ArMesh.create({
                         ...mesh.get({ plain: true }),
-                        id: "project-"+newProject.id+"-scene-"+newScene.title+"-mesh-"+mesh.name, // générer un nouvel id
-                        sceneId: newScene.id, // lier le nouvel asset à la nouvelle scène
+                        id: "project-"+newProject.id+"-scene-"+newScene.title+"-mesh-"+mesh.name, // new id
+                        sceneId: newScene.id, // link to scene
                     }, {
                         transaction:t
                     });
                 }));
 
                 await Promise.all(scene.assets.map(async asset => {
-                    return ArAsset.create({
+                    const newAsset = await ArAsset.create({
                         ...asset.get({ plain: true }),
-                        id: undefined, // générer un nouvel id
-                        sceneId: newScene.id, // lier le nouvel asset à la nouvelle scène
+                        id: undefined, // new id
+                        sceneId: newScene.id, // link to scene
                         url: getUpdatedPath(asset.url, projectId, newProject.id)
                     }, {
                         transaction:t
                     });
+                    oldAssetIdToNew[asset.id] = newAsset.id;
+                    return newAsset;
                 }));
 
-                // Dupliquer les labels
+                // copy labels
+                const hostUrl = req.protocol + '://' + req.get('host');
                 await Promise.all(scene.labels.map(async label => {
-                    return ArLabel.create({
-                        ...label.get({ plain: true }),
-                        id: undefined, // générer un nouvel id
-                        sceneId: newScene.id // lier le nouveau label à la nouvelle scène
+                    const labelData = label.get({ plain: true });
+                    if (labelData.text) {
+                        // update urls and add host
+                        labelData.text = updateUrl(labelData.text, newProject.id, hostUrl);
+                    }
+                    const newLabel = await ArLabel.create({
+                        ...labelData,
+                        id: undefined, // new id
+                        sceneId: newScene.id // link to scene
                     }, {
                         transaction:t
                     });
+                    oldLabelIdToNew[label.id] = newLabel.id;
+                    return newLabel;
                 }));
 
 
@@ -409,6 +434,33 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
             await duplicateFolder(getProjectDirectory(projectId), getProjectDirectory(newProject.id))
             if(newProject.pictureUrl != null){
                 newProject.pictureUrl = getUpdatedPath(newProject.pictureUrl, projectId, newProject.id)
+                await newProject.save({transaction:t});
+            }
+
+            // Update preset actions with new IDs
+            if (project.presets) {
+                let newPresets = JSON.parse(JSON.stringify(project.presets));
+                for (let preset of newPresets) {
+                    if (preset.text) {
+                        preset.text = updateUrl(preset.text, newProject.id, hostUrl);
+                    }
+                    if (preset.actions) {
+                        for (let action of preset.actions) {
+                            if (action.args && action.args[0]) {
+                                if (action.args[0].sceneId && oldSceneIdToNew[action.args[0].sceneId]) {
+                                    action.args[0].sceneId = oldSceneIdToNew[action.args[0].sceneId];
+                                }
+                                if (action.args[0].assetId && oldAssetIdToNew[action.args[0].assetId]) {
+                                    action.args[0].assetId = oldAssetIdToNew[action.args[0].assetId];
+                                }
+                                if (action.args[0].labelId && oldLabelIdToNew[action.args[0].labelId]) {
+                                    action.args[0].labelId = oldLabelIdToNew[action.args[0].labelId];
+                                }
+                            }
+                        }
+                    }
+                }
+                newProject.presets = newPresets;
                 await newProject.save({transaction:t});
             }
 
@@ -424,38 +476,8 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
     }
 })
 
-router.put(baseUrl+'project/:projectId/presets', authMiddleware, async (req, res) => {
-    const token = req.user
-    const projectId = req.params.projectId
 
-    const project = await ArProject.findOne({
-        where: { id: projectId },
-    })
-
-    if(!project)
-        return res.status(404).send({ error: 'No project found'});
-
-    try {
-
-        await project.update({
-            presets: req.body.presets
-        }, {
-            returning: true
-        })
-
-        return res.status(200).send(project)
-
-    } catch(e) {
-        console.log(e);
-        res.status(400);
-        return res.send({error: 'Unable to fetch project'});
-    }
-
-
-})
-
-
-// routes pour le mode admin
+// admin routes
 
 const PROJECTS_PAGE_LENGTH = 10;
 
@@ -548,23 +570,19 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
                     as: "scenes",
                     separate: true,
                     order: [['index', 'ASC']],
-                    attributes: {exclude: ['id']},
                     include:[
                         {
                             model:ArMesh,
                             as:"meshes",
-                            attributes: {exclude: ['id']}
                         },
                         {
                             model: ArAsset,
                             as: "assets",
                             required:false,
-                            attributes: {exclude: ['id']}
                         },
                         {
                             model: ArLabel,
                             as: "labels",
-                            attributes: {exclude: ['id']}
                         },
                     ],
                 },
@@ -582,13 +600,11 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
 
             const jsonFilePath = path.join(getTempDirectory(), projectId + "-" + Date.now() + '.json')
 
-            if (!fs.existsSync(getTempDirectory()))
-                fs.mkdirSync(getTempDirectory(), { recursive: true })
+            await fs.promises.mkdir(getTempDirectory(), { recursive: true })
 
             const projectObj = project.toJSON()
-            delete projectObj.id
 
-            await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
+            await fs.promises.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj))
 
             res.zip({
                 files: [
@@ -632,15 +648,74 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
 
     try {
         const dataFolder = req.uploadedFilePath + "-data"
-        // dézipper le fichier
+        // unzip file
         await decompress(req.uploadedFilePath, dataFolder)
 
-        // créer les enregistrements dans la BD
+        // create records
         const projectFilePath = path.join(dataFolder, "project.json")
-        const data = fs.readFileSync(projectFilePath)
+        const data = await fs.promises.readFile(projectFilePath, 'utf8')
 
         const projectObj = JSON.parse(data)
         projectObj.userId = token.id
+        
+        // Generate new UUIDs to prevent conflicts when importing, 
+        // while preserving the assetId link in meshes
+        const crypto = await import('crypto');
+        const oldSceneIdToNew = {};
+        const oldAssetIdToNew = {};
+        const oldLabelIdToNew = {};
+        
+        projectObj.id = crypto.randomUUID();
+        
+        for (let scene of projectObj.scenes || []) {
+            const newSceneId = crypto.randomUUID();
+            oldSceneIdToNew[scene.id] = newSceneId;
+            scene.id = newSceneId;
+            for (let asset of scene.assets || []) {
+                if (asset.id) {
+                    const newId = crypto.randomUUID();
+                    oldAssetIdToNew[asset.id] = newId;
+                    asset.id = newId;
+                }
+            }
+            for (let label of scene.labels || []) {
+                if (label.id) {
+                    const newId = crypto.randomUUID();
+                    oldLabelIdToNew[label.id] = newId;
+                    label.id = newId;
+                }
+            }
+            for (let mesh of scene.meshes || []) {
+                mesh.id = crypto.randomUUID();
+                if (mesh.assetId && oldAssetIdToNew[mesh.assetId]) {
+                    mesh.assetId = oldAssetIdToNew[mesh.assetId];
+                }
+            }
+        }
+        
+        const hostUrl = req.protocol + '://' + req.get('host');
+        if (projectObj.presets) {
+            for (let preset of projectObj.presets) {
+                if (preset.text) {
+                    preset.text = updateUrl(preset.text, projectObj.id, hostUrl);
+                }
+                if (preset.actions) {
+                    for (let action of preset.actions) {
+                        if (action.args && action.args[0]) {
+                            if (action.args[0].sceneId && oldSceneIdToNew[action.args[0].sceneId]) {
+                                action.args[0].sceneId = oldSceneIdToNew[action.args[0].sceneId];
+                            }
+                            if (action.args[0].assetId && oldAssetIdToNew[action.args[0].assetId]) {
+                                action.args[0].assetId = oldAssetIdToNew[action.args[0].assetId];
+                            }
+                            if (action.args[0].labelId && oldLabelIdToNew[action.args[0].labelId]) {
+                                action.args[0].labelId = oldLabelIdToNew[action.args[0].labelId];
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         const project = await ArProject.create(projectObj, {
             include: [
@@ -666,17 +741,22 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
             ]
         })
 
-        // modifier l'url des fichiers (assets, cover...)
+        // update file urls
 
-        project.pictureUrl = updateUrl(project.pictureUrl, project.id)
+        project.pictureUrl = updateUrl(project.pictureUrl, project.id, hostUrl)
         await project.save()
 
         for(let scene of project.scenes) {
-            scene.envmapUrl = updateUrl(scene.envmapUrl, project.id)
+            scene.envmapUrl = updateUrl(scene.envmapUrl, project.id, hostUrl)
 
             for(let asset of scene.assets) {
-                asset.url = updateUrl(asset.url, project.id)
+                asset.url = updateUrl(asset.url, project.id, hostUrl)
                 await asset.save()
+            }
+
+            for(let label of scene.labels) {
+                label.text = updateUrl(label.text, project.id, hostUrl)
+                await label.save()
             }
 
             await scene.save()
@@ -685,11 +765,11 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
 
         const projectDir = getProjectDirectory(project.id)
 
-        await fs.renameSync(dataFolder+"/files", projectDir)
+        await fs.promises.rename(dataFolder+"/files", projectDir)
 
         // supprimer les fichiers temporaires
-        fs.rmSync(dataFolder, {recursive: true})
-        fs.rmSync(req.uploadedFilePath)
+        await fs.promises.rm(dataFolder, {recursive: true, force: true})
+        await fs.promises.rm(req.uploadedFilePath, {force: true})
 
         return res.status(200).send(project)
 

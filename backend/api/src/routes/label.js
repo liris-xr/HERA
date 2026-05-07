@@ -8,7 +8,7 @@ import {Op} from "sequelize";
 
 const router = express.Router()
 
-// routes pour le mode admin
+// admin routes
 
 const LABELS_PAGE_LENGTH = 10;
 

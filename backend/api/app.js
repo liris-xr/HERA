@@ -1,7 +1,7 @@
-import express from 'express';
-import {initializeDatabase} from "./src/orm/index.js";
-import {resetDatabase} from "./src/orm/defaults/reset.js";
-import {insertDefaults} from "./src/orm/defaults/insertDefaults.js";
+import express from "express";
+import { initializeDatabase } from "./src/orm/index.js";
+import { resetDatabase } from "./src/orm/defaults/reset.js";
+import { insertDefaults } from "./src/orm/defaults/insertDefaults.js";
 import project from "./src/routes/project.js";
 import auth from "./src/routes/auth.js";
 import user from "./src/routes/user.js";
@@ -9,67 +9,83 @@ import scene from "./src/routes/scene.js";
 import dev from "./src/routes/dev.js";
 import asset from "./src/routes/asset.js";
 import label from "./src/routes/label.js";
-import cors from 'cors'
-
-
+import preset from "./src/routes/preset.js";
+import cors from "cors";
 
 import * as path from "node:path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 export const DIRNAME = path.dirname(__filename);
 
-
-
-
-//for https only :
+// for https
 import * as fs from "node:fs";
 import * as https from "node:https";
-import {Server} from "socket.io";
+import { Server } from "socket.io";
 import setupSocket from "./src/socket/index.js";
-import {errorHandler} from "./src/utils/errorHandler.js";
-import zip from 'express-easy-zip'
+import { errorHandler } from "./src/utils/errorHandler.js";
+import zip from "express-easy-zip";
+
 const options = {
-    key: fs.readFileSync('privatekey.key'),
-    cert: fs.readFileSync('certificate.crt')
+  key: fs.readFileSync(path.join(DIRNAME, "privatekey.key")),
+  cert: fs.readFileSync(path.join(DIRNAME, "certificate.crt")),
 };
 
+const app = express();
+app.use(express.json());
 
-const app = express()
-app.use(express.json())
-app.use(cors({}))
-app.use(zip())
-app.use(errorHandler)
+app.use(
+  cors({
+    origin: [
+      "https://localhost",
+      "https://127.0.0.1",
+      "https://localhost:8081",
+      "https://localhost:8082",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 
-async function main () {
-    await initializeDatabase({force: false});
-        // await resetDatabase();
-        // await insertDefaults();
+app.use(zip());
 
-    app.use(project);
-    app.use(auth);
-    app.use(user);
-    app.use(scene)
-    app.use(dev)
-    app.use(asset)
-    app.use(label)
-    app.use('/public', express.static('public'));       //serving static files
-
-    const httpsServer = https.createServer(options, app)
-
-    // mise en place du socket
-    const io = new Server(httpsServer, {
-        cors: {
-            origin: "*",
-            methods: ["GET", "POST"],
-        },
-        path: "/api/socket"
-    })
-    setupSocket(io)
+async function main() {
+  await initializeDatabase({ force: false });
 
 
-    httpsServer.listen(8080, () => {
-        console.log('Server started on port 8080')
-    })
+  app.use(project);
+  app.use(auth);
+  app.use(user);
+  app.use(scene);
+  app.use(dev);
+  app.use(asset);
+  app.use(label);
+  app.use(preset);
+
+  const filesDir = path.join(DIRNAME, "public", "files");
+  if (!fs.existsSync(filesDir)) {
+    fs.mkdirSync(filesDir, { recursive: true });
+    console.log("Created public/files directory");
+  }
+
+  app.use("/public", express.static(path.join(DIRNAME, "public")));
+  
+  app.use(errorHandler);
+
+  const httpsServer = https.createServer(options, app);
+
+  const io = new Server(httpsServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+    },
+    path: "/api/socket",
+  });
+  setupSocket(io);
+
+  httpsServer.listen(8080, () => {
+    console.log("Server started on port 8080");
+  });
 }
 
-main().catch(e => console.error(e))
+main().catch((e) => console.error(e));

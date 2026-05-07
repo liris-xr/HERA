@@ -8,7 +8,7 @@ export function extractYawQuaternion(q) {
     forward.y = 0;
     forward.normalize();
 
-    // Construire un quaternion représentant uniquement cette direction (yaw)
+    // yaw quaternion
     const yawQuat = new THREE.Quaternion();
     yawQuat.setFromUnitVectors(new THREE.Vector3(0, 0, -1), forward);
 

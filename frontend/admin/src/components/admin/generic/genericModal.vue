@@ -110,10 +110,10 @@ function validateFields() {
       <slot></slot>
 
       <div>
-        <button @click="validateFields() && $emit('confirm')">Confirmer</button>
+        <button @click="validateFields() && $emit('confirm')">{{$t("admin.confirm")}}</button>
       </div>
       <div>
-        <button @click="$emit('cancel')">Annuler</button>
+        <button @click="$emit('cancel')">{{$t("admin.cancel")}}</button>
       </div>
     </div>
   </div>

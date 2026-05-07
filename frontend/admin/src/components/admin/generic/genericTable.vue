@@ -58,10 +58,15 @@ onMounted(() => {
 })
 
 function getProperty(obj, prop) {
-  if(!prop.includes("."))
-    return obj[prop]
+  let val = obj;
+  if(!prop.includes(".")) {
+    val = obj[prop];
+  } else {
+    val = prop.split(".").reduce((acc, part) => acc && acc[part], obj);
+  }
 
-  return prop.split(".").reduce((acc, part) => acc && acc[part], obj)
+
+  return val;
 }
 
 </script>
@@ -102,7 +107,9 @@ function getProperty(obj, prop) {
         </tr>
 
         <tr v-if="props.data.length > 0" v-for="element in props.data">
-          <td v-for="field in props.fields">{{getProperty(element, field)}}</td>
+          <td v-for="field in props.fields">
+            <div class="scrollable-cell">{{getProperty(element, field)}}</div>
+          </td>
 
           <td>
             <div class="inline-flex">
@@ -180,4 +187,19 @@ function getProperty(obj, prop) {
   height: 30px;
 }
 
+.scrollable-cell {
+  max-width: 300px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+
+.scrollable-cell::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scrollable-cell::-webkit-scrollbar-thumb {
+  background: var(--accentColor);
+  border-radius: 2px;
+}
 </style>

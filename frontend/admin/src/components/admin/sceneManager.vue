@@ -2,7 +2,7 @@
 import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
-import * as sea from "node:sea";
+
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
@@ -63,19 +63,23 @@ function editAsset(asset) {
 
   if(index !== -1) {
     const scene = scenes.value[index]
+    if(!scene.assets) return
     const index2 = scene.assets.findIndex(a => a.id === asset.id)
 
-    scenes.value[index].assets[index2] = { ...asset }
+    if (index2 !== -1) scenes.value[index].assets[index2] = { ...asset }
   }
 }
 
 async function newLabel(label) {
   const index = scenes.value.findIndex(scene => scene.id === label.sceneId)
 
-  if(index !== -1)
+  if(index !== -1) {
+    if(!scenes.value[index].labels) scenes.value[index].labels = []
     scenes.value[index].labels.push(label)
+  }
 
   if(editingScene.value?.id === label.sceneId) {
+    if(!editingScene.value.labels) editingScene.value.labels = []
     editingScene.value.labels.push(label)
   }
 }
@@ -85,9 +89,10 @@ function editLabel(label) {
 
   if(index !== -1) {
     const scene = scenes.value[index]
+    if(!scene.labels) return
     const index2 = scene.labels.findIndex(l => l.id === label.id)
 
-    scenes.value[index].labels[index2] = { ...label }
+    if (index2 !== -1) scenes.value[index].labels[index2] = { ...label }
   }
 }
 
@@ -96,6 +101,7 @@ async function supprLabel(label) {
 
   if(index !== -1) {
     const scene = scenes.value[index]
+    if(!scene.labels) scene.labels = []
     const index2 = scene.labels.findIndex(l => l.id === label.id)
 
     if(index2 !== -1)
@@ -103,18 +109,22 @@ async function supprLabel(label) {
   }
 
   if(editingScene.value?.id === label.sceneId) {
+    if(!editingScene.value.labels) editingScene.value.labels = []
     const index2 = editingScene.value.labels.findIndex(l => l.id === label.id)
-    editingScene.value.labels.splice(index2, 1)
+    if (index2 !== -1) editingScene.value.labels.splice(index2, 1)
   }
 }
 
 async function newAsset(asset) {
   const index = scenes.value.findIndex(scene => scene.id === asset.sceneId)
 
-  if(index !== -1)
+  if(index !== -1) {
+    if(!scenes.value[index].assets) scenes.value[index].assets = []
     scenes.value[index].assets.push(asset)
+  }
 
   if(editingScene.value?.id === asset.sceneId) {
+    if(!editingScene.value.assets) editingScene.value.assets = []
     editingScene.value.assets.push(asset)
   }
 }
@@ -124,15 +134,15 @@ async function supprAsset(asset) {
   const scene = scenes.value[index]
 
   if(index !== -1) {
-    const index2 = scene.assets.findIndex(a => a.id === asset.id)
+    const index2 = scene.assets?.findIndex(a => a.id === asset.id) ?? -1
 
     if(index2 !== -1)
       scene.assets.splice(index2, 1)
   }
 
   if(editingScene.value?.id === asset.sceneId) {
-    const index2 = editingScene.value.assets.findIndex(a => a.id === asset.id)
-    editingScene.value.assets.splice(index2, 1)
+    const index2 = editingScene.value.assets?.findIndex(a => a.id === asset.id) ?? -1
+    if (index2 !== -1) editingScene.value.assets.splice(index2, 1)
   }
 }
 
@@ -148,20 +158,20 @@ async function confirmSceneCreate() {
 
   if(res.ok) {
     const data = await res.json()
+    if(!data.labels) data.labels = []
+    if(!data.assets) data.assets = []
     scenes.value.push(data)
 
     emit("newScene", data)
+    creatingScene.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  creatingScene.value = null
 }
 
 async function confirmSceneDelete() {
-
   const res = await fetch(`${ENDPOINT}scenes/${deletingScene.value.id}`,{
     method: "DELETE",
     headers: {
@@ -175,14 +185,12 @@ async function confirmSceneDelete() {
     if(index !== -1)
       scenes.value.splice(index, 1)
     emit("supprScene", deletingScene.value)
+    deletingScene.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  deletingScene.value = null
-
 }
 
 async function confirmSceneEdit() {
@@ -203,13 +211,12 @@ async function confirmSceneEdit() {
       scenes.value[index] = { ...data }
 
     emit("editScene", data)
+    editingScene.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  editingScene.value = null
 }
 
 async function fetchScenes(data=null) {
@@ -234,7 +241,7 @@ async function fetchScenes(data=null) {
       scenes.value = data.scenes
       totalPages.value = data.totalPages
 
-      if(table.value.currentPage > totalPages.value)
+      if(table.value && table.value.currentPage > totalPages.value)
         table.value.currentPage = totalPages.value
     } else
       error.value = true
@@ -290,7 +297,7 @@ defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, 
 
 
 
-  <!-- Interfaces modales -->
+  <!-- modals -->
 
   <generic-modal
       title="create"
@@ -357,7 +364,7 @@ defineExpose({editingScene, deletingScene, creatingScene, newLabel, supprLabel, 
     <div>
       <div class="inline-flex">
         <p>{{ $t("admin.sections.scenes.labels") }}</p>
-        <button-view icon="/icons/add.svg" @click="createLabel"></button-view>
+        <button-view icon="/icons/add.svg" :text="$t('admin.sections.labels.create')" @click="createLabel"></button-view>
       </div>
       <div v-if="editingScene?.labels?.length > 0" class="list">
         <div v-for="label in editingScene?.labels" class="item">

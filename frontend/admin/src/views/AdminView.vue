@@ -15,9 +15,10 @@ import ProjectManager from "@/components/admin/projectManager.vue";
 import SceneManager from "@/components/admin/sceneManager.vue";
 import AssetManager from "@/components/admin/assetManager.vue";
 import LabelManager from "@/components/admin/labelManager.vue";
+import PresetManager from "@/components/admin/presetManager.vue";
 import 'vue3-toastify/dist/index.css';
 import TableOfContent from "@/components/admin/tableOfContent.vue";
-import scene from "three/addons/offscreen/scene.js";
+
 
 
 const { isAuthenticated, token ,userData} = useAuthStore()
@@ -38,17 +39,19 @@ const projectManager = ref(null)
 const sceneManager = ref(null)
 const assetManager = ref(null)
 const labelManager = ref(null)
+const presetManager = ref(null)
 
 const sections = ref(null)
 
 onMounted(async () => {
   await nextTick()
   sections.value = {
-    accounts: accountManager,
-    projects: projectManager,
-    scenes: sceneManager,
-    assets: assetManager,
-    labels: labelManager
+    accounts: accountManager.value,
+    projects: projectManager.value,
+    scenes: sceneManager.value,
+    assets: assetManager.value,
+    labels: labelManager.value,
+    presets: presetManager.value
   }
 })
 
@@ -112,6 +115,11 @@ onMounted(async () => {
           @suppr-label="sceneManager.supprLabel($event)"
           @edit-label="sceneManager.editLabel($event)"
       />
+      
+      <preset-manager
+          ref="presetManager"
+          :token="token"
+      />
 
     </main>
 
@@ -131,21 +139,19 @@ onMounted(async () => {
 main > section + section {
   margin-top: 15px;
 }
-
 table {
   width: 100%;
   background-color: white;
   border-collapse: collapse;
 }
 
+table th {
+  font-weight: bold;
+}
 table td, table th {
   border: solid 1px #ddd;
   padding: 10px;
   color: black;
-}
-
-table th {
-  font-weight: bold;
 }
 
 table td {

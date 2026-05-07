@@ -2,7 +2,7 @@
 import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
-import * as sea from "node:sea";
+
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
@@ -40,8 +40,10 @@ const showSpinner = ref(false)
 function newScene(scene) {
   const index = projects.value.findIndex(project => project.id === scene.projectId)
 
-  if(index !== -1)
+  if(index !== -1) {
+    if(!projects.value[index].scenes) projects.value[index].scenes = []
     projects.value[index].scenes.push(scene)
+  }
 }
 
 function supprScene(scene) {
@@ -49,9 +51,10 @@ function supprScene(scene) {
 
   if(index !== -1) {
     const project = projects.value[index]
+    if(!project.scenes) return
     const index2 = project.scenes.findIndex(s => s.id === scene.id)
 
-    projects.value[index].scenes.splice(index2, 1)
+    if (index2 !== -1) project.scenes.splice(index2, 1)
   }
 
 }
@@ -61,9 +64,10 @@ function editScene(scene) {
 
   if(index !== -1) {
     const project = projects.value[index]
+    if(!project.scenes) return
     const index2 = project.scenes.findIndex(s => s.id === scene.id)
 
-    projects.value[index].scenes[index2] = { ...scene }
+    if (index2 !== -1) project.scenes[index2] = { ...scene }
   }
 }
 
@@ -108,14 +112,14 @@ async function confirmProjectCreate() {
   if(res.ok) {
     const data = await res.json()
     const newProject = data
+    if(!newProject.scenes) newProject.scenes = []
     projects.value.push(newProject)
+    creatingProject.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  creatingProject.value = null
 }
 
 async function confirmProjectEdit() {
@@ -137,13 +141,12 @@ async function confirmProjectEdit() {
     const index = projects.value.findIndex(project => project.id === data.id)
     if(index !== -1)
       projects.value[index] = { ...editingProject.value }
+    editingProject.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  editingProject.value = null
 }
 
 async function confirmProjectDelete() {
@@ -159,13 +162,12 @@ async function confirmProjectDelete() {
     const index = projects.value.findIndex(project => project.id === deletingProject.value.id)
     if(index !== -1)
       projects.value.splice(index, 1)
+    deletingProject.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  deletingProject.value = null
 }
 
 
@@ -191,7 +193,7 @@ async function fetchProjects(data=null) {
       projects.value = data.projects
       totalPages.value = data.totalPages
 
-      if(table.value.currentPage > totalPages.value)
+      if(table.value && table.value.currentPage > totalPages.value)
         table.value.currentPage = totalPages.value
     } else
       error.value = true
@@ -257,7 +259,7 @@ async function confirmProjectImport() {
 
     if(res.ok) {
       const data = await res.json()
-
+      if(!data.scenes) data.scenes = []
       projects.value.push(data)
     } else {
       toast.error(res.status + " : " + res.statusText, {
@@ -334,7 +336,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
 
     </generic-table>
 
-  <!-- Interfaces modales -->
+  <!-- modals -->
 
   <generic-modal
       title="edit"

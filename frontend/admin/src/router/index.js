@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import ProjectsView from "@/views/ProjectsView.vue";
 import ProjectView from "@/views/ProjectView.vue";
 import LoginView from "@/views/LoginView.vue";
-import NotFoundView from "@/views/NotFoundView.vue";
 import SceneView from "@/views/SceneView.vue";
 import RegisterView from "@/views/RegisterView.vue";
 import {BASE_URL} from "@/js/endpoints.js";
@@ -13,11 +12,6 @@ const router = createRouter({
   history: createWebHistory(BASE_URL),
   routes: [
 
-    {
-      path: "/:notFound",
-      name: "notFound",
-      component: NotFoundView,
-    },
 
     {
       path: "/login",

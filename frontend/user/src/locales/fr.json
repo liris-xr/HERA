@@ -78,7 +78,7 @@
       "at": "à"
     },
     "startPresentation": "Démarrer une nouvelle présentation",
-    "presentationState": "Etat de la présentation",
+    "presentationState": "État de la présentation",
     "terminated": "La présentation est maintenant terminée, merci pour votre attention",
     "seeProject": "Voir le projet"
   },
@@ -94,7 +94,7 @@
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le nouveau mot de passe",
       "lengthMessage": "Le mot de passe doit être de longueur >= 8",
-      "notMatching": "Les mots de passes ne correspondent pas",
+      "notMatching": "Les mots de passe ne correspondent pas",
       "success": "Mot de passe modifié avec succès"
     }
   },
@@ -140,7 +140,7 @@
         "title": "Labels"
       }
     },
-    "quitQr": "Appuyez n'importe ou pour faire disparaitre le QR code",
+    "quitQr": "Appuyez n'importe où pour faire disparaître le QR code",
     "unpublishedWarning": "Attention : votre projet est privé",
     "brightnessTip": "Pour faciliter le scan du QR code, augmentez la luminosité de votre écran",
     "viewers": "spectateurs",

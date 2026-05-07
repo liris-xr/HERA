@@ -9,11 +9,15 @@ export class ShadowPlane extends classes(THREE.Group, SceneElementInterface){
         let width = 4;
         let height = 4;
         let center = new THREE.Vector3();
-        if(boundingBox != null){
+        if(boundingBox != null && !isNaN(boundingBox.min.x) && isFinite(boundingBox.min.x)){
             width = scale*(boundingBox.max.x-boundingBox.min.x);
             height = scale*(boundingBox.max.z-boundingBox.min.z);
             boundingBox.getCenter(center);
         }
+        
+        // Safety check for NaN or infinite values
+        if (isNaN(width) || !isFinite(width) || width <= 0) width = 1;
+        if (isNaN(height) || !isFinite(height) || height <= 0) height = 1;
         const geometry = new THREE.PlaneGeometry(width, height).rotateX( -Math.PI / 2 );
         const shadowMaterial = new THREE.ShadowMaterial({opacity:0.3});
         const occlusionMaterial = new THREE.MeshBasicMaterial({colorWrite: false});

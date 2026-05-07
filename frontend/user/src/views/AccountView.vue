@@ -36,7 +36,7 @@ async function confirmPasswordChange() {
     return
   }
 
-  // envoi des données
+  // send data
   const res = await fetch(`${ENDPOINT}users/${userData.value.id}`,{
     method: "PUT",
     headers: {

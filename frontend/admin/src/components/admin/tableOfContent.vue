@@ -10,7 +10,9 @@ const activeSection = ref(null)
 
 function scrollTo(section) {
 
-  const el = props.sections[section].element
+  const sec = props.sections[section]
+  if (!sec || !sec.element) return;
+  const el = sec.element
   window.scrollTo({top: el.offsetTop - 65, behavior: "smooth"})
 
 }
@@ -18,6 +20,7 @@ function scrollTo(section) {
 function handleScroll() {
   for(const fieldName of Object.keys(props.sections)) {
     const section = props.sections[fieldName];
+    if (!section || !section.element) continue;
     const el = section.element
 
     const top = el.offsetTop
@@ -32,7 +35,10 @@ function handleScroll() {
 
 onMounted(() => {
   for (const section of Object.keys(props.sections)) {
-    props.sections[section].element.setAttribute("section", section)
+    const sec = props.sections[section];
+    if (sec && sec.element) {
+        sec.element.setAttribute("section", section)
+    }
   }
 
   window.addEventListener("scroll", handleScroll)

@@ -256,7 +256,7 @@ async function updateEnvmap(file){
       event.target.value = ""
     }else{
 
-      // vérifier que l'exr uploadé est valide
+      // validate exr
       try {
         const url = URL.createObjectURL(file)
 
@@ -489,6 +489,7 @@ onBeforeRouteUpdate((to, from, next)=>{
             <label-edit-modal
                 :show="showLabelEditModal && lastClickedLabel!=null"
                 :label="lastClickedLabel"
+                :project-id="scene.project.id"
                 @close="showLabelEditModal = false"
                 @confirm="(newLabel)=>{
                   editor.scene.labelManager.getSelectedLabel.value.copyContentFrom(newLabel);

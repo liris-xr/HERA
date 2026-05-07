@@ -3,10 +3,15 @@ import { jwtDecode } from "jwt-decode";
 
 const token = ref(sessionStorage.getItem("token") || null);
 
-try {
-    jwtDecode(token.value);
-} catch {
-    token.value = null;
+if (token.value) {
+    try {
+        jwtDecode(token.value);
+        console.log("[Auth] Token chargé et valide.");
+    } catch (e) {
+        console.error("[Auth] Token invalide dans le stockage:", e);
+        token.value = null;
+        sessionStorage.removeItem("token");
+    }
 }
 
 /**

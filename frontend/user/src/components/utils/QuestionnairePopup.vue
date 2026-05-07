@@ -1,6 +1,6 @@
 // Liens vers la page demo : https://localhost:8082/viewer/questionnaire-demo
 <script setup>
-import { defineProps, defineEmits, watch, ref, onBeforeUnmount, nextTick } from 'vue'
+import { watch, ref, onBeforeUnmount, nextTick } from 'vue'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },

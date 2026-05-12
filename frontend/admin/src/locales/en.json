@@ -346,7 +346,8 @@
         "h1": "Presets",
         "bigText": "Title",
         "text": "Text",
-        "projectTitle": "Project"
+        "projectTitle": "Project",
+        "delete": "Delete the preset"
       }
     }
   },

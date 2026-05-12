@@ -98,13 +98,13 @@ onMounted(async () => {
         ref="table"
         section-name="presets"
         :create="false"
+        :edit="false"
         :fields="['bigText', 'text', 'projectTitle']"
         :data="presets"
         :total-pages="totalPages"
         :item-buttons="[]"
 
         @delete="deletingPreset = $event"
-        @edit="editPreset"
         @fetch="fetchPresets">
 
       <notification

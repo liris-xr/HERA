@@ -35,12 +35,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: [
-      "https://localhost",
-      "https://127.0.0.1",
-      "https://localhost:8081",
-      "https://localhost:8082",
-    ],
+    origin: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -51,6 +46,8 @@ app.use(zip());
 
 async function main() {
   await initializeDatabase({ force: false });
+  // await resetDatabase();
+  // await insertDefaults();
 
 
   app.use(project);

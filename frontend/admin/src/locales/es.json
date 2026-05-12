@@ -323,6 +323,13 @@
             "title": "Projet"
           }
         }
+      },
+      "presets": {
+        "h1": "Presets",
+        "bigText": "Titre",
+        "text": "Texte",
+        "projectTitle": "Projet",
+        "delete": "Delete the preset"
       }
     }
   },

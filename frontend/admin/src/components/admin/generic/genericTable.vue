@@ -10,6 +10,7 @@ const props = defineProps({
   data:  {type: Array, required: true},
   totalPages: {type: Number, required: true},
   create: {type: Boolean, default: true},
+  edit: {type: Boolean, default: true},
   titleButtons: {type: Array, default: []},
   itemButtons: {type: Array, default: []},
 })
@@ -119,7 +120,7 @@ function getProperty(obj, prop) {
                            :theme="button.theme || 'default'"
                            @click="button.func(element)" />
 
-              <button-view icon="/icons/edit.svg" @click="$emit('edit', {...element})"></button-view>
+              <button-view v-if="edit" icon="/icons/edit.svg" @click="$emit('edit', {...element})"></button-view>
               <button-view icon="/icons/delete.svg" theme="danger" @click="$emit('delete', element)"></button-view>
             </div>
           </td>

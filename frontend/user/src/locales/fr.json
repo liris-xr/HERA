@@ -79,7 +79,7 @@
       "at": "à"
     },
     "startPresentation": "Démarrer une nouvelle présentation",
-    "presentationState": "Etat de la présentation",
+    "presentationState": "État de la présentation",
     "terminated": "La présentation est maintenant terminée, merci pour votre attention",
     "seeProject": "Voir le projet"
   },
@@ -94,8 +94,8 @@
       "button": "Modifier mon mot de passe",
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le nouveau mot de passe",
-      "lengthMessage": "Le mot de passe doit être de longueur >= 8",
-      "notMatching": "Les mots de passes ne correspondent pas",
+      "lengthMessage": "Le mot de passe doit contenir au moins 8 caractères",
+      "notMatching": "Les mots de passe ne correspondent pas",
       "success": "Mot de passe modifié avec succès"
     }
   },
@@ -123,9 +123,9 @@
         "cancel": "Annuler",
         "confirm": "Confirmer",
         "removeTitle": "Supprimer le preset",
-        "removeWarning": "Voulez vous vraiment supprimer ce preset ? Cette action est irréversible",
+        "removeWarning": "Voulez-vous vraiment supprimer ce preset ? Cette action est irréversible",
         "editTitle": "Modifier le preset",
-        "icon": "Icone",
+        "icon": "Icône",
         "text": "Texte",
         "redefineLabel": "Redéfinir les actions",
         "redefine": "Redéfinir",
@@ -141,12 +141,12 @@
         "title": "Labels"
       }
     },
-    "quitQr": "Appuyez n'importe ou pour faire disparaitre le QR code",
+    "quitQr": "Appuyez n'importe où pour faire disparaître le QR code",
     "unpublishedWarning": "Attention : votre projet est privé",
     "brightnessTip": "Pour faciliter le scan du QR code, augmentez la luminosité de votre écran",
     "viewers": "spectateurs",
     "currentScene": "Scène actuelle",
-    "terminated": "Presentation terminée",
+    "terminated": "Présentation terminée",
     "restart": "Redémarrer une présentation",
     "seeProject": "Voir le projet",
     "validateTerminate": "Voulez-vous vraiment achever cette présentation ?"

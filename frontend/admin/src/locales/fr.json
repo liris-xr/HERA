@@ -37,7 +37,7 @@
 
   "defaultProjectSettings": {
     "unit": "Scène",
-    "calibrationMessage": "Appuyer n'importe où pour placer votre objet"
+    "calibrationMessage": "Appuyez n'importe où pour placer votre objet"
   },
 
   "projectsView": {
@@ -129,7 +129,7 @@
         "title": "Supprimer le projet",
         "body": {
           "part1": "Vous êtes sur le point de supprimer le projet ",
-          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+          "part2": "Cette action est irréversible, êtes-vous sûr de vouloir continuer ?"
         }
       },
       "newScene": {
@@ -141,7 +141,7 @@
         "title": "Supprimer la scène",
         "body": {
           "part1": "Vous êtes sur le point de supprimer la scène ",
-          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+          "part2": "Cette action est irréversible, êtes-vous sûr de vouloir continuer ?"
         }
       }
     },
@@ -231,7 +231,7 @@
         "title": "Supprimer la scène",
         "body": {
           "part1": "Vous êtes sur le point de supprimer la scène ",
-          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+          "part2": "Cette action est irréversible, êtes-vous sûr de vouloir continuer ?"
         }
       }
     },
@@ -259,11 +259,11 @@
     "required": "Ce champ est requis",
     "research": "Recherche",
     "noResult": "Aucun résultat",
-    "deleteConfirm": "Vous-vous vraiment supprimer",
+    "deleteConfirm": "Voulez-vous vraiment supprimer",
     "irreversibleAction": "Cette action est irréversible",
     "sections": {
       "accounts": {
-        "h1": "Accounts",
+        "h1": "Comptes",
         "edit": "Modifier l'utilisateur",
         "delete": "Supprimer l'utilisateur",
         "create": "Créer un utilisateur",
@@ -275,7 +275,7 @@
       },
       "projects": {
         "h1": "Projets",
-        "cautionMessage": "La suppression d'un projet entrainera la suppression de toutes ses scènes, assets et labels",
+        "cautionMessage": "La suppression d'un projet entraînera la suppression de toutes ses scènes, assets et labels",
         "edit": "Modifier le projet",
         "delete": "Supprimer le projet",
         "create": "Créer un projet",
@@ -289,8 +289,8 @@
         "unit": "Nom du paramètre"
       },
       "scenes": {
-        "h1": "Scenes",
-        "cautionMessage": "La suppression d'une scène entrainera la suppression de tous ses assets et labels",
+        "h1": "Scènes",
+        "cautionMessage": "La suppression d'une scène entraînera la suppression de tous ses assets et labels",
         "edit": "Modifier la scène",
         "delete": "Supprimer la scène",
         "create": "Créer une scène",
@@ -343,8 +343,8 @@
       "button": "Modifier mon mot de passe",
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le nouveau mot de passe",
-      "lengthMessage": "Le mot de passe doit être de longueur >= 8",
-      "notMatching": "Les mots de passes ne correspondent pas",
+      "lengthMessage": "Le mot de passe doit contenir au moins 8 caractères",
+      "notMatching": "Les mots de passe ne correspondent pas",
       "success": "Mot de passe modifié avec succès"
     }
   },
@@ -370,7 +370,7 @@
     "title": "Enregistrer les modifications ?",
     "body": {
       "part1": "Vous êtes sur le point de quitter cette page.",
-      "part2": "Les données non-enregistrées seront perdues. Êtes vous sûr de vouloir continuer ?"
+      "part2": "Les données non enregistrées seront perdues. Êtes-vous sûr de vouloir continuer ?"
     },
     "buttons": {
       "cancel": "Annuler",

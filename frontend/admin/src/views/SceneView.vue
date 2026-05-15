@@ -707,8 +707,12 @@ function markChang() {
           </Teleport>
 
           <div class="multilineField">
-            <div class="inlineFlex">
-              <span>{{ $t("sceneView.leftSection.sceneAssets.label") }}</span>
+            <div class="sectionHeader">
+              <div>
+                <h3>{{ $t("sceneView.leftSection.sceneAssets.label") }}</h3>
+                <p>Upload and optimize the 3D models used in this scene.</p>
+              </div>
+
               <file-upload-button-view
                   :text="$t('sceneView.leftSection.sceneAssets.addAssetButton')"
                   icon="/icons/upload.svg"
@@ -910,131 +914,172 @@ function markChang() {
     </form>
   </main>
 </template>
-
 <style scoped>
-#valuesGroup{
+main {
   width: 100%;
-  display: flex;
-  overflow: hidden;
-  align-items: center;
-  justify-content: right;
+  min-height: 100vh;
+  background-color: var(--darkerBackgroundColor);
 }
-#valuesGroup>label{ margin-right: 4px; }
-#valuesGroup>input{ width: 64px; margin-right: 16px; }
-#toolGroup{ display: flex; }
-#previewGroup{
-  position: sticky;
-  top: 64px;
-  margin-bottom: 16px;
-  z-index: 2;
-  background-color: var(--backgroundColor);
-}
-#container{
-  position: relative;
-  border: solid 1px var(--darkerBackgroundColor);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-h1{
-  width: 100%;
-  color: var(--textColor);
-  font-size: 16px;
-  font-weight: normal;
-}
-form{
-  width: 90%;
+
+form {
+  width: 88%;
+  max-width: 1600px;
   margin: auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   align-items: center;
 }
-.center{
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 64px;
-}
-@media screen and (min-width: 1200px) { .center>section{ width: 50%; } }
-@media screen and (max-width: 1200px) { form{ width: 100%; } .center>section{ width: 50%; } }
-@media screen and (max-width: 900px) { .center{ flex-direction: column; } .center>section{ width: 100%; } }
 
-.center>section{
+h1 {
+  width: 100%;
+  color: var(--textColor);
+  font-size: 14px;
+  font-weight: normal;
+  margin: 16px 0 14px 0;
+}
+
+h1 a {
+  color: var(--textColor);
+  text-decoration: none;
+}
+
+h1 a:hover {
+  color: var(--accentColor);
+  text-decoration: underline;
+}
+
+.center {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(430px, 0.95fr) 16px minmax(520px, 1.05fr);
+  align-items: start;
+  margin-bottom: 96px;
+}
+
+.center > span {
+  width: 16px;
+  height: 16px;
+}
+
+.center > section {
   background-color: var(--backgroundColor);
-  border-radius: 16px;
-  flex-grow: 1;
-  padding: 16px;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
-.center>span{ width: 16px; height: 16px; }
 
-h2{
-  color: var(--textImportantColor);
-  font-weight: 600;
-  margin-bottom: 32px;
+#left,
+#right,
+#materials {
+  min-width: 0;
 }
-.inlineFlex{
+
+h2 {
+  color: var(--textImportantColor);
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0 0 24px 0;
+  letter-spacing: 0.2px;
+}
+
+h3 {
+  margin: 0;
+  color: var(--textImportantColor);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.inlineFlex {
   width: 100%;
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
-.inlineFlex button{ margin-right: 8px; }
-.multilineField{ margin-bottom: 8px; }
-label{ margin-right: 16px; font-weight: 500; width: fit-content; }
-#labelList{ margin-bottom: 24px; }
 
-textarea{
+.inlineFlex button {
+  margin-right: 0;
+}
+
+label {
+  margin-right: 10px;
+  font-weight: 500;
+  width: fit-content;
+  color: var(--textColor);
+}
+
+.multilineField {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.055);
+}
+
+.multilineField:last-of-type {
+  border-bottom: none;
+}
+
+textarea {
   width: 100%;
+  min-height: 54px;
   resize: vertical;
   color: var(--textImportantColor);
   text-align: justify;
   border: solid 1px var(--darkerBackgroundColor);
-  border-radius: 4px;
+  border-radius: 8px;
   overflow-x: hidden;
   field-sizing: content;
+  padding: 8px 10px;
+  background-color: white;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.sceneItem{
+
+textarea:focus {
+  outline: none;
+  border-color: var(--accentColor);
+  box-shadow: 0 0 0 2px rgba(55, 145, 245, 0.12);
+}
+
+#labelList {
+  margin-bottom: 24px;
+}
+
+#labelList > div {
+  color: var(--textColor);
+  opacity: 0.85;
+}
+
+.sectionHeader {
   display: flex;
-  width: 100%;
   justify-content: space-between;
-  align-items: center;
-  background-color: var(--darkerBackgroundColor);
-  border-radius: 8px;
-  margin-bottom: 8px;
-  padding: 8px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
 }
-.sceneItem>div{
-  align-items: center;
-  height: 100%;
-  width: fit-content;
-  margin-bottom: 0;
-}
-.sceneItem>div:last-child{ justify-content: flex-end; }
-.sceneItem>div>*{ margin-right: 16px; }
 
-.bottomActionBar{
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  background-color: var(--backgroundColor);
-  padding: 16px;
-  box-shadow: var(--defaultUniformShadow);
-  z-index: 4;
+.sectionHeader h3 {
+  margin: 0;
+  color: var(--textImportantColor);
+  font-size: 16px;
+  font-weight: 600;
 }
-.bottomActionBar>*{ margin-left: 8px; }
 
-.invisible{ display: none !important; }
-strong{ color: var(--accentColor); }
+.sectionHeader p {
+  margin: 4px 0 0 0;
+  color: var(--textColor);
+  font-size: 13px;
+  opacity: 0.75;
+}
+
 .variantSelector {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin: 8px 0 12px 0;
+  margin: 8px 0 14px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.035);
 }
 
 .variantSelectorHeader {
@@ -1046,6 +1091,7 @@ strong{ color: var(--accentColor); }
 .variantSelector label {
   font-weight: 500;
   margin-right: 0;
+  color: var(--textImportantColor);
 }
 
 .variantSelector select {
@@ -1056,7 +1102,182 @@ strong{ color: var(--accentColor); }
 .variantSelector p {
   margin: 0;
   color: var(--textColor);
-  font-size: 13px;
+  font-size: 12px;
   opacity: 0.75;
+}
+
+#assetList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sceneItem {
+  width: 100%;
+}
+
+.inlineFlex:last-of-type {
+  flex-wrap: wrap;
+}
+
+#previewGroup {
+  position: sticky;
+  top: 96px;
+  margin-bottom: 16px;
+  z-index: 2;
+  background-color: var(--backgroundColor);
+}
+
+#container {
+  position: relative;
+  min-height: 430px;
+  border: solid 1px var(--darkerBackgroundColor);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background-color: white;
+}
+
+#toolGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 0 0;
+}
+
+#valuesGroup {
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+#valuesGroup > label {
+  margin-right: 4px;
+}
+
+#valuesGroup > input {
+  width: 64px;
+  margin-right: 16px;
+  border: 1px solid var(--darkerBackgroundColor);
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+
+#right::after {
+  content: "Use the tools below the preview to move, rotate or scale selected objects.";
+  display: block;
+  margin-top: 8px;
+  color: var(--textColor);
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+#materials {
+  min-width: 320px;
+}
+
+.bottomActionBar {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.96);
+  padding: 12px 24px;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.08);
+  z-index: 4;
+  backdrop-filter: blur(8px);
+}
+
+.bottomActionBar > * {
+  margin-left: 0;
+}
+
+.invisible {
+  display: none !important;
+}
+
+strong {
+  color: var(--accentColor);
+}
+
+@media screen and (max-width: 1200px) {
+  form {
+    width: 96%;
+  }
+
+  .center {
+    grid-template-columns: 1fr 12px 1fr;
+  }
+
+  .center > section {
+    padding: 20px;
+  }
+
+  #container {
+    min-height: 380px;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  form {
+    width: 96%;
+  }
+
+  .center {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .center > span {
+    display: none;
+  }
+
+  .center > section {
+    width: 100%;
+  }
+
+  #previewGroup {
+    position: relative;
+    top: 0;
+  }
+
+  #container {
+    min-height: 340px;
+  }
+
+  .bottomActionBar {
+    padding: 10px 16px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  h2 {
+    font-size: 20px;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .variantSelectorHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #toolGroup {
+    flex-wrap: wrap;
+  }
+
+  #valuesGroup {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
 }
 </style>

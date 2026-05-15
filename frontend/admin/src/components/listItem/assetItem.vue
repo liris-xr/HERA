@@ -32,24 +32,14 @@ const emit = defineEmits([
   "changed",
 ]);
 
-const onClick = (cb) => {
-  if (!props.loading && !props.simplifying) cb();
-};
-
 const animations = ref([]);
-const hasAnimations = computed(() => animations.value.length > 0);
-
-watch(
-    () => props.asset,
-    (asset) => {
-      animations.value = asset?.animations?.map((el) => el.name) ?? [];
-    },
-    { immediate: true, deep: true }
-);
-
 const selectedOption = ref(null);
 const compressFormat = ref("webp");
 const showAdvancedOptimization = ref(false);
+
+const hasAnimations = computed(() => animations.value.length > 0);
+
+const isBusy = computed(() => props.loading || props.simplifying);
 
 const canProcess = computed(() => {
   return (
@@ -60,7 +50,17 @@ const canProcess = computed(() => {
   );
 });
 
-const isBusy = computed(() => props.loading || props.simplifying);
+function onClick(cb) {
+  if (!isBusy.value) cb();
+}
+
+watch(
+    () => props.asset,
+    (asset) => {
+      animations.value = asset?.animations?.map((el) => el.name) ?? [];
+    },
+    { immediate: true, deep: true }
+);
 
 onMounted(() => {
   selectedOption.value = props.activeAnimation ?? "none";
@@ -97,76 +97,120 @@ function toggleAdvancedOptimization() {
 </script>
 
 <template>
-  <div class="item" :class="{ active: active }" @click.stop="onClick(() => emit('select'))">
-    <div class="inlineFlex assetMainInfo">
-      <span v-if="index !== undefined">{{ index + 1 }}</span>
+  <div
+      class="item"
+      :class="{ active: active }"
+      @click.stop="onClick(() => emit('select'))"
+  >
+    <div class="assetCardHeader">
+      <div class="assetIdentity">
+        <span v-if="index !== undefined" class="assetIndex">
+          {{ index + 1 }}
+        </span>
 
-      <span class="assetName" :class="{ textStrike: hideInViewer || error }">
-        {{ text }}
-      </span>
+        <div class="assetTextBlock">
+          <span class="assetName" :class="{ textStrike: hideInViewer || error }">
+            {{ text }}
+          </span>
 
-      <span v-if="hideInViewer" class="notDisplayedInfo">
-        {{ $t("sceneView.leftSection.sceneAssets.assetNotDisplayed") }}
-      </span>
-    </div>
-
-    <div class="inlineFlex assetActions">
-      <icon-svg
-          v-if="rightMenu && error"
-          url="/icons/warning.svg"
-          theme="danger"
-          class="iconAction"
-      />
-
-      <icon-svg
-          v-if="rightMenu && (loading || simplifying)"
-          url="/icons/spinner.svg"
-          theme="default"
-      />
-
-      <div v-if="rightMenu && hasAnimations">
-        <select
-            v-model="selectedOption"
-            :disabled="isBusy"
-            @change="emit('animationChanged', selectedOption === 'none' ? null : selectedOption)"
-        >
-          <option value="none">{{ $t("none") }}</option>
-          <option v-for="option in animations" :key="option" :value="option">
-            {{ option }}
-          </option>
-        </select>
+          <span v-if="hideInViewer" class="notDisplayedInfo">
+            {{ $t("sceneView.leftSection.sceneAssets.assetNotDisplayed") }}
+          </span>
+        </div>
       </div>
 
-      <tag
-          v-if="rightMenu"
-          :text="'3D/' + getFileExtension(text)"
-          icon="/icons/3d.svg"
-      />
+      <div class="assetHeaderActions">
+        <icon-svg
+            v-if="rightMenu && error"
+            url="/icons/warning.svg"
+            theme="danger"
+            class="iconAction"
+        />
 
-      <a
-          v-if="rightMenu && downloadUrl && !error && !loading"
-          target="_blank"
-          :href="downloadUrl"
-          @click.stop
-      >
-        <icon-svg url="/icons/download.svg" theme="text" class="iconAction" />
-      </a>
+        <icon-svg
+            v-if="rightMenu && (loading || simplifying)"
+            url="/icons/spinner.svg"
+            theme="default"
+        />
 
-      <icon-svg
-          v-if="rightMenu && hideInViewer"
-          url="/icons/display_off.svg"
-          class="iconAction"
-          @click.stop="onClick(() => emit('hideInViewer', true))"
-      />
+        <tag
+            v-if="rightMenu"
+            :text="'3D/' + getFileExtension(text)"
+            icon="/icons/3d.svg"
+        />
+      </div>
+    </div>
 
-      <icon-svg
-          v-else-if="rightMenu"
-          url="/icons/display_on.svg"
-          class="iconAction"
-          @click.stop="onClick(() => emit('hideInViewer', false))"
-      />
+    <div v-if="rightMenu" class="assetToolsRow">
+      <div class="assetLeftTools">
+        <div v-if="hasAnimations">
+          <select
+              v-model="selectedOption"
+              :disabled="isBusy"
+              @click.stop
+              @change="emit('animationChanged', selectedOption === 'none' ? null : selectedOption)"
+          >
+            <option value="none">{{ $t("none") }}</option>
+            <option
+                v-for="option in animations"
+                :key="option"
+                :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </div>
 
-      <div v-if="canProcess" class="optimizationBox" @click.stop>
+        <a
+            v-if="downloadUrl && !error && !loading"
+            target="_blank"
+            :href="downloadUrl"
+            title="Download asset"
+            @click.stop
+        >
+          <icon-svg
+              url="/icons/download.svg"
+              theme="text"
+              class="iconAction"
+          />
+        </a>
+
+        <icon-svg
+            v-if="hideInViewer"
+            url="/icons/display_off.svg"
+            class="iconAction"
+            title="Hidden in viewer"
+            @click.stop="onClick(() => emit('hideInViewer', true))"
+        />
+
+        <icon-svg
+            v-else
+            url="/icons/display_on.svg"
+            class="iconAction"
+            title="Displayed in viewer"
+            @click.stop="onClick(() => emit('hideInViewer', false))"
+        />
+      </div>
+
+      <div class="assetRightTools">
+        <icon-svg
+            url="/icons/duplicate.svg"
+            class="iconAction"
+            title="Duplicate asset"
+            @click.stop="onClick(() => emit('duplicate'))"
+        />
+
+        <icon-svg
+            url="/icons/delete.svg"
+            class="iconAction dangerIcon"
+            title="Delete asset"
+            @click.stop="onClick(() => emit('delete'))"
+        />
+      </div>
+    </div>
+
+    <div v-if="canProcess" class="optimizationBox" @click.stop>
+      <div class="optimizationMainRow">
         <button
             class="primaryOptimizeButton"
             type="button"
@@ -176,117 +220,169 @@ function toggleAdvancedOptimization() {
           {{ simplifying ? "Optimizing..." : "Optimize automatically" }}
         </button>
 
-        <p class="optimizationHint">
-          Compresses large textures and generates lighter geometry variants when useful.
-        </p>
-
         <button
             class="advancedToggle"
             type="button"
             :disabled="isBusy"
             @click.stop="toggleAdvancedOptimization"
         >
-          {{ showAdvancedOptimization ? "Hide advanced options" : "Advanced options" }}
+          {{ showAdvancedOptimization ? "Hide advanced" : "Advanced options" }}
         </button>
+      </div>
 
-        <div v-if="showAdvancedOptimization" class="advancedOptimizationPanel">
-          <div class="manualAction">
-            <div class="manualActionText">
-              <strong>Geometry only</strong>
-              <p>Generate simplified geometry variants without changing textures.</p>
-            </div>
+      <p class="optimizationHint">
+        Compresses large textures and generates lighter geometry variants when useful.
+      </p>
+
+      <div v-if="showAdvancedOptimization" class="advancedOptimizationPanel">
+        <div class="manualAction">
+          <div class="manualActionText">
+            <strong>Geometry only</strong>
+            <p>
+              Generate simplified variants without changing textures.
+            </p>
+          </div>
+
+          <button
+              class="secondaryOptimizeButton"
+              type="button"
+              :disabled="isBusy"
+              @click.stop="runSimplify"
+          >
+            {{ simplifying ? "Processing..." : "Simplify geometry" }}
+          </button>
+        </div>
+
+        <div class="manualAction">
+          <div class="manualActionText">
+            <strong>Textures only</strong>
+            <p>
+              Compress textures without changing geometry.
+            </p>
+          </div>
+
+          <div class="textureControls">
+            <select
+                v-model="compressFormat"
+                :disabled="isBusy"
+                class="formatSelect"
+                @click.stop
+            >
+              <option value="webp">WebP</option>
+            </select>
 
             <button
                 class="secondaryOptimizeButton"
                 type="button"
                 :disabled="isBusy"
-                @click.stop="runSimplify"
+                @click.stop="runCompress"
             >
-              {{ simplifying ? "Processing..." : "Simplify geometry" }}
+              {{ simplifying ? "Processing..." : "Compress textures" }}
             </button>
-          </div>
-
-          <div class="manualAction">
-            <div class="manualActionText">
-              <strong>Textures only</strong>
-              <p>Compress textures without simplifying the model geometry.</p>
-            </div>
-
-            <div class="textureControls">
-              <select
-                  v-model="compressFormat"
-                  :disabled="isBusy"
-                  class="formatSelect"
-                  @click.stop
-              >
-                <option value="webp">WebP</option>
-              </select>
-
-              <button
-                  class="secondaryOptimizeButton"
-                  type="button"
-                  :disabled="isBusy"
-                  @click.stop="runCompress"
-              >
-                {{ simplifying ? "Processing..." : "Compress textures" }}
-              </button>
-            </div>
           </div>
         </div>
       </div>
-
-      <icon-svg
-          v-if="rightMenu"
-          url="/icons/duplicate.svg"
-          class="iconAction"
-          @click.stop="onClick(() => emit('duplicate'))"
-      />
-
-      <icon-svg
-          v-if="rightMenu"
-          url="/icons/delete.svg"
-          class="iconAction"
-          @click.stop="onClick(() => emit('delete'))"
-      />
-
-      <icon-svg
-          v-if="reset"
-          url="/icons/restart.svg"
-          class="iconAction"
-          @click.stop="onClick(() => emit('reset'))"
-      />
     </div>
+
+    <icon-svg
+        v-if="reset"
+        url="/icons/restart.svg"
+        class="iconAction"
+        @click.stop="onClick(() => emit('reset'))"
+    />
   </div>
 </template>
 
 <style scoped>
 .item {
-  display: flex;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  background-color: var(--darkerBackgroundColor);
+  border: 1px solid transparent;
+  transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      background-color 0.15s ease;
+}
+
+.item:hover {
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.item.active {
+  border-color: var(--accentColor);
+  box-shadow: 0 0 0 2px rgba(55, 145, 245, 0.12);
+}
+
+.assetCardHeader {
+  display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
-.inlineFlex {
+.assetIdentity {
   display: flex;
-  align-items: center;
-}
-
-.assetMainInfo {
+  align-items: flex-start;
+  gap: 10px;
   min-width: 0;
   flex: 1;
-  gap: 8px;
 }
 
-.assetActions {
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
+.assetIndex {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background-color: var(--backgroundColor);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--textColor);
+  flex-shrink: 0;
+}
+
+.assetTextBlock {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .assetName {
+  color: var(--textImportantColor);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+.assetHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.assetToolsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.assetLeftTools,
+.assetRightTools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .textStrike {
@@ -301,24 +397,43 @@ function toggleAdvancedOptimization() {
 
 .iconAction {
   cursor: pointer;
+  opacity: 0.85;
+  transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+}
+
+.iconAction:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.dangerIcon:hover {
+  opacity: 1;
 }
 
 .optimizationBox {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  min-width: 210px;
-  max-width: 260px;
-  padding: 8px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.04);
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: var(--backgroundColor);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.optimizationMainRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .primaryOptimizeButton {
   width: fit-content;
-  padding: 6px 10px;
+  padding: 7px 12px;
   border: 1px solid var(--accentColor);
-  border-radius: 6px;
+  border-radius: 8px;
   background-color: var(--accentColor);
   color: white;
   font-size: 12px;
@@ -327,7 +442,7 @@ function toggleAdvancedOptimization() {
 }
 
 .primaryOptimizeButton:hover:not(:disabled) {
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .primaryOptimizeButton:disabled {
@@ -338,9 +453,9 @@ function toggleAdvancedOptimization() {
 .optimizationHint {
   margin: 0;
   font-size: 11px;
-  line-height: 1.3;
+  line-height: 1.35;
   color: var(--textColor);
-  opacity: 0.75;
+  opacity: 0.72;
 }
 
 .advancedToggle {
@@ -352,6 +467,7 @@ function toggleAdvancedOptimization() {
   font-size: 11px;
   cursor: pointer;
   text-decoration: underline;
+  white-space: nowrap;
 }
 
 .advancedToggle:disabled {
@@ -362,17 +478,17 @@ function toggleAdvancedOptimization() {
 .advancedOptimizationPanel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--darkerBackgroundColor);
-  border-radius: 8px;
-  background-color: var(--backgroundColor);
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
 }
 
 .manualAction {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .manualActionText {
@@ -397,25 +513,27 @@ function toggleAdvancedOptimization() {
 .textureControls {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
   flex-wrap: wrap;
 }
 
 .formatSelect {
   max-width: 85px;
-  padding: 3px 4px;
+  padding: 4px 5px;
   font-size: 11px;
 }
 
 .secondaryOptimizeButton {
   width: fit-content;
-  padding: 4px 8px;
+  padding: 5px 8px;
   border: 1px solid var(--darkerBackgroundColor);
-  border-radius: 6px;
+  border-radius: 7px;
   background-color: var(--backgroundColor);
   color: var(--textImportantColor);
   font-size: 11px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .secondaryOptimizeButton:hover:not(:disabled) {
@@ -427,5 +545,9 @@ function toggleAdvancedOptimization() {
 .formatSelect:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+select {
+  max-width: 140px;
 }
 </style>

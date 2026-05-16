@@ -7,6 +7,7 @@ export function terminatePresentation(socket, callback) {
 
     const roomId = "presentation-" + socket.auth.id
 
+
     if(presentations[roomId])
         destroyPresentation(roomId)
 

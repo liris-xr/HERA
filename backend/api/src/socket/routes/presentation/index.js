@@ -26,12 +26,13 @@ export function leavePresentation(socket) {
 
     if(!room) return
 
-    const index = room.viewers.findIndex((v) => v.id === socket.id)
-    room.viewers.splice(index, 1)
+    const index = room.viewers.findIndex((socketId) => socketId === socket.id)
+    if(index !== -1) {
+        room.viewers.splice(index, 1)
+        sendUserCount(socket.roomCode)
+    }
 
-    sendUserCount(socket.roomCode)
-    socket.leave(room)
-
+    socket.leave(socket.roomCode)
     socket.roomCode = undefined
 }
 

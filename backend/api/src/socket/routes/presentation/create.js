@@ -10,14 +10,18 @@ export function createPresentation(socket, data, callback) {
     if(presentations[roomId])
         destroyPresentation(roomId)
 
+    const recordUser = !!data?.recordUser
+
+
     presentations[roomId] = {
         host: socket.id,
         viewers: [],
         actions: [],
-        project: data.projectId
+        project: data.projectId,
+        recordUser,
     }
     socket.join(roomId)
     socket.roomCode = roomId
 
-    callback({success: true, message: "Created", id: roomId})
+    callback({success: true, message: "Created", id: roomId, recordUser})
 }

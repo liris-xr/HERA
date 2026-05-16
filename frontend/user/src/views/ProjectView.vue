@@ -1,8 +1,8 @@
 <script setup>
 import ArView from "@/components/arView.vue";
 import ProjectDetail from "@/components/projectDetail.vue";
-import {computed, onMounted, reactive, ref} from "vue";
-import {onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter} from "vue-router";
+import {computed, onMounted, ref} from "vue";
+import {onBeforeRouteLeave, onBeforeRouteUpdate, useRoute} from "vue-router";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
 import ProjectInfo from "@/components/projectInfo.vue";
@@ -13,9 +13,10 @@ import FilledButtonView from "@/components/button/filledButtonView.vue";
 import {SocketConnection} from "@/js/socket/socketConnection.js";
 import {SocketActionManager} from "@/js/socket/socketActionManager.js";
 import {useI18n} from "vue-i18n";
+import RecordUserModal from "@/components/modal/recordUserModal.vue";
 
 const {t} = useI18n()
-const { isAuthenticated, token } = useAuthStore()
+const { isAuthenticated, token, userData } = useAuthStore()
 
 const route = useRoute();
 const project = ref({});
@@ -29,6 +30,8 @@ const connected = ref(false)
 
 const terminated = ref(false)
 
+const showRecordUserModal = ref(false)
+
 async function fetchProject(projectId) {
   loading.value = true;
   error.value = false;
@@ -41,15 +44,18 @@ async function fetchProject(projectId) {
     if(res.ok){
       return await res.json();
     }
-    throw new Error("ko");
+    error.value = true;
+    return null;
   } catch (e) {
     error.value = true;
+    return null;
   }
 }
 
 
 fetchProject(route.params.projectId).then((r)=>{
-  project.value=r
+  if(r)
+    project.value=r
   loading.value = false;
 });
 
@@ -115,6 +121,19 @@ const connectedText = computed(() => {
   return t("presentation.controls.connected.false");
 })
 
+function startPresentation() {
+  // La popup ne concerne que les admins connectés sur le viewer
+  if (isAuthenticated.value && userData?.value?.admin) {
+    showRecordUserModal.value = true
+  } else {
+    router.push({ name: 'presentation' });
+  }
+}
+
+function confirmStartPresentation(shouldRecord) {
+  showRecordUserModal.value = false
+  router.push({ name: 'presentation', query: { recordUser: shouldRecord ? '1' : '0' } });
+}
 </script>
 <template>
   <main>
@@ -152,11 +171,10 @@ const connectedText = computed(() => {
       <section>
         <filled-button-view
             v-if="isAuthenticated"
-
             icon="/icons/play.svg"
             class="center"
             :text="$t('projectView.startPresentation')"
-            @click="router.push({ name: 'presentation' });"/>
+            @click="startPresentation"/>
         <ar-view
             v-if="!(loading || error)"
             ref="arView"
@@ -176,6 +194,14 @@ const connectedText = computed(() => {
       {{$t('projectView.seeProject')}}
     </RouterLink>
   </div>
+
+  <Teleport to="body">
+    <record-user-modal
+        v-if="isAuthenticated && userData?.admin"
+        :show="showRecordUserModal"
+        @close="showRecordUserModal = false"
+        @confirm="confirmStartPresentation" />
+  </Teleport>
 
 </template>
 

@@ -4,7 +4,7 @@ import { defineProps, defineEmits, watch, ref, onBeforeUnmount, nextTick } from 
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
-  title: { type: String, default: 'Votre avis compte !' },
+  title: { type: String, default: '' },
   confirmLabel: { type: String, default: null },
   cancelLabel: { type: String, default: null },
   disableConfirm: { type: Boolean, default: false },
@@ -105,33 +105,37 @@ function onModelUpdate(v) {
       class="overlay"
       role="dialog"
       aria-modal="true"
-      :aria-label="title"
+      :aria-label="title || ($t ? $t('projectView.arView.questionnairePopup.title') : 'Your feedback matters!')"
       @click="onOverlayClick"
     >
       <transition name="modal-scale">
         <div class="modal" ref="modalRef" role="document">
           <header class="modal__header">
-            <h3 class="modal__title">{{ title }}</h3>
+            <h3 class="modal__title">
+              {{ title || ($t ? $t('projectView.arView.questionnairePopup.title') : 'Your feedback matters!') }}
+            </h3>
           </header>
 
           <main class="modal__body">
             <!-- Message : valeur par défaut si vide -->
             <div class="q-block">
               <p class="q-value">
-                {{ quitMessage || 'Vous allez être redirigé vers un questionnaire externe.' }}
+                {{ quitMessage || ($t ? $t('projectView.arView.questionnairePopup.defaultMessage') : 'You will be redirected to an external questionnaire.') }}
               </p>
             </div>
             <div class="q-block">
-              <label class="q-label">URL de redirection</label>
+              <label class="q-label">
+                {{ $t ? $t('projectView.arView.questionnairePopup.redirectUrlLabel') : 'Redirect URL' }}
+              </label>
               <p class="q-value">
-                {{ quitUrl || 'https://www.youtube.com/' }}
+                {{ quitUrl || ($t ? $t('projectView.arView.questionnairePopup.defaultUrl') : DEFAULT_QUIT_URL) }}
               </p>
             </div>
           </main>
 
           <footer class="modal__footer">
             <button class="btn btn--secondary" @click="onCancel">
-              {{ cancelLabel || ($t ? $t('projectView.arView.questionnairePopup.cancel') : 'Fermer') }}
+              {{ cancelLabel || ($t ? $t('projectView.arView.questionnairePopup.cancel') : 'Close') }}
             </button>
             <button
               class="btn btn--primary"
@@ -139,7 +143,7 @@ function onModelUpdate(v) {
               :aria-disabled="props.disableConfirm ? 'true' : 'false'"
               @click="onConfirm"
             >
-              {{ confirmLabel || ($t ? $t('projectView.arView.questionnairePopup.confirm') : 'Ouvrir le questionnaire') }}
+              {{ confirmLabel || ($t ? $t('projectView.arView.questionnairePopup.confirm') : 'Open questionnaire') }}
             </button>
           </footer>
         </div>

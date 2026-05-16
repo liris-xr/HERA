@@ -204,9 +204,9 @@ const buttonText = computed(() => {
   <QuestionnairePopup
     :visible="showQuestionnairePopup"
     @update:visible="val => showQuestionnairePopup = val"
-    :title="$t ? $t('projectView.arView.questionnairePopup.title') : 'Liens vers notre questionnaire'"
-    cancel-label="Fermer"
-    :confirm-label="'Ouvrir le questionnaire'"
+    :title="$t ? $t('projectView.arView.questionnairePopup.title') : 'Your feedback matters!'"
+    :confirm-label="null"
+    :cancel-label="null"
     :quit-message="props.json.quitMessage"
     :quit-url="props.json.quitUrl"
   />

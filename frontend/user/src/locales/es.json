@@ -1,4 +1,3 @@
-
 {
   "locale": "es-ES",
   "header": {
@@ -67,7 +66,8 @@
         "cancel": "Cerrar",
         "confirm": "Abrir el cuestionario",
         "defaultMessage": "Vas a ser redirigido a un cuestionario externo.",
-        "defaultUrl": "https://www.youtube.com/"
+        "defaultUrl": "https://www.youtube.com/",
+        "redirectUrlLabel": "URL de redirección"
       }
     },
     "projectInfo": {
@@ -80,7 +80,7 @@
     },
     "startPresentation": "Démarrer une nouvelle présentation",
     "presentationState": "Etat de la présentation",
-    "terminated": "La présentation est maintenant terminée, merci pour votre attention",
+    "terminated": "La presentación est maintenant terminée, merci pour votre attention",
     "seeProject": "Voir le projet"
   },
 
@@ -169,5 +169,20 @@
   "meshLoadError": {
     "title": "Error de carga",
     "message": "No se pudo cargar el archivo"
+  },
+  "recordUserModal": {
+    "title": "Registro de trazas de usuario",
+    "body": "¿Quieres activar el registro de trazas de usuario durante esta sesión?",
+    "no": "No",
+    "yes": "Sí",
+    "close": "Cerrar"
+  },
+  "questionnaireDemo": {
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Introduce tu nombre",
+    "commentLabel": "Comentario",
+    "commentPlaceholder": "Opcional",
+    "confirmed": "Confirmado",
+    "cancelled": "Cancelado"
   }
 }

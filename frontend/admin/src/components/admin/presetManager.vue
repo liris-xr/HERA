@@ -45,7 +45,7 @@ async function confirmPresetDelete() {
 
 function editPreset(preset) {
   const host = window.location.protocol + '//' + window.location.hostname;
-  // redirect to viewer
+  // redirect to viewer (edit = false so useless. We don't want to edit preset via admin pannel)
   const url = `${host}:8081/viewer/project/${preset.projectId}/presentation`;
   window.open(url, '_blank');
 }

@@ -1,5 +1,8 @@
 // const HOST = 'https://192.168.83.116';
+
+// the devices understand at which ip (Raspberry) they need to send the request
 const HOST = window.location.protocol + '//' + window.location.hostname;
+
 // const HOST = 'https://172.22.69.22';
 
 export const ENDPOINT = `${HOST}:8080/api/`;

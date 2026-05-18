@@ -437,7 +437,7 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                 await newProject.save({transaction:t});
             }
 
-            // Update preset actions with new IDs
+            // update preset actions with new IDs
             if (project.presets) {
                 let newPresets = JSON.parse(JSON.stringify(project.presets));
                 for (let preset of newPresets) {

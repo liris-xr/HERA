@@ -35,6 +35,7 @@ app.use(express.json());
 
 app.use(
   cors({
+    // any devices is allowed to communicate
     origin: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -47,7 +48,7 @@ app.use(zip());
 async function main() {
   await initializeDatabase({ force: false });
   // await resetDatabase();
-  // await insertDefaults();
+  // await insertDefaults(); 
 
 
   app.use(project);

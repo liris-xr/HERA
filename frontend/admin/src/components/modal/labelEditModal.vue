@@ -43,6 +43,7 @@ function clampValue(value){
   return Math.round(Number(value))
 }
 
+// convert base64 pictures -> jpeg/png
 async function processBase64Images(htmlContent) {
   if (!htmlContent) return htmlContent;
   const parser = new DOMParser();

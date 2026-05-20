@@ -1,10 +1,9 @@
 // graphRuntime.js
-// Warning-first graph runtime for HERA.
+// Contract-first graph runtime for HERA.
 // Goal:
-// - keep current behavior as much as possible
 // - replace flat merge with structured state
 // - add requires/provides metadata
-// - warn first instead of throwing everywhere
+// - fail fast when a node's declared inputs are missing
 
 function createInitialPipelineState(ctx = {}) {
     return {
@@ -40,41 +39,6 @@ function isPlainObject(value) {
 
     const proto = Object.getPrototypeOf(value);
     return proto === Object.prototype || proto === null;
-}
-
-function deepClone(value) {
-    // Do NOT deep clone runtime objects like Vue refs, class instances,
-    // functions, Three.js objects, etc.
-    // We only keep this helper for plain JSON-safe values if ever needed.
-    if (value === null || value === undefined) return value;
-
-    if (typeof value !== "object") return value;
-
-    if (Array.isArray(value)) {
-        return value.map((item) => deepClone(item));
-    }
-
-    const out = {};
-    for (const [key, val] of Object.entries(value)) {
-        if (typeof val === "function") continue;
-
-        if (val && typeof val === "object") {
-            const proto = Object.getPrototypeOf(val);
-            const isPlain =
-                proto === Object.prototype || proto === null || Array.isArray(val);
-
-            if (!isPlain) {
-                // keep non-plain runtime objects by reference
-                out[key] = val;
-            } else {
-                out[key] = deepClone(val);
-            }
-        } else {
-            out[key] = val;
-        }
-    }
-
-    return out;
 }
 
 function getByPath(obj, path) {
@@ -160,10 +124,9 @@ function validateRequiredPaths(node, state) {
     }
 
     if (missing.length > 0) {
-        pushWarning(
-            state,
-            `[GraphRuntime] Node '${node.id}' missing required paths: ${missing.join(", ")}`
-        );
+        const message = `[GraphRuntime] Node '${node.id}' missing required paths: ${missing.join(", ")}`;
+        pushWarning(state, message);
+        throw new Error(message);
     }
 }
 
@@ -227,8 +190,6 @@ export async function runLinearGraph(ctx, nodes, options = {}) {
         if (!isValid) continue;
 
         validateRequiredPaths(node, state);
-
-        const stateBefore = state;
 
         let patch = {};
         try {

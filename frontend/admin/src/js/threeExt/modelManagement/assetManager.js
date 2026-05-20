@@ -64,6 +64,26 @@ export class AssetManager {
         if (root) step(root, new THREE.Matrix4());
     }
 
+    createGraphContext(scene, asset, onAdd, options = {}) {
+        return {
+            scene,
+            asset,
+            onAdd,
+            options: { ...options },
+            services: { resourceLoader: defaultResourceLoader },
+        };
+    }
+
+    attachGraphResultToScene(scene, state) {
+        const object3D = state?.resource?.object3D ?? null;
+        if (!object3D) {
+            throw new Error("[AssetManager] graph result missing resource.object3D");
+        }
+
+        scene.add(object3D);
+        return object3D;
+    }
+
     addToScene(scene, asset, onAdd, decomposeMesh = true, options = {}) {
         if (!asset.id) asset.id = "new-asset" + currentAssetId++;
         console.log("[addToScene] asset.id =", asset.id);
@@ -78,10 +98,11 @@ export class AssetManager {
             this.runOnChanged();
         }
 
-        const ctx = { scene, asset, onAdd, options: { ...options }, services: {resourceLoader: defaultResourceLoader,}, };
+        const ctx = this.createGraphContext(scene, asset, onAdd, options);
 
         return runLinearGraph(ctx, createDefaultAssetGraph())
-            .then(() => {
+            .then((state) => {
+                this.attachGraphResultToScene(scene, state);
                 if (decomposeMesh) {
                     this.updateAssetSubMeshes(asset, this.meshManagerMap.get(asset.id), scene);
                 }
@@ -133,10 +154,11 @@ export class AssetManager {
         this.meshManagerMap.delete(asset.id);
         this.meshManagerMap.set(asset.id, new MeshManager());
 
-        const ctx = { scene, asset, onAdd: null, options: { ...options }, services: {resourceLoader: defaultResourceLoader,}, };
+        const ctx = this.createGraphContext(scene, asset, null, options);
 
         try {
-            await runLinearGraph(ctx, createDefaultAssetGraph());
+            const state = await runLinearGraph(ctx, createDefaultAssetGraph());
+            this.attachGraphResultToScene(scene, state);
 
             const newRoot = asset.getObject?.() ?? asset.object ?? asset.mesh ?? null;
             if (!newRoot) {

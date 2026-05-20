@@ -54,6 +54,7 @@ export function ResolveAssetUrlNode() {
                         url: null,
                         fromUpload: true,
                         variant: "original",
+                        kind: detectAssetKind(asset),
                     },
                 };
             }
@@ -79,7 +80,7 @@ export function ResolveAssetUrlNode() {
                     url: finalUrl,
                     fromUpload: false,
                     variant: chosen.variant,
-                    kind: detectAssetKind(asset,null),
+                    kind,
                 },
             };
         },

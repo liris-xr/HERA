@@ -788,7 +788,7 @@ export class ArScene extends AbstractScene {
                         forced: forcedVariant ?? null,
                         final: finalTargetVariant ?? null,
                     };
-/*
+
                     if (this.#assets[0] === asset) {
                         const overlay = ensureLodDebugOverlay();
 
@@ -818,7 +818,7 @@ export class ArScene extends AbstractScene {
                             `final: ${finalTargetVariant ?? "-"}`,
                         ].join("<br>");
                     }
-                    */
+
 
                     const debugSignature =
                         `${asset.currentVariant}|${autoTargetVariant}|${forcedVariant}|${finalTargetVariant}|${asset.pendingTargetVariant}|${asset.queuedTargetVariant}`;

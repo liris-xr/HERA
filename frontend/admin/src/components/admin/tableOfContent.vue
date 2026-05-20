@@ -6,33 +6,44 @@ const props = defineProps({
 })
 
 const activeSection = ref(null)
+const HEADER_OFFSET = 80
 
 function getSectionElement(sectionKey) {
-  return props.sections?.[sectionKey]?.value?.element ?? null
-}
+  const sectionKeys = Object.keys(props.sections)
+  const sectionIndex = sectionKeys.indexOf(sectionKey)
+  const sectionByOrder = document.querySelectorAll("main > section")?.[sectionIndex] ?? null
+  if (sectionByOrder)
+    return sectionByOrder
 
-function scrollTo(sectionKey) {
-  const el = getSectionElement(sectionKey)
-  if (!el) return
+  const section = props.sections?.[sectionKey]
+  const component = section?.value ?? section
+  const element = component?.element ?? component?.$el ?? null
 
-  window.scrollTo({
-    top: el.offsetTop - 65,
-    behavior: "smooth"
-  })
+  return element?.value ?? element
 }
 
 function handleScroll() {
+  let nextSection = null
+  let currentSection = null
+  let closestDistance = Number.POSITIVE_INFINITY
+
   for (const fieldName of Object.keys(props.sections)) {
     const el = getSectionElement(fieldName)
     if (!el) continue
 
-    const top = el.offsetTop
-    const height = el.offsetHeight
+    const { top, bottom } = el.getBoundingClientRect()
+    const distance = Math.abs(top - HEADER_OFFSET)
 
-    if (window.scrollY + 125 >= top && window.scrollY + 125 <= top + height) {
-      activeSection.value = el.getAttribute("section")
+    if (distance < closestDistance) {
+      closestDistance = distance
+      currentSection = fieldName
     }
+
+    if (top <= HEADER_OFFSET && bottom > HEADER_OFFSET)
+      nextSection = fieldName
   }
+
+  activeSection.value = nextSection ?? currentSection
 }
 
 onMounted(() => {
@@ -40,14 +51,16 @@ onMounted(() => {
     const el = getSectionElement(sectionKey)
     if (!el) continue
     el.setAttribute("section", sectionKey)
+    el.id = `admin-${sectionKey}`
+    el.style.scrollMarginTop = `${HEADER_OFFSET}px`
   }
 
-  window.addEventListener("scroll", handleScroll)
+  document.addEventListener("scroll", handleScroll, true)
   handleScroll()
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener("scroll", handleScroll)
+  document.removeEventListener("scroll", handleScroll, true)
 })
 </script>
 
@@ -57,9 +70,12 @@ onBeforeUnmount(() => {
       <li
           v-for="section in Object.keys(sections)"
           v-bind:class="{ active: activeSection === section }"
-
-          @click="scrollTo(section)" >
-       {{$t(`admin.sections.${section}.h1`)}}
+      >
+        <a
+            :href="`#admin-${section}`"
+            @click="activeSection = section">
+          {{$t(`admin.sections.${section}.h1`)}}
+        </a>
       </li>
     </ul>
   </aside>
@@ -87,6 +103,10 @@ aside ul {
 
 aside ul li {
   cursor: pointer;
+}
+
+aside ul li a {
+  display: block;
 }
 
 aside ul li:hover {

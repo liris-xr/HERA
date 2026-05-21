@@ -1,6 +1,6 @@
 import { ArUser } from '../orm/index.js'
 import jwt from 'jsonwebtoken'
-import { JWT_SECRET } from '../consts/secret.js'
+import { JWT_SECRET } from '../config.js'
 import express from 'express'
 import { getDetails } from '../validators/index.js'
 import {baseUrl} from "./baseUrl.js";

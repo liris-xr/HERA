@@ -96,14 +96,7 @@ const getPostUploadData = async (req, res, next) => {
  * PUT scenes/:sceneId
  * Upload files + update/create/delete labels/assets/meshes + update scene
  */
-router.put(
-    baseUrl + "scenes/:sceneId",
-    authMiddleware,
-    getPostUploadData,
-    uploadEnvmapAndAssets.fields([
-        { name: "uploadedEnvmap", maxCount: 1 },
-        { name: "uploads", maxCount: 16 },
-    ]),
+router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploadEnvmapAndAssets.fields([{ name: "uploadedEnvmap", maxCount: 1 }, { name: "uploads", maxCount: 16 },]),
     async (req, res) => {
         const token = req.user;
         const sceneId = req.params.sceneId;
@@ -325,13 +318,11 @@ router.put(
 );
 const SCENES_PAGE_LENGTH = 10;
 
-// Sans page -> page = 1
 router.get(baseUrl + "admin/scenes", authMiddleware, async (req, res) => {
     req.params.page = "1";
     return adminScenesHandler(req, res);
 });
 
-// Avec page explicite
 router.get(baseUrl + "admin/scenes/:page", authMiddleware, async (req, res) => {
     return adminScenesHandler(req, res);
 });

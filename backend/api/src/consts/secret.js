@@ -1,1 +1,1 @@
-export const JWT_SECRET = 'THE_JWT_SECRET'
+export { JWT_SECRET } from "../config.js";

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { JWT_SECRET } from '../consts/secret.js'
+import { JWT_SECRET } from '../config.js'
 /**
  * Middleware function type import
  * @typedef {import('express').RequestHandler} RequestHandler

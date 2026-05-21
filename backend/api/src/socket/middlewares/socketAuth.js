@@ -1,4 +1,4 @@
-import {JWT_SECRET} from "../../consts/secret.js";
+import { JWT_SECRET } from "../../config.js";
 import jwt from "jsonwebtoken";
 
 export default function socketAuthMiddleware(socket, next) {

@@ -37,17 +37,20 @@ export function ResolveAssetUrlNode() {
             "source.kind",
         ],
 
-        async run(ctx, state) {
+        async run(ctx, state, services) {
             const asset = state.input.asset;
             const variantOverride = ctx?.options?.variantOverride ?? null;
             const token = ctx?.options?.token ?? null;
+            const logger = services.logger;
 
-            console.log("[ResolveAssetUrlNode] asset.id =", asset.id);
-            console.log("[ResolveAssetUrlNode] variantOverride =", variantOverride);
-            console.log("[ResolveAssetUrlNode] token present =", !!token);
+            logger.debug("[ResolveAssetUrlNode] input", {
+                assetId: asset.id,
+                variantOverride,
+                hasToken: !!token,
+            });
 
             if (asset.uploadData) {
-                console.log("[ResolveAssetUrlNode] upload asset -> load from upload");
+                logger.debug("[ResolveAssetUrlNode] upload asset -> load from upload");
                 return {
                     source: {
                         manifest: null,
@@ -69,10 +72,13 @@ export function ResolveAssetUrlNode() {
             const finalUrl = getResource(chosen.path);
             const kind = detectAssetKind(asset, { url: finalUrl });
 
-            console.log("[ResolveAssetUrlNode] asset:", asset.id);
-            console.log("[ResolveAssetUrlNode] chosen variant:", chosen.variant);
-            console.log("[ResolveAssetUrlNode] chosen path:", chosen.path);
-            console.log("[ResolveAssetUrlNode] final url:", finalUrl);
+            logger.debug("[ResolveAssetUrlNode] resolved", {
+                assetId: asset.id,
+                variant: chosen.variant,
+                path: chosen.path,
+                url: finalUrl,
+                kind,
+            });
 
             return {
                 source: {
@@ -93,12 +99,12 @@ export function AssetMetricNode() {
         requires: ["input.asset"],
         provides: ["metrics.assetSizeBytes"],
 
-        async run(ctx, state) {
+        async run(ctx, state, services) {
             const manifestSize = state?.source?.manifest?.metrics?.assetSizeBytes ?? null;
             const uploadSize = state?.input?.asset?.uploadData?.size ?? null;
             const assetSizeBytes = manifestSize ?? uploadSize ?? null;
 
-            console.log("[AssetMetricNode]", {
+            services.logger.debug("[AssetMetricNode]", {
                 manifestSize,
                 uploadSize,
                 final: assetSizeBytes,
@@ -126,9 +132,9 @@ export function DecodeNode() {
 
             const kind = state?.source?.kind ?? "gltf";
             if (!state?.source?.kind) {
-                console.warn("[DecodeNode] missing kind → fallback to gltf");
+                services.logger.warn("[DecodeNode] missing kind, fallback to gltf");
             }
-            console.log("[DecodeNode] source =", {
+            services.logger.debug("[DecodeNode] source", {
                 url,
                 fromUpload,
                 variant: state?.source?.variant ?? null,
@@ -158,24 +164,3 @@ export function DecodeNode() {
     };
 }
 
-export function RenderNode() {
-    return {
-        id: "Render",
-        requires: ["resource.object3D"],
-        provides: [],
-
-        async run(ctx, state) {
-            if (!ctx?.scene) {
-                throw new Error("[RenderNode] ctx.scene missing");
-            }
-
-            const object3D = state?.resource?.object3D ?? null;
-            if (!object3D) {
-                throw new Error("[RenderNode] resource.object3D missing");
-            }
-
-            ctx.scene.add(object3D);
-            return {};
-        },
-    };
-}

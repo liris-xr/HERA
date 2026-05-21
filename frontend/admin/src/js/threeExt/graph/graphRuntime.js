@@ -155,6 +155,16 @@ function validateProvidedPaths(node, patch, stateAfter) {
         );
     }
 }
+
+function createDefaultLogger() {
+    return {
+        debug() {},
+        info: console.info.bind(console),
+        warn: console.warn.bind(console),
+        error: console.error.bind(console),
+    };
+}
+
 function createDefaultServices(ctx = {}) {
     return {
         resourceLoader: {
@@ -169,7 +179,7 @@ function createDefaultServices(ctx = {}) {
                 });
             },
         },
-        logger: console,
+        logger: createDefaultLogger(),
         ...ctx?.services,
     };
 }

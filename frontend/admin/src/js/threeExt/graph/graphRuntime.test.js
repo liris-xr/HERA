@@ -77,3 +77,24 @@ test("runLinearGraph keeps non-plain runtime values by reference", async () => {
 
     assert.equal(state.resource.object3D, object3D);
 });
+
+test("runLinearGraph uses injected logger services", async () => {
+    const debugCalls = [];
+
+    await runLinearGraph(
+        { asset: { id: "asset-1" }, services: { logger: { debug: (...args) => debugCalls.push(args) } } },
+        [
+            {
+                id: "UsesLogger",
+                requires: ["input.asset"],
+                provides: [],
+                async run(ctx, state, services) {
+                    services.logger.debug("node-debug", state.input.asset.id);
+                    return {};
+                },
+            },
+        ]
+    );
+
+    assert.deepEqual(debugCalls, [["node-debug", "asset-1"]]);
+});

@@ -17,7 +17,6 @@ export async function fetchAssetManifest(assetId, token = null) {
     if (!res.ok) {
         throw new Error(json?.error || `Manifest error ${res.status}`);
     }
-    console.log("[fetchAssetManifest] token present:", !!token);
     return json;
 }
 

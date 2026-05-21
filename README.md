@@ -1,8 +1,9 @@
 # HERA
 
-HERA is a no-code AR authoring platform for cultural heritage. It is entirely web-based and does not need any coding abilities. For more informations, check [the paper](https://hal.science/hal-04725966v1) and the [demo video](https://www.youtube.com/watch?v=ZqwUtapg_Bk). 
-
+HERA is a web-based no-code AR authoring platform for cultural heritage.
 It allows users to create, edit, and visualize augmented reality scenes directly in the browser. The project is split into a backend API and two frontend applications: an admin/editor interface and a user/viewer interface.
+
+For more information, check [the paper](https://hal.science/hal-04725966v1) and the [demo video](https://www.youtube.com/watch?v=ZqwUtapg_Bk). 
 
 ## Project Structure & Default Development Ports
 
@@ -22,7 +23,7 @@ Before running the project, make sure you have:
 - a browser compatible with WebXR for AR testing (Google Chrome)
 - local HTTPS certificates for development
 - a working local database configuration
-- An Android smartphone/tablet ARCore compatible ([list of compatible devices](https://developers.google.com/ar/devices)) to test AR.
+- An ARCore-compatible Android smartphone  or tablet ([list of compatible devices](https://developers.google.com/ar/devices)) to test AR.
 - [ADB](https://developer.android.com/tools/adb) (Optional if you need to open the console on the phone/tablet) 
 
 
@@ -393,7 +394,7 @@ However, the site should still display an error even after accepting the risk:
 ![image](./readme/fetchFail.png)\
 This is because the browser is trying to fetch data from the API, which is not considered a secure resource.
 The only solution to solve this problem is to manually make a request to the API, and click on "Continue to the site" (as in the previous step)\
-[Click here to make a request on the default port](https://localhost:3000/api/dev/hello)\
+[Click here to make a request on the default port](https://localhost:8080/api/dev/hello)\
 After this step, go back to the site and refresh the page. The problem should be solved.
 
 ## Production Notes

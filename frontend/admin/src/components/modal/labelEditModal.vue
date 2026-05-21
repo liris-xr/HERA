@@ -25,6 +25,7 @@ const timestampEnd = ref(null);
 
 const showNotification = ref(false);
 const textNotification = ref("");
+const savingLabel = ref(false);
 
 watch(() =>props.show,async (value) => {
   if (value) {
@@ -59,7 +60,7 @@ async function processBase64Images(htmlContent) {
         const projectId = props.projectId;
         const formData = new FormData();
         formData.append('id', projectId);
-        formData.append('image', blob, 'image.jpg');
+        formData.append('image', blob, 'image.jpg');     
         
         const uploadRes = await fetch(`${ENDPOINT}project/${projectId}/image`, {
           method: 'POST',
@@ -88,7 +89,9 @@ async function editedLabelValidation($emit){
   if(timestampStart.value === null && timestampEnd.value !== null)
     timestampStart.value = 0
 
+  savingLabel.value = true;
   labelText.value = await processBase64Images(labelText.value);
+  savingLabel.value = false;
 
   $emit('confirm', getEditedLabel.value)
 }
@@ -207,8 +210,8 @@ const getEditedLabel = computed(()=>{
 
     <template #footer>
       <div class="inlineFlex flexRight">
-        <button-view :text="$t('labelEditModal.buttons.cancel')" @click="$emit('close') ; showNotification=false"></button-view>
-        <filled-button-view :text="$t('labelEditModal.buttons.confirm')" @click="editedLabelValidation($emit)"></filled-button-view>
+        <button-view :disabled="savingLabel" :text="$t('labelEditModal.buttons.cancel')" @click="$emit('close') ; showNotification=false"></button-view>
+        <filled-button-view :text="savingLabel ? $t('labelEditModal.buttons.saving') || 'Saving...' : $t('labelEditModal.buttons.confirm')" :disabled="savingLabel" @click="editedLabelValidation($emit)"></filled-button-view>
       </div>
       <NotificationComponent :visible="showNotification">
         <template #content>

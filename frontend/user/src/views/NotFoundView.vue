@@ -37,14 +37,14 @@ button {
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
-  background-color: var(--color-primary);
+  background-color: var(--accentColor);
   color: white;
   border: none;
   border-radius: 8px;
-  transition: background-color 0.2s;
+  transition: opacity 0.2s;
 }
 
 button:hover {
-  background-color: var(--color-primary-dark);
+  opacity: 0.8;
 }
 </style>

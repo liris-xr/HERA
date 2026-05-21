@@ -10,6 +10,7 @@ const props = defineProps({
   sectionName: {type: String, required: true},
   fields: {type: Array, default: []},
   subject: {type: Object},
+  loading: {type: Boolean, default: false},
 })
 
 const fieldRefs = ref({})
@@ -110,10 +111,12 @@ function validateFields() {
       <slot></slot>
 
       <div>
-        <button @click="validateFields() && $emit('confirm')">{{$t("admin.confirm")}}</button>
+        <button :disabled="loading" @click="validateFields() && $emit('confirm')">
+          {{ loading ? $t("admin.saving") || "Saving..." : $t("admin.confirm") }}
+        </button>
       </div>
       <div>
-        <button @click="$emit('cancel')">{{$t("admin.cancel")}}</button>
+        <button :disabled="loading" @click="$emit('cancel')">{{$t("admin.cancel")}}</button>
       </div>
     </div>
   </div>

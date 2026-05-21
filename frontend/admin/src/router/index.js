@@ -7,12 +7,11 @@ import RegisterView from "@/views/RegisterView.vue";
 import {BASE_URL} from "@/js/endpoints.js";
 import AdminView from "@/views/AdminView.vue";
 import AccountView from "@/views/AccountView.vue";
+import NotFoundView from "@/views/NotFoundView.vue";
 
 const router = createRouter({
   history: createWebHistory(BASE_URL),
   routes: [
-
-
     {
       path: "/login",
       name: "login",
@@ -26,41 +25,47 @@ const router = createRouter({
     // },
 
     {
-      path: '/',
-      name: 'home',
-      component: ProjectsView
+      path: "/",
+      name: "home",
+      component: ProjectsView,
     },
 
     {
-      path: '/projects',
-      name: 'projects',
-      component: ProjectsView
+      path: "/projects",
+      name: "projects",
+      component: ProjectsView,
     },
 
     {
-      path: '/project/:projectId',
-      name: 'project',
-      component: ProjectView
+      path: "/project/:projectId",
+      name: "project",
+      component: ProjectView,
     },
 
     {
-      path: '/scene/:sceneId',
-      name: 'scene',
-      component: SceneView
+      path: "/scene/:sceneId",
+      name: "scene",
+      component: SceneView,
     },
 
     {
-      path: '/admin',
-      name: 'admin',
-      component: AdminView
+      path: "/admin",
+      name: "admin",
+      component: AdminView,
     },
 
     {
-      path: '/account',
-      name: 'account',
-      component: AccountView
+      path: "/account",
+      name: "account",
+      component: AccountView,
+    },
+
+    {
+      path: "/:pathMatch(.*)*",
+      name: "notFound",
+      component: NotFoundView,
     }
   ]
-})
+});
 
 export default router

@@ -6,10 +6,11 @@ It allows users to create, edit, and visualize augmented reality scenes directly
 
 ## Project Structure & Default Development Ports
 
-| Folder           | Role                                                  | URL                              |
-| `backend/api`    | Express API, database, authentication, uploaded files | `https://localhost:8080`         |
-| `frontend/user`  | Viewer used to open and visualize AR projects         | `https://localhost:8081/viewer/` |
-| `frontend/admin` | Editor used to create and manage projects             | `https://localhost:8082/editor/` |
+| Folder | Role | URL |
+|---|---|---|
+| `backend/api` | Express API, database, authentication, uploaded files | `https://localhost:8080` |
+| `frontend/user` | Viewer used to open and visualize AR projects | `https://localhost:8081/viewer/` |
+| `frontend/admin` | Editor used to create and manage projects | `https://localhost:8082/editor/` |
 
 The viewer and editor need the API to be running.
 
@@ -37,15 +38,18 @@ git checkout dev
 cd backend/api
 npm install
 npm run start
+```
 
+```bash
 cd frontend/user
 npm install
 npm run dev
+```
 
-cd ../admin
+```bash
+cd frontend/admin
 npm install
 npm run dev
-
 ```
 Open:
 

@@ -21,10 +21,8 @@ Before running the project, make sure you have:
 
 - Node.js and npm installed
 - a browser compatible with WebXR for AR testing (Google Chrome)
-- local HTTPS certificates for development
-- a working local database configuration
-- An ARCore-compatible Android smartphone  or tablet ([list of compatible devices](https://developers.google.com/ar/devices)) to test AR.
-- [ADB](https://developer.android.com/tools/adb) (Optional if you need to open the console on the phone/tablet) 
+- An ARCore-compatible Android smartphone or tablet ([list of compatible devices](https://developers.google.com/ar/devices)) to test AR.
+- [ADB](https://developer.android.com/tools/adb) (Optional if you want to open the console on the phone/tablet) 
 
 
 ## Installation

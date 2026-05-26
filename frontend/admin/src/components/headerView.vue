@@ -21,10 +21,14 @@ function logoutAndRedirect(){
 
       <div>
         <locale-changer></locale-changer>
-        <RouterLink :to="{name:'viewer'}" v-if="isAuthenticated">{{$t("header.viewer")}}</RouterLink>
+        <RouterLink :to="{name:'viewer'}" v-if="isAuthenticated" class="viewer-link">
+          <img src="/icons/redirection.svg" alt="viewer" class="icon">
+          {{$t("header.viewer")}}
+        </RouterLink>
         <RouterLink :to="{name:'admin'}" v-if="userData?.admin">{{$t("header.administration")}}</RouterLink>
 
-        <RouterLink :to="{name:'account'}" v-if="isAuthenticated">
+        <RouterLink :to="{name:'account'}" v-if="isAuthenticated" class="account-link">
+          <img src="/icons/person.svg" alt="account" class="icon">
           <span>{{userData.username}}</span>
         </RouterLink>
 
@@ -57,9 +61,10 @@ nav{
 nav>a{
   margin-right: 24px;
   text-decoration: none;
-
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-
 
 nav>a.router-link-exact-active {
   color: var(--accentColor);
@@ -72,4 +77,21 @@ nav>div{
 nav>div>*{
   margin-right: 16px;
 }
+
+.icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+}
+
+.viewer-link .icon,
+.account-link .icon {
+  filter: invert(1);
+}
+
+.viewer-link:hover .icon,
+.account-link:hover .icon {
+  filter: invert(0.7);
+}
+
 </style>

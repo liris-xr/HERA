@@ -1,4 +1,3 @@
-// assetPipelineNodes.js
 import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/assetManifest.js";
 import { getResource } from "@/js/endpoints.js";
 import { detectAssetKind } from "@/js/threeExt/graph/resourceKinds.js";

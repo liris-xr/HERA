@@ -14,4 +14,16 @@ export class EmptyAsset extends Asset{
 
 
     load(){}
+
+    async getManifest() {
+        return null;
+    }
+
+    supportsLodVariants() {
+        return false;
+    }
+
+    warmLikelyVariants() {
+        return false;
+    }
 }

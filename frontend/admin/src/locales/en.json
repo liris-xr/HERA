@@ -203,7 +203,7 @@
       "sceneAssets": {
         "label": "3D models :",
         "addAssetButton": "Upload",
-        "addAssetButtonErrorFileNotSupported": "This file format is not supported.\nPlease use .glb or .gltf",
+        "addAssetButtonErrorFileNotSupported": "This file format is not supported.\nPlease use .glb, .gltf, or a Gaussian splat file (.splat, .spz, .ksplat, .ply, .sog)",
         "noAssetsInfo": "This scene does not have any 3D model",
         "assetNotDisplayed": "This object will not be displayed in viewer",
         "assetLoadFailed": "Unable to load this 3D model"

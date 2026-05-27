@@ -246,7 +246,7 @@ onMounted(async () => {
           {
             name: 'asset',
             type: 'file',
-            accept: '.glb, .gltf',
+            accept: '.glb, .gltf, .splat, .spz, .ksplat, .ply, .sog',
             required: true,
           }
       ]"

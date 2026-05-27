@@ -3,7 +3,9 @@ import * as THREE from "three";
 import { reactive, ref } from "vue";
 import { ObjectManager } from "@/js/threeExt/modelManagement/objectManager.js";
 import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/assetManifest.js";
-import {getResource} from "@/js/endpoints.js";
+import { loadSparkSplatAsset } from "@/js/threeExt/spark/sparkSplatLoader.js";
+import { detectAssetKind } from "@/js/threeExt/modelManagement/assetKind.js";
+import { getResource } from "@/js/endpoints.js";
 
 function safeNumber(value, fallback) {
     const n = Number(value);
@@ -315,6 +317,9 @@ export class Asset extends SceneElementInterface {
         this.simplifiedUrl = assetData.simplifiedUrl ?? null;
 
         this.name = assetData.name != null ? assetData.name : assetData.url;
+
+        this.assetKind = assetData.assetKind ?? assetData.kind ?? detectAssetKind(this);
+
         this.activeAnimation = assetData.activeAnimation || null;
 
         this.highlight = ref(false);
@@ -347,6 +352,10 @@ export class Asset extends SceneElementInterface {
             ...(policy ?? {}),
         };
         this.enforceVariantCacheLimit();
+    }
+
+    supportsLodVariants() {
+        return this.assetKind === "gltf";
     }
 
     getVariantCacheLimit() {
@@ -460,6 +469,8 @@ export class Asset extends SceneElementInterface {
     }
 
     getWarmVariantKeys() {
+        if (!this.id || !this.supportsLodVariants()) return [];
+
         const limit = this.getVariantCacheLimit();
         if (limit <= 0) return [];
 
@@ -478,6 +489,7 @@ export class Asset extends SceneElementInterface {
     }
 
     async warmVariant(variantKey) {
+        if (!this.id || !this.supportsLodVariants()) return false;
         if (!variantKey || this.getVariantCacheLimit() <= 0) return false;
         if (variantKey === this.currentVariant) return false;
         if (this.variantObjectCache.has(variantKey)) return true;
@@ -487,6 +499,9 @@ export class Asset extends SceneElementInterface {
             try {
                 const manager = ObjectManager.getInstance();
                 const manifest = await this.getManifest();
+                const variant = manifest?.variants?.[variantKey];
+                if (!variant || variant.status !== "ready" || !variant.path) return false;
+
                 const chosen = pickVariantFromManifest(manifest, {
                     variantOverride: variantKey,
                     allowFallback: false,
@@ -584,6 +599,10 @@ export class Asset extends SceneElementInterface {
     }
 
     async getManifest() {
+        if (!this.id) {
+            throw new Error("[Asset.getManifest] missing asset id");
+        }
+
         if (!this.manifestCache) {
             this.manifestCache = await fetchAssetManifest(this.id);
         }
@@ -615,6 +634,8 @@ export class Asset extends SceneElementInterface {
         }
     }
     async preloadVariants() {
+        if (!this.supportsLodVariants()) return;
+
         try {
             const manager = ObjectManager.getInstance();
             const manifest = await this.getManifest();
@@ -650,6 +671,8 @@ export class Asset extends SceneElementInterface {
 
             const manifest = await this.getManifest();
             const chosen = pickVariantFromManifest(manifest, options);
+            const kind = manifest?.assetKind ?? detectAssetKind(this, { url: chosen?.path });
+            this.assetKind = kind;
 
             this.currentVariant = chosen?.variant ?? null;
 
@@ -665,7 +688,9 @@ export class Asset extends SceneElementInterface {
                 throw new Error(`[Asset.load] invalid urlToLoad: ${urlToLoad}`);
             }
 
-            const loaded = await manager.load(urlToLoad);
+            const loaded = kind === "splat"
+                ? await loadSparkSplatAsset({ url: urlToLoad, name: this.name })
+                : await manager.load(urlToLoad);
 
             this.#error = typeof loaded.hasError === "function" ? loaded.hasError() : false;
 
@@ -678,6 +703,7 @@ export class Asset extends SceneElementInterface {
             this.mesh = loadedObject;
 
             this.object.userData.assetId = this.id;
+            this.object.userData.heraAssetKind = kind;
 
             if (!isValidVec3(this.position)) {
                 console.warn("[Asset.load] invalid position, fallback to 0", {
@@ -785,6 +811,8 @@ export class Asset extends SceneElementInterface {
         }
     }
     async swapToVariant(scene, variantOverride) {
+        if (!this.supportsLodVariants()) return;
+
         try {
             const manager = ObjectManager.getInstance();
             const manifest = await this.getManifest();

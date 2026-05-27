@@ -11,11 +11,12 @@
     "adb": "adb reverse tcp:8080 tcp:8080 & adb reverse tcp:3000 tcp:3000"
   },
   "dependencies": {
+    "@sparkjsdev/spark": "^2.1.0",
     "baklavajs": "^2.8.1",
     "jwt-decode": "^4.0.0",
     "primevue": "^4.3.4",
     "quill": "^2.0.3",
-    "three": "^0.163.0",
+    "three": "^0.180.0",
     "vite-plugin-mkcert": "^1.17.5",
     "vue": "^3.4.21",
     "vue-i18n": "^9.14.0",

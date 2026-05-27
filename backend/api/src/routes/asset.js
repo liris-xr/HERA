@@ -8,6 +8,7 @@ import { sequelize } from "../orm/database.js";
 import { computeAssetMetrics } from "../socket/utils/assetMetrics.js";
 import { processAsset } from "../services/assetProcessing/processAsset.js";
 import {buildVariantSet} from "../services/gltf/variantSet.js";
+import { detectAssetKind } from "../services/assetKind.js";
 
 const router = express.Router();
 
@@ -56,6 +57,7 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
         const apiRoot = process.cwd();
         const metrics = await computeAssetMetrics(asset, apiRoot);
         const variants = buildVariantSet(asset, apiRoot);
+        const assetKind = detectAssetKind(asset);
 
         let parsedLodMeta = null;
         try {
@@ -69,6 +71,7 @@ router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async 
 
         return res.status(200).send({
             assetId: asset.id,
+            assetKind,
             revision: asset.updatedAt ? new Date(asset.updatedAt).toISOString() : null,
             preferredVariant: asset.preferredVariant ?? "original",
             variants,
@@ -116,6 +119,10 @@ router.post(baseUrl + "assets/:assetId/simplify", authMiddleware, async (req, re
         const ownerId = asset.scene?.project?.owner?.id;
         if (ownerId !== token.id && !req.user.admin) {
             return res.status(403).send({ error: "User not granted" });
+        }
+
+        if (detectAssetKind(asset) !== "gltf") {
+            return res.status(400).send({ error: "Simplify is only supported for GLB/GLTF assets" });
         }
 
         const apiRoot = process.cwd();
@@ -184,6 +191,10 @@ router.post(baseUrl + "assets/:assetId/process", authMiddleware, async (req, res
 
         if (!strategy) {
             return res.status(400).send({ error: "Missing strategy" });
+        }
+
+        if (detectAssetKind(asset) !== "gltf") {
+            return res.status(400).send({ error: "Processing is only supported for GLB/GLTF assets" });
         }
 
         const apiRoot = process.cwd();

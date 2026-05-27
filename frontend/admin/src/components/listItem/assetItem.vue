@@ -23,7 +23,7 @@ const emit = defineEmits([
   "select",
   "delete",
   "duplicate",
-  "hideInViewer",
+  "hide-in-viewer",
   "animationChanged",
   "reset",
   "optimize",
@@ -40,13 +40,21 @@ const showAdvancedOptimization = ref(false);
 const hasAnimations = computed(() => animations.value.length > 0);
 
 const isBusy = computed(() => props.loading || props.simplifying);
+const assetKind = computed(() => {
+  const explicit = props.asset?.kind ?? props.asset?.type ?? null;
+  if (explicit) return String(explicit).toLowerCase();
+
+  const ext = getFileExtension(props.text || props.asset?.name || props.asset?.sourceUrl || "");
+  return ["splat", "spz", "ksplat", "ply", "sog"].includes(ext.toLowerCase()) ? "splat" : "gltf";
+});
 
 const canProcess = computed(() => {
   return (
       props.rightMenu &&
       !props.loading &&
       !props.error &&
-      !!props.asset?.id
+      !!props.asset?.id &&
+      assetKind.value === "gltf"
   );
 });
 
@@ -180,7 +188,7 @@ function toggleAdvancedOptimization() {
             url="/icons/display_off.svg"
             class="iconAction"
             title="Hidden in viewer"
-            @click.stop="onClick(() => emit('hideInViewer', true))"
+            @click.stop="onClick(() => emit('hide-in-viewer', true))"
         />
 
         <icon-svg
@@ -188,7 +196,7 @@ function toggleAdvancedOptimization() {
             url="/icons/display_on.svg"
             class="iconAction"
             title="Displayed in viewer"
-            @click.stop="onClick(() => emit('hideInViewer', false))"
+            @click.stop="onClick(() => emit('hide-in-viewer', false))"
         />
       </div>
 

@@ -10,6 +10,7 @@ import { extractYawQuaternion } from "@/js/utils/extractYawQuaternion.js";
 import { ScenePlacementManager } from "@/js/threeExt/scene/scenePlacementManager.js";
 import { buildSimpleDevicePolicy } from "@/js/threeExt/DeviceProfile/devicePolicy.js";
 import { createPerfDebugLogger } from "@/js/threeExt/performance/perfDebugLogger.js";
+import { ensureSparkRenderer } from "@/js/threeExt/spark/sparkRuntime.js";
 
 export class ArSessionManager {
     sceneManager;
@@ -60,6 +61,7 @@ export class ArSessionManager {
                 this.xr3dUi.addToScene(this.sceneManager.active.value);
             }
 
+            this.#ensureSparkRendererForScene(this.sceneManager.getActiveContentScene());
             this.applyVrCameraPosition();
             this.#resetCameraPosition();
         }.bind(this);
@@ -71,6 +73,7 @@ export class ArSessionManager {
         this.domContainer = container;
 
         await this.sceneManager.init();
+        await this.#ensureSparkRendererForScene(this.sceneManager.getActiveContentScene());
 
         container.appendChild(this.arRenderer.domElement);
         arOverlay.firstChild.appendChild(this.labelRenderer.domElement);
@@ -90,6 +93,17 @@ export class ArSessionManager {
 
         this.domOverlay = arOverlay;
         this.arRenderer.setAnimationLoop(this.onXrFrame.bind(this));
+    }
+
+    async #ensureSparkRendererForScene(scene) {
+        try {
+            await ensureSparkRenderer({
+                renderer: this.arRenderer,
+                scene,
+            });
+        } catch (error) {
+            console.warn("[HERA][Spark] renderer setup failed", error);
+        }
     }
 
     #resetCameraPosition() {

@@ -205,7 +205,7 @@
       "sceneAssets": {
         "label": "Modèles 3D :",
         "addAssetButton": "Ajouter",
-        "addAssetButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .glb ou .gltf",
+        "addAssetButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .glb, .gltf ou un fichier Gaussian splat (.splat, .spz, .ksplat, .ply, .sog)",
         "noAssetsInfo": "Cette scène ne contient aucun modèle 3D",
         "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
         "assetLoadFailed": "Impossible de charger ce modèle 3D"

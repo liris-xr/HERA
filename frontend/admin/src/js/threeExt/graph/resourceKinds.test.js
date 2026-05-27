@@ -14,6 +14,11 @@ test("detectAssetKind detects kind from resolved source URL", () => {
     );
 });
 
+test("detectAssetKind treats gaussian splat formats as splat assets", () => {
+    assert.equal(detectAssetKind({ name: "scan.ply" }), "splat");
+    assert.equal(detectAssetKind({ name: "scan.spz" }), "splat");
+});
+
 test("detectAssetKind defaults to gltf for unknown sources", () => {
     assert.equal(detectAssetKind({ name: "unknown.asset" }), "gltf");
 });

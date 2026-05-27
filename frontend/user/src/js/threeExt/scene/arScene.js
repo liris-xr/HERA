@@ -246,23 +246,39 @@ export class ArScene extends AbstractScene {
 
     computeBoundingBox(forceCompute = false) {
         if (forceCompute || this.#boundingBox == null) {
-            const group = new THREE.Group();
+            const box = new THREE.Box3();
+
             for (const asset of this.#assets) {
                 if (!asset?.object) continue;
-                group.add(asset.object.clone());
+
+                asset.object.updateMatrixWorld(true);
+
+                if (typeof asset.object.getBoundingBox === "function") {
+                    const assetBox = asset.object.getBoundingBox();
+                    if (assetBox && !assetBox.isEmpty()) {
+                        box.union(assetBox.clone().applyMatrix4(asset.object.matrixWorld));
+                    }
+                } else {
+                    box.expandByObject(asset.object);
+                }
             }
-            this.#boundingBox = new THREE.Box3().setFromObject(group);
+
+            this.#boundingBox = box;
         }
         return this.#boundingBox;
     }
 
     computeBoundingSphere(forceCompute = false) {
         if (forceCompute || this.#boundingSphere == null) {
+            const box = this.computeBoundingBox(forceCompute);
+            if (box.isEmpty()) {
+                this.#boundingSphere = new THREE.Sphere(new THREE.Vector3(), 0);
+                return this.#boundingSphere;
+            }
+
             const center = new THREE.Vector3();
-            this.computeBoundingBox(forceCompute).getCenter(center);
-            this.#boundingSphere = this.computeBoundingBox().getBoundingSphere(
-                new THREE.Sphere(center)
-            );
+            box.getCenter(center);
+            this.#boundingSphere = box.getBoundingSphere(new THREE.Sphere(center));
         }
         return this.#boundingSphere;
     }
@@ -731,6 +747,7 @@ export class ArScene extends AbstractScene {
         for (const asset of this.#assets) {
             if (!asset?.object) continue;
             if (asset instanceof EmptyAsset) continue;
+            if (typeof asset.supportsLodVariants === "function" && !asset.supportsLodVariants()) continue;
 
             asset.getManifest()
                 .then((manifest) => {
@@ -916,6 +933,9 @@ export class ArScene extends AbstractScene {
         }
 
         for (const asset of this.#assets) {
+            if (asset instanceof EmptyAsset) continue;
+            if (!asset?.id) continue;
+
             if (typeof asset.setVariantCachePolicy === "function") {
                 asset.setVariantCachePolicy(policy.variantCache);
             }

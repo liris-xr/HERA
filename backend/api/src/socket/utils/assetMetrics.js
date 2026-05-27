@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import sharp from "sharp";
+import { isGltfAsset } from "../../services/assetKind.js";
 
 function normalizeUrlPath(u) {
     return String(u ?? "").replaceAll("\\", "/").replace(/^\/+/, "");
@@ -164,6 +165,14 @@ export async function computeAssetMetrics(asset, apiRoot) {
     }
 
     const inputDisk = path.resolve(apiRoot, inputRel);
+    if (!fs.existsSync(inputDisk)) {
+        return makeEmptyMetrics();
+    }
+
+    if (!isGltfAsset(asset)) {
+        return makeEmptyMetrics(computeFileSizeBytes(inputDisk));
+    }
+
     return await computeGeometryMetricsFromFile(inputDisk);
 }
 

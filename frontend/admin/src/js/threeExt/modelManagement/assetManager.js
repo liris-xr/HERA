@@ -69,7 +69,10 @@ export class AssetManager {
             scene,
             asset,
             onAdd,
-            options: { ...options },
+            options: {
+                renderer: scene?.runtimeRenderer ?? null,
+                ...options,
+            },
             services: { resourceLoader: defaultResourceLoader },
         };
     }
@@ -284,6 +287,18 @@ export class AssetManager {
 
         let vMin = new Vector3(0, 0, 0);
         let vMax = new Vector3(0, 0, 0);
+
+        for (const asset of this.#assets) {
+            const object = asset?.getObject?.() ?? asset?.object ?? asset?.mesh ?? null;
+            if (!object || object.userData?.heraAssetKind !== "splat") continue;
+
+            object.updateMatrixWorld(true);
+            const box = typeof object.getBoundingBox === "function"
+                ? object.getBoundingBox().clone().applyMatrix4(object.matrixWorld)
+                : new THREE.Box3().setFromObject(object);
+
+            if (!box.isEmpty()) boundingGroup.push(box);
+        }
 
         for (const boundingBox of boundingGroup) {
             vMin.min(boundingBox.min);

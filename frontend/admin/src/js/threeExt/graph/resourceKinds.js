@@ -6,8 +6,14 @@ export function detectAssetKind(asset, source = null) {
     const lower = String(path).toLowerCase();
 
     if (lower.endsWith(".glb") || lower.endsWith(".gltf")) return "gltf";
-    if (lower.endsWith(".ply") || lower.endsWith(".pcd")) return "pointcloud";
-    if (lower.endsWith(".splat")) return "splat";
+    if (
+        lower.endsWith(".splat") ||
+        lower.endsWith(".spz") ||
+        lower.endsWith(".ksplat") ||
+        lower.endsWith(".ply") ||
+        lower.endsWith(".sog")
+    ) return "splat";
+    if (lower.endsWith(".pcd")) return "pointcloud";
 
     return "gltf";
 }

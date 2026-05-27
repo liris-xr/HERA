@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import { detectAssetKind } from "../assetKind.js";
 
 export function normalizePath(p) {
     if (!p) return null;
@@ -63,6 +64,7 @@ function buildVariantEntry({ ready, rel, meta = {} }) {
 export function buildVariantSet(asset, apiRoot) {
     const sourceRel = toInputRel(asset?.url);
     const lodMeta = parseLodMeta(asset?.lodMeta);
+    const assetKind = detectAssetKind(asset);
 
     if (!sourceRel) {
         return {
@@ -76,6 +78,21 @@ export function buildVariantSet(asset, apiRoot) {
 
     const originalRel = relFromMeta(lodMeta.original, sourceRel);
     const originalDisk = path.resolve(apiRoot, originalRel);
+    const originalReady = fileExists(originalDisk);
+
+    if (assetKind !== "gltf") {
+        return {
+            original: buildVariantEntry({
+                ready: originalReady,
+                rel: originalRel,
+                meta: lodMeta.original,
+            }),
+            simplified: { status: "unsupported", path: null },
+            n1: { status: "unsupported", path: null },
+            n2: { status: "unsupported", path: null },
+            n3: { status: "unsupported", path: null },
+        };
+    }
 
     const n1Rel = relFromMeta(lodMeta.variants?.n1, makeVariantRel(sourceRel, "n1"));
     const n2Rel = relFromMeta(lodMeta.variants?.n2, makeVariantRel(sourceRel, "n2"));
@@ -85,7 +102,6 @@ export function buildVariantSet(asset, apiRoot) {
     const n2Disk = path.resolve(apiRoot, n2Rel);
     const n3Disk = path.resolve(apiRoot, n3Rel);
 
-    const originalReady = fileExists(originalDisk);
     const n1Ready = fileExists(n1Disk);
     const n2Ready = fileExists(n2Disk);
     const n3Ready = fileExists(n3Disk);

@@ -1,4 +1,5 @@
 import { Mesh } from "@/js/threeExt/modelManagement/mesh.js";
+import { loadSparkSplatResource } from "@/js/threeExt/spark/sparkSplatLoader.js";
 
 function safeNumber(value, fallback) {
     const n = Number(value);
@@ -31,12 +32,12 @@ async function loadGltfResource({ asset, url, fromUpload }) {
 
 const LOADERS_BY_KIND = {
     gltf: loadGltfResource,
+    splat: loadSparkSplatResource,
     // pointcloud: loadPointcloudResource,
-    // splat: loadSplatResource,
 };
 
 export class ResourceLoader {
-    async load({ asset, url, fromUpload, kind = "gltf" }) {
+    async load({ asset, url, fromUpload, kind = "gltf", state = null, ctx = null }) {
         if (!asset) {
             throw new Error("[ResourceLoader] Missing asset.");
         }
@@ -50,7 +51,7 @@ export class ResourceLoader {
                 throw new Error(`[ResourceLoader] Unsupported asset kind: ${kind}`);
             }
 
-            const object3D = await loader({ asset, url, fromUpload });
+            const object3D = await loader({ asset, url, fromUpload, kind, state, ctx });
 
             asset.position = safeVec3(asset.position, { x: 0, y: 0, z: 0 });
             asset.rotation = safeVec3(asset.rotation, { x: 0, y: 0, z: 0 });
@@ -61,6 +62,7 @@ export class ResourceLoader {
             object3D.scale.set(asset.scale.x, asset.scale.y, asset.scale.z);
 
             asset.mesh = object3D;
+            asset.kind = kind;
             asset.animations = object3D.animations ?? [];
             asset.markLoaded?.();
 

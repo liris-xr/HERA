@@ -30,6 +30,7 @@ export class Editor {
         this.camera = new EditorCamera();
 
         this.renderer = new EditorRenderer(this.shadowMapSize, 1);
+        this.scene.runtimeRenderer = this.renderer;
         this.labelRenderer = new LabelRenderer();
         this.perfDebugLogger = createPerfDebugLogger({
             name: "admin-editor",

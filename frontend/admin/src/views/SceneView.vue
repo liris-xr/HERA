@@ -717,7 +717,7 @@ function markChang() {
                   :text="$t('sceneView.leftSection.sceneAssets.addAssetButton')"
                   icon="/icons/upload.svg"
                   @fileSelected="(file) => editor.scene.addNewAsset(file)"
-                  :accept="['.glb', '.gltf']"
+                  :accept="['.glb', '.gltf', '.splat', '.spz', '.ksplat', '.ply', '.sog']"
               />
             </div>
 

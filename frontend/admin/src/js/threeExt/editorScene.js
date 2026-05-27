@@ -16,6 +16,8 @@ const transformModeKeys = {
     rotate: "rotation",
     scale: "scale"
 };
+const SUPPORTED_ASSET_EXTENSIONS = ["gltf", "glb", "splat", "spz", "ksplat", "ply", "sog"];
+const SPLAT_ASSET_EXTENSIONS = ["splat", "spz", "ksplat", "ply", "sog"];
 
 export class EditorScene extends THREE.Scene {
     projectId;
@@ -262,7 +264,14 @@ export class EditorScene extends THREE.Scene {
 
     setupControls(controls) {
         this.#transformControls = controls;
-        this.add(this.#transformControls);
+        const controlsObject = typeof controls.getHelper === "function"
+            ? controls.getHelper()
+            : controls;
+
+        if (controlsObject?.isObject3D) {
+            this.add(controlsObject);
+        }
+
         this.#transformControls.detach();
         this.setTransformMode("translate");
 
@@ -401,8 +410,8 @@ export class EditorScene extends THREE.Scene {
     }
 
     addNewAsset(file) {
-        const extension = getFileExtension(file.name);
-        if (!["gltf", "glb"].includes(extension)) {
+        const extension = getFileExtension(file.name).toLowerCase();
+        if (!SUPPORTED_ASSET_EXTENSIONS.includes(extension)) {
             alert(i18n.global.t("sceneView.leftSection.sceneAssets.addAssetButtonErrorFileNotSupported"));
             return;
         }
@@ -412,6 +421,7 @@ export class EditorScene extends THREE.Scene {
             url: null,
             uploadData: file,
             name: file.name,
+            kind: SPLAT_ASSET_EXTENSIONS.includes(extension) ? "splat" : "gltf", //adding type of asset
             hideInViewer: false
         };
 

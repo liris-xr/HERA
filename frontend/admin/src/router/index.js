@@ -57,13 +57,22 @@ const router = createRouter({
     {
       path: "/account",
       name: "account",
-      component: AccountView,
+      component: AccountView
     },
 
     {
       path: "/:pathMatch(.*)*",
       name: "notFound",
-      component: NotFoundView,
+      component: NotFoundView
+    },
+
+    {
+      path: '/viewer',
+      name: 'viewer',
+      beforeEnter() {
+        window.location.href = '/viewer/'
+      },
+      component: { render: () => null }
     }
   ]
 });

@@ -26,8 +26,8 @@ import { errorHandler } from "./src/utils/errorHandler.js";
 import zip from "express-easy-zip";
 
 const options = {
-  key: fs.readFileSync(path.join(DIRNAME, "privatekey.key")),
-  cert: fs.readFileSync(path.join(DIRNAME, "certificate.crt")),
+  key: fs.readFileSync("/home/webadmin/certificate/privatekey.key"),
+  cert: fs.readFileSync("/home/webadmin/certificate/certificate.crt"),
 };
 
 const app = express();
@@ -48,8 +48,7 @@ app.use(zip());
 async function main() {
   await initializeDatabase({ force: false });
   // await resetDatabase();
-  // await insertDefaults(); 
-
+  // await insertDefaults();
 
   app.use(project);
   app.use(auth);
@@ -67,7 +66,7 @@ async function main() {
   }
 
   app.use("/public", express.static(path.join(DIRNAME, "public")));
-  
+
   app.use(errorHandler);
 
   const httpsServer = https.createServer(options, app);

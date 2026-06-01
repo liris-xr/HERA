@@ -137,6 +137,10 @@ issues.txt
 backend/api/privatekey.key
 backend/api/certificate.crt
 
+# lockfiles
+
+package-lock.json
+
 # idea
 
 .idea/

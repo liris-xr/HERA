@@ -57,6 +57,15 @@ const router = createRouter({
       path: "/:pathMatch(.*)*",
       name: "notFound",
       component: NotFoundView
+    },
+
+    {
+      path: '/editor',
+      name: 'editor',
+      beforeEnter() {
+        window.location.href = '/editor/'
+      },
+      component: { render: () => null }
     }
   ]
 })

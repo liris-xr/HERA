@@ -3,7 +3,8 @@
   "header": {
     "home": "Mes projets",
     "logout": "Déconnexion",
-    "administration": "Administration"
+    "administration": "Administration",
+    "viewer": "Visualiseur"
   },
 
   "none": "Aucun",
@@ -36,7 +37,7 @@
 
   "defaultProjectSettings": {
     "unit": "Scène",
-    "calibrationMessage": "Appuyer n'importe où pour placer votre objet"
+    "calibrationMessage": "Appuyez n'importe où pour placer votre objet"
   },
 
   "projectsView": {
@@ -128,7 +129,7 @@
         "title": "Supprimer le projet",
         "body": {
           "part1": "Vous êtes sur le point de supprimer le projet ",
-          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+          "part2": "Cette action est irréversible, êtes-vous sûr de vouloir continuer ?"
         }
       },
       "newScene": {
@@ -140,7 +141,7 @@
         "title": "Supprimer la scène",
         "body": {
           "part1": "Vous êtes sur le point de supprimer la scène ",
-          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+          "part2": "Cette action est irréversible, êtes-vous sûr de vouloir continuer ?"
         }
       }
     },
@@ -234,7 +235,7 @@
         "title": "Supprimer la scène",
         "body": {
           "part1": "Vous êtes sur le point de supprimer la scène ",
-          "part2": "Cette action est irréversible, êtes vous sûr de vouloir continuer ?"
+          "part2": "Cette action est irréversible, êtes-vous sûr de vouloir continuer ?"
         }
       }
     },
@@ -294,7 +295,7 @@
         "unit": "Nom du paramètre"
       },
       "scenes": {
-        "h1": "Scenes",
+        "h1": "Scènes",
         "cautionMessage": "La suppression d'une scène entraînera la suppression de tous ses assets et labels",
         "edit": "Modifier la scène",
         "delete": "Supprimer la scène",
@@ -355,7 +356,7 @@
       "button": "Modifier mon mot de passe",
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le nouveau mot de passe",
-      "lengthMessage": "Le mot de passe doit être de longueur >= 8",
+      "lengthMessage": "Le mot de passe doit contenir au moins 8 caractères",
       "notMatching": "Les mots de passe ne correspondent pas",
       "success": "Mot de passe modifié avec succès"
     }
@@ -382,7 +383,7 @@
     "title": "Enregistrer les modifications ?",
     "body": {
       "part1": "Vous êtes sur le point de quitter cette page.",
-      "part2": "Les données non-enregistrées seront perdues. Êtes vous sûr de vouloir continuer ?"
+      "part2": "Les données non enregistrées seront perdues. Êtes-vous sûr de vouloir continuer ?"
     },
     "buttons": {
       "cancel": "Annuler",

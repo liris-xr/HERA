@@ -1,0 +1,462 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA0000000000000000000100 /* HERAViewerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000050 /* HERAViewerApp.swift */; };
+		AA0000000000000000000101 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000051 /* ContentView.swift */; };
+		AA0000000000000000000102 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000052 /* AppSettings.swift */; };
+		AA0000000000000000000103 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000053 /* KeychainHelper.swift */; };
+		AA0000000000000000000104 /* NetworkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000054 /* NetworkSession.swift */; };
+		AA0000000000000000000105 /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000055 /* SharedModels.swift */; };
+		AA0000000000000000000106 /* ArProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000056 /* ArProject.swift */; };
+		AA0000000000000000000107 /* ArScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000057 /* ArScene.swift */; };
+		AA0000000000000000000108 /* ArAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000058 /* ArAsset.swift */; };
+		AA0000000000000000000109 /* ArMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000059 /* ArMesh.swift */; };
+		AA0000000000000000000110 /* ArLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000060 /* ArLabel.swift */; };
+		AA0000000000000000000111 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000061 /* AuthModels.swift */; };
+		AA0000000000000000000112 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000062 /* APIClient.swift */; };
+		AA0000000000000000000113 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000063 /* AuthService.swift */; };
+		AA0000000000000000000114 /* AssetCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000064 /* AssetCache.swift */; };
+		AA0000000000000000000115 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000065 /* SettingsView.swift */; };
+		AA0000000000000000000116 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000066 /* LoginView.swift */; };
+		AA0000000000000000000117 /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000067 /* ProjectListView.swift */; };
+		AA0000000000000000000118 /* ProjectRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000068 /* ProjectRowView.swift */; };
+		AA0000000000000000000119 /* ARSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000069 /* ARSessionView.swift */; };
+		AA0000000000000000000120 /* ARSceneController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000070 /* ARSceneController.swift */; };
+		AA0000000000000000000121 /* MeshOverrider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000071 /* MeshOverrider.swift */; };
+		AA0000000000000000000122 /* LabelRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000072 /* LabelRenderer.swift */; };
+		AA0000000000000000000123 /* LabelPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000073 /* LabelPlayer.swift */; };
+		AA0000000000000000000124 /* ARViewContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000074 /* ARViewContainer.swift */; };
+		AA0000000000000000000130 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000042 /* Assets.xcassets */; };
+		AA0000000000000000000202 /* GLTFKit2 in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000201 /* GLTFKit2 */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AA0000000000000000000040 /* HERAViewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HERAViewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0000000000000000000041 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA0000000000000000000042 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA0000000000000000000050 /* HERAViewerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HERAViewerApp.swift; sourceTree = "<group>"; };
+		AA0000000000000000000051 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000052 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		AA0000000000000000000053 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		AA0000000000000000000054 /* NetworkSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSession.swift; sourceTree = "<group>"; };
+		AA0000000000000000000055 /* SharedModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedModels.swift; sourceTree = "<group>"; };
+		AA0000000000000000000056 /* ArProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArProject.swift; sourceTree = "<group>"; };
+		AA0000000000000000000057 /* ArScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArScene.swift; sourceTree = "<group>"; };
+		AA0000000000000000000058 /* ArAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArAsset.swift; sourceTree = "<group>"; };
+		AA0000000000000000000059 /* ArMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArMesh.swift; sourceTree = "<group>"; };
+		AA0000000000000000000060 /* ArLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArLabel.swift; sourceTree = "<group>"; };
+		AA0000000000000000000061 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
+		AA0000000000000000000062 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		AA0000000000000000000063 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		AA0000000000000000000064 /* AssetCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetCache.swift; sourceTree = "<group>"; };
+		AA0000000000000000000065 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000066 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000067 /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000068 /* ProjectRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRowView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000069 /* ARSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000070 /* ARSceneController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSceneController.swift; sourceTree = "<group>"; };
+		AA0000000000000000000071 /* MeshOverrider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshOverrider.swift; sourceTree = "<group>"; };
+		AA0000000000000000000072 /* LabelRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelRenderer.swift; sourceTree = "<group>"; };
+		AA0000000000000000000073 /* LabelPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelPlayer.swift; sourceTree = "<group>"; };
+		AA0000000000000000000074 /* ARViewContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARViewContainer.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA0000000000000000000016 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000000000202 /* GLTFKit2 in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA0000000000000000000020 = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000022 /* HERAViewer */,
+				AA0000000000000000000021 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000021 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000040 /* HERAViewer.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000022 /* HERAViewer */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000050 /* HERAViewerApp.swift */,
+				AA0000000000000000000051 /* ContentView.swift */,
+				AA0000000000000000000041 /* Info.plist */,
+				AA0000000000000000000042 /* Assets.xcassets */,
+				AA0000000000000000000023 /* Models */,
+				AA0000000000000000000024 /* Services */,
+				AA0000000000000000000025 /* Views */,
+				AA0000000000000000000030 /* Utilities */,
+			);
+			path = HERAViewer;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000023 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000055 /* SharedModels.swift */,
+				AA0000000000000000000056 /* ArProject.swift */,
+				AA0000000000000000000057 /* ArScene.swift */,
+				AA0000000000000000000058 /* ArAsset.swift */,
+				AA0000000000000000000059 /* ArMesh.swift */,
+				AA0000000000000000000060 /* ArLabel.swift */,
+				AA0000000000000000000061 /* AuthModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000024 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000062 /* APIClient.swift */,
+				AA0000000000000000000063 /* AuthService.swift */,
+				AA0000000000000000000064 /* AssetCache.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000025 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000026 /* Settings */,
+				AA0000000000000000000027 /* Auth */,
+				AA0000000000000000000028 /* Projects */,
+				AA0000000000000000000029 /* AR */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000026 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000065 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000027 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000066 /* LoginView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000028 /* Projects */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000067 /* ProjectListView.swift */,
+				AA0000000000000000000068 /* ProjectRowView.swift */,
+			);
+			path = Projects;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000029 /* AR */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000069 /* ARSessionView.swift */,
+				AA0000000000000000000074 /* ARViewContainer.swift */,
+				AA0000000000000000000070 /* ARSceneController.swift */,
+				AA0000000000000000000071 /* MeshOverrider.swift */,
+				AA0000000000000000000072 /* LabelRenderer.swift */,
+				AA0000000000000000000073 /* LabelPlayer.swift */,
+			);
+			path = AR;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000030 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000052 /* AppSettings.swift */,
+				AA0000000000000000000053 /* KeychainHelper.swift */,
+				AA0000000000000000000054 /* NetworkSession.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA0000000000000000000010 /* HERAViewer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000000000011 /* Build configuration list for PBXNativeTarget "HERAViewer" */;
+			buildPhases = (
+				AA0000000000000000000014 /* Sources */,
+				AA0000000000000000000015 /* Resources */,
+				AA0000000000000000000016 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HERAViewer;
+			packageProductDependencies = (
+				AA0000000000000000000201 /* GLTFKit2 */,
+			);
+			productName = HERAViewer;
+			productReference = AA0000000000000000000040 /* HERAViewer.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA0000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					AA0000000000000000000010 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = AA0000000000000000000002 /* Build configuration list for PBXProject "HERAViewer" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA0000000000000000000020;
+			packageReferences = (
+				AA0000000000000000000200 /* XCRemoteSwiftPackageReference "GLTFKit2" */,
+			);
+			productRefGroup = AA0000000000000000000021 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA0000000000000000000010 /* HERAViewer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA0000000000000000000015 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000000000130 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA0000000000000000000014 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000000000100 /* HERAViewerApp.swift in Sources */,
+				AA0000000000000000000101 /* ContentView.swift in Sources */,
+				AA0000000000000000000102 /* AppSettings.swift in Sources */,
+				AA0000000000000000000103 /* KeychainHelper.swift in Sources */,
+				AA0000000000000000000104 /* NetworkSession.swift in Sources */,
+				AA0000000000000000000105 /* SharedModels.swift in Sources */,
+				AA0000000000000000000106 /* ArProject.swift in Sources */,
+				AA0000000000000000000107 /* ArScene.swift in Sources */,
+				AA0000000000000000000108 /* ArAsset.swift in Sources */,
+				AA0000000000000000000109 /* ArMesh.swift in Sources */,
+				AA0000000000000000000110 /* ArLabel.swift in Sources */,
+				AA0000000000000000000111 /* AuthModels.swift in Sources */,
+				AA0000000000000000000112 /* APIClient.swift in Sources */,
+				AA0000000000000000000113 /* AuthService.swift in Sources */,
+				AA0000000000000000000114 /* AssetCache.swift in Sources */,
+				AA0000000000000000000115 /* SettingsView.swift in Sources */,
+				AA0000000000000000000116 /* LoginView.swift in Sources */,
+				AA0000000000000000000117 /* ProjectListView.swift in Sources */,
+				AA0000000000000000000118 /* ProjectRowView.swift in Sources */,
+				AA0000000000000000000119 /* ARSessionView.swift in Sources */,
+				AA0000000000000000000120 /* ARSceneController.swift in Sources */,
+				AA0000000000000000000121 /* MeshOverrider.swift in Sources */,
+				AA0000000000000000000122 /* LabelRenderer.swift in Sources */,
+				AA0000000000000000000123 /* LabelPlayer.swift in Sources */,
+				AA0000000000000000000124 /* ARViewContainer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA0000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA0000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AA0000000000000000000012 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A6JAXACAJW;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = HERAViewer/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hera.viewer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		AA0000000000000000000013 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A6JAXACAJW;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = HERAViewer/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hera.viewer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA0000000000000000000002 /* Build configuration list for PBXProject "HERAViewer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000003 /* Debug */,
+				AA0000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA0000000000000000000011 /* Build configuration list for PBXNativeTarget "HERAViewer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000012 /* Debug */,
+				AA0000000000000000000013 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA0000000000000000000200 /* XCRemoteSwiftPackageReference "GLTFKit2" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/warrenm/GLTFKit2";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA0000000000000000000201 /* GLTFKit2 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA0000000000000000000200 /* XCRemoteSwiftPackageReference "GLTFKit2" */;
+			productName = GLTFKit2;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AA0000000000000000000001 /* Project object */;
+}

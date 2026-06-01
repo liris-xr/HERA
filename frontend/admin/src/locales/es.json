@@ -3,7 +3,8 @@
   "header": {
     "home": "Mis proyectos",
     "logout": "Cerrar sesión",
-    "administration": "panel de administración"
+    "administration": "panel de administración",
+    "viewer": "Visor"
   },
 
   "none": "Ninguno",

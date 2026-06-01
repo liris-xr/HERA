@@ -4,7 +4,8 @@
     "home": "Home",
     "login": "Login",
     "logout": "Logout",
-    "allProjects": "All projects"
+    "allProjects": "All projects",
+    "editor": "Editor"
   },
 
   "none": "None",

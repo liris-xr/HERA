@@ -5,7 +5,8 @@
     "home": "Inicio",
     "login": "Connexion",
     "logout": "Déconnexion",
-    "allProjects": "Todos los proyectos"
+    "allProjects": "Todos los proyectos",
+    "editor": "Editor"
   },
 
   "none": "Ninguno",

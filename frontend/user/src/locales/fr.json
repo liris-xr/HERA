@@ -4,7 +4,8 @@
     "home": "Accueil",
     "login": "Connexion",
     "logout": "Déconnexion",
-    "allProjects": "Tous les projets"
+    "allProjects": "Tous les projets",
+    "editor": "Éditeur"
   },
 
   "none": "Aucun",
@@ -93,7 +94,7 @@
       "button": "Modifier mon mot de passe",
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Confirmer le nouveau mot de passe",
-      "lengthMessage": "Le mot de passe doit être de longueur >= 8",
+      "lengthMessage": "Le mot de passe doit contenir au moins 8 caractères",
       "notMatching": "Les mots de passe ne correspondent pas",
       "success": "Mot de passe modifié avec succès"
     }
@@ -122,9 +123,9 @@
         "cancel": "Annuler",
         "confirm": "Confirmer",
         "removeTitle": "Supprimer le preset",
-        "removeWarning": "Voulez vous vraiment supprimer ce preset ? Cette action est irréversible",
+        "removeWarning": "Voulez-vous vraiment supprimer ce preset ? Cette action est irréversible",
         "editTitle": "Modifier le preset",
-        "icon": "Icone",
+        "icon": "Icône",
         "text": "Texte",
         "redefineLabel": "Redéfinir les actions",
         "redefine": "Redéfinir",
@@ -145,7 +146,7 @@
     "brightnessTip": "Pour faciliter le scan du QR code, augmentez la luminosité de votre écran",
     "viewers": "spectateurs",
     "currentScene": "Scène actuelle",
-    "terminated": "Presentation terminée",
+    "terminated": "Présentation terminée",
     "restart": "Redémarrer une présentation",
     "seeProject": "Voir le projet",
     "validateTerminate": "Voulez-vous vraiment achever cette présentation ?"

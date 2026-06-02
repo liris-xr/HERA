@@ -1,10 +1,4 @@
-/**
- * Permet d'éxécuter une fonction en réponse à un évènement
- * en évitant de faire planter le socket en cas d'erreur
- *
- * @param handler {function}: la fonction à appeler
- * @returns {(function(...[*]): Promise<void>)|*}
- */
+/** safe wrapper for socket events */
 
 export default function safeHandler(handler) {
     return async (...args) => {

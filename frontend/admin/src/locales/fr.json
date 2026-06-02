@@ -160,6 +160,10 @@
         "buttonText": "Ajouter",
         "noSceneInfo": "Ce projet ne comporte aucune scène",
         "assetCount": "modèle | modèles"
+      },
+      "projectPresets": {
+        "label": "Presets :",
+        "noPresetInfo": "Ce projet ne comporte aucun preset"
       }
     },
     "bottomActionBar": {
@@ -261,6 +265,8 @@
     "noResult": "Aucun résultat",
     "deleteConfirm": "Voulez-vous vraiment supprimer",
     "irreversibleAction": "Cette action est irréversible",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
     "sections": {
       "accounts": {
         "h1": "Comptes",
@@ -329,6 +335,13 @@
             "title": "Projet"
           }
         }
+      },
+      "presets": {
+        "h1": "Presets",
+        "bigText": "Titre",
+        "text": "Texte",
+        "projectTitle": "Projet",
+        "delete": "Supprimer le preset"
       }
     }
   },
@@ -398,7 +411,8 @@
     },
     "buttons": {
       "cancel": "Annuler",
-      "confirm": "Valider"
+      "confirm": "Valider",
+      "saving": "Enregistrement..."
     }
   }
 }

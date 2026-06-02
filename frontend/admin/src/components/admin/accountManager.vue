@@ -2,7 +2,7 @@
 import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
-import * as sea from "node:sea";
+
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import Notification from "@/components/notification/notification.vue";
@@ -48,13 +48,12 @@ async function confirmUserEdit() {
     const index = users.value.findIndex(user => user.id === data.id)
     if(index !== -1)
       users.value[index] = { ...data }
+    editingUser.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  editingUser.value = null
 }
 
 async function confirmUserDelete() {
@@ -70,12 +69,12 @@ async function confirmUserDelete() {
     const index = users.value.findIndex(user => user.id === deletingUser.value.id)
     if(index !== -1)
       users.value.splice(index, 1)
+    deletingUser.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-  deletingUser.value = null
 }
 
 async function confirmUserCreate() {
@@ -93,14 +92,13 @@ async function confirmUserCreate() {
     const newUser = data.user
     users.value.push(newUser)
 
-    table.value.currentPage = data.redirectPage
+    if(table.value) table.value.currentPage = data.redirectPage
+    creatingUser.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  creatingUser.value = null
 }
 
 async function fetchUsers(data=null) {
@@ -125,7 +123,7 @@ async function fetchUsers(data=null) {
       users.value = data.users
       totalPages.value = data.totalPages
 
-      if(table.value.currentPage > totalPages.value)
+      if(table.value && table.value.currentPage > totalPages.value)
         table.value.currentPage = totalPages.value
 
     } else
@@ -182,7 +180,7 @@ defineExpose({element})
 
 
 
-  <!-- Interfaces modales -->
+  <!-- modals -->
 
   <generic-modal
       title="edit"

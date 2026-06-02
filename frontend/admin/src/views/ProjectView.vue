@@ -472,7 +472,7 @@ const showQuitPreview = ref(false)
 
             <div id="sceneList">
               <div v-if="project.scenes.length == 0">{{$t("projectView.rightSection.projectScenes.noSceneInfo")}}</div>
-              <draggable v-model="project.scenes" handle=".handle">
+              <draggable v-model="project.scenes" handle=".handle" item-key="id">
                 <template #item="{element, index}">
                   <div class="sceneItem">
                     <div class="inlineFlex">
@@ -506,6 +506,31 @@ const showQuitPreview = ref(false)
               </delete-confirm-modal>
             </Teleport>
 
+          </div>
+          
+          <div class="multilineField">
+            <div class="inlineFlex">
+              <label>{{$t("projectView.rightSection.projectPresets.label")}}</label>
+            </div>
+            
+            <div id="presetList">
+              <div v-if="!project.presets || project.presets.length == 0">{{$t("projectView.rightSection.projectPresets.noPresetInfo")}}</div>
+              <draggable v-if="project.presets" v-model="project.presets" handle=".handle" item-key="text">
+                <template #item="{element, index}">
+                  <div class="sceneItem">
+                    <div class="inlineFlex">
+                      <span>{{index+1}}</span>
+                      <span class="itemTitle">{{element.bigText}} - {{element.text}}</span>
+                    </div>
+
+                    <div class="inlineFlex">
+                      <icon-svg url="/icons/delete.svg" theme="text" class="iconAction" :hover-effect="true" @click="() => { project.presets.splice(index, 1); saved = false; }"/>
+                      <icon-svg url="/icons/handle.svg" theme="text" class="handle"/>
+                    </div>
+                  </div>
+                </template>
+              </draggable>
+            </div>
           </div>
         </section>
       </section>

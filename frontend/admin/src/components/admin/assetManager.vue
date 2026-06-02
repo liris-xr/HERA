@@ -2,7 +2,7 @@
 import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
-import * as sea from "node:sea";
+
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
@@ -54,13 +54,12 @@ async function confirmAssetCreate() {
     assets.value.push(data)
 
     emit("newAsset", data)
+    creatingAsset.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  creatingAsset.value = null
 }
 
 async function confirmAssetDelete() {
@@ -77,13 +76,12 @@ async function confirmAssetDelete() {
     if(index !== -1)
       assets.value.splice(index, 1)
     emit("supprAsset", deletingAsset.value)
+    deletingAsset.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  deletingAsset.value = null
 }
 
 async function confirmAssetEdit() {
@@ -104,13 +102,12 @@ async function confirmAssetEdit() {
       assets.value[index] = { ...editingAsset.value }
 
     emit("editAsset", editingAsset.value)
+    editingAsset.value = null
   } else {
     toast.error(res.status + " : " + res.statusText, {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
-
-  editingAsset.value = null
 }
 
 async function fetchAssets(data=null) {
@@ -136,7 +133,7 @@ async function fetchAssets(data=null) {
 
       totalPages.value = data.totalPages
 
-      if(table.value.currentPage > totalPages.value)
+      if(table.value && table.value.currentPage > totalPages.value)
         table.value.currentPage = totalPages.value
     } else
       error.value = true
@@ -191,7 +188,7 @@ onMounted(async () => {
 
 
 
-  <!-- Interfaces modales -->
+  <!-- modals -->
 
   <generic-modal
       title="edit"

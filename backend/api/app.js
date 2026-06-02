@@ -9,6 +9,7 @@ import scene from "./src/routes/scene.js";
 import dev from "./src/routes/dev.js";
 import asset from "./src/routes/asset.js";
 import label from "./src/routes/label.js";
+import preset from "./src/routes/preset.js";
 import cors from "cors";
 
 import * as path from "node:path";
@@ -16,7 +17,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 export const DIRNAME = path.dirname(__filename);
 
-//for https only :
+// for https
 import * as fs from "node:fs";
 import * as https from "node:https";
 import { Server } from "socket.io";
@@ -25,19 +26,28 @@ import { errorHandler } from "./src/utils/errorHandler.js";
 import zip from "express-easy-zip";
 
 const options = {
-  key: fs.readFileSync(path.join(DIRNAME, "privatekey.key")),
-  cert: fs.readFileSync(path.join(DIRNAME, "certificate.crt")),
+  key: fs.readFileSync("/home/webadmin/certificate/privatekey.key"),
+  cert: fs.readFileSync("/home/webadmin/certificate/certificate.crt"),
 };
 
 const app = express();
 app.use(express.json());
-app.use(cors({}));
+
+app.use(
+  cors({
+    // any devices is allowed to communicate
+    origin: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
+
 app.use(zip());
-app.use(errorHandler);
 
 async function main() {
   await initializeDatabase({ force: false });
- // await resetDatabase();
+  // await resetDatabase();
   // await insertDefaults();
 
   app.use(project);
@@ -47,11 +57,20 @@ async function main() {
   app.use(dev);
   app.use(asset);
   app.use(label);
-  app.use("/public", express.static("public")); //serving static files
+  app.use(preset);
+
+  const filesDir = path.join(DIRNAME, "public", "files");
+  if (!fs.existsSync(filesDir)) {
+    fs.mkdirSync(filesDir, { recursive: true });
+    console.log("Created public/files directory");
+  }
+
+  app.use("/public", express.static(path.join(DIRNAME, "public")));
+
+  app.use(errorHandler);
 
   const httpsServer = https.createServer(options, app);
 
-  // mise en place du socket
   const io = new Server(httpsServer, {
     cors: {
       origin: "*",
@@ -62,7 +81,7 @@ async function main() {
   setupSocket(io);
 
   httpsServer.listen(8080, () => {
-    console.log("server started on port 8080");
+    console.log("Server started on port 8080");
   });
 }
 

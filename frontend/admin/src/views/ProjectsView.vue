@@ -1,6 +1,6 @@
 <script setup>
 import ProjectCard from "@/components/projectCard.vue";
-import {ref} from "vue";
+import {ref, onMounted} from "vue";
 import {ENDPOINT} from "@/js/endpoints.js";
 import ButtonView from "@/components/button/buttonView.vue";
 import Notification from "@/components/notification/notification.vue";
@@ -20,11 +20,9 @@ if (!isAuthenticated.value) {
   router.push({ name: "login" });
 }
 
-
-
-
 const projects = ref([]);
-const loading = ref(false);
+// default loading
+const loading = ref(true); 
 const error = ref(false);
 const currentPage = ref(0);
 const PAGE_LENGTH = 20;
@@ -66,9 +64,10 @@ async function loadNext() {
   });
 }
 
-await loadNext();
-
-
+// Modification ici : on utilise onMounted au lieu du 'await' de haut niveau
+onMounted(() => {
+  loadNext();
+});
 
 const showProjectModal = ref(false);
 async function createProject(title) {

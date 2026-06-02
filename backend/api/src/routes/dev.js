@@ -1,5 +1,8 @@
 import express from 'express'
 import {baseUrl} from "./baseUrl.js";
+import {resetDatabase} from "../orm/defaults/reset.js";
+import {insertDefaults} from "../orm/defaults/insertDefaults.js";
+import authMiddleware from "../middlewares/auth.js";
 
 
 const router = express.Router()
@@ -13,6 +16,22 @@ router.get(baseUrl+'dev/hello', async (req, res) => {
         return res.send('Error :(');
     }
 
+})
+
+router.get(baseUrl+'dev/reset-defaults', authMiddleware, async (req, res) => {
+    const user = req.user
+    if(!user.admin) {
+        return res.status(401).send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
+    try {
+        await resetDatabase();
+        await insertDefaults();
+        return res.send('Database reset and defaults inserted successfully.');
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error while resetting database');
+    }
 })
 
 

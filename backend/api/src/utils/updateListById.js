@@ -2,16 +2,16 @@ export async function updateListById(knownIds, list, onUpdate, onInsert, onDelet
     for (let element of list) {
         const index = knownIds.indexOf(element.id);
 
-        if (index > -1) { //if the id is known : update
+        if (index > -1) { // update
             await onUpdate(element);
-            knownIds.splice(index, 1); //the id was used, so we remove it from the array
+            knownIds.splice(index, 1); // remove used id
 
-        }else{ //else : insert
+        }else{ // insert
             await onInsert(element);
         }
     }
 
-    for (let knownId of knownIds) { //the element is not in the input list, so we only know his id
+    for (let knownId of knownIds) { // delete remaining
         await onDelete(knownId);
     }
 }
@@ -43,16 +43,16 @@ export async function updateListByCompositeId(knownIds, fields, list, onUpdate, 
             }
         }
 
-        if (index > -1) { //if the id is known : update
+        if (index > -1) { // update
             await onUpdate(element);
-            knownIds.splice(index, 1); //the id was used, so we remove it from the array
+            knownIds.splice(index, 1); // remove used id
 
-        }else{ //else : insert
+        }else{ // insert
             await onInsert(element);
         }
     }
 
-    for (let knownId of knownIds) { //the element is not in the input list, so we only know his id
+    for (let knownId of knownIds) { // delete remaining
         await onDelete(knownId);
     }
 }

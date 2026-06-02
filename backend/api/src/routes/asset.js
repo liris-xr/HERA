@@ -9,7 +9,7 @@ import {adminUploadAsset, deleteAsset, uploadAsset} from "../utils/fileUpload.js
 
 const router = express.Router()
 
-// routes pour le mode admin
+// admin routes
 
 const ASSETS_PAGE_LENGTH = 10;
 
@@ -81,7 +81,16 @@ router.delete(baseUrl+"admin/assets/:assetId", authMiddleware, async (req, res) 
     try {
         const asset = await ArAsset.findOne({
             where: {id: assetId},
+            include: [{
+                model: ArScene,
+                as: "scene",
+                include: [{
+                    model: ArProject,
+                    as: "project"
+                }]
+            }]
         })
+
 
         await deleteAsset(asset)
         await asset.destroy()
@@ -109,7 +118,16 @@ router.put(baseUrl+"admin/assets/:assetId", authMiddleware, async (req, res) => 
     try {
         const asset = await ArAsset.findOne({
             where: {id: assetId},
+            include: [{
+                model: ArScene,
+                as: "scene",
+                include: [{
+                    model: ArProject,
+                    as: "project"
+                }]
+            }]
         })
+
 
         await asset.update({
             name: req.body?.name,
@@ -140,6 +158,15 @@ router.post(baseUrl+"admin/assets", authMiddleware, adminUploadAsset.single("ass
 
     try {
         const fileUrl = req.uploadedFilenames[0]
+
+        const scene = await ArScene.findOne({
+            where: {id: req.body.sceneId},
+            include: [{
+                model: ArProject,
+                as: "project"
+            }]
+        })
+
 
         const newAsset = await ArAsset.create({
             name: req.body.name,

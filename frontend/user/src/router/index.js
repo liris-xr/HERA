@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+    import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProjectView from "@/views/ProjectView.vue";
 import ProjectsView from "@/views/ProjectsView.vue";
@@ -7,6 +7,7 @@ import QuestionnaireDemoView from "@/views/QuestionnaireDemoView.vue";
 import LoginView from "@/views/LoginView.vue";
 import AccountView from "@/views/AccountView.vue";
 import PresentationView from "@/views/PresentationView.vue";
+import NotFoundView from "@/views/NotFoundView.vue";
 
 const router = createRouter({
   history: createWebHistory(BASE_URL),
@@ -50,6 +51,12 @@ const router = createRouter({
       path: '/project/:projectId/presentation',
       name: 'presentation',
       component: PresentationView
+    },
+
+    {
+      path: "/:pathMatch(.*)*",
+      name: "notFound",
+      component: NotFoundView
     },
 
     {

@@ -2,6 +2,7 @@ import {CSS2DObject} from "three/addons";
 import {ref} from "vue";
 import * as THREE from "three";
 import html2canvas from "html2canvas";
+import {getResource} from "../../endpoints.js";
 
 export class Label{
     id;
@@ -95,11 +96,25 @@ export class Label{
     }
 
     async setContent(text){
+        let processedText = text;
+        if (text && typeof text === 'string') {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            const images = doc.querySelectorAll('img');
+            for (let img of images) {
+                let src = img.getAttribute('src');
+                if (src && src.startsWith('/public/')) {
+                    img.setAttribute('src', getResource(src.substring(1)));
+                }
+            }
+            processedText = doc.body.innerHTML;
+        }
+
         if(this.xr) {
             const htmlLabel = this.#createHtmlLabel();
 
-            this.content = text;
-            this.#htmlContent.innerHTML = text;
+            this.content = processedText;
+            this.#htmlContent.innerHTML = processedText;
 
             const container = document.createElement("div")
             container.style.position = "absolute";
@@ -124,7 +139,7 @@ export class Label{
             // sprite.renderOrder = 998
             sprite.material.depthTest = false
 
-            this.aspect = canvas.height / canvas.width;
+            this.aspect = canvas.width > 0 ? canvas.height / canvas.width : 1;
 
             const scaleFactor = 1;
             sprite.scale.set(scaleFactor, this.aspect * scaleFactor, 1);
@@ -134,8 +149,8 @@ export class Label{
 
             this.label = sprite
         } else {
-            this.content = text;
-            this.#htmlContent.innerHTML = text;
+            this.content = processedText;
+            this.#htmlContent.innerHTML = processedText;
             this.label = new CSS2DObject(this.#htmlContent);
         }
     }

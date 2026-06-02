@@ -6,7 +6,7 @@ import {createButton} from "@/js/threeExt/ui/utils.js";
 import {generateUUID} from "three/src/math/MathUtils.js";
 import {ScenePlacementManager} from "@/js/threeExt/scene/scenePlacementManager.js";
 
-const COYOTE_TIME = 150; // en ms, délai pendant lequel un bouton reste pressable pour compenser les tremblements
+const COYOTE_TIME = 150; // coyote time delay
 
 export class Xr3dUi {
 

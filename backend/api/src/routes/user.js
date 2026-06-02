@@ -131,7 +131,7 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
 
 })
 
-// uniquement pour changer le mdp
+// change password
 router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
     const authUser = req.user
     const userId = req.params.userId;
@@ -152,7 +152,7 @@ router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
         })
 
         await user.update({
-            password: passwordHash(req.body.password)
+            password: await passwordHash(req.body.password)
         }, {
             returning: true
         })
@@ -170,7 +170,7 @@ router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
 })
 
 
-// routes pour le mode admin
+// admin routes
 
 const USERS_PAGE_LENGTH = 10;
 
@@ -290,7 +290,7 @@ router.post(baseUrl+"admin/users", authMiddleware, async (req, res) => {
 
     try {
 
-        const password = passwordHash(req.body.password)
+        const password = await passwordHash(req.body.password)
 
         const newUser = await ArUser.create({
             username: req.body.username,

@@ -1,14 +1,13 @@
 <script setup>
-
-import ButtonView from "@/components/button/buttonView.vue";
+import { RouterLink } from "vue-router";
 </script>
 
 <template>
   <main>
     <h1>Error 404 : Page not found</h1>
     <h2>La page que vous avez demandée n'existe pas</h2>
-    <router-link :to="{name: 'home'}">
-      <button-view text="Retour à l'accueil"></button-view>
+    <router-link :to="{ name: 'home' }">
+      <button>Retour à l'accueil</button>
     </router-link>
   </main>
 </template>
@@ -32,5 +31,20 @@ h2 {
   margin-bottom: 2rem;
   font-weight: 400;
   text-align: center;
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: var(--accentColor);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  transition: opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.8;
 }
 </style>

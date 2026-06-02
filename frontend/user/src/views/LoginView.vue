@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { useAuthStore } from "../store/auth";
-import { useRouter } from "vue-router/dist/vue-router";
+import { useRoute, useRouter } from "vue-router";
 import FilledButtonView from "@/components/button/filledButtonView.vue";
 import Notification from "@/components/notification/notification.vue";
 import {ENDPOINT} from "@/js/endpoints.js";
@@ -9,11 +9,17 @@ import RedirectMessage from "@/components/notification/redirect-message.vue";
 
 const { login, isAuthenticated } = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 const ADMIN_MAIL = import.meta.env.VITE_ADMIN_MAIL
 
 if (isAuthenticated.value) {
-  router.push({ name: "home" });
+  const redirect = route.query.redirect;
+  if (redirect) {
+    router.push(redirect);
+  } else {
+    router.push({ name: "home" });
+  }
 }
 
 const email = ref("");
@@ -40,7 +46,13 @@ const loginUser = async () => {
     } else {
       const { access_token } = await response.json();
       login(access_token);
-      await router.push({name: "home"});
+      
+      const redirect = route.query.redirect;
+      if (redirect) {
+        await router.push(redirect);
+      } else {
+        await router.push({name: "home"});
+      }
     }
   } catch (e) {
     errorMessage.value = e;

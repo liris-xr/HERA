@@ -24,11 +24,7 @@ const arSessionManager = new ArSessionManager(props.json);
 const overlayBottom = ref(true)
 
 defineExpose({
-  arSessionManager: reactive(arSessionManager), // on expose une version reactive pour uniformiser l'acces aux champs
-                                                // dans les pages presentation et project, car sur la 1ere, on utilise
-                                                // une ref pour le socket (car il peut ne pas etre utilisé), alors que
-                                                // sur l'autre, c'est un reactive car toujours utilisé, donc pas besoin
-                                                // de le reaffecter
+  arSessionManager: reactive(arSessionManager), // exposing reactive version for uniform access
   overlayBottom
 })
 

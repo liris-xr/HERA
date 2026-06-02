@@ -1,19 +1,31 @@
-import { fileURLToPath, URL } from 'node:url'
+import { fileURLToPath, URL } from "node:url";
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import fs from "fs"; // for certificates
 
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import mkcert from "vite-plugin-mkcert";
-
-// https://vitejs.dev/config/
 export default defineConfig({
-  base: '/editor/',
+  base: "/editor/",
   plugins: [
     vue(),
-    mkcert(),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  }
-})
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
+  server: {
+    https: {
+      // relative paths
+      key: fs.readFileSync(
+        fileURLToPath(
+          new URL("../../backend/api/privatekey.key", import.meta.url),
+        ),
+      ),
+      cert: fs.readFileSync(
+        fileURLToPath(
+          new URL("../../backend/api/certificate.crt", import.meta.url),
+        ),
+      ),
+    },
+  },
+});

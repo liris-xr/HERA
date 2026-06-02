@@ -66,7 +66,7 @@ router.get(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
 
 
 
-// Middleware to extract some project data before upload
+// get data before upload
 const getPostUploadData = async (req, res, next) => {
     let sceneId = req.params.sceneId
 
@@ -299,7 +299,7 @@ router.put(baseUrl+'scenes/:sceneId', authMiddleware, getPostUploadData,
 
             let updatedUrl = req.uploadedUrl;
             if(uploadedUrl && scene.envmapUrl !== "" && scene.envmapUrl != null){
-                deleteFile(scene.envmapUrl);
+                await deleteFile(scene.envmapUrl);
                 updatedUrl = uploadedUrl
             }
 
@@ -431,6 +431,10 @@ router.delete(baseUrl+'scenes/:sceneId', authMiddleware, async (req, res) => {
             await deleteAsset(asset);
         }
 
+        if (scene.envmapUrl && scene.envmapUrl !== "") {
+            await deleteFile(scene.envmapUrl);
+        }
+
         await scene.destroy();
         res.status(200);
         return res.send();
@@ -494,7 +498,7 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
 
         await sequelize.transaction(async (t) => {
 
-            //copy the scene
+            // copy scene
             const newScene = await ArScene.create({
                 ...scene.get({ plain: true }),
                 id: undefined,
@@ -503,29 +507,29 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
                 transaction: t
             });
 
-            //copy all meshes related to scene
+            // copy meshes
             const newMeshes = await Promise.all(scene.meshes.map(async mesh => {
                 return ArMesh.create({
                     ...mesh.get({ plain: true }),
-                    id: "project-"+newScene.projectId+"-scene-"+req.body.newTitle+"-mesh-"+mesh.name, // générer un nouvel id
-                    sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
+                    id: "project-"+newScene.projectId+"-scene-"+req.body.newTitle+"-mesh-"+mesh.name, // new id
+                    sceneId: newScene.id // link to scene
                 },{
                     transaction:t
                 });
             }));
 
-            //copy all assets related to scene
+            // copy assets
             const newAssets = await Promise.all(scene.assets.map(async asset => {
                 return ArAsset.create({
                     ...asset.get({ plain: true }),
-                    id: undefined, // générer un nouvel id
-                    sceneId: newScene.id // lier le nouvel asset à la nouvelle scène
+                    id: undefined, // new id
+                    sceneId: newScene.id // link to scene
                 },{
                     transaction:t
                 });
             }));
 
-            //copy all labels related to scene
+            // copy labels
             const newLabels = await Promise.all(scene.labels.map(async label => {
                 return ArLabel.create({
                     ...label.get({ plain: true }),
@@ -547,7 +551,7 @@ router.post(baseUrl+'scene/:sceneId/copy', authMiddleware, async (req, res) => {
     }
 })
 
-// routes pour le mode admin
+// admin routes
 
 const SCENES_PAGE_LENGTH = 10;
 

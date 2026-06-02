@@ -3,6 +3,7 @@ import {computed, ref, watch} from "vue";
 import {SelectableInterface} from "@/js/threeExt/interfaces/selectableInterface.js";
 import {LoadableInterface} from "@/js/threeExt/interfaces/loadableInterface.js";
 import {classes} from "@/js/utils/extender.js";
+import {getResource} from "@/js/endpoints.js";
 
 export class Label extends classes(SelectableInterface, LoadableInterface){
     content;
@@ -94,7 +95,20 @@ export class Label extends classes(SelectableInterface, LoadableInterface){
     }
 
     setContent(content){
-        this.#htmlContent.innerHTML = content;
+        if (content && typeof content === 'string') {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(content, 'text/html');
+            const images = doc.querySelectorAll('img');
+            for (let img of images) {
+                let src = img.getAttribute('src');
+                if (src && src.startsWith('/public/')) {
+                    img.setAttribute('src', getResource(src.substring(1)));
+                }
+            }
+            this.#htmlContent.innerHTML = doc.body.innerHTML;
+        } else {
+            this.#htmlContent.innerHTML = content;
+        }
     }
 
     setVisible(visible){

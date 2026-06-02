@@ -2,7 +2,7 @@
 import {ENDPOINT} from "@/js/endpoints.js";
 import {computed, onMounted, ref, watch} from "vue";
 import ButtonView from "@/components/button/buttonView.vue";
-import * as sea from "node:sea";
+
 import GenericTable from "@/components/admin/generic/genericTable.vue";
 import IconSvg from "@/components/icons/IconSvg.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
@@ -18,6 +18,7 @@ const element = ref(null)
 
 const loading = ref(false)
 const error = ref(false)
+const saving = ref(false)
 
 
 const emit = defineEmits(['createScene', 'editScene', 'deleteScene'])
@@ -40,8 +41,10 @@ const showSpinner = ref(false)
 function newScene(scene) {
   const index = projects.value.findIndex(project => project.id === scene.projectId)
 
-  if(index !== -1)
+  if(index !== -1) {
+    if(!projects.value[index].scenes) projects.value[index].scenes = []
     projects.value[index].scenes.push(scene)
+  }
 }
 
 function supprScene(scene) {
@@ -49,9 +52,10 @@ function supprScene(scene) {
 
   if(index !== -1) {
     const project = projects.value[index]
+    if(!project.scenes) return
     const index2 = project.scenes.findIndex(s => s.id === scene.id)
 
-    projects.value[index].scenes.splice(index2, 1)
+    if (index2 !== -1) project.scenes.splice(index2, 1)
   }
 
 }
@@ -61,9 +65,10 @@ function editScene(scene) {
 
   if(index !== -1) {
     const project = projects.value[index]
+    if(!project.scenes) return
     const index2 = project.scenes.findIndex(s => s.id === scene.id)
 
-    projects.value[index].scenes[index2] = { ...scene }
+    if (index2 !== -1) project.scenes[index2] = { ...scene }
   }
 }
 
@@ -96,76 +101,95 @@ async function askSceneEdit(sceneId) {
 }
 
 async function confirmProjectCreate() {
-  const res = await fetch(`${ENDPOINT}project`,{
-    method: "POST",
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${props.token}`,
-    },
-    body: JSON.stringify(creatingProject.value),
-  })
-
-  if(res.ok) {
-    const data = await res.json()
-    const newProject = data
-    projects.value.push(newProject)
-  } else {
-    toast.error(res.status + " : " + res.statusText, {
-      position: toast.POSITION.BOTTOM_RIGHT
+  saving.value = true
+  try {
+    const res = await fetch(`${ENDPOINT}project`,{
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${props.token}`,
+      },
+      body: JSON.stringify(creatingProject.value),
     })
-  }
 
-  creatingProject.value = null
+    if(res.ok) {
+      const data = await res.json()
+      const newProject = data
+      if(!newProject.scenes) newProject.scenes = []
+      projects.value.push(newProject)
+      creatingProject.value = null
+    } else {
+      toast.error(res.status + " : " + res.statusText, {
+        position: toast.POSITION.BOTTOM_RIGHT
+      })
+    }
+  } catch(e) {
+    console.error(e)
+  } finally {
+    saving.value = false
+  }
 }
 
 async function confirmProjectEdit() {
   const temp = { ...editingProject.value }
   temp.scenes = undefined
 
-  const res = await fetch(`${ENDPOINT}projects/${editingProject.value.id}`,{
-    method: "PUT",
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${props.token}`,
-    },
-    body: JSON.stringify(temp),
-  })
-
-  if(res.ok) {
-    const data = await res.json()
-
-    const index = projects.value.findIndex(project => project.id === data.id)
-    if(index !== -1)
-      projects.value[index] = { ...editingProject.value }
-  } else {
-    toast.error(res.status + " : " + res.statusText, {
-      position: toast.POSITION.BOTTOM_RIGHT
+  saving.value = true
+  try {
+    const res = await fetch(`${ENDPOINT}projects/${editingProject.value.id}`,{
+      method: "PUT",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${props.token}`,
+      },
+      body: JSON.stringify(temp),
     })
-  }
 
-  editingProject.value = null
+    if(res.ok) {
+      const data = await res.json()
+
+      const index = projects.value.findIndex(project => project.id === data.id)
+      if(index !== -1)
+        projects.value[index] = { ...editingProject.value }
+      editingProject.value = null
+    } else {
+      toast.error(res.status + " : " + res.statusText, {
+        position: toast.POSITION.BOTTOM_RIGHT
+      })
+    }
+  } catch(e) {
+    console.error(e)
+  } finally {
+    saving.value = false
+  }
 }
 
 async function confirmProjectDelete() {
-  const res = await fetch(`${ENDPOINT}project/${deletingProject.value.id}`,{
-    method: "DELETE",
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${props.token}`,
-    },
-  })
-
-  if(res.ok) {
-    const index = projects.value.findIndex(project => project.id === deletingProject.value.id)
-    if(index !== -1)
-      projects.value.splice(index, 1)
-  } else {
-    toast.error(res.status + " : " + res.statusText, {
-      position: toast.POSITION.BOTTOM_RIGHT
+  saving.value = true
+  try {
+    const res = await fetch(`${ENDPOINT}project/${deletingProject.value.id}`,{
+      method: "DELETE",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${props.token}`,
+      },
     })
-  }
 
-  deletingProject.value = null
+    if(res.ok) {
+      const index = projects.value.findIndex(project => project.id === deletingProject.value.id)
+      if(index !== -1)
+        projects.value.splice(index, 1)
+      deletingProject.value = null
+    } else {
+      toast.error(res.status + " : " + res.statusText, {
+        position: toast.POSITION.BOTTOM_RIGHT
+      })
+    }
+  } catch(e) {
+    console.error(e)
+  } finally {
+    saving.value = false
+  }
 }
 
 
@@ -191,7 +215,7 @@ async function fetchProjects(data=null) {
       projects.value = data.projects
       totalPages.value = data.totalPages
 
-      if(table.value.currentPage > totalPages.value)
+      if(table.value && table.value.currentPage > totalPages.value)
         table.value.currentPage = totalPages.value
     } else
       error.value = true
@@ -257,7 +281,7 @@ async function confirmProjectImport() {
 
     if(res.ok) {
       const data = await res.json()
-
+      if(!data.scenes) data.scenes = []
       projects.value.push(data)
     } else {
       toast.error(res.status + " : " + res.statusText, {
@@ -334,13 +358,14 @@ defineExpose({projects, newScene, supprScene, editScene, element})
 
     </generic-table>
 
-  <!-- Interfaces modales -->
+  <!-- modals -->
 
   <generic-modal
       title="edit"
       section-name="projects"
 
       :subject="editingProject"
+      :loading="saving"
       :fields="[
           {
             name: 'title',
@@ -402,6 +427,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
       section-name="projects"
 
       :subject="deletingProject"
+      :loading="saving"
 
       @confirm="confirmProjectDelete"
       @cancel="deletingProject = null">
@@ -418,6 +444,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
       section-name="projects"
 
       :subject="creatingProject"
+      :loading="saving"
       :fields="[
           {
             name: 'title',

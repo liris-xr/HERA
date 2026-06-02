@@ -104,7 +104,7 @@ export class ScenePlacementManager extends classes(AbstractScene, ToggleableInte
 
             const hitPose = hitTestResults[0].getPose(localReferenceSpace);
 
-            // Le hittest ne donnant pas la bonne orientation sur meta quest, on la recalcule à la main
+            // recalculate orientation for meta quest
             const position = new THREE.Vector3(
                 hitPose.transform.position.x,
                 hitPose.transform.position.y,

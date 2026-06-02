@@ -2,14 +2,13 @@ import multer from "multer";
 import { DIRNAME } from "../../app.js";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import arAsset from "../orm/models/arAsset.js";
 import { Op } from "sequelize";
 import { ArAsset, ArMesh, ArProject, ArScene } from "../orm/index.js";
 
 const imageFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   if ([".png", ".jpg", ".jpeg", ".webp"].includes(ext)) return cb(null, true);
-  cb(new Error("Only images (.png, .jpg, .jpeg, .webp) are allowed"));
+  cb(new Error("only images (.png, .jpg, .jpeg, .webp) are allowed"));
 };
 
 const assetFilter = (req, file, cb) => {
@@ -18,7 +17,7 @@ const assetFilter = (req, file, cb) => {
     return cb(null, true);
   cb(
     new Error(
-      "Only 3D models (.glb, .gltf), envmaps (.hdr) and images are allowed",
+      "only 3d models (.glb, .gltf), envmaps (.hdr) and images are allowed",
     ),
   );
 };
@@ -26,24 +25,21 @@ const assetFilter = (req, file, cb) => {
 const zipFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   if (ext === ".zip") return cb(null, true);
-  cb(new Error("Only ZIP files are allowed"));
+  cb(new Error("only zip files are allowed"));
 };
 
 export const uploadCover = multer({
   fileFilter: imageFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const projectId = req.body.id || req.params.projectId;
-      if (!projectId) return cb(new Error("Project Id is missing"));
+      if (!projectId) return cb(new Error("project id is missing"));
 
       const uploadDirectory = path.join(DIRNAME, getImagesDirectory(projectId));
-
-      if (!fs.existsSync(uploadDirectory)) {
-        fs.mkdirSync(uploadDirectory, { recursive: true });
-      }
-
-      cb(null, uploadDirectory);
+      fs.promises.mkdir(uploadDirectory, { recursive: true })
+        .then(() => cb(null, uploadDirectory))
+        .catch(err => cb(err));
     },
     filename: (req, file, cb) => {
       const projectId = req.body.id || req.params.projectId;
@@ -59,40 +55,33 @@ export const uploadCover = multer({
 
 export const uploadEnvmapAndAssets = multer({
   fileFilter: assetFilter,
+  limits: { fieldSize: 500 * 1024 * 1024 },
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const projectId = req.projectId;
-      if (!projectId) throw new Error("Project Id is missing");
+      if (!projectId) return cb(new Error("project id is missing"));
 
       if (file.fieldname === "uploadedEnvmap") {
-        const uploadDirectory = path.join(
-          DIRNAME,
-          getEnvmapsDirectory(projectId),
-        );
-        if (!fs.existsSync(uploadDirectory)) {
-          fs.mkdirSync(uploadDirectory, { recursive: true });
-        }
-
-        cb(null, uploadDirectory);
+        const uploadDirectory = path.join(DIRNAME, getEnvmapsDirectory(projectId));
+        fs.promises.mkdir(uploadDirectory, { recursive: true })
+          .then(() => cb(null, uploadDirectory))
+          .catch(err => cb(err));
       } else if (file.fieldname === "uploads") {
-        const uploadDirectory = path.join(
-          DIRNAME,
-          getAssetsDirectory(projectId),
-        );
-        if (!fs.existsSync(uploadDirectory)) {
-          fs.mkdirSync(uploadDirectory, { recursive: true });
-        }
-
-        cb(null, uploadDirectory);
-      } else cb(null, "");
+        const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId));
+        fs.promises.mkdir(uploadDirectory, { recursive: true })
+          .then(() => cb(null, uploadDirectory))
+          .catch(err => cb(err));
+      } else {
+        cb(null, "");
+      }
     },
     filename: (req, file, cb) => {
       const projectId = req.projectId;
       const ext = path.extname(file.originalname);
+
       if (file.fieldname === "uploadedEnvmap") {
         const filename = "envmap" + Date.now() + ext;
         req.uploadedUrl = path.join(getEnvmapsDirectory(projectId), filename);
-
         cb(null, filename);
       } else if (file.fieldname === "uploads") {
         if (!req.currentAssetCount) {
@@ -102,15 +91,14 @@ export const uploadEnvmapAndAssets = multer({
         req.currentAssetCount++;
 
         if (!req.uploadedFilenames) req.uploadedFilenames = [];
-        req.uploadedFilenames.push(
-          path.join(getAssetsDirectory(req.projectId), filename),
-        );
+        req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
 
         cb(null, filename);
-      } else cb(null, "");
+      } else {
+        cb(null, "");
+      }
     },
   }),
-  limits: { fieldSize: 500 * 1024 * 1024 },
 });
 
 export const uploadAsset = multer({
@@ -118,14 +106,12 @@ export const uploadAsset = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const projectId = req.projectId;
-      if (!projectId) throw new Error("Project Id is missing");
+      if (!projectId) return cb(new Error("project id is missing"));
 
       const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId));
-      if (!fs.existsSync(uploadDirectory)) {
-        fs.mkdirSync(uploadDirectory, { recursive: true });
-      }
-
-      cb(null, uploadDirectory);
+      fs.promises.mkdir(uploadDirectory, { recursive: true })
+        .then(() => cb(null, uploadDirectory))
+        .catch(err => cb(err));
     },
     filename: (req, file, cb) => {
       const ext = path.extname(file.originalname);
@@ -137,9 +123,7 @@ export const uploadAsset = multer({
       req.currentAssetCount++;
 
       if (!req.uploadedFilenames) req.uploadedFilenames = [];
-      req.uploadedFilenames.push(
-        path.join(getAssetsDirectory(req.projectId), filename),
-      );
+      req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
 
       cb(null, filename);
     },
@@ -150,29 +134,29 @@ export const adminUploadAsset = multer({
   fileFilter: assetFilter,
   storage: multer.diskStorage({
     destination: async (req, file, cb) => {
-      const sceneId = req.body.sceneId;
+      try {
+        const sceneId = req.body.sceneId;
+        let scene = await ArScene.findOne({
+          include: [
+            {
+              model: ArProject,
+              as: "project",
+              attributes: ["id"],
+            },
+          ],
+          where: { id: sceneId },
+        });
 
-      let scene = await ArScene.findOne({
-        include: [
-          {
-            model: ArProject,
-            as: "project",
-            attributes: ["id"],
-          },
-        ],
-        where: { id: sceneId },
-      });
+        const projectId = scene?.project?.id;
+        req.projectId = projectId;
+        if (!projectId) return cb(new Error("project id is missing"));
 
-      const projectId = scene.project.id;
-      req.projectId = projectId;
-      if (!projectId) throw new Error("Project Id is missing");
-
-      const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId));
-      if (!fs.existsSync(uploadDirectory)) {
-        fs.mkdirSync(uploadDirectory, { recursive: true });
+        const uploadDirectory = path.join(DIRNAME, getAssetsDirectory(projectId));
+        await fs.promises.mkdir(uploadDirectory, { recursive: true });
+        cb(null, uploadDirectory);
+      } catch (err) {
+        cb(err);
       }
-
-      cb(null, uploadDirectory);
     },
     filename: (req, file, cb) => {
       const ext = path.extname(file.originalname);
@@ -184,9 +168,7 @@ export const adminUploadAsset = multer({
       req.currentAssetCount++;
 
       if (!req.uploadedFilenames) req.uploadedFilenames = [];
-      req.uploadedFilenames.push(
-        path.join(getAssetsDirectory(req.projectId), filename),
-      );
+      req.uploadedFilenames.push(path.join(getAssetsDirectory(req.projectId), filename));
 
       cb(null, filename);
     },
@@ -198,24 +180,13 @@ export const uploadProject = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadDirectory = path.join(DIRNAME, "public", "files", "temp");
-      if (!fs.existsSync(uploadDirectory)) {
-        fs.mkdirSync(uploadDirectory, { recursive: true });
-      }
-
-      cb(null, uploadDirectory);
+      fs.promises.mkdir(uploadDirectory, { recursive: true })
+        .then(() => cb(null, uploadDirectory))
+        .catch(err => cb(err));
     },
-
     filename: (req, file, cb) => {
       const filename = Date.now() + "-" + file.originalname;
-
-      req.uploadedFilePath = path.join(
-        DIRNAME,
-        "public",
-        "files",
-        "temp",
-        filename,
-      );
-
+      req.uploadedFilePath = path.join(DIRNAME, "public", "files", "temp", filename);
       cb(null, filename);
     },
   }),
@@ -248,29 +219,31 @@ function isUploadedFilePath(pathFromServerRoot) {
   return absoluteTarget.startsWith(absoluteAllowedBase);
 }
 
-export function deleteFile(pathFromServerRoot) {
+export async function deleteFile(pathFromServerRoot) {
   if (!isUploadedFilePath(pathFromServerRoot)) {
-    console.error("This file cannot be deleted");
+    console.error("this file cannot be deleted");
     return;
   }
   const filePath = path.join(DIRNAME, pathFromServerRoot);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  } else {
-    console.error("unable to delete file");
+  try {
+    await fs.promises.unlink(filePath);
+  } catch (err) {
+    if (err.code !== "enoent") {
+      console.error("unable to delete file", err);
+    }
   }
 }
 
 export async function deleteFolder(pathFromServerRoot) {
   if (!isUploadedFilePath(pathFromServerRoot)) {
-    console.error("This folder cannot be deleted");
+    console.error("this folder cannot be deleted");
     return;
   }
   const folderPath = path.join(DIRNAME, pathFromServerRoot);
   try {
     await fs.promises.rm(folderPath, { recursive: true, force: true });
   } catch (err) {
-    console.error(`Error while deleting ${folderPath}.`, err);
+    console.error(`error while deleting ${folderPath}`, err);
   }
 }
 
@@ -280,7 +253,7 @@ export async function duplicateFolder(source, dest) {
   try {
     await fs.promises.cp(sourcePath, destPath, { recursive: true });
   } catch (e) {
-    console.error("Unable to duplicate folder : " + e);
+    console.error("unable to duplicate folder", e);
   }
 }
 
@@ -289,7 +262,9 @@ export function getUpdatedPath(currentPath, oldId, newId) {
 }
 
 export async function deleteAsset(asset) {
-  let assetsUsingSameUrl = await arAsset.findAll({
+  if (!asset || !asset.url) return;
+
+  let assetsUsingSameUrl = await ArAsset.findAll({
     where: {
       url: asset.url,
       id: {
@@ -298,23 +273,8 @@ export async function deleteAsset(asset) {
     },
   });
 
-  if (assetsUsingSameUrl.length === 0) deleteFile(asset.url);
+  if (assetsUsingSameUrl.length === 0) {
+    await deleteFile(asset.url);
+  }
 }
-/*
 
-
-public/
-    abc-123/
-        images/
-            projectCover.jpg
-        assets/
-            a.glb
-            b.glb
-            c.glb
-            ...
-            //autres assets
-    def-456
-    ghi-789
-
-
- */

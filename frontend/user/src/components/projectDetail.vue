@@ -11,7 +11,7 @@ const project =  ref(projectData.projectData);
 <template>
   <h1>{{project.title}}</h1>
   <img :src="getResource(project.pictureUrl)" :alt="$t('projectView.projectDetail.pictureAlt')">
-  <p>{{project.description}}</p>
+  <p v-html="project.description"></p>
 </template>
 
 <style scoped>
@@ -29,8 +29,14 @@ img{
 p{
   font-weight: 350;
   width: 100%;
+  word-break: break-word;
 }
 
-
+p :deep(a) {
+  color: var(--accentColor);
+  text-decoration: underline;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
 
 </style>

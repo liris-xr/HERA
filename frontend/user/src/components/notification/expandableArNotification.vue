@@ -1,4 +1,4 @@
-<script setup>
+  <script setup>
 import {ref} from "vue";
 import ButtonView from "@/components/utils/buttonView.vue";
 
@@ -28,9 +28,7 @@ function handleClick(event, fromArrow = false){
     <div id="content">
       <h3>{{props.title}}</h3>
       <div class="expandable" :class="{collapsedText: collapsed}">
-        <p>
-          {{props.text}}
-        </p>
+        <p v-html="props.text"></p>
         <button-view :text="$t('expandableNotification.hideButton')" @click="userHidden = true"></button-view>
       </div>
 
@@ -123,4 +121,10 @@ p{
   margin-bottom: 8px;
 }
 
+.expandable :deep(a) {
+  color: var(--accentColor);
+  text-decoration: underline;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
 </style>

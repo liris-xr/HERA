@@ -2,6 +2,7 @@
 
 import {computed, ref} from "vue";
 import {useI18n} from "vue-i18n";
+import Editor from "primevue/editor";
 
 const {t} = useI18n()
 
@@ -40,15 +41,20 @@ function validateFields() {
 
   for(const field of props.fields) {
     const elem = fieldRefs.value[field.name];
+    const val = field.type === 'rich-text' ? props.subject[field.name] : elem?.value;
 
     if(
-        (field.required && (!elem.value || elem.value?.trim?.()?.length === 0))
-        || (field.validator && !field.validator?.(elem.value))
+        (field.required && (!val || val?.trim?.()?.length === 0))
+        || (field.validator && !field.validator?.(val))
     ) {
       ok = false;
-      putError(elem, t("admin.required"))
+      if (elem && elem.classList) {
+        putError(elem, t("admin.required"))
+      }
     } else {
-      elem.classList.remove("error")
+      if (elem && elem.classList) {
+        elem.classList.remove("error")
+      }
     }
   }
 
@@ -81,6 +87,14 @@ function validateFields() {
             :id="field.name"
             :placeholder="field?.placeholder"></textarea>
 
+        <Editor
+            :ref="el => fieldRefs[field.name] = el"
+            v-else-if="field.type==='rich-text'"
+            v-model="subject[field.name]"
+            class="editor"
+            :name="field.name"
+            :id="field.name"
+            :placeholder="field?.placeholder" />   
         <input
           :ref="el => fieldRefs[field.name] = el"
 
@@ -129,4 +143,18 @@ function validateFields() {
   border-color: var(--dangerColor);
 }
 
+.editor {
+  --p-editor-toolbar-border-color: var(--darkerBackgroundColor);
+  --p-editor-toolbar-item-color: var(--textColor);
+  --p-editor-toolbar-item-hover-color: var(--textImportantColor);
+  --p-editor-toolbar-item-active-color: var(--textImportantColor);
+  --p-editor-content-border-color: var(--darkerBackgroundColor);
+  --p-editor-overlay-background: var(--backgroundColor);
+  --p-editor-overlay-option-focus-background: var(--darkerBackgroundColor);
+  width: 100%;
+  display: block;
+  background: var(--backgroundColor);
+  color: var(--textImportantColor);
+  margin-bottom: 8px;
+}
 </style>

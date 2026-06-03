@@ -17,6 +17,7 @@ import {sleep} from "@/js/utils/sleep.js";
 import SaveWarningModal from "@/components/modal/saveWarningModal.vue";
 import RedirectMessage from "@/components/notification/redirect-message.vue";
 import {useI18n} from "vue-i18n";
+import Editor from "primevue/editor";
 const {t} = useI18n()
 const route = useRoute();
 const {token, userData} = useAuthStore();
@@ -371,7 +372,7 @@ const showQuitPreview = ref(false)
                 <icon-svg url="/icons/edit.svg" theme="default" :hover-effect="true"></icon-svg>
               </label>
             </div>
-            <textarea id="desc" v-model="project.description" rows="8" :placeholder="$t('projectView.leftSection.projectDescription.placeholder')"></textarea>
+            <Editor id="desc" v-model="project.description" class="editor" />
           </div>
 
           <div class="multilineField">
@@ -736,4 +737,15 @@ h1{
   font-weight: normal;
 }
 
+.editor {
+  --p-editor-toolbar-border-color: var(--darkerBackgroundColor);
+  --p-editor-toolbar-item-color: var(--textColor);
+  --p-editor-toolbar-item-hover-color: var(--textImportantColor);
+  --p-editor-toolbar-item-active-color: var(--textImportantColor);
+  --p-editor-content-border-color: var(--darkerBackgroundColor);
+  --p-editor-overlay-background: var(--backgroundColor);
+  --p-editor-overlay-option-focus-background: var(--darkerBackgroundColor);
+  width: 100%;
+  display: block;
+}
 </style>

@@ -375,7 +375,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
           },
           {
             name: 'description',
-            type: 'big-text',
+            type: 'rich-text',
             placeholder: 'Le musée des Confluences, situé à Lyon, est un musée d\'histoire naturelle, d\'anthropologie et des sociétés. Son architecture audacieuse et futuriste reflète sa vocation : explorer l’origine de l’humanité et la diversité des cultures à travers le temps.',
           },
           {
@@ -454,7 +454,7 @@ defineExpose({projects, newScene, supprScene, editScene, element})
           },
           {
             name: 'description',
-            type: 'big-text',
+            type: 'rich-text',
             placeholder: 'Le musée des Confluences, situé à Lyon, est un musée d\'histoire naturelle, d\'anthropologie et des sociétés. Son architecture audacieuse et futuriste reflète sa vocation : explorer l’origine de l’humanité et la diversité des cultures à travers le temps.',
           },
           {

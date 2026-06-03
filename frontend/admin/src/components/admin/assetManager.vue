@@ -6,6 +6,7 @@ import GenericTable from "@/components/admin/generic/genericTable.vue";
 import GenericModal from "@/components/admin/generic/genericModal.vue";
 import Notification from "@/components/notification/notification.vue";
 import {toast} from "vue3-toastify";
+import { ASSET_KINDS } from "@shared/assetKinds.js";
 
 
 const props = defineProps({
@@ -33,19 +34,44 @@ defineExpose({editingAsset, deletingAsset, creatingAsset, element})
 
 
 async function confirmAssetCreate() {
+  const endpoint = `${ENDPOINT}admin/assets`;
+
+  console.info("[HERA][DEBUG] REAL FRONTEND UPLOAD HIT", {
+    function: "assetManager.confirmAssetCreate",
+    endpoint,
+    method: "POST",
+    fileName: creatingAsset.value?.asset?.name ?? null,
+    assetKind: creatingAsset.value?.assetKind ?? creatingAsset.value?.kind ?? null,
+  });
+
   const formData = new FormData()
 
   for(const key in creatingAsset.value)
     if(creatingAsset.value.hasOwnProperty(key))
       formData.append(key, creatingAsset.value[key]);
 
-  const res = await fetch(`${ENDPOINT}admin/assets`,{
-    method: "POST",
-    headers: {
-      'Authorization': `Bearer ${props.token}`,
-    },
-    body: formData
-  })
+  let res;
+  try {
+    res = await fetch(endpoint,{
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${props.token}`,
+      },
+      body: formData
+    })
+  } catch (e) {
+    console.error("[HERA][DEBUG] REAL FRONTEND UPLOAD NETWORK ERROR", {
+      endpoint,
+      message: e?.message || String(e),
+    });
+    throw e;
+  }
+
+  console.info("[HERA][DEBUG] REAL FRONTEND UPLOAD RESPONSE", {
+    endpoint: res.url,
+    status: res.status,
+    ok: res.ok,
+  });
 
   if(res.ok) {
     const data = await res.json()
@@ -53,7 +79,8 @@ async function confirmAssetCreate() {
 
     emit("newAsset", data)
   } else {
-    toast.error(res.status + " : " + res.statusText, {
+    const payload = await res.json().catch(() => ({}))
+    toast.error(payload.details ?? payload.error ?? (res.status + " : " + res.statusText), {
       position: toast.POSITION.BOTTOM_RIGHT
     })
   }
@@ -244,9 +271,19 @@ onMounted(async () => {
             type: 'boolean',
           },
           {
+            name: 'assetKind',
+            type: 'select',
+            defaultValue: 'auto',
+            options: [
+              { value: 'auto', label: 'Auto' },
+              { value: ASSET_KINDS.POINTCLOUD, label: 'Classic point cloud (.ply)' },
+              { value: ASSET_KINDS.POINTCLOUD_STREAMING, label: 'Potree streaming (.zip)' },
+            ],
+          },
+          {
             name: 'asset',
             type: 'file',
-            accept: '.glb, .gltf, .splat, .spz, .ksplat, .ply, .sog',
+            accept: '.glb, .gltf, .splat, .spz, .ksplat, .ply, .sog, .zip',
             required: true,
           }
       ]"

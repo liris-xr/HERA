@@ -18,6 +18,17 @@ function safeVec3(value, fallback) {
     };
 }
 
+function parseLodMeta(raw) {
+    if (!raw) return null;
+    if (typeof raw === "object") return raw;
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
 export class Asset extends classes(SelectableInterface, LoadableInterface) {
     id;
     subMeshes;
@@ -63,7 +74,10 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
 
         this.#hasError = ref(false);
         this.#isLoading = ref(true);
-        this.kind = assetData.kind ?? null;
+        this.lodMeta = parseLodMeta(assetData.lodMeta);
+        this.kind = assetData.kind ?? assetData.assetKind ?? this.lodMeta?.assetKind ?? null;
+        this.pointCloud = assetData.pointCloud ?? assetData.pointcloud ?? this.lodMeta?.pointCloud ?? null;
+        this.needsReloadAfterUpload = false;
 
         if (assetData?.copiedUrl) this.copiedUrl = assetData.copiedUrl;
     }
@@ -141,6 +155,10 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
 
     getObject() {
         return this.mesh;
+    }
+
+    updateRenderFrame(camera, renderer) {
+        this.mesh?.updatePointCloudStreaming?.(camera, renderer);
     }
 
     getResultPosition() {

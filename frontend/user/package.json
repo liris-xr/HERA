@@ -12,6 +12,7 @@
   "dependencies": {
     "@baklavajs/core": "^2.8.1",
     "@baklavajs/renderer-vue": "^2.8.1",
+    "@pnext/three-loader": "^1.0.0",
     "@sparkjsdev/spark": "^2.1.0",
     "@types/webxr": "^0.5.15",
     "html2canvas": "^1.4.1",

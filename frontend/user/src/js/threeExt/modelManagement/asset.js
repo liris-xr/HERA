@@ -6,6 +6,8 @@ import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/asset
 import { loadSparkSplatAsset } from "@/js/threeExt/spark/sparkSplatLoader.js";
 import { detectAssetKind } from "@/js/threeExt/modelManagement/assetKind.js";
 import { getResource } from "@/js/endpoints.js";
+import { loadStaticPointCloud } from "@/js/threeExt/pointcloud/staticPointCloud.js";
+import { ASSET_KINDS } from "@shared/assetKinds.js";
 
 function safeNumber(value, fallback) {
     const n = Number(value);
@@ -22,6 +24,17 @@ function safeVec3(value, fallback) {
 
 function isValidVec3(value) {
     return (value && Number.isFinite(value.x) && Number.isFinite(value.y) && Number.isFinite(value.z));
+}
+
+function parseLodMeta(raw) {
+    if (!raw) return null;
+    if (typeof raw === "object") return raw;
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
 }
 function applyVariantDebugColor(object, variant) {
     const colorMap = {
@@ -204,7 +217,7 @@ function createObjectDisposeJobs(object) {
     const jobs = [];
 
     object?.traverse((child) => {
-        if (!child?.isMesh) return;
+        if (!child?.isMesh && !child?.isPoints) return;
 
         if (child.geometry && !disposedGeometries.has(child.geometry)) {
             disposedGeometries.add(child.geometry);
@@ -318,7 +331,10 @@ export class Asset extends SceneElementInterface {
 
         this.name = assetData.name != null ? assetData.name : assetData.url;
 
-        this.assetKind = assetData.assetKind ?? assetData.kind ?? detectAssetKind(this);
+        this.lodMeta = parseLodMeta(assetData.lodMeta);
+        this.assetKind = assetData.assetKind ?? assetData.kind ?? this.lodMeta?.assetKind ?? detectAssetKind(this);
+        this.kind = this.assetKind;
+        this.pointCloudOptions = assetData.pointCloud ?? assetData.pointcloud ?? this.lodMeta?.pointCloud ?? null;
 
         this.activeAnimation = assetData.activeAnimation || null;
 
@@ -355,7 +371,7 @@ export class Asset extends SceneElementInterface {
     }
 
     supportsLodVariants() {
-        return this.assetKind === "gltf";
+        return this.assetKind === ASSET_KINDS.GLTF;
     }
 
     getVariantCacheLimit() {
@@ -673,6 +689,7 @@ export class Asset extends SceneElementInterface {
             const chosen = pickVariantFromManifest(manifest, options);
             const kind = manifest?.assetKind ?? detectAssetKind(this, { url: chosen?.path });
             this.assetKind = kind;
+            this.kind = kind;
 
             this.currentVariant = chosen?.variant ?? null;
 
@@ -688,9 +705,23 @@ export class Asset extends SceneElementInterface {
                 throw new Error(`[Asset.load] invalid urlToLoad: ${urlToLoad}`);
             }
 
-            const loaded = kind === "splat"
+            const pointCloudOptions = {
+                ...(manifest?.lodMeta?.pointCloud ?? {}),
+                ...(manifest?.pointCloud ?? {}),
+                ...(this.pointCloudOptions ?? {}),
+            };
+
+            const loaded = kind === ASSET_KINDS.SPLAT
                 ? await loadSparkSplatAsset({ url: urlToLoad, name: this.name })
-                : await manager.load(urlToLoad);
+                : kind === ASSET_KINDS.POINTCLOUD
+                    ? await loadStaticPointCloud({
+                        url: urlToLoad,
+                        name: this.name,
+                        options: pointCloudOptions,
+                    })
+                    : kind === ASSET_KINDS.POINTCLOUD_STREAMING
+                        ? await this.loadPotreeStreamingPointCloud(urlToLoad, pointCloudOptions)
+                        : await manager.load(urlToLoad);
 
             this.#error = typeof loaded.hasError === "function" ? loaded.hasError() : false;
 
@@ -788,6 +819,23 @@ export class Asset extends SceneElementInterface {
             return null;
         }
     }
+    updateRenderFrame(camera, renderer) {
+        this.object?.updatePointCloudStreaming?.(camera, renderer);
+    }
+
+    getPointCloudStats() {
+        return this.object?.getStats?.() ?? null;
+    }
+
+    async loadPotreeStreamingPointCloud(url, options) {
+        const { loadPotreeStreamingPointCloud } = await import("@/js/threeExt/pointcloud/potreeStreamingPointCloud.js");
+        return await loadPotreeStreamingPointCloud({
+            url,
+            name: this.name,
+            options,
+        });
+    }
+
     async prefetchVariantFile(variantKey) {
         try {
             const manifest = await this.getManifest();

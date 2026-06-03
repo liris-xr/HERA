@@ -10,14 +10,18 @@ import i18n from "@/i18n.js";
 import { Label } from "@/js/threeExt/postprocessing/label.js";
 import { EXRLoader } from "three/examples/jsm/addons";
 import { getResource } from "@/js/endpoints.js";
+import { ASSET_KINDS } from "@shared/assetKinds.js";
+import { detectPlyAssetKindFromFile } from "@shared/pointcloud/plyAssetKind.js";
 
 const transformModeKeys = {
     translate: "position",
     rotate: "rotation",
     scale: "scale"
 };
-const SUPPORTED_ASSET_EXTENSIONS = ["gltf", "glb", "splat", "spz", "ksplat", "ply", "sog"];
+const SUPPORTED_ASSET_EXTENSIONS = ["gltf", "glb", "splat", "spz", "ksplat", "ply", "sog", "zip"];
 const SPLAT_ASSET_EXTENSIONS = ["splat", "spz", "ksplat", "ply", "sog"];
+const POTREE_ARCHIVE_EXTENSIONS = ["zip"];
+const STATIC_POINT_CLOUD_EXTENSIONS = ["ply"];
 
 export class EditorScene extends THREE.Scene {
     projectId;
@@ -294,7 +298,15 @@ export class EditorScene extends THREE.Scene {
 
     getErrors = computed(() => this.#errors.value);
 
-    onFrame(time, frame, cameraPosition) {}
+    onFrame(time, frame, cameraPosition, camera = null, renderer = null) {
+        if (!camera || !renderer) return;
+
+        this.updateMatrixWorld(true);
+
+        for (const asset of this.assetManager.getAssets.value) {
+            asset.updateRenderFrame?.(camera, renderer);
+        }
+    }
 
     onSceneClick(event, camera) {
         const target = event.target;
@@ -409,19 +421,74 @@ export class EditorScene extends THREE.Scene {
         this.labelManager.removeFromScene(this, label);
     }
 
-    addNewAsset(file) {
+    async addNewAsset(file, options = {}) {
         const extension = getFileExtension(file.name).toLowerCase();
+        const requestedKind = options.kind ? String(options.kind).toLowerCase() : null;
+        const pointCloudUploadRequested = [
+            ASSET_KINDS.POINTCLOUD,
+            ASSET_KINDS.POINTCLOUD_STREAMING,
+        ].includes(requestedKind);
+
+        if (pointCloudUploadRequested) {
+            const allowedPointCloudExtensions = [
+                ...STATIC_POINT_CLOUD_EXTENSIONS,
+                ...POTREE_ARCHIVE_EXTENSIONS,
+            ];
+
+            if (!allowedPointCloudExtensions.includes(extension)) {
+                alert("Point cloud uploads support classic .ply files or converted Potree .zip datasets.");
+                return;
+            }
+        }
+
         if (!SUPPORTED_ASSET_EXTENSIONS.includes(extension)) {
+            const fileName = String(file.name ?? "").toLowerCase();
+            if (fileName === "cloud.js" || fileName === "metadata.json") {
+                alert("Upload the full converted Potree dataset as a .zip file, not only cloud.js or metadata.json.");
+                return;
+            }
+
             alert(i18n.global.t("sceneView.leftSection.sceneAssets.addAssetButtonErrorFileNotSupported"));
             return;
         }
+
+        let kind = ASSET_KINDS.GLTF;
+        if (pointCloudUploadRequested && STATIC_POINT_CLOUD_EXTENSIONS.includes(extension)) {
+            kind = ASSET_KINDS.POINTCLOUD;
+        } else if (POTREE_ARCHIVE_EXTENSIONS.includes(extension)) {
+            kind = ASSET_KINDS.POINTCLOUD_STREAMING;
+        } else if (extension === "ply") {
+            try {
+                kind = await detectPlyAssetKindFromFile(file, ASSET_KINDS.SPLAT);
+            } catch (e) {
+                console.warn("[EditorScene] PLY header detection failed; falling back to splat", e);
+                kind = ASSET_KINDS.SPLAT;
+            }
+        } else if (SPLAT_ASSET_EXTENSIONS.includes(extension)) {
+            kind = ASSET_KINDS.SPLAT;
+        }
+
+        console.info("[HERA][AssetUpload] classified", {
+            file: file.name,
+            extension,
+            requestedPointCloud: pointCloudUploadRequested,
+            kind,
+            treatment:
+                kind === ASSET_KINDS.POINTCLOUD
+                    ? "classic .ply preview now; backend converts to Potree streaming on save"
+                    : kind === ASSET_KINDS.POINTCLOUD_STREAMING
+                        ? "Potree dataset archive; backend extracts and stores metadata/cloud entry"
+                        : kind === ASSET_KINDS.SPLAT
+                            ? "Gaussian splat pipeline"
+                            : "GLTF pipeline",
+        });
 
         const assetData = {
             id: null,
             url: null,
             uploadData: file,
             name: file.name,
-            kind: SPLAT_ASSET_EXTENSIONS.includes(extension) ? "splat" : "gltf", //adding type of asset
+            kind,
             hideInViewer: false
         };
 
@@ -449,6 +516,9 @@ export class EditorScene extends THREE.Scene {
             rotation: { ...asset.getResultRotation() },
             scale: { ...asset.getResultScale() },
             copiedUrl: asset.sourceUrl ?? asset.copiedUrl,
+            kind: asset.kind ?? null,
+            lodMeta: asset.lodMeta ?? null,
+            pointCloud: asset.pointCloud ?? null,
         };
 
         const newAsset = new Asset(assetData);

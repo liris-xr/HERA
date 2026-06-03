@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import arAsset from "../orm/models/arAsset.js";
 import {Op} from "sequelize";
 import {ArAsset, ArMesh, ArProject, ArScene} from "../orm/index.js";
+import { isPointCloudStreamingAsset } from "../services/assetKind.js";
 
 
 
@@ -250,6 +251,25 @@ export function getUpdatedPath(currentPath, oldId, newId){
 
 export async function deleteAsset(asset) {
     if (!asset) return;
+
+    if (isPointCloudStreamingAsset(asset)) {
+        const normalizedUrl = String(asset.url ?? "").replaceAll("\\", "/").replace(/^\/+/, "");
+        const datasetDir = path.posix.dirname(normalizedUrl);
+
+        if (datasetDir && datasetDir !== ".") {
+            const sibling = await arAsset.findOne({
+                where: {
+                    id: { [Op.not]: asset.id },
+                    url: { [Op.like]: `${datasetDir}/%` },
+                },
+            });
+
+            if (!sibling) {
+                await deleteFolder(datasetDir);
+                return;
+            }
+        }
+    }
 
     // original
     if (asset.url) {

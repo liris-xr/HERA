@@ -24,16 +24,25 @@ import vue from "@vitejs/plugin-vue";
 import mkcert from "vite-plugin-mkcert";
 
 const API_TARGET = "https://10.42.205.102:8080";
+const FRONTEND_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 export default defineConfig({
   base: "/viewer/",
   plugins: [vue(), mkcert()],
-  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@shared": fileURLToPath(new URL("../shared", import.meta.url)),
+    },
+  },
 
   server: {
     host: true,
     port: 8081,
     https: true,
+    fs: {
+      allow: [FRONTEND_ROOT],
+    },
     proxy: {
       "/api": { target: API_TARGET, changeOrigin: true, secure: false },
       "/public": { target: API_TARGET, changeOrigin: true, secure: false },

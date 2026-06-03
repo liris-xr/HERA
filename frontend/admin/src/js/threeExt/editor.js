@@ -102,7 +102,7 @@ export class Editor {
     }
 
     onFrame(time, frame) {
-        this.scene.onFrame(time, frame, this.camera.position);
+        this.scene.onFrame(time, frame, this.camera.position, this.camera, this.renderer);
         this.orbitControls.update();
         this.renderer.render(this.scene, this.camera);
         this.perfDebugLogger.logFrame(time);

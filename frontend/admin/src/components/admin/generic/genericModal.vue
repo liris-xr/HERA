@@ -1,6 +1,6 @@
 <script setup>
 
-import {computed, ref} from "vue";
+import {computed, ref, watchEffect} from "vue";
 import {useI18n} from "vue-i18n";
 
 const {t} = useI18n()
@@ -13,6 +13,17 @@ const props = defineProps({
 })
 
 const fieldRefs = ref({})
+
+watchEffect(() => {
+  if (!props.subject) return;
+
+  for (const field of props.fields) {
+    if (field.defaultValue === undefined) continue;
+    if (props.subject[field.name] !== undefined) continue;
+
+    props.subject[field.name] = field.defaultValue;
+  }
+})
 
 defineEmits(['confirm', 'cancel'])
 
@@ -93,6 +104,22 @@ function validateFields() {
           :accept="field?.accept"
           @change="handleFile($event, field.name)"
           >
+
+        <select
+            :ref="el => fieldRefs[field.name] = el"
+
+            v-else-if="field.type==='select'"
+            v-model="subject[field.name]"
+
+            :name="field.name"
+            :id="field.name">
+          <option
+              v-for="option in field.options ?? []"
+              :key="option.value"
+              :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
 
         <input
             :ref="el => fieldRefs[field.name] = el"

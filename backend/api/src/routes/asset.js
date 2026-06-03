@@ -9,12 +9,20 @@ import { computeAssetMetrics } from "../socket/utils/assetMetrics.js";
 import { processAsset } from "../services/assetProcessing/processAsset.js";
 import {buildVariantSet} from "../services/gltf/variantSet.js";
 import { detectAssetKind } from "../services/assetKind.js";
+import { prepareUploadedPointCloudAsset } from "../services/pointCloud/pointCloudUpload.js";
 
 const router = express.Router();
 
 // Prevent concurrent simplify jobs on same asset
 const activeSimplifyJobs = new Set();
 const activeProcessJobs = new Set();
+
+function logAdminAssetUploadHit(req, res, next) {
+    console.info("[HERA][DEBUG] REAL UPLOAD ENDPOINT HIT", {
+        route: "POST /admin/assets",
+    });
+    next();
+}
 
 router.get(baseUrl + "assets/:assetId/manifest", optionnalAuthMiddleware, async (req, res) => {
     const assetId = req.params.assetId;
@@ -466,10 +474,7 @@ router.put(baseUrl + "admin/assets/:assetId", authMiddleware, async (req, res) =
     }
 });
 
-router.post(
-    baseUrl + "admin/assets",
-    authMiddleware,
-    adminUploadAsset.single("asset"),
+router.post(baseUrl + "admin/assets", authMiddleware, logAdminAssetUploadHit, adminUploadAsset.single("asset"),
     async (req, res) => {
         const authUser = req.user;
 
@@ -483,24 +488,41 @@ router.post(
         try {
             const fileUrl = req.uploadedFilenames?.[0];
 
+            console.info("[HERA][DEBUG] REAL UPLOAD FILES PARSED", {
+                route: "POST /admin/assets",
+                uploadedFilenames: req.uploadedFilenames ?? [],
+                fileName: req.file?.originalname ?? null,
+                assetKind: req.body.assetKind ?? req.body.kind ?? null,
+            });
+
             if (!fileUrl) {
                 return res.status(400).send({ error: "Missing uploaded asset file" });
             }
 
+            const importedPointCloud = await prepareUploadedPointCloudAsset({
+                fileRelPath: fileUrl,
+                assetName: req.body.name,
+                apiRoot: process.cwd(),
+                requestedKind: req.body.assetKind ?? req.body.kind,
+            });
+
             const newAsset = await ArAsset.create({
                 name: req.body.name,
                 hideInViewer: req.body?.hideInViewer,
-                url: fileUrl,
+                url: importedPointCloud?.url ?? fileUrl,
                 sceneId: req.body.sceneId,
                 simplifiedUrl: null,
                 preferredVariant: "original",
-                lodMeta: null,
+                lodMeta: importedPointCloud?.lodMeta ?? null,
             });
 
             return res.status(200).send(newAsset);
         } catch (e) {
             console.log(e);
-            return res.status(400).send({ error: "Unable to save asset" });
+            return res.status(400).send({
+                error: "Unable to save asset",
+                details: e?.message || String(e),
+            });
         }
     }
 );

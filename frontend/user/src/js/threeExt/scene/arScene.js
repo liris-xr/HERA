@@ -719,10 +719,13 @@ export class ArScene extends AbstractScene {
         }
 
         const delta = this.clock.getDelta();
+        this.updateMatrixWorld(true);
+
         for (const asset of this.#assets) {
             if (asset.animationMixer) {
                 asset.animationMixer.update(delta);
             }
+            asset.updateRenderFrame?.(camera, renderer);
         }
 
         this.updateFpsStats(time);

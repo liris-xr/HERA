@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import sharp from "sharp";
-import { isGltfAsset } from "../../services/assetKind.js";
+import { isGltfAsset, isPointCloudAsset, isPointCloudStreamingAsset } from "../../services/assetKind.js";
 
 function normalizeUrlPath(u) {
     return String(u ?? "").replaceAll("\\", "/").replace(/^\/+/, "");
@@ -39,6 +39,62 @@ function makeEmptyMetrics(fileSizeBytes = null) {
         maxTexturePixels: null,
         cacheWeight: null,
     };
+}
+
+function computeDirectorySizeBytes(directory) {
+    let total = 0;
+
+    function walk(current) {
+        const entries = fs.readdirSync(current, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(current, entry.name);
+            if (entry.isDirectory()) {
+                walk(fullPath);
+            } else if (entry.isFile()) {
+                total += fs.statSync(fullPath).size;
+            }
+        }
+    }
+
+    try {
+        walk(directory);
+        return total;
+    } catch {
+        return null;
+    }
+}
+
+function computePointCloudMetrics(entryDiskPath) {
+    const metrics = makeEmptyMetrics(computeDirectorySizeBytes(path.dirname(entryDiskPath)));
+
+    if (path.basename(entryDiskPath).toLowerCase() !== "metadata.json") {
+        return metrics;
+    }
+
+    try {
+        const metadata = JSON.parse(fs.readFileSync(entryDiskPath, "utf8"));
+        metrics.vertexCount = metadata?.points ?? metadata?.numPoints ?? null;
+        metrics.cacheWeight = metrics.assetSizeBytes
+            ? Number(Math.max(1, metrics.assetSizeBytes / (50 * 1024 * 1024)).toFixed(2))
+            : null;
+    } catch (e) {
+        console.log("[ASSET METRICS] point cloud metadata read failed:", entryDiskPath, e?.message || e);
+    }
+
+    return metrics;
+}
+
+function parsePointCountFromLodMeta(asset) {
+    const raw = asset?.lodMeta;
+    if (!raw) return null;
+
+    try {
+        const lodMeta = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const count = Number(lodMeta?.pointCloud?.pointCount);
+        return Number.isFinite(count) ? count : null;
+    } catch {
+        return null;
+    }
 }
 
 function computeCacheWeight(metrics) {
@@ -167,6 +223,19 @@ export async function computeAssetMetrics(asset, apiRoot) {
     const inputDisk = path.resolve(apiRoot, inputRel);
     if (!fs.existsSync(inputDisk)) {
         return makeEmptyMetrics();
+    }
+
+    if (isPointCloudStreamingAsset(asset)) {
+        return computePointCloudMetrics(inputDisk);
+    }
+
+    if (isPointCloudAsset(asset)) {
+        const metrics = makeEmptyMetrics(computeFileSizeBytes(inputDisk));
+        metrics.vertexCount = parsePointCountFromLodMeta(asset);
+        metrics.cacheWeight = metrics.assetSizeBytes
+            ? Number(Math.max(1, metrics.assetSizeBytes / (50 * 1024 * 1024)).toFixed(2))
+            : null;
+        return metrics;
     }
 
     if (!isGltfAsset(asset)) {

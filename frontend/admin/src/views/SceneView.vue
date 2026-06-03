@@ -27,6 +27,7 @@ import EnvmapItem from "@/components/listItem/envmapItem.vue";
 import { useI18n } from "vue-i18n";
 import { EXRLoader } from "three/addons";
 import * as THREE from "three";
+import { ASSET_KINDS } from "@shared/assetKinds.js";
 
 const route = useRoute();
 const { token } = useAuthStore();
@@ -177,6 +178,17 @@ onUnmounted(() => {
 });
 
 async function saveScene(sceneData, uploads, envmapFile) {
+  const endpoint = `${ENDPOINT}scenes/${sceneData.id}`;
+
+  console.info("[HERA][DEBUG] REAL FRONTEND UPLOAD HIT", {
+    function: "SceneView.saveScene",
+    endpoint,
+    method: "PUT",
+    uploadCount: uploads?.length ?? 0,
+    uploadNames: (uploads ?? []).map((file) => file?.name ?? null),
+    hasEnvmapUpload: envmapFile != null,
+  });
+
   const formData = new FormData();
 
   Object.entries(sceneData).forEach(([key, value]) => {
@@ -190,13 +202,40 @@ async function saveScene(sceneData, uploads, envmapFile) {
   if (uploads && uploads.length > 0) uploads.forEach((file) => formData.append("uploads", file));
   if (envmapFile != null) formData.append("uploadedEnvmap", envmapFile);
 
-  const res = await fetch(`${ENDPOINT}scenes/${sceneData.id}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${token.value}` },
-    body: formData,
+  let res;
+  try {
+    res = await fetch(endpoint, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token.value}` },
+      body: formData,
+    });
+  } catch (e) {
+    console.error("[HERA][DEBUG] REAL FRONTEND UPLOAD NETWORK ERROR", {
+      endpoint,
+      message: e?.message || String(e),
+    });
+    throw e;
+  }
+
+  console.info("[HERA][DEBUG] REAL FRONTEND UPLOAD RESPONSE", {
+    endpoint: res.url,
+    status: res.status,
+    ok: res.ok,
   });
 
-  if (res.ok) return res.json();
+  if (res.ok) {
+    const payload = await res.json();
+    console.info("[HERA][DEBUG] REAL FRONTEND UPLOAD SUCCESS PAYLOAD", {
+      assetUrls: (payload?.scene?.assets ?? []).map((asset) => ({
+        id: asset.id,
+        name: asset.name,
+        url: asset.url,
+        assetKind: asset.lodMeta?.assetKind ?? null,
+        pointCloudFormat: asset.lodMeta?.pointCloud?.format ?? null,
+      })),
+    });
+    return payload;
+  }
 
   let payload = null;
   try {
@@ -240,6 +279,15 @@ async function saveAll() {
     scene.value.envmapUrl = r.scene.envmapUrl;
 
     editor.scene.assetManager.setUploaded(r.scene.assets, r.assetsIdMatching);
+
+    const assetsToReload = editor.scene.assetManager.consumeAssetsNeedingReloadAfterUpload?.() ?? [];
+    for (const asset of assetsToReload) {
+      await editor.scene.assetManager.reloadAndSwap(editor.scene, asset, {
+        token: token.value,
+        logAssetPipeline: true,
+        pipelineReason: "post-upload-streaming-reload",
+      });
+    }
 
     await sleep(50);
     saved.value = true;
@@ -563,6 +611,10 @@ async function optimizeAsset(asset) {
   }
 }
 
+function addPointCloudAsset(file) {
+  editor.scene.addNewAsset(file, { kind: ASSET_KINDS.POINTCLOUD });
+}
+
 const availableVariants = computed(() => {
   const variants = new Set(["original", "n1", "n2", "n3"]);
   scene.value.assets?.forEach(a => {
@@ -717,7 +769,14 @@ function markChang() {
                   :text="$t('sceneView.leftSection.sceneAssets.addAssetButton')"
                   icon="/icons/upload.svg"
                   @fileSelected="(file) => editor.scene.addNewAsset(file)"
-                  :accept="['.glb', '.gltf', '.splat', '.spz', '.ksplat', '.ply', '.sog']"
+                  :accept="['.glb', '.gltf', '.splat', '.spz', '.ksplat', '.ply', '.sog', '.zip']"
+              />
+
+              <file-upload-button-view
+                  :text="$t('sceneView.leftSection.sceneAssets.addPointCloudButton')"
+                  icon="/icons/upload.svg"
+                  @fileSelected="addPointCloudAsset"
+                  :accept="['.ply', '.zip']"
               />
             </div>
 

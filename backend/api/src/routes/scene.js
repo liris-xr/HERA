@@ -6,6 +6,7 @@ import { sequelize } from "../orm/database.js";
 import { Op, Sequelize } from "sequelize";
 import { updateListById } from "../utils/updateListById.js";
 import { deleteAsset, deleteFile, uploadEnvmapAndAssets } from "../utils/fileUpload.js";
+import { prepareUploadedPointCloudAsset } from "../services/pointCloud/pointCloudUpload.js";
 
 const router = express.Router();
 
@@ -26,6 +27,10 @@ function normalizeRatio(r) {
     return Math.max(0.01, Math.min(1.0, n));
 }
 const normalizeUrl = (u) => String(u ?? "").replaceAll("\\", "/");
+const requestedAssetKind = (asset) => {
+    const kind = asset?.kind ?? asset?.assetKind ?? asset?.type ?? null;
+    return kind ? String(kind).toLowerCase() : null;
+};
 
 router.get(baseUrl + "scenes/:sceneId", authMiddleware, async (req, res) => {
     const sceneId = req.params.sceneId;
@@ -77,6 +82,11 @@ router.get(baseUrl + "scenes/:sceneId", authMiddleware, async (req, res) => {
 const getPostUploadData = async (req, res, next) => {
     const sceneId = req.params.sceneId;
 
+    console.info("[HERA][DEBUG] REAL UPLOAD ENDPOINT HIT", {
+        route: "PUT /scenes/:sceneId",
+        sceneId,
+    });
+
     const scene = await ArScene.findOne({
         include: [
             { model: ArAsset, as: "assets" },
@@ -103,6 +113,18 @@ router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploa
         const uploadedUrl = req.uploadedUrl;
 
         const uploadedFilenames = (req.uploadedFilenames ?? []).map(normalizeUrl);
+
+        console.info("[HERA][DEBUG] REAL UPLOAD FILES PARSED", {
+            route: "PUT /scenes/:sceneId",
+            sceneId,
+            uploadedFilenames,
+            uploadFields: Object.fromEntries(
+                Object.entries(req.files ?? {}).map(([field, files]) => [
+                    field,
+                    files.map((file) => file.originalname),
+                ])
+            ),
+        });
 
         try {
             const fetchScene = async () =>
@@ -133,6 +155,7 @@ router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploa
             const meshesBody = asJson(req.body.meshes, []);
 
             const vrStartPositionBody = asJson(req.body.vrStartPosition, scene.vrStartPosition ?? null);
+            const nextVrStartPosition = vrStartPositionBody ?? scene.vrStartPosition ?? { x: 0, y: 0, z: 0 };
 
             let assetsIdMatching = [];
             let insertedCount = 0;
@@ -210,6 +233,7 @@ router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploa
 
                         if (asset.copiedUrl) {
                             data.url = normalizeUrl(asset.copiedUrl);
+                            data.lodMeta = asset.lodMeta ?? null;
                         } else {
                             const nextUploaded = uploadedFilenames[insertedCount];
                             if (!nextUploaded) {
@@ -218,7 +242,15 @@ router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploa
                                     `uploads received=${uploadedFilenames.length}, insertedCount=${insertedCount}.`
                                 );
                             }
-                            data.url = normalizeUrl(nextUploaded);
+                            const importedPointCloud = await prepareUploadedPointCloudAsset({
+                                fileRelPath: nextUploaded,
+                                assetName: asset.name,
+                                apiRoot: process.cwd(),
+                                requestedKind: requestedAssetKind(asset),
+                            });
+
+                            data.url = normalizeUrl(importedPointCloud?.url ?? nextUploaded);
+                            data.lodMeta = importedPointCloud?.lodMeta ?? null;
                             insertedCount++;
                         }
 
@@ -297,7 +329,7 @@ router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploa
                         title: req.body.title,
                         description: req.body.description,
                         envmapUrl: updatedEnvmapUrl || req.body.envmapUrl,
-                        vrStartPosition: vrStartPositionBody,
+                        vrStartPosition: nextVrStartPosition,
                     },
                     { where: { id: sceneId }, transaction: t }
                 );

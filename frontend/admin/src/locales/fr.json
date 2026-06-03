@@ -205,7 +205,8 @@
       "sceneAssets": {
         "label": "Modèles 3D :",
         "addAssetButton": "Ajouter",
-        "addAssetButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .glb, .gltf ou un fichier Gaussian splat (.splat, .spz, .ksplat, .ply, .sog)",
+        "addPointCloudButton": "Point cloud",
+        "addAssetButtonErrorFileNotSupported": "Ce format de fichier n'est pas pris en charge.\nVeuillez utiliser .glb, .gltf, un fichier Gaussian splat (.splat, .spz, .ksplat, .ply, .sog), ou un dataset Potree converti en .zip.",
         "noAssetsInfo": "Cette scène ne contient aucun modèle 3D",
         "assetNotDisplayed": "Cet objet ne sera pas affiché lors de la visualisation",
         "assetLoadFailed": "Impossible de charger ce modèle 3D"
@@ -308,6 +309,7 @@
         "create": "Créer un asset",
         "name": "Nom",
         "asset": "Fichier",
+        "assetKind": "Type d'asset",
         "hideInViewer": "Masqué",
         "scene": {
           "project": {

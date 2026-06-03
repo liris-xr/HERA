@@ -2,6 +2,7 @@
 import IconSvg from "@/components/icons/IconSvg.vue";
 import Tag from "@/components/tag.vue";
 import { getFileExtension } from "@/js/utils/fileUtils.js";
+import { detectAssetKindFromPath } from "@shared/assetKinds.js";
 import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
@@ -42,10 +43,11 @@ const hasAnimations = computed(() => animations.value.length > 0);
 const isBusy = computed(() => props.loading || props.simplifying);
 const assetKind = computed(() => {
   const explicit = props.asset?.kind ?? props.asset?.type ?? null;
-  if (explicit) return String(explicit).toLowerCase();
-
-  const ext = getFileExtension(props.text || props.asset?.name || props.asset?.sourceUrl || "");
-  return ["splat", "spz", "ksplat", "ply", "sog"].includes(ext.toLowerCase()) ? "splat" : "gltf";
+  const path = props.text || props.asset?.name || props.asset?.sourceUrl || "";
+  return detectAssetKindFromPath(path, {
+    explicitKind: explicit,
+    includePotreeArchive: true,
+  });
 });
 
 const canProcess = computed(() => {

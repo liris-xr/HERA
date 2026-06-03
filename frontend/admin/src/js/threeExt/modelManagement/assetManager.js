@@ -6,8 +6,28 @@ import { Vector3 } from "three";
 import { runLinearGraph } from "@/js/threeExt/graph/graphRuntime.js";
 import { createDefaultAssetGraph } from "@/js/threeExt/graph/defaultAssetGraph.js";
 import { defaultResourceLoader } from "@/js/threeExt/graph/resourceLoader.js";
+import { ASSET_KINDS } from "@shared/assetKinds.js";
 
 let currentAssetId = 0;
+
+function createAssetPipelineLogger(asset, options = {}) {
+    const enabled = !!asset?.uploadData || !!options?.logAssetPipeline;
+
+    return {
+        debug(...args) {
+            if (enabled) console.info("[HERA][AssetPipeline]", ...args);
+        },
+        info(...args) {
+            if (enabled) console.info("[HERA][AssetPipeline]", ...args);
+        },
+        warn(...args) {
+            console.warn("[HERA][AssetPipeline]", ...args);
+        },
+        error(...args) {
+            console.error("[HERA][AssetPipeline]", ...args);
+        },
+    };
+}
 
 export class AssetManager {
     #assets;
@@ -73,7 +93,10 @@ export class AssetManager {
                 renderer: scene?.runtimeRenderer ?? null,
                 ...options,
             },
-            services: { resourceLoader: defaultResourceLoader },
+            services: {
+                logger: createAssetPipelineLogger(asset, options),
+                resourceLoader: defaultResourceLoader,
+            },
         };
     }
 
@@ -264,6 +287,8 @@ export class AssetManager {
                 copiedUrl: asset?.copiedUrl,
                 activeAnimation: asset.activeAnimation,
                 preferredVariant,
+                kind: asset.kind ?? null,
+                lodMeta: asset.lodMeta ?? null,
             });
         }
         return result;
@@ -290,7 +315,7 @@ export class AssetManager {
 
         for (const asset of this.#assets) {
             const object = asset?.getObject?.() ?? asset?.object ?? asset?.mesh ?? null;
-            if (!object || object.userData?.heraAssetKind !== "splat") continue;
+            if (!object || ![ASSET_KINDS.SPLAT, ASSET_KINDS.POINTCLOUD, ASSET_KINDS.POINTCLOUD_STREAMING].includes(object.userData?.heraAssetKind)) continue;
 
             object.updateMatrixWorld(true);
             const box = typeof object.getBoundingBox === "function"
@@ -361,10 +386,25 @@ export class AssetManager {
             asset.sourceUrl = asset.__originalSourceUrl;
             asset.simplifiedUrl = db.simplifiedUrl ?? asset.simplifiedUrl ?? null;
             asset.preferredVariant = db.preferredVariant ?? asset.preferredVariant ?? "original";
+            asset.lodMeta = db.lodMeta ?? asset.lodMeta ?? null;
+            asset.kind = asset.lodMeta?.assetKind ?? asset.kind ?? null;
+            asset.pointCloud = asset.lodMeta?.pointCloud ?? asset.pointCloud ?? null;
+            asset.needsReloadAfterUpload =
+                !!asset.uploadData &&
+                asset.kind === ASSET_KINDS.POINTCLOUD_STREAMING &&
+                !!asset.sourceUrl;
 
             if (asset.uploadData) asset.uploadData = null;
         }
 
         this.runOnChanged();
+    }
+
+    consumeAssetsNeedingReloadAfterUpload() {
+        const assets = this.#assets.filter((asset) => asset.needsReloadAfterUpload);
+        for (const asset of assets) {
+            asset.needsReloadAfterUpload = false;
+        }
+        return assets;
     }
 }

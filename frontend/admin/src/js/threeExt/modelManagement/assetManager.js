@@ -29,6 +29,17 @@ function createAssetPipelineLogger(asset, options = {}) {
     };
 }
 
+function parseLodMeta(raw) {
+    if (!raw) return null;
+    if (typeof raw === "object") return raw;
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
 export class AssetManager {
     #assets;
     sceneTitle;
@@ -386,7 +397,7 @@ export class AssetManager {
             asset.sourceUrl = asset.__originalSourceUrl;
             asset.simplifiedUrl = db.simplifiedUrl ?? asset.simplifiedUrl ?? null;
             asset.preferredVariant = db.preferredVariant ?? asset.preferredVariant ?? "original";
-            asset.lodMeta = db.lodMeta ?? asset.lodMeta ?? null;
+            asset.lodMeta = parseLodMeta(db.lodMeta) ?? asset.lodMeta ?? null;
             asset.kind = asset.lodMeta?.assetKind ?? asset.kind ?? null;
             asset.pointCloud = asset.lodMeta?.pointCloud ?? asset.pointCloud ?? null;
             asset.needsReloadAfterUpload =

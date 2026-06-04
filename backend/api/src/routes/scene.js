@@ -16,6 +16,13 @@ function asJson(val, fallback) {
     try { return JSON.parse(val); } catch { return fallback; }
 }
 
+function defaultVrStartPosition() {
+    return {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+    };
+}
+
 function normalizeVariant(v) {
     const s = String(v ?? "").trim().toLowerCase();
     if (["original", "simplified", "n1", "n2", "n3"].includes(s)) return s;
@@ -155,7 +162,7 @@ router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploa
             const meshesBody = asJson(req.body.meshes, []);
 
             const vrStartPositionBody = asJson(req.body.vrStartPosition, scene.vrStartPosition ?? null);
-            const nextVrStartPosition = vrStartPositionBody ?? scene.vrStartPosition ?? { x: 0, y: 0, z: 0 };
+            const nextVrStartPosition = vrStartPositionBody ?? scene.vrStartPosition ?? defaultVrStartPosition();
 
             let assetsIdMatching = [];
             let insertedCount = 0;

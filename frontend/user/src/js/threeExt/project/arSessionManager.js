@@ -10,6 +10,8 @@ import { extractYawQuaternion } from "@/js/utils/extractYawQuaternion.js";
 import { ScenePlacementManager } from "@/js/threeExt/scene/scenePlacementManager.js";
 import { buildSimpleDevicePolicy } from "@/js/threeExt/DeviceProfile/devicePolicy.js";
 import { createPerfDebugLogger } from "@/js/threeExt/performance/perfDebugLogger.js";
+import { createArMetricsCollector } from "@/js/threeExt/performance/arMetricsCollector.js";
+import { createArMetricsHud3d } from "@/js/threeExt/performance/arMetricsHud3d.js";
 import { ensureSparkRenderer } from "@/js/threeExt/spark/sparkRuntime.js";
 
 export class ArSessionManager {
@@ -18,6 +20,8 @@ export class ArSessionManager {
     arRenderer;
     labelRenderer;
     perfDebugLogger;
+    metricsCollector;
+    metricsHud;
 
     shadowMapSize;
     controls;
@@ -52,6 +56,17 @@ export class ArSessionManager {
             renderer: this.arRenderer,
             getScene: () => this.sceneManager.active.value,
             getCamera: () => this.arCamera,
+        });
+        this.metricsCollector = createArMetricsCollector({
+            renderer: this.arRenderer,
+            getScene: () => this.sceneManager.active.value,
+            getAssetScene: () => this.sceneManager.getActiveContentScene(),
+            getCamera: () => this.arCamera,
+            getMode: () => this.xrMode ?? "inline",
+        });
+        this.metricsHud = createArMetricsHud3d({
+            enabled: this.metricsCollector?.hudEnabled,
+            getSnapshot: () => this.metricsCollector?.getHudSnapshot?.(),
         });
 
         this.sceneManager.onSceneChanged = function () {
@@ -279,6 +294,7 @@ export class ArSessionManager {
             setTimeout(() => this.applyVrCameraPosition(), 100);
         }
 
+        this.metricsCollector?.startSession();
         this.sceneManager.isArRunning.value = true;
     }
 
@@ -386,6 +402,8 @@ export class ArSessionManager {
             this.removeVrCameraPosition();
         }
 
+        this.metricsCollector?.endSession();
+        this.metricsHud?.detach?.();
         this.#resetCameraPosition();
 
         if (this.sceneManager.active.value.hasLabels.value) {
@@ -402,6 +420,18 @@ export class ArSessionManager {
         this.#resetCameraPosition();
     }
 
+    logMetricsSnapshot() {
+        return this.metricsCollector?.logSnapshot?.() ?? null;
+    }
+
+    exportMetrics(format = "json") {
+        if (format === "csv") {
+            return this.metricsCollector?.downloadCSV?.() ?? this.metricsCollector?.exportCsv?.() ?? false;
+        }
+
+        return this.metricsCollector?.downloadJSON?.() ?? this.metricsCollector?.exportJson?.() ?? false;
+    }
+
     onXrFrame(time, frame) {
         this.sceneManager.onXrFrame(
             time,
@@ -413,7 +443,18 @@ export class ArSessionManager {
 
         this.controls.update();
 
+        this.metricsHud?.update?.({
+            scene: this.sceneManager.active.value,
+            renderer: this.arRenderer,
+            camera: this.arCamera,
+            frame,
+            referenceSpace: this.referenceSpace,
+            time,
+        });
         this.arRenderer.render(this.sceneManager.active.value, this.arCamera);
+        this.metricsCollector?.sampleAfterRender?.(time, frame, {
+            mode: this.xrMode ?? "inline",
+        });
         //this.perfDebugLogger.logFrame(time);
 
         if (

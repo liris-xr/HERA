@@ -37,6 +37,19 @@ function resolveRelativeUrl(baseUrl, relativeUrl) {
     }
 }
 
+async function fetchPotreeResource(input, init = {}) {
+    const response = await fetch(input, {
+        ...init,
+        cache: "no-store",
+    });
+
+    if (!response.ok) {
+        throw new Error(`[Potree] Failed to load ${input}: ${response.status} ${response.statusText}`);
+    }
+
+    return response;
+}
+
 function detectPotreeVersion(entryName, options = {}) {
     const explicit = options.version ?? options.potreeVersion ?? null;
     if (explicit === "v1" || explicit === "v2") return explicit;
@@ -209,7 +222,8 @@ export function createPotreeStreamingLoader(dependencies) {
         const potree = new Potree(version);
         const pointCloud = await potree.loadPointCloud(
             entryName,
-            (relativeUrl) => resolveRelativeUrl(baseUrl, relativeUrl)
+            (relativeUrl) => resolveRelativeUrl(baseUrl, relativeUrl),
+            fetchPotreeResource
         );
 
         return new PotreeStreamingPointCloud({

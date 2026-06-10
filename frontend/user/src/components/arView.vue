@@ -127,6 +127,58 @@ function exportLodLogs() {
   scene.exportExperimentLogs();
 }
 
+const metricsSnapshot = computed(() => arSessionManager.metricsCollector?.live?.value ?? null);
+const metricsEnabled = computed(() => !!arSessionManager.metricsCollector?.enabled);
+const metricsOverlayEnabled = computed(() => !!arSessionManager.metricsCollector?.overlayEnabled);
+const metricsHudEnabled = computed(() => !!arSessionManager.metricsCollector?.hudEnabled);
+const metricsDisplayEnabled = computed(() => metricsEnabled.value && (metricsOverlayEnabled.value || metricsHudEnabled.value));
+const metricsSampleCount = computed(() => {
+  metricsSnapshot.value;
+  return arSessionManager.metricsCollector?.getHistory?.().length ?? 0;
+});
+const metricsSessionEnded = computed(() => {
+  return (arSessionManager.metricsCollector?.sessionEndCount?.value ?? 0) > 0;
+});
+const metricsExportPanelEnabled = computed(() => {
+  return metricsDisplayEnabled.value || (metricsSessionEnded.value && metricsSampleCount.value > 0);
+});
+
+const metricsPrimaryAsset = computed(() => {
+  return metricsSnapshot.value?.assets?.find((asset) => asset?.visible !== false) ?? metricsSnapshot.value?.assets?.[0] ?? null;
+});
+
+const metricsAssetText = computed(() => {
+  const asset = metricsPrimaryAsset.value;
+  if (!asset) return "asset -";
+
+  if (asset.kind === "splat") {
+    const count = asset.splat?.activeSplats ?? asset.splat?.lodSplats ?? asset.splat?.totalSplats;
+    return `splat ${count ?? "-"}`;
+  }
+
+  if (asset.kind === "pointcloud-streaming") {
+    return `points ${asset.pointCloud?.visiblePoints ?? "-"}`;
+  }
+
+  return `tris ${asset.triangles ?? "-"}`;
+});
+
+const metricsFps = computed(() => metricsSnapshot.value?.fps ?? metricsSnapshot.value?.fpsStats?.avgFps ?? "-");
+const metricsP95 = computed(() => metricsSnapshot.value?.p95FrameMs ?? metricsSnapshot.value?.fpsStats?.p95FrameMs ?? "-");
+const metricsDrawCalls = computed(() => metricsSnapshot.value?.renderer?.calls ?? "-");
+
+function logMetricsSnapshot() {
+  arSessionManager.logMetricsSnapshot?.();
+}
+
+function exportMetricsJson() {
+  arSessionManager.exportMetrics?.("json");
+}
+
+function exportMetricsCsv() {
+  arSessionManager.exportMetrics?.("csv");
+}
+
 const buttonText = computed(() => {
   if (props.json.displayMode === "ar") {
     return t("projectView.arView.startAr.button");
@@ -154,6 +206,37 @@ const buttonText = computed(() => {
     </span>
   </div>
 
+  <aside
+      v-if="metricsExportPanelEnabled && metricsSnapshot && !arSessionManager.isArRunning.value"
+      id="metricsExportPanel"
+  >
+    <div>
+      <strong>AR metrics ready</strong>
+      <span>{{ metricsSampleCount }} samples</span>
+    </div>
+    <p>
+      FPS {{ metricsFps }},
+      p95 {{ metricsP95 }} ms,
+      draw {{ metricsDrawCalls }}
+    </p>
+    <div class="metricsActions">
+      <button @click="logMetricsSnapshot">Log</button>
+      <button @click="exportMetricsJson">JSON</button>
+      <button @click="exportMetricsCsv">CSV</button>
+    </div>
+  </aside>
+
+  <aside
+      v-else-if="metricsDisplayEnabled && !arSessionManager.isArRunning.value"
+      id="metricsExportPanel"
+  >
+    <div>
+      <strong>AR metrics armed</strong>
+      <span>start AR</span>
+    </div>
+    <p>Metrics collection is armed. Export stays available after the session.</p>
+  </aside>
+
   <div>
     <div ref="container" id="container"></div>
 
@@ -173,6 +256,16 @@ const buttonText = computed(() => {
         </button>
 
         <h2>{{ props.json.title }}</h2>
+
+        <div
+            v-if="metricsOverlayEnabled && arSessionManager.isArRunning.value"
+            id="xrMetricsDomHud"
+        >
+          <strong>FPS {{ metricsFps }}</strong>
+          <span>p95 {{ metricsP95 }} ms</span>
+          <span>draw {{ metricsDrawCalls }}</span>
+          <span>{{ metricsAssetText }}</span>
+        </div>
 
         <hot-dog-menu ref="contextMenu">
           <IconContextMenuItem
@@ -440,6 +533,61 @@ h2 {
   padding: 4px;
   border: none;
   background: none;
+}
+
+#metricsExportPanel {
+  width: min(520px, calc(100% - 32px));
+  margin: 0 auto 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--backgroundColor);
+  color: var(--textImportantColor);
+  box-shadow: var(--defaultUniformShadow);
+}
+
+#metricsExportPanel > div,
+.metricsActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#metricsExportPanel p {
+  margin: 6px 0 0;
+  color: var(--textColor);
+}
+
+.metricsActions {
+  justify-content: flex-end;
+}
+
+#metricsExportPanel .metricsActions > button {
+  padding: 4px 6px;
+  border: 1px solid var(--accentColor);
+  border-radius: 4px;
+  color: var(--accentColor);
+  background: transparent;
+}
+
+#xrMetricsDomHud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 2px solid #40b0ff;
+  border-radius: 6px;
+  background: #080c12;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+#xrMetricsDomHud > span {
+  color: #dcecff;
 }
 
 .arrowButton {

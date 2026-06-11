@@ -1,5 +1,5 @@
 import {io} from "socket.io-client";
-import {reactive, ref} from "vue";
+import {reactive, ref, toRaw} from "vue";
 import {SocketActionManager} from "@/js/socket/socketActionManager.js";
 
 export class SocketConnection {
@@ -48,14 +48,15 @@ export class SocketConnection {
 
     handleActionManager(event, ...args) {
         if(!this.socketActionManager) return
+        const socketActionManager = toRaw(this.socketActionManager)
 
         if(event.startsWith("presentation:action:")) {
             const eventName = event.replace("presentation:action:", "")
             if (
-                Object.getOwnPropertyNames(Object.getPrototypeOf(this.socketActionManager)).includes(eventName) &&
-                typeof this.socketActionManager[eventName] === 'function'
+                Object.getOwnPropertyNames(Object.getPrototypeOf(socketActionManager)).includes(eventName) &&
+                typeof socketActionManager[eventName] === 'function'
             )
-                this.socketActionManager[eventName](...args)
+                socketActionManager[eventName](...args)
             else
                 console.error("SocketActionManager : event "+eventName+" not found")
         }

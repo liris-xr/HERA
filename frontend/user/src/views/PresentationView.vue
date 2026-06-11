@@ -128,11 +128,11 @@ async function endPresentation() {
 }
 
 function highlight(asset) {
-  socket.send("presentation:action:highlight", { assetId: asset.id, value: !asset.highlight.value ?? true })
+  socket.send("presentation:action:highlight", { assetId: asset.id, value: !asset.highlight.value ?? false })
 }
 
 function toggleAssetVisibility(asset) {
-  socket.send("presentation:action:toggleAsset", { assetId: asset.id, value: asset.hidden.value ?? false })
+  socket.send("presentation:action:toggleAsset", { assetId: asset.id, value: asset.hidden.value ?? true })
 }
 
 function toggleLabelVisibility(label) {

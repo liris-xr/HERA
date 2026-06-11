@@ -7,7 +7,7 @@ export class SocketActionManager {
     arSessionManager
 
     constructor(arSessionManager) {
-        this.arSessionManager = arSessionManager;
+        this.arSessionManager = toRaw(arSessionManager);
     }
 
     getScene(sceneId = null) {

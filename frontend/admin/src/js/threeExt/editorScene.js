@@ -262,7 +262,12 @@ export class EditorScene extends THREE.Scene {
 
     setupControls(controls) {
         this.#transformControls = controls;
-        this.add(this.#transformControls);
+        const transformHelper = typeof this.#transformControls.getHelper === "function"
+            ? this.#transformControls.getHelper()
+            : this.#transformControls;
+        if (transformHelper && !transformHelper.parent) {
+            this.add(transformHelper);
+        }
         this.#transformControls.detach();
         this.setTransformMode("translate");
 

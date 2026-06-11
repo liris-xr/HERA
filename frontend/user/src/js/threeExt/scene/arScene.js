@@ -808,7 +808,7 @@ export class ArScene extends AbstractScene {
                         forced: forcedVariant ?? null,
                         final: finalTargetVariant ?? null,
                     };
-
+                    /*
                     if (this.#assets[0] === asset) {
                         const overlay = ensureLodDebugOverlay();
 
@@ -863,7 +863,7 @@ export class ArScene extends AbstractScene {
                         });
 
                         asset.lastDebugTargetVariant = debugSignature;
-                    }
+                    }*/
 
                     /* Keep the latest target while a swap is loading.
                      If the loaded variant becomes stale, the asset discards it before display.

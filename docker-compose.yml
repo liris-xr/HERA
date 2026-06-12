@@ -1,0 +1,8 @@
+services:
+  hera:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/src/database
+    restart: unless-stopped

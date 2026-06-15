@@ -61,7 +61,15 @@
     "seeMoreProjectsButton": "Voir plus de projets",
     "noMoreProjectsToShow": "Plus de projets à afficher.",
     "loadingInfo": "Chargement...",
-    "loadingError": "Une erreur est survenue lors du chargement des projets. Veuillez réessayer plus tard."
+    "loadingError": "Une erreur est survenue lors du chargement des projets. Veuillez réessayer plus tard.",
+    "homeEditor": {
+      "title": "Modifier la page d'accueil",
+      "fieldTitle": "Titre de la page d'accueil",
+      "fieldText": "Description du site",
+      "restore": "Restaurer à la dernière sauvegarde",
+      "save": "Sauvegarder et appliquer",
+      "appliedSuccess": "Modifications appliquées"
+    }
   },
 
   "projectView": {
@@ -290,6 +298,7 @@
         "title": "Titre",
         "scenes": "Scènes",
         "published": "Public",
+        "fav": "Favori",
         "description": "Description",
         "calibrationMessage": "Message de calibration",
         "unit": "Nom du paramètre"

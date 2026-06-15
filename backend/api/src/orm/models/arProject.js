@@ -85,5 +85,10 @@ export default sequelize.define('ArProject', {
         type: DataTypes.UUID,
         allowNull: false,
     },
+    fav:{
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
 
 })

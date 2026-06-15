@@ -23,10 +23,15 @@
     "createAccount": "Crear uno"
   },
   "homeView": {
-    "title": "Proyectos recientes",
+    "title": "Inicio",
     "loadingInfo": "Cargando...",
     "loadingError": "Ocurrió un error al cargar los proyectos. Inténtalo de nuevo más tarde.",
-    "seeAllProjects": "Ver todos los proyectos"
+    "seeAllProjects": "Ver todos los proyectos",
+    "noFavorites": "ningún favorito por el momento",
+    "noProjects": "ningún proyecto por el momento",
+    "allOurProjects": "Todos nuestros proyectos",
+    "ourFavorites": "Nuestros Favoritos",
+    "seeAllOurProjects": "Ver todos nuestros proyectos"
   },
   "projectsView": {
     "title": "Todos los proyectos",
@@ -154,8 +159,10 @@
 
   "projectCard": {
     "scene": "escena | escenas",
-    "pictureAlt": "Imagen del proyecto",
-    "updatedOn": "Actualizado el "
+    "pictureAlt": "Imagen del projet",
+    "updatedOn": "Actualizado el ",
+    "projectPublished": "Publicado",
+    "projectPrivate": "Privado"
   },
   "redirectMessage": {
     "part1": "Nota:",

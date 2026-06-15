@@ -59,7 +59,15 @@
     "seeMoreProjectsButton": "See more projects",
     "noMoreProjectsToShow": "No more projects to show.",
     "loadingInfo": "Loading...",
-    "loadingError": "An error occurred while loading projects. Please try again later."
+    "loadingError": "An error occurred while loading projects. Please try again later.",
+    "homeEditor": {
+      "title": "Edit home page",
+      "fieldTitle": "Home page title",
+      "fieldText": "Site description",
+      "restore": "Restore to last backup",
+      "save": "Save and apply",
+      "appliedSuccess": "Changes applied"
+    }
   },
 
   "projectView": {
@@ -297,6 +305,7 @@
         "title": "Title",
         "scenes": "Scenes",
         "published": "Published",
+        "fav": "Favorite",
         "description": "Description",
         "calibrationMessage": "Calibration message",
         "unit": "Parameter name"

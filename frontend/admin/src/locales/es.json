@@ -58,7 +58,15 @@
     "seeMoreProjectsButton": "Ver más proyectos",
     "noMoreProjectsToShow": "No hay más proyectos para mostrar.",
     "loadingInfo": "Cargando...",
-    "loadingError": "Ocurrió un error al cargar los proyectos. Inténtalo de nuevo más tarde."
+    "loadingError": "Ocurrió un error al cargar los proyectos. Inténtalo de nuevo más tarde.",
+    "homeEditor": {
+      "title": "Editar la página de inicio",
+      "fieldTitle": "Título de la página de inicio",
+      "fieldText": "Descripción del sitio",
+      "restore": "Restaurar a la última copia",
+      "save": "Guardar y aplicar",
+      "appliedSuccess": "Cambios aplicados"
+    }
   },
   "projectView": {
     "selectedFile": {
@@ -279,6 +287,7 @@
         "title": "Titre",
         "scenes": "Scènes",
         "published": "Public",
+        "fav": "Favorito",
         "description": "Description",
         "calibrationMessage": "Message de calibration",
         "unit": "Nom du paramètre"

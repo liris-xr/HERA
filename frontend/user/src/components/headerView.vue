@@ -22,7 +22,6 @@ function logoutAndRedirect(){
   <header>
     <nav>
       <RouterLink :to="{name: 'home'}">{{$t("header.home")}}</RouterLink>
-      <RouterLink :to="{name:'projects'}">{{$t("header.allProjects")}}</RouterLink>
 
       <div>
         <locale-changer></locale-changer>

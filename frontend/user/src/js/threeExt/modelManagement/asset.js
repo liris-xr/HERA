@@ -867,7 +867,7 @@ export class Asset extends SceneElementInterface {
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;
-            applyVariantDebugColor(newObject, this.currentVariant);
+            //applyVariantDebugColor(newObject, this.currentVariant);
 
             if (parent) {
                 parent.add(newObject);

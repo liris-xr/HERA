@@ -754,7 +754,7 @@ export class ArScene extends AbstractScene {
                       limitAutoUpgradeStep autorise le jump direct vers original.
                      */
                     const fps = this.getFpsStats();
-
+/*
                     this._latestLodStateByAssetId.set(asset.id, {
                         currentVariant: asset.currentVariant ?? null,
                         autoTargetVariant,

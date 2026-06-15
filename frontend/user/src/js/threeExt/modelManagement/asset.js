@@ -23,10 +23,10 @@ function isValidVec3(value) {
 }
 function applyVariantDebugColor(object, variant) {
     const colorMap = {
-        original: 0x073763,
-        n1: 0xffff00,
-        n2: 0xff8800,
-        n3: 0xff0000,
+        original: 0x00aaff, // bright blue
+        n1: 0x00ff66,      // bright green
+        n2: 0xffcc00,      // bright yellow/orange
+        n3: 0xff3366,
     };
 
     const color = colorMap[variant] ?? 0xffffff;
@@ -867,7 +867,7 @@ export class Asset extends SceneElementInterface {
             this.object = newObject;
             this.mesh = newObject;
             this.currentVariant = chosen.variant;
-            //applyVariantDebugColor(newObject, this.currentVariant);
+            applyVariantDebugColor(newObject, this.currentVariant);
 
             if (parent) {
                 parent.add(newObject);

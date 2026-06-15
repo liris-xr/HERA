@@ -5,7 +5,7 @@ import { ArProject, ArScene, ArAsset, ArLabel } from "../orm/index.js";
 if (global.currentServerIp === undefined) {
   global.currentServerIp = "";
 }
-
+ 
 function getLocalIp() {
   const interfaces = os.networkInterfaces();
   for (const interfaceName in interfaces) {
@@ -25,7 +25,7 @@ export async function checkAndUpdateIpAddresses(targetIp = null) {
   // Update global cache
   global.currentServerIp = localIp;
 
-  console.log(`[IP Detection] Updating database URLs to use ${newHost}...`);
+  console.log(`Updating URLs to use ${newHost}...`);
 
   const hostRegex = /https?:\/\/[^\/]+\/(public[\\/]files[\\/])/gi;
 
@@ -35,7 +35,7 @@ export async function checkAndUpdateIpAddresses(targetIp = null) {
   }
 
   try {
-    // 1. Update ArProject pictureUrl and presets
+    // Update ArProject pictureUrl and presets
     const projects = await ArProject.findAll();
     for (const project of projects) {
       let changed = false;
@@ -78,11 +78,10 @@ export async function checkAndUpdateIpAddresses(targetIp = null) {
 
       if (changed) {
         await project.save();
-        console.log(`[IP Detection] Updated project URLs for project ID: ${project.id}`);
       }
     }
 
-    // 2. Update ArScene envmapUrl
+    // Update ArScene envmapUrl
     const scenes = await ArScene.findAll();
     for (const scene of scenes) {
       if (scene.envmapUrl) {
@@ -90,12 +89,11 @@ export async function checkAndUpdateIpAddresses(targetIp = null) {
         if (updatedEnvmapUrl !== scene.envmapUrl) {
           scene.envmapUrl = updatedEnvmapUrl;
           await scene.save();
-          console.log(`[IP Detection] Updated envmap URL for scene ID: ${scene.id}`);
         }
       }
     }
 
-    // 3. Update ArAsset url
+    // Update ArAsset url
     const assets = await ArAsset.findAll();
     for (const asset of assets) {
       if (asset.url) {
@@ -103,12 +101,11 @@ export async function checkAndUpdateIpAddresses(targetIp = null) {
         if (updatedUrl !== asset.url) {
           asset.url = updatedUrl;
           await asset.save();
-          console.log(`[IP Detection] Updated asset URL for asset ID: ${asset.id}`);
         }
       }
     }
 
-    // 4. Update ArLabel text
+    // Update ArLabel text
     const labels = await ArLabel.findAll();
     for (const label of labels) {
       if (label.text) {
@@ -116,14 +113,13 @@ export async function checkAndUpdateIpAddresses(targetIp = null) {
         if (updatedText !== label.text) {
           label.text = updatedText;
           await label.save();
-          console.log(`[IP Detection] Updated label text for label ID: ${label.id}`);
         }
       }
     }
 
-    console.log("[IP Detection] Database URL verification/update complete.");
+    console.log("URL verification/update completed.");
   } catch (error) {
-    console.error("[IP Detection] Error updating database URLs:", error);
+    console.error("Error updating URLs:", error);
   }
 }
 
@@ -133,10 +129,9 @@ export function ipDetectionMiddleware(req, res, next) {
     const requestIp = requestHost.split(':')[0];
     // Ignore updates if the host hasn't changed or if it's empty
     if (requestIp && requestIp !== global.currentServerIp) {
-      console.log(`[IP Detection] Request IP changed from "${global.currentServerIp}" to "${requestIp}". Triggering update...`);
       global.currentServerIp = requestIp;
       checkAndUpdateIpAddresses(requestIp).catch(err => {
-        console.error("[IP Detection] Async update error:", err);
+        console.error("Async update error:", err);
       });
     }
   }

@@ -9,6 +9,7 @@ import scene from "./src/routes/scene.js";
 import dev from "./src/routes/dev.js";
 import asset from "./src/routes/asset.js";
 import label from "./src/routes/label.js";
+import preset from "./src/routes/preset.js";
 import cors from "cors";
 
 import * as path from "node:path";
@@ -50,6 +51,7 @@ async function main() {
   app.use(dev);
   app.use(asset);
   app.use(label);
+  app.use(preset);
   app.use("/public", express.static("public")); //serving static files
 
   const httpsServer = https.createServer(options, app);

@@ -712,7 +712,7 @@ export class Asset extends SceneElementInterface {
             };
 
             const loaded = kind === ASSET_KINDS.SPLAT
-                ? await loadSparkSplatAsset({ url: urlToLoad, name: this.name })
+                ? await loadSparkSplatAsset({ url: urlToLoad, name: this.name, asset: this, manifest })
                 : kind === ASSET_KINDS.POINTCLOUD
                     ? await loadStaticPointCloud({
                         url: urlToLoad,

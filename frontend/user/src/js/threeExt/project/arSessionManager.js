@@ -455,7 +455,7 @@ export class ArSessionManager {
         this.metricsCollector?.sampleAfterRender?.(time, frame, {
             mode: this.xrMode ?? "inline",
         });
-        //this.perfDebugLogger.logFrame(time);
+        this.perfDebugLogger.logFrame(time);
 
         if (
             this.sceneManager.active.value.hasLabels.value &&

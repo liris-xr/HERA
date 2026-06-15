@@ -12,6 +12,7 @@ import { MeshManager } from "../modelManagement/meshManager";
 import { buildAssetRuntimeMetrics } from "@/js/threeExt/runtimeLod/runtimeMetrics.js";
 import { selectAssetVariant } from "@/js/threeExt/runtimeLod/variantSelector.js";
 import { ensureAssetVariant } from "@/js/threeExt/runtimeLod/variantApplier.js";
+import { buildSplatDebugPayload, logSplatDebug } from "@shared/splat/splatDiagnostics.js";
 
 function ensureLodDebugOverlay() {
     let el = document.getElementById("lod-debug-overlay");
@@ -221,6 +222,18 @@ export class ArScene extends AbstractScene {
 
            // this.updateAssetSubMeshes(assetData);
             this.add(assetData.object);
+            if (assetData.assetKind === "splat" || assetData.object?.userData?.heraAssetKind === "splat") {
+                logSplatDebug("viewer-object-added-to-scene", buildSplatDebugPayload({
+                    asset: assetData,
+                    object: assetData.object,
+                    kind: "splat",
+                    url: assetData.sourceUrl,
+                    source: {
+                        sceneId: this.sceneId,
+                        sceneTitle: this.title ?? null,
+                    },
+                }));
+            }
         }
 
         this.computeBoundingSphere(true);

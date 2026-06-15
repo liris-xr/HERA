@@ -7,6 +7,7 @@ import { runLinearGraph } from "@/js/threeExt/graph/graphRuntime.js";
 import { createDefaultAssetGraph } from "@/js/threeExt/graph/defaultAssetGraph.js";
 import { defaultResourceLoader } from "@/js/threeExt/graph/resourceLoader.js";
 import { ASSET_KINDS } from "@shared/assetKinds.js";
+import { buildSplatDebugPayload, logSplatDebug } from "@shared/splat/splatDiagnostics.js";
 
 let currentAssetId = 0;
 
@@ -118,6 +119,22 @@ export class AssetManager {
         }
 
         scene.add(object3D);
+        if (object3D.userData?.heraAssetKind === ASSET_KINDS.SPLAT) {
+            const asset = state?.input?.asset ?? null;
+            logSplatDebug("admin-object-added-to-scene", buildSplatDebugPayload({
+                asset,
+                object: object3D,
+                renderer: scene?.runtimeRenderer ?? null,
+                kind: ASSET_KINDS.SPLAT,
+                url: state?.source?.url ?? asset?.sourceUrl ?? null,
+                manifest: state?.source?.manifest ?? null,
+                source: {
+                    sceneTitle: scene?.sceneTitle ?? null,
+                    variant: state?.source?.variant ?? null,
+                    fromUpload: !!state?.source?.fromUpload,
+                },
+            }));
+        }
         return object3D;
     }
 

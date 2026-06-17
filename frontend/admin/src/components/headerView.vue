@@ -17,10 +17,7 @@ function logoutAndRedirect(){
 <template>
   <header>
     <nav>
-      <RouterLink :to="{name:'projects'}" class="icon-link">
-        <img src="/icons/globe.svg" alt="home" class="icon">
-        {{$t("header.home")}}
-      </RouterLink>
+      <RouterLink :to="{name:'projects'}">{{$t("header.home")}}</RouterLink>
 
       <div>
         <locale-changer></locale-changer>
@@ -65,6 +62,13 @@ nav{
   box-shadow: var(--defaultUniformShadow);
 }
 
+/* Rétablissement du style classique pour les liens sans icône (Accueil) */
+nav>a {
+  margin-right: 24px;
+  text-decoration: none;
+  color: inherit;
+}
+
 nav>a.router-link-exact-active {
   color: var(--accentColor);
 }
@@ -84,10 +88,6 @@ nav>div>*{
   gap: 8px;
   text-decoration: none;
   color: inherit;
-}
-
-nav > .icon-link {
-  margin-right: 24px;
 }
 
 .icon {

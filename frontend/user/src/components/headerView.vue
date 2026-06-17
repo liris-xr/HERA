@@ -19,15 +19,8 @@ function logoutAndRedirect(){
 <template>
   <header>
     <nav>
-      <RouterLink :to="{name: 'home'}" class="icon-link">
-        <img src="/icons/globe.svg" alt="home" class="icon">
-        {{$t("header.home")}}
-      </RouterLink>
-      
-      <RouterLink :to="{name:'projects'}" class="icon-link">
-        <img src="/icons/ar.svg" alt="projects" class="icon">
-        {{$t("header.allProjects")}}
-      </RouterLink>
+      <RouterLink :to="{name: 'home'}">{{$t("header.home")}}</RouterLink>
+      <RouterLink :to="{name:'projects'}">{{$t("header.allProjects")}}</RouterLink>
 
       <div>
         <locale-changer></locale-changer>
@@ -69,6 +62,11 @@ nav{
   box-shadow: var(--defaultUniformShadow);
 }
 
+nav>a{
+  margin-right: 24px;
+  text-decoration: none;
+}
+
 nav>a.router-link-exact-active {
   color: var(--accentColor);
 }
@@ -87,10 +85,6 @@ nav > div {
   gap: 8px;
   text-decoration: none;
   color: inherit;
-}
-
-nav > .icon-link {
-  margin-right: 24px;
 }
 
 .icon {

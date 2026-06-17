@@ -54,7 +54,9 @@
       "pictureAlt": "Project picture",
       "updatedOn": "Updated on ",
       "projectPublished": "Published",
-      "projectPrivate": "Private"
+      "projectPrivate": "Private",
+      "maxFavoritesReached": "Maximum number of favorites reached ({max})!",
+      "updateError": "Error during update."
     },
     "seeMoreProjectsButton": "See more projects",
     "noMoreProjectsToShow": "No more projects to show.",
@@ -64,6 +66,7 @@
       "title": "Edit home page",
       "fieldTitle": "Home page title",
       "fieldText": "Site description",
+      "fieldMaxFavorites": "Maximum number of favorites",
       "restore": "Restore to last backup",
       "save": "Save and apply",
       "appliedSuccess": "Changes applied"

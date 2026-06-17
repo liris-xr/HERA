@@ -1,6 +1,6 @@
 <script setup>
 import ProjectCard from "@/components/projectCard.vue";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { ENDPOINT, getResource } from "@/js/endpoints.js";
 import ArNotification from "@/components/notification/arNotification.vue";
 import ButtonView from "@/components/utils/buttonView.vue";
@@ -78,14 +78,33 @@ const favorites = computed(() => {
   return projects.value.filter((p) => p.fav === 1);
 });
 
+function handleGlobalFavToggled(e) {
+  const proj = projects.value.find((p) => p.id === e.detail.projectId);
+  if (proj) {
+    proj.fav = e.detail.fav;
+  }
+}
+
+const showScrollBtn = ref(true);
+function handleScroll() {
+  showScrollBtn.value = window.scrollY < 200;
+}
+
 onMounted(() => {
   fetchHomeSettings();
   loadNext();
+  window.addEventListener("project-fav-toggled", handleGlobalFavToggled);
+  window.addEventListener("scroll", handleScroll);
 });
 
-// scroll to all projects
-function scrollToProjects() {
-  const el = document.getElementById("all-projects");
+onUnmounted(() => {
+  window.removeEventListener("project-fav-toggled", handleGlobalFavToggled);
+  window.removeEventListener("scroll", handleScroll);
+});
+
+// scroll to favorites
+function scrollToFavorites() {
+  const el = document.getElementById("favorites-section");
   if (el) {
     el.scrollIntoView({ behavior: "smooth" });
   }
@@ -108,24 +127,8 @@ function scrollToProjects() {
           </div>
         </div>
 
-        <div class="acc-content">
-          <h1>{{ homeSettings.title }}</h1>
-          <p>{{ homeSettings.text }}</p>
-        </div>
-      </div>
-
-      <div class="scroll-down-container">
-        <a
-          href="#all-projects"
-          class="scroll-down-btn"
-          @click.prevent="scrollToProjects"
-        >
-          <span>{{ $t("homeView.seeAllOurProjects") }}</span>
-          <IconSvg
-            url="/icons/arrow_downward.svg"
-            class="scroll-down-icon"
-          />
-        </a>
+        <h1>{{ homeSettings.title }}</h1>
+        <p>{{ homeSettings.text }}</p>
       </div>
     </div>
 
@@ -150,7 +153,7 @@ function scrollToProjects() {
       </ar-notification>
     </section>
 
-    <section class="projects-section">
+    <section class="projects-section" id="favorites-section">
       <div class="section-title-row">
         <h2>{{ $t("homeView.ourFavorites") }}</h2>
         <span
@@ -195,6 +198,23 @@ function scrollToProjects() {
       </div>
     </section>
     </div>
+
+    <Transition name="fade">
+      <div v-if="showScrollBtn" class="scroll-down-container">
+        <a
+          href="#favorites-section"
+          class="scroll-down-btn"
+          @click.prevent="scrollToFavorites"
+        >
+          <span>{{ $t("homeView.seeOurProjects") }}</span>
+          <IconSvg
+            url="/icons/arrow_downward.svg"
+            theme="background"
+            :size="20"
+          />
+        </a>
+      </div>
+    </Transition>
   </main>
 </template>
 
@@ -223,32 +243,23 @@ main {
 }
 
 .home-acc {
-  display: flex;
-  flex-direction: row;
-  gap: 32px;
+  display: block;
   width: 100%;
-  align-items: center;
-}
-
-@media (max-width: 768px) {
-  .home-acc {
-    flex-direction: column;
-    gap: 20px;
-  }
 }
 
 .acc-image {
-  flex: 1;
-  max-width: 40%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  float: left;
+  width: 40%;
+  margin-right: 32px;
+  margin-bottom: 16px;
 }
 
 @media (max-width: 768px) {
   .acc-image {
-    max-width: 100%;
+    float: none;
     width: 100%;
+    margin-right: 0;
+    margin-bottom: 20px;
   }
 }
 
@@ -273,22 +284,15 @@ main {
   font-weight: 600;
 }
 
-.acc-content {
-  flex: 1.5;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-}
-
-.acc-content h1 {
+.home-acc h1 {
   font-size: 2.2rem;
   color: var(--textImportantColor);
-  margin: 0;
+  margin-top: 0;
+  margin-bottom: 16px;
   font-weight: 700;
 }
 
-.acc-content p {
+.home-acc p {
   font-size: 1.1rem;
   line-height: 1.6;
   color: var(--textColor);
@@ -297,32 +301,47 @@ main {
 }
 
 .scroll-down-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-  width: 100%;
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 1000;
 }
 
 .scroll-down-btn {
-  display: inline-flex;
-  flex-direction: column;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 8px;
-  color: var(--accentColor);
+  gap: 10px;
+  background-color: var(--accentColor);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
   font-weight: 600;
   text-decoration: none;
-  font-size: 1rem;
-  transition: transform 0.2s ease;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.scroll-down-btn span {
+  color: white !important;
 }
 
 .scroll-down-btn:hover {
-  transform: translateY(5px);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  filter: brightness(110%);
 }
 
-.scroll-down-icon {
-  width: 32px;
-  height: 32px;
-  fill: var(--accentColor);
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 .notification-container {

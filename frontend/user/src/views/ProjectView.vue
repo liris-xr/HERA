@@ -213,7 +213,7 @@ const connectedText = computed(() => {
 }
 
 .success {
-  color: var(--succesColor)
+  color: var(--successColor)
 }
 
 .center {

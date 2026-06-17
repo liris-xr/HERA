@@ -14,7 +14,7 @@
   --backgroundColor:#FFFFFF;
   --dangerColor:#FF4040;
   --warningColor:#FFD217;
-  --succesColor:#04BF71;
+  --successColor:#04BF71;
 
   --shadowColor: rgba(34, 58, 80, 0.64);
   --defaultUniformShadow: 0 0 8px 0 var(--shadowColor);

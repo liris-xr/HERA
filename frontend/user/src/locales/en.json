@@ -30,7 +30,8 @@
     "noProjects": "no projects yet",
     "allOurProjects": "All our projects",
     "ourFavorites": "Our Favorites",
-    "seeAllOurProjects": "See all our projects"
+    "seeAllOurProjects": "See all our projects",
+    "seeOurProjects": "See our projects"
   },
   "projectsView": {
     "title": "All projects",
@@ -161,7 +162,9 @@
     "pictureAlt": "Project picture",
     "updatedOn": "Updated on ",
     "projectPublished": "Published",
-    "projectPrivate": "Private"
+    "projectPrivate": "Private",
+    "maxFavoritesReached": "Maximum number of favorites reached ({max})!",
+    "updateError": "Error during update."
   },
   "redirectMessage": {
     "part1": "Note:",

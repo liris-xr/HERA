@@ -31,7 +31,8 @@
     "noProjects": "aucun projet pour le moment",
     "allOurProjects": "Tous nos projets",
     "ourFavorites": "Nos Favoris",
-    "seeAllOurProjects": "Voir tous nos projets"
+    "seeAllOurProjects": "Voir tous nos projets",
+    "seeOurProjects": "Voir nos projets"
   },
   "projectsView": {
     "title": "Tous les projets",
@@ -162,7 +163,9 @@
     "pictureAlt": "Image du projet",
     "updatedOn": "Mis à jour le ",
     "projectPublished": "Public",
-    "projectPrivate": "Privé"
+    "projectPrivate": "Privé",
+    "maxFavoritesReached": "Nombre maximum de favoris atteint ({max}) !",
+    "updateError": "Erreur lors de la mise à jour."
   },
   "redirectMessage": {
     "part1": "Remarque :",

@@ -1,5 +1,5 @@
 <script setup>
-import {ref, computed} from "vue";
+import {ref, computed, onMounted, onUnmounted} from "vue";
 import {getResource, ENDPOINT} from "@/js/endpoints.js";
 import {useI18n} from "vue-i18n";
 import {useAuthStore} from "@/store/auth.js";
@@ -24,9 +24,9 @@ const isOwner = computed(() => {
 
 // toggle favorite
 async function toggleFav() {
-  const newFav = project.value.fav === 1 ? 0 : 1
-  const temp = { ...project.value, scenes: undefined }
-  temp.fav = newFav
+  const newFav = project.value.fav === 1 ? 0 : 1;
+  const temp = { ...project.value, scenes: undefined };
+  temp.fav = newFav;
 
   try {
     const res = await fetch(`${ENDPOINT}projects/${project.value.id}`, {
@@ -36,15 +36,39 @@ async function toggleFav() {
         'Authorization': `Bearer ${token.value}`,
       },
       body: JSON.stringify(temp),
-    })
+    });
     if (res.ok) {
-      const data = await res.json()
-      project.value.fav = data.fav
+      const data = await res.json();
+      project.value.fav = data.fav;
+      window.dispatchEvent(new CustomEvent("project-fav-toggled", {
+        detail: { projectId: project.value.id, fav: data.fav }
+      }));
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      if (errData.error === "max_favorites_reached") {
+        alert(t("projectCard.maxFavoritesReached", { max: errData.maxFavorites || 10 }));
+      } else {
+        alert(t("projectCard.updateError"));
+      }
     }
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }
+
+function handleFavToggled(e) {
+  if (e.detail.projectId === project.value.id) {
+    project.value.fav = e.detail.fav;
+  }
+}
+
+onMounted(() => {
+  window.addEventListener("project-fav-toggled", handleFavToggled);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("project-fav-toggled", handleFavToggled);
+});
 
 // toggle publication
 async function togglePublished() {

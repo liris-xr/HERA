@@ -691,7 +691,7 @@ section > h3 {
 }
 
 .success {
-  color: var(--succesColor)
+  color: var(--successColor)
 }
 
 section:has(>.item) {

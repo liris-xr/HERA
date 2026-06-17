@@ -56,7 +56,9 @@
       "pictureAlt": "Image du projet",
       "updatedOn": "Mis à jour le ",
       "projectPublished": "Public",
-      "projectPrivate": "Privé"
+      "projectPrivate": "Privé",
+      "maxFavoritesReached": "Nombre maximum de favoris atteint ({max}) !",
+      "updateError": "Erreur lors de la mise à jour."
     },
     "seeMoreProjectsButton": "Voir plus de projets",
     "noMoreProjectsToShow": "Plus de projets à afficher.",
@@ -66,6 +68,7 @@
       "title": "Modifier la page d'accueil",
       "fieldTitle": "Titre de la page d'accueil",
       "fieldText": "Description du site",
+      "fieldMaxFavorites": "Nombre maximum de favoris",
       "restore": "Restaurer à la dernière sauvegarde",
       "save": "Sauvegarder et appliquer",
       "appliedSuccess": "Modifications appliquées"

@@ -26,6 +26,8 @@ router.get(baseUrl+'users/:userId/projects/:page', authMiddleware , async (req, 
                 "pictureUrl",
                 "updatedAt",
                 "published",
+                "fav",
+                "userId",
                 [
                     sequelize.fn('COUNT', sequelize.col('scenes.id')), 'sceneCount'
                 ]

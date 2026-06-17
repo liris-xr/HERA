@@ -1,6 +1,6 @@
 <script setup>
 import ProjectCard from "@/components/projectCard.vue";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { ENDPOINT, getResource } from "@/js/endpoints.js";
 import ButtonView from "@/components/button/buttonView.vue";
 import Notification from "@/components/notification/notification.vue";
@@ -32,12 +32,14 @@ const homeSettings = ref({
   title: "Vos projets",
   text: "Découvrez nos projets interactifs en réalité augmentée.",
   imageUrl: "",
+  maxFavorites: 10,
 });
 
 const lastSavedSettings = ref({
   title: "Vos projets",
   text: "Découvrez nos projets interactifs en réalité augmentée.",
   imageUrl: "",
+  maxFavorites: 10,
 });
 
 const homeImageInput = ref(null);
@@ -77,6 +79,7 @@ async function saveHomeSettings() {
         title: homeSettings.value.title,
         text: homeSettings.value.text,
         imageUrl: homeSettings.value.imageUrl,
+        maxFavorites: homeSettings.value.maxFavorites,
       }),
     });
     if (res.ok) {
@@ -169,10 +172,21 @@ async function loadNext() {
     hasNextPage.value = r.length === PAGE_LENGTH;
   });
 }
+function handleGlobalFavToggled(e) {
+  const proj = projects.value.find((p) => p.id === e.detail.projectId);
+  if (proj) {
+    proj.fav = e.detail.fav;
+  }
+}
 
 onMounted(() => {
   fetchHomeSettings();
   loadNext();
+  window.addEventListener("project-fav-toggled", handleGlobalFavToggled);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("project-fav-toggled", handleGlobalFavToggled);
 });
 
 const showProjectModal = ref(false);
@@ -245,23 +259,42 @@ async function createProject(title) {
           </div>
 
           <div class="editor-field">
-            <label>{{ $t("projectsView.homeEditor.fieldTitle") }}</label>
+            <div class="label-row">
+              <label>{{ $t("projectsView.homeEditor.fieldTitle") }}</label>
+              <span class="char-count">{{ (homeSettings.title || '').length }}/100</span>
+            </div>
             <textarea
               class="preview-title-input"
               v-model="homeSettings.title"
               rows="1"
+              maxlength="100"
               placeholder="Titre de la page d'accueil"
             ></textarea>
           </div>
 
           <div class="editor-field">
-            <label>{{ $t("projectsView.homeEditor.fieldText") }}</label>
+            <div class="label-row">
+              <label>{{ $t("projectsView.homeEditor.fieldText") }}</label>
+              <span class="char-count">{{ (homeSettings.text || '').length }}/1500</span>
+            </div>
             <textarea
               class="preview-desc-input"
               v-model="homeSettings.text"
               rows="4"
+              maxlength="1500"
               placeholder="Description ou texte de présentation du site"
             ></textarea>
+          </div>
+
+          <div class="editor-field">
+            <label>{{ $t("projectsView.homeEditor.fieldMaxFavorites") }}</label>
+            <input
+              type="number"
+              min="1"
+              class="preview-max-fav-input"
+              v-model.number="homeSettings.maxFavorites"
+              placeholder="10"
+            />
           </div>
 
           <div class="editor-actions-row">
@@ -494,12 +527,44 @@ main {
   flex-direction: column;
 }
 
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
 .editor-field label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--textColor);
-  margin-bottom: 6px;
+  margin: 0;
   display: block;
+}
+
+.char-count {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.preview-max-fav-input {
+  border: 1px solid var(--darkerBackgroundColor);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background: #fafafa;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.preview-max-fav-input:focus {
+  border-color: var(--accentColor);
+  box-shadow: 0 0 0 3px rgba(63, 155, 240, 0.1);
 }
 
 .preview-title-input,

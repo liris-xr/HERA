@@ -38,6 +38,13 @@ const router = express.Router();
 
 const PAGE_LENGTH = 20;
 
+const homeSettingsPath = path.join(
+  DIRNAME,
+  "public",
+  "files",
+  "home_settings.json",
+);
+
 router.get(
   baseUrl + "projects/:page",
   optionnalAuthMiddleware,
@@ -192,24 +199,40 @@ router.put(
       if (project.userId !== token.id && !req.user.admin)
         return res.status(403).send({ error: "user not granted" });
 
-      let updatedUrl = req.body.pictureUrl;
+      // Check max favorites limit if transitioning to fav = 1
+      if (req.body?.fav !== undefined && parseInt(req.body.fav) === 1 && project.fav !== 1) {
+        let settings = { maxFavorites: 10 };
+        if (fs.existsSync(homeSettingsPath)) {
+          try {
+            settings = { ...settings, ...JSON.parse(fs.readFileSync(homeSettingsPath, "utf8")) };
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        const currentFavoritesCount = await ArProject.count({ where: { fav: 1 } });
+        if (currentFavoritesCount >= settings.maxFavorites) {
+          return res.status(400).send({ error: "max_favorites_reached", maxFavorites: settings.maxFavorites });
+        }
+      }
+
+      let updatedUrl = req.body.pictureUrl !== undefined ? req.body.pictureUrl : project.pictureUrl;
       if (uploadedUrl) {
-        await deleteFile(req.body.pictureUrl);
+        await deleteFile(project.pictureUrl);
         updatedUrl = uploadedUrl;
       }
 
       await project.update(
         {
-          published: req.body?.published,
-          title: req.body?.title,
-          description: req.body?.description,
+          published: req.body?.published !== undefined ? req.body.published : project.published,
+          title: req.body?.title !== undefined ? req.body.title : project.title,
+          description: req.body?.description !== undefined ? req.body.description : project.description,
           pictureUrl: updatedUrl,
-          userId: token.id,
-          quitMessage: req.body.quitMessage,
-          quitUrl: req.body.quitUrl,
-          unit: req.body?.unit,
-          displayMode: req.body.displayMode,
-          calibrationMessage: req.body?.calibrationMessage,
+          userId: project.userId, // keep original owner instead of token.id
+          quitMessage: req.body.quitMessage !== undefined ? req.body.quitMessage : project.quitMessage,
+          quitUrl: req.body.quitUrl !== undefined ? req.body.quitUrl : project.quitUrl,
+          unit: req.body?.unit !== undefined ? req.body.unit : project.unit,
+          displayMode: req.body.displayMode !== undefined ? req.body.displayMode : project.displayMode,
+          calibrationMessage: req.body?.calibrationMessage !== undefined ? req.body.calibrationMessage : project.calibrationMessage,
           fav:
             req.body?.fav !== undefined ? parseInt(req.body.fav) : project.fav,
         },
@@ -865,12 +888,6 @@ router.post(
 );
 
 // home settings endpoints
-const homeSettingsPath = path.join(
-  DIRNAME,
-  "public",
-  "files",
-  "home_settings.json",
-);
 
 // clean up unused home banner images
 function cleanupHomeImages(activeUrl, uploadingFilename = null) {
@@ -898,10 +915,11 @@ router.get(baseUrl + "home-settings", async (req, res) => {
       title: "Vos projets",
       text: "Découvrez nos projets interactifs en réalité augmentée.",
       imageUrl: "",
+      maxFavorites: 10,
     };
     if (fs.existsSync(homeSettingsPath)) {
       const data = fs.readFileSync(homeSettingsPath, "utf8");
-      settings = JSON.parse(data);
+      settings = { ...settings, ...JSON.parse(data) };
     }
     res.status(200).json(settings);
   } catch (e) {
@@ -912,10 +930,25 @@ router.get(baseUrl + "home-settings", async (req, res) => {
 
 router.put(baseUrl + "home-settings", authMiddleware, async (req, res) => {
   try {
+    const title = req.body.title || "Vos projets";
+    const text = req.body.text || "";
+    const maxFavorites = parseInt(req.body.maxFavorites) !== undefined ? parseInt(req.body.maxFavorites) : 10;
+
+    if (title.length > 100) {
+      return res.status(400).json({ error: "title_too_long" });
+    }
+    if (text.length > 1500) {
+      return res.status(400).json({ error: "description_too_long" });
+    }
+    if (isNaN(maxFavorites) || maxFavorites < 1) {
+      return res.status(400).json({ error: "invalid_max_favorites" });
+    }
+
     const settings = {
-      title: req.body.title || "Vos projets",
-      text: req.body.text || "",
+      title: title,
+      text: text,
       imageUrl: req.body.imageUrl || "",
+      maxFavorites: maxFavorites,
     };
     fs.mkdirSync(path.dirname(homeSettingsPath), { recursive: true });
     fs.writeFileSync(

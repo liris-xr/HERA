@@ -17,17 +17,25 @@ function logoutAndRedirect(){
 <template>
   <header>
     <nav>
-      <RouterLink :to="{name:'projects'}">{{$t("header.home")}}</RouterLink>
+      <RouterLink :to="{name:'projects'}" class="icon-link">
+        <img src="/icons/globe.svg" alt="home" class="icon">
+        {{$t("header.home")}}
+      </RouterLink>
 
       <div>
         <locale-changer></locale-changer>
-        <RouterLink :to="{name:'viewer'}" v-if="isAuthenticated" class="viewer-link">
+        
+        <RouterLink :to="{name:'viewer'}" v-if="isAuthenticated" class="icon-link">
           <img src="/icons/redirection.svg" alt="viewer" class="icon">
           {{$t("header.viewer")}}
         </RouterLink>
-        <RouterLink :to="{name:'admin'}" v-if="userData?.admin">{{$t("header.administration")}}</RouterLink>
+        
+        <RouterLink :to="{name:'admin'}" v-if="userData?.admin" class="icon-link">
+          <img src="/icons/adminpanel.svg" alt="admin" class="icon">
+          {{$t("header.administration")}}
+        </RouterLink>
 
-        <RouterLink :to="{name:'account'}" v-if="isAuthenticated" class="account-link">
+        <RouterLink :to="{name:'account'}" v-if="isAuthenticated" class="icon-link">
           <img src="/icons/person.svg" alt="account" class="icon">
           <span>{{userData.username}}</span>
         </RouterLink>
@@ -39,7 +47,6 @@ function logoutAndRedirect(){
 </template>
 
 <style scoped>
-
 header{
   width: 100%;
   position: sticky;
@@ -58,14 +65,6 @@ nav{
   box-shadow: var(--defaultUniformShadow);
 }
 
-nav>a{
-  margin-right: 24px;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 nav>a.router-link-exact-active {
   color: var(--accentColor);
 }
@@ -79,9 +78,7 @@ nav>div>*{
   margin-right: 16px;
 }
 
-/* Alignement et structure pour les liens avec icônes */
-.viewer-link,
-.account-link {
+.icon-link {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -89,20 +86,18 @@ nav>div>*{
   color: inherit;
 }
 
+nav > .icon-link {
+  margin-right: 24px;
+}
+
 .icon {
   width: 20px;
   height: 20px;
   display: inline-block;
-}
-
-.viewer-link .icon,
-.account-link .icon {
   filter: invert(1);
 }
 
-.viewer-link:hover .icon,
-.account-link:hover .icon {
+.icon-link:hover .icon {
   filter: invert(0.7);
 }
-
 </style>

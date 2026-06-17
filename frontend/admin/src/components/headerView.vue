@@ -32,7 +32,7 @@ function logoutAndRedirect(){
           <span>{{userData.username}}</span>
         </RouterLink>
 
-        <button-view :text="$t('header.logout')" @click="logoutAndRedirect()"/>
+        <button-view :text="$t('header.logout')" icon="/icons/logout.svg" @click="logoutAndRedirect()"/>
       </div>
     </nav>
   </header>
@@ -72,10 +72,21 @@ nav>a.router-link-exact-active {
 
 nav>div{
   display: flex;
+  align-items: center;
 }
 
 nav>div>*{
   margin-right: 16px;
+}
+
+/* Alignement et structure pour les liens avec icônes */
+.viewer-link,
+.account-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
 }
 
 .icon {

@@ -27,15 +27,19 @@ function logoutAndRedirect(){
       <div>
         <locale-changer></locale-changer>
 
-        <RouterLink :to="{name:'editor'}" v-if="isAuthenticated">{{$t("header.editor")}}</RouterLink>
+        <RouterLink :to="{name:'editor'}" v-if="isAuthenticated" class="editor-link">
+          <img src="/icons/redirection.svg" alt="editor" class="icon">
+          {{$t("header.editor")}}
+        </RouterLink>
 
-        <RouterLink :to="{name:'account'}" v-if="isAuthenticated">
+        <RouterLink :to="{name:'account'}" v-if="isAuthenticated" class="account-link">
+          <img src="/icons/person.svg" alt="account" class="icon">
           <span>{{userData.username}}</span>
         </RouterLink>
 
-        <button-view v-if="isAuthenticated" :text="$t('header.logout')" @click="logoutAndRedirect()"/>
+        <button-view v-if="isAuthenticated" :text="$t('header.logout')" icon="/icons/logout.svg" @click="logoutAndRedirect()"/>
 
-        <button-view v-else :text="$t('header.login')" @click="router.push({ name: 'login' })"/>
+        <button-view v-else :text="$t('header.login')" icon="/icons/login.svg" @click="router.push({ name: 'login' })"/>
       </div>
     </nav>
   </header>
@@ -64,9 +68,7 @@ nav{
 nav>a{
   margin-right: 24px;
   text-decoration: none;
-
 }
-
 
 nav>a.router-link-exact-active {
   color: var(--accentColor);
@@ -76,7 +78,34 @@ nav > div {
   display: flex;
   flex-grow: 1;
   justify-content: flex-end;
-  gap: 10px
+  gap: 10px;
+  align-items: center;
+}
+
+/* Alignement et gestion des filtres de couleur pour le thème */
+.editor-link,
+.account-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+}
+
+.editor-link .icon,
+.account-link .icon {
+  filter: invert(1);
+}
+
+.editor-link:hover .icon,
+.account-link:hover .icon {
+  filter: invert(0.7);
 }
 
 </style>

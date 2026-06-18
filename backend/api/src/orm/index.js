@@ -6,6 +6,7 @@ import {sequelize} from './database.js'
 import ArAsset from "./models/arAsset.js";
 import ArMesh from "./models/arMesh.js";
 import ArLabel from "./models/arLabel.js";
+import ArHomeSettings from "./models/arHomeSettings.js";
 
 ArUser.hasMany(ArProject, { as: 'projects', foreignKey: 'userId', onDelete: 'CASCADE' });
 
@@ -26,4 +27,4 @@ export async function initializeDatabase (options) {
     return await sequelize.sync(options);
 }
 
-export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh}
+export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh, ArHomeSettings}

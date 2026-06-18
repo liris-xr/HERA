@@ -7,6 +7,7 @@ import {
   ArProject,
   ArScene,
   ArUser,
+  ArHomeSettings,
 } from "../orm/index.js";
 import { sequelize } from "../orm/database.js";
 import authMiddleware, {
@@ -38,12 +39,6 @@ const router = express.Router();
 
 const PAGE_LENGTH = 20;
 
-const homeSettingsPath = path.join(
-  DIRNAME,
-  "public",
-  "files",
-  "home_settings.json",
-);
 
 router.get(
   baseUrl + "projects/:page",
@@ -201,17 +196,18 @@ router.put(
 
       // Check max favorites limit if transitioning to fav = 1
       if (req.body?.fav !== undefined && parseInt(req.body.fav) === 1 && project.fav !== 1) {
-        let settings = { maxFavorites: 10 };
-        if (fs.existsSync(homeSettingsPath)) {
-          try {
-            settings = { ...settings, ...JSON.parse(fs.readFileSync(homeSettingsPath, "utf8")) };
-          } catch (e) {
-            console.error(e);
+        let maxFavorites = 10;
+        try {
+          const dbSettings = await ArHomeSettings.findOne();
+          if (dbSettings) {
+            maxFavorites = dbSettings.maxFavorites;
           }
+        } catch (e) {
+          console.error(e);
         }
         const currentFavoritesCount = await ArProject.count({ where: { fav: 1 } });
-        if (currentFavoritesCount >= settings.maxFavorites) {
-          return res.status(400).send({ error: "max_favorites_reached", maxFavorites: settings.maxFavorites });
+        if (currentFavoritesCount >= maxFavorites) {
+          return res.status(400).send({ error: "max_favorites_reached", maxFavorites: maxFavorites });
         }
       }
 
@@ -911,15 +907,14 @@ function cleanupHomeImages(activeUrl, uploadingFilename = null) {
 
 router.get(baseUrl + "home-settings", async (req, res) => {
   try {
-    let settings = {
-      title: "Vos projets",
-      text: "Découvrez nos projets interactifs en réalité augmentée.",
-      imageUrl: "",
-      maxFavorites: 10,
-    };
-    if (fs.existsSync(homeSettingsPath)) {
-      const data = fs.readFileSync(homeSettingsPath, "utf8");
-      settings = { ...settings, ...JSON.parse(data) };
+    let settings = await ArHomeSettings.findOne();
+    if (!settings) {
+      settings = await ArHomeSettings.create({
+        title: "Vos projets",
+        text: "Découvrez nos projets interactifs en réalité augmentée.",
+        imageUrl: "",
+        maxFavorites: 10,
+      });
     }
     res.status(200).json(settings);
   } catch (e) {
@@ -932,7 +927,7 @@ router.put(baseUrl + "home-settings", authMiddleware, async (req, res) => {
   try {
     const title = req.body.title || "Vos projets";
     const text = req.body.text || "";
-    const maxFavorites = parseInt(req.body.maxFavorites) !== undefined ? parseInt(req.body.maxFavorites) : 10;
+    const maxFavorites = req.body.maxFavorites !== undefined ? parseInt(req.body.maxFavorites) : 10;
 
     if (title.length > 100) {
       return res.status(400).json({ error: "title_too_long" });
@@ -944,18 +939,23 @@ router.put(baseUrl + "home-settings", authMiddleware, async (req, res) => {
       return res.status(400).json({ error: "invalid_max_favorites" });
     }
 
-    const settings = {
-      title: title,
-      text: text,
-      imageUrl: req.body.imageUrl || "",
-      maxFavorites: maxFavorites,
-    };
-    fs.mkdirSync(path.dirname(homeSettingsPath), { recursive: true });
-    fs.writeFileSync(
-      homeSettingsPath,
-      JSON.stringify(settings, null, 2),
-      "utf8",
-    );
+    let settings = await ArHomeSettings.findOne();
+    if (!settings) {
+      settings = await ArHomeSettings.create({
+        title: title,
+        text: text,
+        imageUrl: req.body.imageUrl || "",
+        maxFavorites: maxFavorites,
+      });
+    } else {
+      await settings.update({
+        title: title,
+        text: text,
+        imageUrl: req.body.imageUrl !== undefined ? req.body.imageUrl : settings.imageUrl,
+        maxFavorites: maxFavorites,
+      });
+    }
+
     cleanupHomeImages(settings.imageUrl);
     res.status(200).json(settings);
   } catch (e) {
@@ -990,13 +990,13 @@ router.post(
   async (req, res) => {
     try {
       let activeUrl = "";
-      if (fs.existsSync(homeSettingsPath)) {
-        try {
-          const data = fs.readFileSync(homeSettingsPath, "utf8");
-          activeUrl = JSON.parse(data).imageUrl || "";
-        } catch (e) {
-          console.log("error reading settings during upload: " + e.message);
+      try {
+        const settings = await ArHomeSettings.findOne();
+        if (settings) {
+          activeUrl = settings.imageUrl || "";
         }
+      } catch (e) {
+        console.log("error reading settings during upload: " + e.message);
       }
       // pass the new filename to protect it from deletion
       cleanupHomeImages(activeUrl, req.file.filename);

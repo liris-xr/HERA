@@ -7,8 +7,6 @@ export function destroyPresentation(id) {
 
     const presentation = presentations[id];
 
-    console.log(presentation)
-
     for (const viewer of presentation.viewers) {
         const socket = ioInstance.sockets.sockets.get(viewer)
         socket?.emit("presentation:terminated", {message: "presentation " + id + " has ended"})
@@ -22,15 +20,24 @@ export function destroyPresentation(id) {
 }
 
 export function leavePresentation(socket) {
-    const room = presentations[socket.roomCode]
+    const roomCode = socket.roomCode;
+    const room = presentations[roomCode]
 
     if(!room) return
 
-    const index = room.viewers.findIndex((v) => v.id === socket.id)
-    room.viewers.splice(index, 1)
+    if (room.host === socket.id) {
+        socket.roomCode = undefined
+        destroyPresentation(roomCode)
+        return
+    }
 
-    sendUserCount(socket.roomCode)
-    socket.leave(room)
+    const index = room.viewers.findIndex((viewerId) => viewerId === socket.id)
+    if (index !== -1) {
+        room.viewers.splice(index, 1)
+    }
+
+    sendUserCount(roomCode)
+    socket.leave(roomCode)
 
     socket.roomCode = undefined
 }

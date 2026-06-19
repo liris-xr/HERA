@@ -18,7 +18,8 @@ router.get(baseUrl+'dev/hello', async (req, res) => {
 
 
 router.get('/api/dev/cert', (req, res) => {
-    const redirectUrl = req.query.redirect;
+    const redirectUrl = typeof req.query.redirect === "string" ? req.query.redirect : "/";
+    const redirectJson = JSON.stringify(redirectUrl);
     res.send(`
     <html lang="en">
       <body>
@@ -26,7 +27,7 @@ router.get('/api/dev/cert', (req, res) => {
         <p>You will be redirected automatically after clicking "accept"</p>
         <script>
           setTimeout(() => {
-            window.location.href = '${redirectUrl}';
+            window.location.href = ${redirectJson};
           }, 1000);
         </script>
       </body>

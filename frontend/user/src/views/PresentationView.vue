@@ -67,6 +67,17 @@ let recordTarget = null
 const showTerminate = ref(false)
 const terminated = ref(false)
 
+function refValue(value) {
+  if (value && typeof value === "object" && "value" in value) {
+    return value.value
+  }
+
+  return value
+}
+
+const sceneManager = computed(() => arView.value?.arSessionManager?.sceneManager ?? null)
+const selectedSceneId = computed(() => refValue(sceneManager.value?.activeSceneId))
+const sceneLoading = computed(() => !!refValue(sceneManager.value?.isSceneLoading))
 
 async function fetchProject(projectId) {
   loading.value = true;
@@ -140,6 +151,11 @@ function toggleLabelVisibility(label) {
 }
 
 function setScene(event) {
+  if (sceneLoading.value) {
+    event.target.value = selectedSceneId.value ?? ""
+    return
+  }
+
   socket.send("presentation:action:scene", { sceneId: event.target.value })
 }
 
@@ -152,8 +168,21 @@ function resetScene() {
 }
 
 function applyPreset(preset) {
-  for(const action of preset.actions) {
-    socket.send(action.event, ...action.args)
+  const actions = Array.isArray(preset?.actions) ? preset.actions : []
+
+  if (actions.length === 0) {
+    console.warn("[PresentationView] preset has no actions", preset)
+    return
+  }
+
+  for(const action of actions) {
+    if (typeof action?.event !== "string") {
+      console.warn("[PresentationView] preset action skipped: missing event", action)
+      continue
+    }
+
+    const args = Array.isArray(action.args) ? action.args : []
+    socket.send(action.event, ...args)
   }
 }
 
@@ -313,8 +342,9 @@ const projectUrl = computed(() => {
           <section class="sceneSelection">
             <label for="sceneSelection">{{$t("presentation.currentScene")}}</label>
             <select
-                v-if="arView?.arSessionManager?.sceneManager"
-                v-model="arView.arSessionManager.sceneManager.activeSceneId"
+                v-if="sceneManager"
+                :value="selectedSceneId"
+                :disabled="sceneLoading"
 
                 id="sceneSelection"
                 name="sceneSelection"
@@ -421,7 +451,7 @@ const projectUrl = computed(() => {
     <div>
       <div class="inline-flex">
         <h3>{{ $t("presentation.sections.presets.managementTitle") }}</h3>
-        <button-view icon="/icons/add.svg" @click="creatingPreset = { id: generateUUID() }"></button-view>
+        <button-view icon="/icons/add.svg" @click="creatingPreset = { id: generateUUID(), actions: [] }"></button-view>
 
       </div>
       <div>

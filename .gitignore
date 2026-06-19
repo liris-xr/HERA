@@ -132,6 +132,12 @@ dist
 # Notes
 issues.txt
 
+# Local/generated tooling
+.DS_Store
+.agents/
+.hera-tools/
+scripts/tools/
+
 # certificates
 
 backend/api/privatekey.key

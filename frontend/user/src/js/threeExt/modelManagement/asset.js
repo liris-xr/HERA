@@ -487,6 +487,11 @@ export class Asset extends SceneElementInterface {
             try {
                 const manager = ObjectManager.getInstance();
                 const manifest = await this.getManifest();
+                const variantEntry = manifest?.variants?.[variantKey];
+                if (!variantEntry || variantEntry.status !== "ready" || !variantEntry.path) {
+                    return false;
+                }
+
                 const chosen = pickVariantFromManifest(manifest, {
                     variantOverride: variantKey,
                     allowFallback: false,

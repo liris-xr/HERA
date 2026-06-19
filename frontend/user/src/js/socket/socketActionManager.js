@@ -95,7 +95,7 @@ export class SocketActionManager {
         label.setHidden(!data.value)
     }
 
-    reset() {
+    async reset() {
         for(let sceneProxy of this.arSessionManager.sceneManager.getScenes()) {
             const scene = toRaw(sceneProxy)
             for(const asset of scene.getAssets()) {
@@ -108,7 +108,7 @@ export class SocketActionManager {
                 this.toggleLabel({sceneId: scene.sceneId, labelId: label.id, value: true})
             }
         }
-        void this.arSessionManager.sceneManager.setFirstActive()
+        await this.arSessionManager.sceneManager.setFirstActive()
     }
 
     hideAll(data) {

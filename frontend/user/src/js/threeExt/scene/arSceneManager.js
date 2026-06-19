@@ -33,15 +33,25 @@ export class ArSceneManager {
 
         this.activeSceneId = ref(this.scenes[0].sceneId);
         this.onSceneChanged = null;
+        this._suppressedActiveSceneWatchCount = 0;
 
         watch(this.active, () => {
-            this.#updateLighting();
-            this.active.value.resetLabels();
-
-            if (this.onSceneChanged != null) {
-                this.onSceneChanged();
+            if (this._suppressedActiveSceneWatchCount > 0) {
+                this._suppressedActiveSceneWatchCount -= 1;
+                return;
             }
+
+            this.#runSceneChangedSideEffects();
         });
+    }
+
+    #runSceneChangedSideEffects() {
+        this.#updateLighting();
+        this.active.value?.resetLabels?.();
+
+        if (this.onSceneChanged != null) {
+            this.onSceneChanged();
+        }
     }
 
     activeSceneIndex = computed(() => {
@@ -108,7 +118,13 @@ export class ArSceneManager {
 
             if (requestId !== this._sceneLoadRequestId) return false;
 
-            this.activeSceneId.value = scene.sceneId;
+            const sceneChanged = String(this.activeSceneId.value) !== String(scene.sceneId);
+            if (sceneChanged) {
+                this._suppressedActiveSceneWatchCount += 1;
+                this.activeSceneId.value = scene.sceneId;
+            }
+
+            this.#runSceneChangedSideEffects();
             return true;
         } finally {
             if (requestId === this._sceneLoadRequestId) {

@@ -460,16 +460,21 @@ router.put(baseUrl+'project/:projectId/presets', authMiddleware, async (req, res
 const PROJECTS_PAGE_LENGTH = 10;
 
 // Sans page -> page = 1
-router.get(baseUrl + 'admin/projects', async (req, res) => {
+router.get(baseUrl + 'admin/projects', authMiddleware, async (req, res) => {
     req.params.page = '1';
     return adminProjectsHandler(req, res);
 });
 
 // Avec page explicite
-router.get(baseUrl + 'admin/projects/:page', async (req, res) => {
+router.get(baseUrl + 'admin/projects/:page', authMiddleware, async (req, res) => {
     return adminProjectsHandler(req, res);
 });
 async function adminProjectsHandler(req, res) {
+    const token = req.user;
+    if(!token?.admin) {
+        return res.status(401).send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
     const page = parseInt(req.params.page) || 1;
     try {
         const where = {}
@@ -598,7 +603,7 @@ router.get(baseUrl+'project/:projectId/export', authMiddleware, async (req, res)
             const projectObj = project.toJSON()
             delete projectObj.id
 
-            await fs.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj), (err) => {})
+            await fs.promises.writeFile(path.join(DIRNAME, jsonFilePath), JSON.stringify(projectObj))
 
             res.zip({
                 files: [

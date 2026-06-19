@@ -99,6 +99,10 @@ router.delete(baseUrl+"admin/labels/:labelId", authMiddleware, async (req, res) 
             where: {id: labelId},
         })
 
+        if(!label) {
+            return res.status(404).send({ error: 'Label not found' })
+        }
+
         await label.destroy()
 
         return res.status(200).send()
@@ -125,6 +129,10 @@ router.put(baseUrl+"admin/labels/:labelId", authMiddleware, async (req, res) => 
         const label = await ArLabel.findOne({
             where: {id: labelId},
         })
+
+        if(!label) {
+            return res.status(404).send({ error: 'Label not found' })
+        }
 
         await label.update({
             text: req.body?.text,

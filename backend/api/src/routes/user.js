@@ -14,9 +14,14 @@ const PAGE_LENGTH = 20;
  * Route to fetch all projects of a user (published or not)
  */
 router.get(baseUrl+'users/:userId/projects/:page', authMiddleware , async (req, res) => {
-    const page = parseInt(req.params.page);
+    const page = parseInt(req.params.page) || 1;
     const userId = req.params.userId;
     const token = req.user
+    if(token.id !== userId && !token.admin){
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
+
     try{
         let projects = await ArProject.findAll({
             subQuery:false,
@@ -40,7 +45,7 @@ router.get(baseUrl+'users/:userId/projects/:page', authMiddleware , async (req, 
             where: { userId: userId },
             group: ['ArProject.id'],
             limit: PAGE_LENGTH,
-            offset: page * PAGE_LENGTH,
+            offset: (page - 1) * PAGE_LENGTH,
             order: [['updatedAt', 'DESC']],
         });
 
@@ -49,11 +54,6 @@ router.get(baseUrl+'users/:userId/projects/:page', authMiddleware , async (req, 
         res.set({
             'Content-Type': 'application/json'
         });
-
-        if(token.id !== userId && !req.user.admin){
-            res.status(401);
-            return res.send({ error: 'Unauthorized', details: 'User not granted' })
-        }
 
         if(projects == null){
             res.status(404);
@@ -79,6 +79,12 @@ router.get(baseUrl+'users/:userId/projects/:page', authMiddleware , async (req, 
 router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (req, res) => {
     const userId = req.params.userId;
     const projectId = req.params.projectId;
+    const authUser = req.user
+
+    if(userId !== authUser.id && !authUser.admin){
+        res.status(401);
+        return res.send({ error: 'Unauthorized', details: 'User not granted' })
+    }
 
     let project = (await ArProject.findOne({
             where: {id: projectId },
@@ -121,7 +127,7 @@ router.get(baseUrl+'users/:userId/project/:projectId', authMiddleware, async (re
         return res.send({ error: 'Unable to find project'});
     }
     
-    if(userId !== project.owner.id && !req.user.admin){
+    if(userId !== project.owner.id && !authUser.admin){
         res.status(401);
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
@@ -150,6 +156,10 @@ router.put(baseUrl+"users/:userId", authMiddleware, async (req, res) => {
         const user = await ArUser.findOne({
             where: {id: userId},
         })
+
+        if(!user) {
+            return res.status(404).send({ error: 'User not found' })
+        }
 
         await user.update({
             password: passwordHash(req.body.password)
@@ -237,6 +247,10 @@ router.put(baseUrl+"admin/users/:userId", authMiddleware, async (req, res) => {
             where: {id: userId},
         })
 
+        if(!user) {
+            return res.status(404).send({ error: 'User not found' })
+        }
+
         await user.update({
             username: req.body?.username,
             email: req.body?.email,
@@ -270,6 +284,10 @@ router.delete(baseUrl+"admin/users/:userId", authMiddleware, async (req, res) =>
         const user = await ArUser.findOne({
             where: {id: userId},
         })
+
+        if(!user) {
+            return res.status(404).send({ error: 'User not found' })
+        }
 
         await user.destroy()
 

@@ -6,14 +6,24 @@ export function actionInPresentation(socket, event, ...args) {
     if(!event.startsWith("presentation:action:"))
         return
 
-    const callback = args[args.length-1]
+    const maybeCallback = args[args.length-1]
+    const callback = typeof maybeCallback === "function" ? maybeCallback : null
+    const actionArgs = callback ? args.slice(0, -1) : args
 
     if(!socket.auth)
-        return callback({success: false, message: "Unauthorized"})
+        return callback?.({success: false, message: "Unauthorized"})
 
-    presentations[socket.roomCode].actions.push({event, args})
+    const room = presentations[socket.roomCode]
+    if(!room)
+        return callback?.({success: false, message: "Presentation not found"})
 
-    ioInstance.to(socket.roomCode).except(socket.id).emit(event, ...args)
+    if(room.host !== socket.id)
+        return callback?.({success: false, message: "Unauthorized"})
+
+    room.actions.push({event, args: actionArgs})
+
+    ioInstance.to(socket.roomCode).except(socket.id).emit(event, ...actionArgs)
+    callback?.({success: true})
 
 
 }

@@ -12,6 +12,7 @@ export class SocketConnection {
     actionsRecord
 
     socketActionManager
+    actionQueue
 
     constructor(server, path, options, arSessionManager=null) {
         options.path = path
@@ -28,8 +29,9 @@ export class SocketConnection {
 
         this.recording = ref(false)
         this.actionsRecord = []
+        this.actionQueue = Promise.resolve()
 
-        this.socket.onAny((event, ...args) => this.handleActionManager(event, ...args))
+        this.socket.onAny((event, ...args) => this.queueActionManager(event, ...args))
     }
 
     send(event, ...args) {
@@ -39,14 +41,26 @@ export class SocketConnection {
             this.socket.emit(event, ...args)
         }
 
-        this.handleActionManager(event, ...args)
+        this.queueActionManager(event, ...args)
     }
 
     addListener(event, handler) {
         this.socket.on(event, handler)
     }
 
-    handleActionManager(event, ...args) {
+    queueActionManager(event, ...args) {
+        if(!event.startsWith("presentation:action:")) {
+            return this.handleActionManager(event, ...args)
+        }
+
+        const run = () => this.handleActionManager(event, ...args)
+            .catch((e) => console.error("[SocketConnection] action failed", event, e))
+
+        this.actionQueue = this.actionQueue.then(run, run)
+        return this.actionQueue
+    }
+
+    async handleActionManager(event, ...args) {
         if(!this.socketActionManager) return
         const socketActionManager = toRaw(this.socketActionManager)
 
@@ -56,7 +70,7 @@ export class SocketConnection {
                 Object.getOwnPropertyNames(Object.getPrototypeOf(socketActionManager)).includes(eventName) &&
                 typeof socketActionManager[eventName] === 'function'
             )
-                socketActionManager[eventName](...args)
+                await socketActionManager[eventName](...args)
             else
                 console.error("SocketActionManager : event "+eventName+" not found")
         }

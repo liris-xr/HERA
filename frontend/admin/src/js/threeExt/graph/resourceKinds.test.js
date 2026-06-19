@@ -31,6 +31,7 @@ test("detectAssetKind treats Potree zip uploads as streaming point clouds in adm
 test("detectAssetKind treats gaussian splat formats as splat assets", () => {
     assert.equal(detectAssetKind({ name: "scan.ply" }), "splat");
     assert.equal(detectAssetKind({ name: "scan.spz" }), "splat");
+    assert.equal(detectAssetKind({ name: "scan.rad" }), "splat");
 });
 
 test("detectAssetKind can explicitly treat ply as a classic point cloud", () => {

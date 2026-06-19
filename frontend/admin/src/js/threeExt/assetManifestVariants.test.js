@@ -16,6 +16,7 @@ test("pickVariantFromManifest chooses the preferred ready variant", () => {
     assert.deepEqual(pickVariantFromManifest(manifest), {
         variant: "n2",
         path: "/assets/n2.glb",
+        meta: { status: "ready", path: "assets/n2.glb" },
     });
 });
 
@@ -33,6 +34,7 @@ test("pickVariantFromManifest falls back to the first ready variant", () => {
     assert.deepEqual(pickVariantFromManifest(manifest), {
         variant: "n1",
         path: "/assets/n1.glb",
+        meta: { status: "ready", path: "/assets/n1.glb" },
     });
 });
 
@@ -50,4 +52,58 @@ test("pickVariantFromManifest throws when no selected variant is ready", () => {
         () => pickVariantFromManifest(manifest, { allowFallback: false }),
         /No ready variant for asset asset-3/
     );
+});
+
+test("pickVariantFromManifest prefers a ready Spark RAD variant for splats", () => {
+    const manifest = {
+        assetId: "splat-1",
+        assetKind: "splat",
+        preferredVariant: "original",
+        variants: {
+            original: { status: "ready", path: "assets/source.spz" },
+            sparkRad: {
+                status: "ready",
+                path: "assets/source-lod.rad",
+                format: "spark-rad",
+                streaming: true,
+                paged: true,
+            },
+        },
+    };
+
+    assert.deepEqual(pickVariantFromManifest(manifest), {
+        variant: "sparkRad",
+        path: "/assets/source-lod.rad",
+        meta: {
+            status: "ready",
+            path: "assets/source-lod.rad",
+            format: "spark-rad",
+            streaming: true,
+            paged: true,
+        },
+    });
+});
+
+test("pickVariantFromManifest honors explicit original override for splats", () => {
+    const manifest = {
+        assetId: "splat-2",
+        assetKind: "splat",
+        preferredVariant: "sparkRad",
+        variants: {
+            original: { status: "ready", path: "assets/source.spz" },
+            sparkRad: {
+                status: "ready",
+                path: "assets/source-lod.rad",
+                format: "spark-rad",
+                streaming: true,
+                paged: true,
+            },
+        },
+    };
+
+    assert.deepEqual(pickVariantFromManifest(manifest, { variantOverride: "original" }), {
+        variant: "original",
+        path: "/assets/source.spz",
+        meta: { status: "ready", path: "assets/source.spz" },
+    });
 });

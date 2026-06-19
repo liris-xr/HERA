@@ -7,7 +7,15 @@ import { runLinearGraph } from "@/js/threeExt/graph/graphRuntime.js";
 import { createDefaultAssetGraph } from "@/js/threeExt/graph/defaultAssetGraph.js";
 import { defaultResourceLoader } from "@/js/threeExt/graph/resourceLoader.js";
 import { ASSET_KINDS } from "@shared/assetKinds.js";
-import { buildSplatDebugPayload, logSplatDebug } from "@shared/splat/splatDiagnostics.js";
+import {
+    buildSplatDebugPayload,
+    hasSplatDebugFlag,
+    logSplatDebug,
+} from "@shared/splat/splatDiagnostics.js";
+import {
+    getObjectBoundingBox,
+    snapshotBox3,
+} from "@shared/splat/splatBounds.js";
 
 let currentAssetId = 0;
 
@@ -346,11 +354,23 @@ export class AssetManager {
             if (!object || ![ASSET_KINDS.SPLAT, ASSET_KINDS.POINTCLOUD, ASSET_KINDS.POINTCLOUD_STREAMING].includes(object.userData?.heraAssetKind)) continue;
 
             object.updateMatrixWorld(true);
-            const box = typeof object.getBoundingBox === "function"
-                ? object.getBoundingBox().clone().applyMatrix4(object.matrixWorld)
-                : new THREE.Box3().setFromObject(object);
+            const boundsInfo = getObjectBoundingBox(object, {
+                preferCustom: true,
+                applyMatrixWorld: true,
+            });
 
-            if (!box.isEmpty()) boundingGroup.push(box);
+            if (boundsInfo.valid) {
+                boundingGroup.push(boundsInfo.box);
+            } else if (object.userData?.heraAssetKind === ASSET_KINDS.SPLAT && hasSplatDebugFlag()) {
+                console.warn("[HERA][SplatBounds] invalid bounds; skipping bbox-based placement", {
+                    assetId: asset?.id ?? object.userData?.assetId ?? null,
+                    assetName: asset?.name ?? object.name ?? null,
+                    boundsSource: boundsInfo.source,
+                    boundsEmpty: boundsInfo.empty,
+                    boundsError: boundsInfo.error ?? null,
+                    bounds: snapshotBox3(boundsInfo.box),
+                });
+            }
         }
 
         for (const boundingBox of boundingGroup) {

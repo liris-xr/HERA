@@ -6,7 +6,7 @@ export const ASSET_KINDS = Object.freeze({
 });
 
 const GLTF_EXTENSIONS = new Set(["glb", "gltf"]);
-const SPLAT_EXTENSIONS = new Set(["splat", "spz", "ksplat", "ply", "sog"]);
+const SPLAT_EXTENSIONS = new Set(["splat", "spz", "ksplat", "ply", "sog", "rad"]);
 const POTREE_ENTRY_FILES = new Set(["metadata.json", "cloud.js"]);
 const POTREE_ARCHIVE_EXTENSIONS = new Set(["zip"]);
 

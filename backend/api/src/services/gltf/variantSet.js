@@ -81,7 +81,7 @@ export function buildVariantSet(asset, apiRoot) {
     const originalReady = fileExists(originalDisk);
 
     if (assetKind !== "gltf") {
-        return {
+        const variants = {
             original: buildVariantEntry({
                 ready: originalReady,
                 rel: originalRel,
@@ -92,6 +92,30 @@ export function buildVariantSet(asset, apiRoot) {
             n2: { status: "unsupported", path: null },
             n3: { status: "unsupported", path: null },
         };
+
+        if (assetKind === "splat") {
+            const sparkRadMeta = lodMeta.variants?.sparkRad ?? lodMeta.variants?.sparkrad ?? null;
+            const radRel = relFromMeta(
+                sparkRadMeta ?? { path: lodMeta.splat?.radPath },
+                null
+            );
+            if (radRel) {
+                const radDisk = path.resolve(apiRoot, radRel);
+                variants.sparkRad = buildVariantEntry({
+                    ready: fileExists(radDisk),
+                    rel: radRel,
+                    meta: {
+                        format: "spark-rad",
+                        streaming: true,
+                        paged: true,
+                        ...(lodMeta.splat ?? {}),
+                        ...(sparkRadMeta ?? {}),
+                    },
+                });
+            }
+        }
+
+        return variants;
     }
 
     const n1Rel = relFromMeta(lodMeta.variants?.n1, makeVariantRel(sourceRel, "n1"));

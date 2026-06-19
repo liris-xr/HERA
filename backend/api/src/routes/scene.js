@@ -25,6 +25,7 @@ function defaultVrStartPosition() {
 
 function normalizeVariant(v) {
     const s = String(v ?? "").trim().toLowerCase();
+    if (s === "sparkrad" || s === "spark-rad") return "sparkRad";
     if (["original", "simplified", "n1", "n2", "n3"].includes(s)) return s;
     return "original";
 }
@@ -257,6 +258,7 @@ router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploa
                             });
 
                             data.url = normalizeUrl(importedPointCloud?.url ?? nextUploaded);
+                            data.preferredVariant = normalizeVariant(importedPointCloud?.preferredVariant ?? data.preferredVariant);
                             data.lodMeta = importedPointCloud?.lodMeta ?? null;
                             insertedCount++;
                         }

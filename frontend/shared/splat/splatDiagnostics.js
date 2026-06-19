@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { getAssetExtension } from "../assetKinds.js";
+import { getObjectBoundingBox } from "./splatBounds.js";
 
 const _size = new THREE.Vector3();
 const _center = new THREE.Vector3();
@@ -22,12 +23,32 @@ function readStorageFlag(key) {
     }
 }
 
+function getDebugUrlParams() {
+    if (typeof window === "undefined") return [];
+
+    const params = [];
+    try {
+        params.push(new URLSearchParams(window.location.search));
+
+        const hash = String(window.location.hash ?? "");
+        const hashQueryStart = hash.indexOf("?");
+        if (hashQueryStart !== -1) {
+            params.push(new URLSearchParams(hash.slice(hashQueryStart + 1)));
+        }
+    } catch {
+        return params;
+    }
+
+    return params;
+}
+
 function searchHasAny(names) {
     if (typeof window === "undefined") return false;
 
     try {
-        const params = new URLSearchParams(window.location.search);
-        return names.some((name) => params.get(name) === "1" || params.has(name));
+        return getDebugUrlParams().some((params) =>
+            names.some((name) => params.get(name) === "1" || params.has(name))
+        );
     } catch {
         return false;
     }
@@ -39,6 +60,31 @@ export function hasSplatDebugFlag() {
         readStorageFlag("heraSplatDebug") ||
         readStorageFlag("heraPerfDebug")
     );
+}
+
+export function hasSplatNoAutoFitFlag() {
+    return searchHasAny(["splatNoAutoFit"]);
+}
+
+export function getSplatDebugVariantOverride() {
+    if (typeof window === "undefined") return null;
+
+    try {
+        for (const params of getDebugUrlParams()) {
+            if (params.get("disableSparkRad") === "1" || params.has("disableSparkRad")) {
+                return "original";
+            }
+
+            const raw = String(params.get("splatVariant") ?? "").trim().toLowerCase();
+            if (!raw) continue;
+            if (raw === "original") return "original";
+            if (raw === "sparkrad" || raw === "spark-rad" || raw === "rad") return "sparkRad";
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
 }
 
 function maybeCallNumber(fn) {
@@ -93,17 +139,21 @@ export function getSplatBounds(object) {
     if (!object) return null;
 
     try {
-        object.updateMatrixWorld?.(true);
-        const box = typeof object.getBoundingBox === "function"
-            ? object.getBoundingBox().clone()
-            : new THREE.Box3().setFromObject(object);
+        const boundsInfo = getObjectBoundingBox(object, {
+            preferCustom: true,
+            applyMatrixWorld: true,
+        });
+        const box = boundsInfo.box;
 
-        if (box.isEmpty()) {
-            return { empty: true };
-        }
-
-        if (object.matrixWorld) {
-            box.applyMatrix4(object.matrixWorld);
+        if (!boundsInfo.valid) {
+            return {
+                valid: false,
+                empty: boundsInfo.empty,
+                source: boundsInfo.source,
+                error: boundsInfo.error ?? null,
+                min: vectorSnapshot(box?.min),
+                max: vectorSnapshot(box?.max),
+            };
         }
 
         box.getSize(_size);
@@ -111,7 +161,9 @@ export function getSplatBounds(object) {
         box.getBoundingSphere(_sphere);
 
         return {
+            valid: true,
             empty: false,
+            source: boundsInfo.source,
             center: vectorSnapshot(_center),
             size: vectorSnapshot(_size),
             radius: safeRound(_sphere.radius),
@@ -164,6 +216,10 @@ function getWarnings({ object, renderer, bounds, splatCount }) {
 
     if (object?.enableLod === false) {
         warnings.push("Spark object reports enableLod=false.");
+    }
+
+    if (bounds?.valid === false) {
+        warnings.push("Bounding box is invalid; HERA will skip bbox-based placement/camera fitting for this splat.");
     }
 
     if (bounds?.empty) {
@@ -264,4 +320,9 @@ export function logSplatDebug(event, payload) {
     }
 
     console.groupEnd();
+}
+
+export function logSplatSourceDebug(message, payload = {}) {
+    if (!hasSplatDebugFlag()) return;
+    console.info(`[HERA][SplatSource] ${message}`, payload);
 }

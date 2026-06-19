@@ -70,7 +70,7 @@ export default sequelize.define('ArAsset', {
         type: DataTypes.STRING,
         allowNull: false,
         defaultValue: "original",
-        validate: { isIn: [["original", "simplified","n1", "n2","n3"]] },
+        validate: { isIn: [["original", "simplified", "n1", "n2", "n3", "sparkRad"]] },
     },
     simplifyRatio: {
         type: DataTypes.FLOAT,

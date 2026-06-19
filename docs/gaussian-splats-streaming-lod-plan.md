@@ -519,3 +519,134 @@ These are low-risk and can be done before the full backend RAD pipeline:
   - `isRad: true/false`
   - `paged: true/false`
 - Do not add `.radc` as a normal user-uploadable asset type; treat it as a sidecar chunk.
+
+## Implementation note: optional Spark RAD support
+
+HERA now supports `.rad` as an optional optimized variant for splat assets without making Spark RAD generation mandatory.
+
+Frontend behavior:
+
+- Existing `.ply`, `.spz`, `.splat`, `.ksplat`, and `.sog` splats still load through Spark Quick LoD with `lod: true`.
+- If the manifest exposes a ready `sparkRad` variant, splat assets prefer that variant.
+- If the selected source is a streamable `.rad`, HERA loads it with `new SplatMesh({ url, paged: true })`.
+- If the selected source is a non-streaming `.rad` or an unsaved local `.rad` upload, HERA loads it without `lod: true`.
+- If runtime RAD loading fails and the manifest still has a ready original splat path, HERA logs `[HERA][SplatSource] falling back to original splat` and retries the original with `lod: true`.
+
+Backend behavior:
+
+- Splat RAD generation is best-effort and controlled by `SPARK_BUILD_LOD_PATH`.
+- HERA does not assume the installed `@sparkjsdev/spark` npm package contains the `build-lod` tool.
+- If `SPARK_BUILD_LOD_PATH` is missing, invalid, times out, fails, or produces no `.rad`, upload still succeeds with the original splat.
+- Generated `.rad` files are stored beside the original upload and exposed in `lodMeta.variants.sparkRad`.
+- Generated `.radc` sidecar files are preserved beside the `.rad` and listed in `lodMeta.splat.chunkPaths`.
+
+Environment variables:
+
+```bash
+SPARK_BUILD_LOD_PATH=/absolute/path/to/build-lod
+SPARK_BUILD_LOD_ARGS="--quality"
+SPARK_BUILD_LOD_TIMEOUT_MS=600000
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:SPARK_BUILD_LOD_PATH="C:\path\to\build-lod.exe"
+$env:SPARK_BUILD_LOD_ARGS="--quality"
+$env:SPARK_BUILD_LOD_TIMEOUT_MS="600000"
+```
+
+Recommended Windows developer setup:
+
+```powershell
+winget install Rustlang.Rustup
+```
+
+Open a new PowerShell window after installing Rust, then run from the HERA repo root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-spark-build-lod.ps1
+```
+
+The setup script:
+
+- Clones the official Spark source repository because the npm package only ships `dist`.
+- Checks out Spark `v2.1.0`, matching HERA's installed `@sparkjsdev/spark`.
+- Builds `rust/build-lod/Cargo.toml` with Cargo in release mode.
+- Writes `.hera-tools\spark-build-lod.env.ps1` with the environment variables HERA needs.
+
+Default output path on this workspace:
+
+```powershell
+C:\Users\ajili\HERA\.hera-tools\spark\rust\target\release\build-lod.exe
+```
+
+After setup, start the backend from a PowerShell session where these variables are set:
+
+```powershell
+$env:SPARK_BUILD_LOD_PATH="C:\Users\ajili\HERA\.hera-tools\spark\rust\target\release\build-lod.exe"
+$env:SPARK_BUILD_LOD_ARGS="--quality"
+$env:SPARK_BUILD_LOD_TIMEOUT_MS="600000"
+```
+
+Equivalent shortcut:
+
+```powershell
+. .\.hera-tools\spark-build-lod.env.ps1
+```
+
+To test the converter during setup, pass a splat path explicitly:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-spark-build-lod.ps1 -TestSplat "C:\path\to\small-splat.spz"
+```
+
+Or test one existing uploaded splat from this workspace:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-spark-build-lod.ps1 -TestSplat "C:\Users\ajili\HERA\backend\api\public\files\9288b3c3-dba1-46f7-aed9-afe5ebc39ed4\assets\asset17804981078820.ply"
+```
+
+Once configured, an upload with `.spz`, `.splat`, `.ksplat`, `.sog`, or Gaussian `.ply` should produce backend logs like:
+
+```text
+[HERA][SparkRad] start
+[HERA][SparkRad] done
+```
+
+The manifest should then expose:
+
+```json
+{
+  "variants": {
+    "sparkRad": {
+      "status": "ready",
+      "format": "spark-rad",
+      "streaming": true,
+      "paged": true
+    }
+  }
+}
+```
+
+With `?splatDebug=1`, the viewer should log `[HERA][SplatSource] using paged .rad` for that asset. If conversion is skipped or fails, HERA still keeps the original splat and the viewer uses the original `lod: true` fallback.
+
+To use chunked RAD output, set:
+
+```bash
+SPARK_BUILD_LOD_ARGS="--quality --rad-chunked"
+```
+
+Range support check for a persisted RAD asset:
+
+```bash
+curl -I -H "Range: bytes=0-1023" "https://localhost:8080/public/files/<project-id>/assets/<asset-name>-lod.rad"
+```
+
+Expected for monolithic paged RAD:
+
+- `206 Partial Content`
+- `Accept-Ranges: bytes`
+- `Content-Range: bytes 0-1023/...`
+
+For chunked RAD, also verify the `.radc` sidecars are reachable under the same static `/public/files/.../assets/` directory.

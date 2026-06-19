@@ -12,7 +12,17 @@ import { MeshManager } from "../modelManagement/meshManager";
 import { buildAssetRuntimeMetrics } from "@/js/threeExt/runtimeLod/runtimeMetrics.js";
 import { selectAssetVariant } from "@/js/threeExt/runtimeLod/variantSelector.js";
 import { ensureAssetVariant } from "@/js/threeExt/runtimeLod/variantApplier.js";
-import { buildSplatDebugPayload, logSplatDebug } from "@shared/splat/splatDiagnostics.js";
+import {
+    buildSplatDebugPayload,
+    hasSplatDebugFlag,
+    hasSplatNoAutoFitFlag,
+    logSplatDebug,
+} from "@shared/splat/splatDiagnostics.js";
+import {
+    getObjectBoundingBox,
+    snapshotBox3,
+    snapshotTransform,
+} from "@shared/splat/splatBounds.js";
 
 function ensureLodDebugOverlay() {
     let el = document.getElementById("lod-debug-overlay");
@@ -231,6 +241,8 @@ export class ArScene extends AbstractScene {
                     source: {
                         sceneId: this.sceneId,
                         sceneTitle: this.title ?? null,
+                        rootTransform: snapshotTransform(assetData.object),
+                        parentTransform: snapshotTransform(assetData.object.parent),
                     },
                 }));
             }
@@ -265,11 +277,50 @@ export class ArScene extends AbstractScene {
                 if (!asset?.object) continue;
 
                 asset.object.updateMatrixWorld(true);
+                const isSplat = asset.assetKind === "splat" || asset.object?.userData?.heraAssetKind === "splat";
+
+                if (isSplat && hasSplatNoAutoFitFlag()) {
+                    logSplatDebug("viewer-splat-autofit-disabled", {
+                        asset: {
+                            id: asset.id,
+                            name: asset.name,
+                            currentVariant: asset.currentVariant ?? null,
+                        },
+                        reason: "splatNoAutoFit=1",
+                    });
+                    continue;
+                }
+
+                if (isSplat) {
+                    const boundsInfo = getObjectBoundingBox(asset.object, {
+                        preferCustom: true,
+                        applyMatrixWorld: true,
+                    });
+
+                    if (boundsInfo.valid) {
+                        box.union(boundsInfo.box);
+                    } else if (hasSplatDebugFlag()) {
+                        console.warn("[HERA][SplatBounds] invalid bounds; skipping bbox-based placement", {
+                            assetId: asset.id,
+                            assetName: asset.name,
+                            currentVariant: asset.currentVariant ?? null,
+                            boundsSource: boundsInfo.source,
+                            boundsEmpty: boundsInfo.empty,
+                            boundsError: boundsInfo.error ?? null,
+                            bounds: snapshotBox3(boundsInfo.box),
+                        });
+                    }
+
+                    continue;
+                }
 
                 if (typeof asset.object.getBoundingBox === "function") {
-                    const assetBox = asset.object.getBoundingBox();
-                    if (assetBox && !assetBox.isEmpty()) {
-                        box.union(assetBox.clone().applyMatrix4(asset.object.matrixWorld));
+                    const boundsInfo = getObjectBoundingBox(asset.object, {
+                        preferCustom: true,
+                        applyMatrixWorld: true,
+                    });
+                    if (boundsInfo.valid) {
+                        box.union(boundsInfo.box);
                     }
                 } else {
                     box.expandByObject(asset.object);

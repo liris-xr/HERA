@@ -512,7 +512,7 @@ router.post(baseUrl + "admin/assets", authMiddleware, logAdminAssetUploadHit, ad
                 url: importedPointCloud?.url ?? fileUrl,
                 sceneId: req.body.sceneId,
                 simplifiedUrl: null,
-                preferredVariant: "original",
+                preferredVariant: importedPointCloud?.preferredVariant ?? "original",
                 lodMeta: importedPointCloud?.lodMeta ?? null,
             });
 

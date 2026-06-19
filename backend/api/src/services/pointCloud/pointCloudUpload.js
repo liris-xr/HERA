@@ -1,6 +1,7 @@
 import { importPotreeArchive, isPotreeArchivePath } from "./potreeDataset.js";
 import { convertPlyPointCloudToPotree } from "./potreeConverter.js";
 import { isStaticPointCloudPath } from "./staticPointCloud.js";
+import { isSplatAssetPath, prepareUploadedSplatAsset } from "../splat/sparkRadAsset.js";
 
 function normalizeKind(value) {
     const kind = String(value ?? "").trim().toLowerCase();
@@ -28,8 +29,13 @@ export async function prepareUploadedPointCloudAsset({fileRelPath, assetName = n
     if (isStaticPointCloudPath(fileRelPath)) {
         //check if it's a splat
         if (kind === "splat") {
-            logUploadTreatment("ply kept as splat", {fileRelPath, assetName, requestedKind, treatment: "leave file in Gaussian splat pipeline",});
-            return null;
+            logUploadTreatment("ply kept as splat", {fileRelPath, assetName, requestedKind, treatment: "optional Spark RAD preprocessing",});
+            return await prepareUploadedSplatAsset({
+                fileRelPath,
+                assetName,
+                apiRoot,
+                requestedKind,
+            });
         }
 
         logUploadTreatment("ply point cloud candidate detected", {
@@ -39,11 +45,40 @@ export async function prepareUploadedPointCloudAsset({fileRelPath, assetName = n
             treatment: "inspect header and convert classic PLY to Potree streaming",
         });
 
-        return await convertPlyPointCloudToPotree({
+        const convertedPointCloud = await convertPlyPointCloudToPotree({
             fileRelPath,
             assetName,
             apiRoot,
             strict: kind === "pointcloud",
+        });
+        if (convertedPointCloud) return convertedPointCloud;
+
+        logUploadTreatment("ply gaussian splat candidate detected", {
+            fileRelPath,
+            assetName,
+            requestedKind,
+            treatment: "optional Spark RAD preprocessing",
+        });
+        return await prepareUploadedSplatAsset({
+            fileRelPath,
+            assetName,
+            apiRoot,
+            requestedKind: "splat",
+        });
+    }
+
+    if (kind === "splat" || isSplatAssetPath(fileRelPath)) {
+        logUploadTreatment("splat candidate detected", {
+            fileRelPath,
+            assetName,
+            requestedKind,
+            treatment: "optional Spark RAD preprocessing",
+        });
+        return await prepareUploadedSplatAsset({
+            fileRelPath,
+            assetName,
+            apiRoot,
+            requestedKind,
         });
     }
 

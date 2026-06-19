@@ -18,8 +18,8 @@ const transformModeKeys = {
     rotate: "rotation",
     scale: "scale"
 };
-const SUPPORTED_ASSET_EXTENSIONS = ["gltf", "glb", "splat", "spz", "ksplat", "ply", "sog", "zip"];
-const SPLAT_ASSET_EXTENSIONS = ["splat", "spz", "ksplat", "ply", "sog"];
+const SUPPORTED_ASSET_EXTENSIONS = ["gltf", "glb", "splat", "spz", "ksplat", "ply", "sog", "rad", "zip"];
+const SPLAT_ASSET_EXTENSIONS = ["splat", "spz", "ksplat", "ply", "sog", "rad"];
 const POTREE_ARCHIVE_EXTENSIONS = ["zip"];
 const STATIC_POINT_CLOUD_EXTENSIONS = ["ply"];
 

@@ -8,6 +8,21 @@ import { detectAssetKind } from "@/js/threeExt/modelManagement/assetKind.js";
 import { getResource } from "@/js/endpoints.js";
 import { loadStaticPointCloud } from "@/js/threeExt/pointcloud/staticPointCloud.js";
 import { ASSET_KINDS } from "@shared/assetKinds.js";
+import {
+    getSplatDebugVariantOverride,
+    hasSplatDebugFlag,
+    hasSplatNoAutoFitFlag,
+    logSplatDebug,
+} from "@shared/splat/splatDiagnostics.js";
+import {
+    getObjectBoundingBox,
+    snapshotBox3,
+    snapshotTransform,
+} from "@shared/splat/splatBounds.js";
+import {
+    getOriginalSplatPath,
+    getSparkRadSplatPath,
+} from "@shared/splat/splatSource.js";
 
 function safeNumber(value, fallback) {
     const n = Number(value);
@@ -686,12 +701,49 @@ export class Asset extends SceneElementInterface {
             const manager = ObjectManager.getInstance();
 
             const manifest = await this.getManifest();
-            const chosen = pickVariantFromManifest(manifest, options);
+            const manifestKind = manifest?.assetKind ?? this.assetKind;
+            const debugVariantOverride = manifestKind === ASSET_KINDS.SPLAT
+                ? getSplatDebugVariantOverride()
+                : null;
+            const effectiveOptions = debugVariantOverride
+                ? {
+                    ...options,
+                    variantOverride: debugVariantOverride,
+                    allowFallback: true,
+                }
+                : options;
+
+            const chosen = pickVariantFromManifest(manifest, effectiveOptions);
             const kind = manifest?.assetKind ?? detectAssetKind(this, { url: chosen?.path });
             this.assetKind = kind;
             this.kind = kind;
 
             this.currentVariant = chosen?.variant ?? null;
+
+            const originalSplatPath = getOriginalSplatPath(manifest);
+            const radSplatPath = getSparkRadSplatPath(manifest);
+
+            if (kind === ASSET_KINDS.SPLAT) {
+                logSplatDebug("viewer-variant-selected", {
+                    asset: {
+                        id: this.id,
+                        name: this.name,
+                        preferredVariant: manifest?.preferredVariant ?? null,
+                        chosenVariant: chosen?.variant ?? null,
+                        debugVariantOverride,
+                        splatNoAutoFit: hasSplatNoAutoFitFlag(),
+                    },
+                    urls: {
+                        selectedPath: chosen?.path ?? null,
+                        selectedUrl: getResource(chosen?.path),
+                        originalPath: originalSplatPath,
+                        originalUrl: getResource(originalSplatPath),
+                        radPath: radSplatPath,
+                        radUrl: getResource(radSplatPath),
+                    },
+                    variantMeta: chosen?.meta ?? null,
+                });
+            }
 
             console.log("[INITIAL LOAD]",
                 "asset:", this.id,
@@ -712,7 +764,14 @@ export class Asset extends SceneElementInterface {
             };
 
             const loaded = kind === ASSET_KINDS.SPLAT
-                ? await loadSparkSplatAsset({ url: urlToLoad, name: this.name, asset: this, manifest })
+                ? await loadSparkSplatAsset({
+                    url: urlToLoad,
+                    name: this.name,
+                    asset: this,
+                    manifest,
+                    variant: chosen?.variant ?? null,
+                    variantMeta: chosen?.meta ?? null,
+                })
                 : kind === ASSET_KINDS.POINTCLOUD
                     ? await loadStaticPointCloud({
                         url: urlToLoad,
@@ -729,6 +788,10 @@ export class Asset extends SceneElementInterface {
             if (!loadedObject) {
                 throw new Error("[Asset.load] loadedObject is null");
             }
+
+            const transformBeforeApply = kind === ASSET_KINDS.SPLAT
+                ? snapshotTransform(loadedObject)
+                : null;
 
             this.object = loadedObject;
             this.mesh = loadedObject;
@@ -769,7 +832,12 @@ export class Asset extends SceneElementInterface {
 
             this.object.updateMatrixWorld(true);
 
-            const box = new THREE.Box3().setFromObject(this.object);
+            const boundsInfo = getObjectBoundingBox(this.object, {
+                preferCustom: true,
+                applyMatrixWorld: true,
+            });
+            const box = boundsInfo.box ?? new THREE.Box3();
+            const hasValidBounds = boundsInfo.valid;
 
             /* tried to fix model of woman position
             if(!box.isEmpty() && Number.isFinite(box.min.y)) {
@@ -781,17 +849,57 @@ export class Asset extends SceneElementInterface {
             const center = new THREE.Vector3();
             const worldPos = new THREE.Vector3();
 
-            box.getCenter(center);
+            if (hasValidBounds) {
+                box.getCenter(center);
+            }
             this.object.getWorldPosition(worldPos);
+
+            if (kind === ASSET_KINDS.SPLAT && !hasValidBounds && hasSplatDebugFlag()) {
+                console.warn("[HERA][SplatBounds] invalid bounds; skipping bbox-based placement", {
+                    assetId: this.id,
+                    assetName: this.name,
+                    chosenVariant: chosen?.variant ?? null,
+                    boundsSource: boundsInfo.source,
+                    boundsEmpty: boundsInfo.empty,
+                    boundsError: boundsInfo.error ?? null,
+                    bounds: snapshotBox3(box),
+                });
+            }
 
             console.log("[ASSET HEIGHT DEBUG]", this.name, {
                 rootY: this.object.position.y,
                 worldY: worldPos.y,
-                bboxMinY: box.min.y,
-                bboxMaxY: box.max.y,
-                bboxCenterY: center.y,
-                offsetFromRootToBottom: box.min.y - worldPos.y,
+                boundsValid: hasValidBounds,
+                boundsSource: boundsInfo.source,
+                bboxMinY: hasValidBounds ? box.min.y : null,
+                bboxMaxY: hasValidBounds ? box.max.y : null,
+                bboxCenterY: hasValidBounds ? center.y : null,
+                offsetFromRootToBottom: hasValidBounds ? box.min.y - worldPos.y : null,
             });
+
+            if (kind === ASSET_KINDS.SPLAT) {
+                logSplatDebug("viewer-transform-applied", {
+                    asset: {
+                        id: this.id,
+                        name: this.name,
+                        chosenVariant: chosen?.variant ?? null,
+                    },
+                    urls: {
+                        selectedPath: chosen?.path ?? null,
+                        originalPath: originalSplatPath,
+                        radPath: radSplatPath,
+                    },
+                    transformBeforeApply,
+                    transformAfterApply: snapshotTransform(this.object),
+                    parentTransform: snapshotTransform(this.object.parent),
+                    bounds: {
+                        source: boundsInfo.source,
+                        valid: hasValidBounds,
+                        empty: boundsInfo.empty,
+                        box: snapshotBox3(box),
+                    },
+                });
+            }
             //debugFullObject(`INITIAL ${chosen?.variant ?? "unknown"}`, this.object);
 
             if (this.object?.animations?.length > 0) {

@@ -2,6 +2,7 @@ import { ArScene } from "@/js/threeExt/scene/arScene.js";
 import { ScenePlacementManager } from "@/js/threeExt/scene/scenePlacementManager.js";
 import { computed, ref, watch } from "vue";
 import { LightSet } from "@/js/threeExt/lighting/lightSet.js";
+import { isFiniteBox3 } from "@shared/splat/splatBounds.js";
 
 export class ArSceneManager {
     scenes;
@@ -81,6 +82,11 @@ export class ArSceneManager {
         if (this.scenePlacementManager.isEnabled.value) return;
 
         const bounds = this.active.value.computeBoundingBox(false);
+        if (!isFiniteBox3(bounds)) {
+            this.#lightEstimate.setLightPosition(4, 4, 4);
+            return;
+        }
+
         const boundsMin = bounds.min.negate();
         const boundsMax = bounds.max;
 

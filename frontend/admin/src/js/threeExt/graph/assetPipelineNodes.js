@@ -1,6 +1,8 @@
 import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/assetManifest.js";
 import { getResource } from "@/js/endpoints.js";
 import { detectAssetKind } from "@/js/threeExt/graph/resourceKinds.js";
+import { ASSET_KINDS } from "@shared/assetKinds.js";
+import { getSplatDebugVariantOverride } from "@shared/splat/splatDiagnostics.js";
 
 export function InputAssetNode() {
     return {
@@ -32,6 +34,7 @@ export function ResolveAssetUrlNode() {
             "source.manifest",
             "source.url",
             "source.variant",
+            "source.variantMeta",
             "source.fromUpload",
             "source.kind",
         ],
@@ -56,15 +59,21 @@ export function ResolveAssetUrlNode() {
                         url: null,
                         fromUpload: true,
                         variant: "original",
+                        variantMeta: null,
                         kind: detectAssetKind(asset),
                     },
                 };
             }
 
             const manifest = await fetchAssetManifest(asset.id, token);
+            const manifestKind = manifest?.assetKind ?? detectAssetKind(asset);
+            const debugSplatVariantOverride = manifestKind === ASSET_KINDS.SPLAT
+                ? getSplatDebugVariantOverride()
+                : null;
+            const finalVariantOverride = variantOverride ?? debugSplatVariantOverride;
 
             const chosen = pickVariantFromManifest(manifest, {
-                variantOverride,
+                variantOverride: finalVariantOverride,
                 allowFallback: true,
             });
 
@@ -74,6 +83,7 @@ export function ResolveAssetUrlNode() {
             logger.debug("[ResolveAssetUrlNode] resolved", {
                 assetId: asset.id,
                 variant: chosen.variant,
+                variantOverride: finalVariantOverride,
                 path: chosen.path,
                 url: finalUrl,
                 kind,
@@ -85,6 +95,7 @@ export function ResolveAssetUrlNode() {
                     url: finalUrl,
                     fromUpload: false,
                     variant: chosen.variant,
+                    variantMeta: chosen.meta ?? null,
                     kind,
                 },
             };

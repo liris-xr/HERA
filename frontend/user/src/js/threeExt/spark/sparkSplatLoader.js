@@ -1,47 +1,159 @@
 import { getResource } from "@/js/endpoints.js";
-import { buildSplatDebugPayload, logSplatDebug } from "@shared/splat/splatDiagnostics.js";
+import {
+    buildSplatDebugPayload,
+    logSplatDebug,
+    logSplatSourceDebug,
+} from "@shared/splat/splatDiagnostics.js";
+import {
+    buildSparkSplatOptions,
+    getOriginalSplatPath,
+    getSparkRadSplatPath,
+    SPLAT_SOURCE_MODES,
+} from "@shared/splat/splatSource.js";
 
-export async function loadSparkSplatAsset({ url, name, asset = null, manifest = null }) {
+function sourceMessage(mode) {
+    if (mode === SPLAT_SOURCE_MODES.RAD_PAGED) return "using paged .rad";
+    if (mode === SPLAT_SOURCE_MODES.RAD) return "using .rad";
+    return "using original splat quick LoD";
+}
+
+async function createSparkSplat({ SplatMesh, options, name, mode }) {
+    const splat = new SplatMesh(options);
+    splat.name = name || "Gaussian Splat";
+    splat.userData.heraAssetKind = "splat";
+    splat.userData.heraSplatSourceMode = mode;
+    splat.userData.heraSplatPaged = !!options.paged;
+    splat.userData.heraSplatSource = {
+        mode,
+        url: options.url ?? null,
+        fileName: options.fileName ?? null,
+        paged: !!options.paged,
+        lod: !!options.lod,
+    };
+    await splat.initialized;
+    return splat;
+}
+
+async function loadWithPlan({
+    SplatMesh,
+    asset,
+    manifest,
+    sparkModule,
+    url,
+    name,
+    variant,
+    variantMeta,
+    fallback = false,
+}) {
     const startedAt = performance.now();
-    const sparkModule = await import("@sparkjsdev/spark");
-    const { SplatMesh } = sparkModule;
     const resolvedUrl = getResource(url);
-
     if (!resolvedUrl) {
         throw new Error("[loadSparkSplatAsset] Missing splat URL.");
     }
 
-    const options = {
+    const plan = buildSparkSplatOptions({
         url: resolvedUrl,
         fileName: name,
-        lod: true,
-        raycastable: false,
-    };
+        manifest,
+        variant,
+        variantMeta,
+    });
 
+    logSplatSourceDebug(fallback ? "falling back to original splat" : sourceMessage(plan.mode), {
+        assetId: asset?.id ?? null,
+        name,
+        url: resolvedUrl,
+        variant,
+        mode: plan.mode,
+        paged: plan.paged,
+    });
     logSplatDebug("viewer-load-start", buildSplatDebugPayload({
         asset,
         url: resolvedUrl,
-        options,
+        options: plan.options,
         sparkModule,
         manifest,
+        source: {
+            variant,
+            mode: plan.mode,
+            paged: plan.paged,
+            fallback,
+            originalPath: getOriginalSplatPath(manifest),
+            radPath: getSparkRadSplatPath(manifest),
+        },
     }));
 
-    const splat = new SplatMesh(options);
-
-    splat.name = name || "Gaussian Splat";
-    splat.userData.heraAssetKind = "splat";
-
-    await splat.initialized;
+    const splat = await createSparkSplat({
+        SplatMesh,
+        options: plan.options,
+        name,
+        mode: plan.mode,
+    });
 
     logSplatDebug("viewer-load-end", buildSplatDebugPayload({
         asset,
         object: splat,
         url: resolvedUrl,
-        options,
+        options: plan.options,
         sparkModule,
         manifest,
         loadMs: performance.now() - startedAt,
+        source: {
+            variant,
+            mode: plan.mode,
+            paged: plan.paged,
+            fallback,
+            originalPath: getOriginalSplatPath(manifest),
+            radPath: getSparkRadSplatPath(manifest),
+        },
     }));
 
-    return splat;
+    return {
+        splat,
+        plan,
+    };
+}
+
+export async function loadSparkSplatAsset({ url, name, asset = null, manifest = null, variant = null, variantMeta = null }) {
+    const sparkModule = await import("@sparkjsdev/spark");
+    const { SplatMesh } = sparkModule;
+
+    try {
+        const { splat } = await loadWithPlan({
+            SplatMesh,
+            asset,
+            manifest,
+            sparkModule,
+            url,
+            name,
+            variant,
+            variantMeta,
+        });
+        return splat;
+    } catch (error) {
+        const originalPath = getOriginalSplatPath(manifest);
+        const canFallback = originalPath && originalPath !== url;
+        if (!canFallback) throw error;
+
+        console.warn("[HERA][SplatSource] falling back to original splat", {
+            assetId: asset?.id ?? null,
+            name,
+            failedUrl: url,
+            originalPath,
+            error: error?.message ?? String(error),
+        });
+
+        const { splat } = await loadWithPlan({
+            SplatMesh,
+            asset,
+            manifest,
+            sparkModule,
+            url: originalPath,
+            name,
+            variant: "original",
+            variantMeta: manifest?.variants?.original ?? null,
+            fallback: true,
+        });
+        return splat;
+    }
 }

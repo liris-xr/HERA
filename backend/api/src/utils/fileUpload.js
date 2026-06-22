@@ -238,7 +238,7 @@ export async function duplicateFolder(source, dest){
     try{
         await fs.promises.cp(sourcePath, destPath, { recursive: true });
     }catch (e){
-        console.error("Unable to duplicate folder : "+e);
+        throw new Error("Unable to duplicate folder: " + e?.message);
     }
 }
 

@@ -307,9 +307,10 @@ export class Asset extends SceneElementInterface {
     highlight;
     hidden;
 
-    constructor(assetData) {
+    constructor(assetData, options = {}) {
         super();
         this.id = assetData.id;
+        this.authToken = options.token ?? null;
 
         this.sourceUrl = assetData.url;
         this.simplifiedUrl = assetData.simplifiedUrl ?? null;
@@ -590,7 +591,7 @@ export class Asset extends SceneElementInterface {
 
     async getManifest() {
         if (!this.manifestCache) {
-            this.manifestCache = await fetchAssetManifest(this.id);
+            this.manifestCache = await fetchAssetManifest(this.id, this.authToken);
         }
         return this.manifestCache;
     }

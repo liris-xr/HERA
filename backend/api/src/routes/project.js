@@ -8,7 +8,6 @@ import {
     deleteFolder,
     duplicateFolder,
     getProjectDirectory, getTempDirectory,
-    getUpdatedPath,
     uploadCover, uploadProject
 } from "../utils/fileUpload.js";
 import {Op} from "sequelize";
@@ -16,7 +15,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import {DIRNAME} from "../../app.js";
 import decompress from "decompress"
-import {updateUrl} from "../utils/updateUrl.js";
+import {updateAssetFileReferences, updateStoredFileUrls, updateUrl} from "../utils/updateUrl.js";
 
 
 const router = express.Router()
@@ -364,7 +363,8 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                 const newScene = await ArScene.create({
                     ...scene.get({ plain: true }),
                     id: undefined, // générer un nouvel id
-                    projectId: newProject.id // lier la scène au nouveau projet
+                    projectId: newProject.id,
+                    envmapUrl: updateUrl(scene.envmapUrl, newProject.id)
                 },{
                     transaction:t
                 });
@@ -384,7 +384,7 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                         ...asset.get({ plain: true }),
                         id: undefined, // générer un nouvel id
                         sceneId: newScene.id, // lier le nouvel asset à la nouvelle scène
-                        url: getUpdatedPath(asset.url, projectId, newProject.id)
+                        ...updateAssetFileReferences(asset, newProject.id)
                     }, {
                         transaction:t
                     });
@@ -395,7 +395,8 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
                     return ArLabel.create({
                         ...label.get({ plain: true }),
                         id: undefined, // générer un nouvel id
-                        sceneId: newScene.id // lier le nouveau label à la nouvelle scène
+                        sceneId: newScene.id,
+                        text: updateStoredFileUrls(label.text, newProject.id)
                     }, {
                         transaction:t
                     });
@@ -408,7 +409,7 @@ router.post(baseUrl+'project/:projectId/copy', authMiddleware, async (req, res) 
 
             await duplicateFolder(getProjectDirectory(projectId), getProjectDirectory(newProject.id))
             if(newProject.pictureUrl != null){
-                newProject.pictureUrl = getUpdatedPath(newProject.pictureUrl, projectId, newProject.id)
+                newProject.pictureUrl = updateUrl(newProject.pictureUrl, newProject.id)
                 await newProject.save({transaction:t});
             }
 
@@ -643,8 +644,6 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
         return res.send({ error: 'Unauthorized', details: 'User not granted' })
     }
 
-    console.log(req.uploadedFilePath)
-
     try {
         const dataFolder = req.uploadedFilePath + "-data"
         // dézipper le fichier
@@ -690,8 +689,16 @@ router.post(baseUrl+'project/import', authMiddleware, uploadProject.single("zip"
             scene.envmapUrl = updateUrl(scene.envmapUrl, project.id)
 
             for(let asset of scene.assets) {
-                asset.url = updateUrl(asset.url, project.id)
+                const updatedRefs = updateAssetFileReferences(asset, project.id)
+                asset.url = updatedRefs.url
+                asset.simplifiedUrl = updatedRefs.simplifiedUrl
+                asset.lodMeta = updatedRefs.lodMeta
                 await asset.save()
+            }
+
+            for(let label of scene.labels) {
+                label.text = updateStoredFileUrls(label.text, project.id)
+                await label.save()
             }
 
             await scene.save()

@@ -52,7 +52,7 @@ export class ArScene extends AbstractScene {
     clock;
     vrStartPosition;
 
-    constructor(sceneData, xr = false) {
+    constructor(sceneData, xr = false, options = {}) {
         super();
 
         this.sceneId = sceneData.id;
@@ -68,9 +68,10 @@ export class ArScene extends AbstractScene {
         this._labelData = sceneData.labels ?? [];
         this._envmapUrl = sceneData.envmapUrl ?? null;
         this._xr = xr;
+        this._authToken = options.token ?? null;
 
         for (const assetData of sceneData.assets ?? []) {
-            this.#assets.push(new Asset(assetData));
+            this.#assets.push(new Asset(assetData, { token: this._authToken }));
         }
 
         for (const meshData of sceneData.meshes ?? []) {

@@ -169,6 +169,7 @@ const sceneCount = computed(() => {
           <ar-view
               ref="arView"
               :json="project"
+              :auth-token="isAuthenticated ? token : null"
               @loaded="socket && initSocketActionManager()"
           />
         </div>

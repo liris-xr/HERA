@@ -32,7 +32,7 @@ export class ArSessionManager {
     domWidth;
     domHeight;
 
-    constructor(json) {
+    constructor(json, options = {}) {
         this.devicePolicy = buildSimpleDevicePolicy();
         this.shadowMapSize = this.devicePolicy.shadowMapSize;
         this.domContainer = null;
@@ -41,7 +41,9 @@ export class ArSessionManager {
         this.#isArRunning = ref(false);
         this.enable3dUI = false;
 
-        this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
+        this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize, false, {
+            token: options.token ?? null,
+        });
         this.arCamera = new ArCamera();
 
         this.arRenderer = new ArRenderer(this.shadowMapSize, 1);

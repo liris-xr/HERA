@@ -14,7 +14,7 @@ export class ArSceneManager {
 
     onSceneChanged;
 
-    constructor(scenes, shadowMapSize, xr = false) {
+    constructor(scenes, shadowMapSize, xr = false, options = {}) {
         this.isArRunning = ref(false);
         this.isSceneLoading = ref(false);
         this.#lightEstimate = new LightSet(shadowMapSize);
@@ -24,11 +24,11 @@ export class ArSceneManager {
 
         this.scenes = [];
         for (const sceneData of scenes) {
-            this.scenes.push(new ArScene(sceneData, xr));
+            this.scenes.push(new ArScene(sceneData, xr, options));
         }
 
         if (this.scenes.length === 0) {
-            this.scenes.push(new ArScene({ id: 0, title: "None", assets: [] }));
+            this.scenes.push(new ArScene({ id: 0, title: "None", assets: [] }, xr, options));
         }
 
         this.activeSceneId = ref(this.scenes[0].sceneId);

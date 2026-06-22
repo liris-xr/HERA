@@ -3,6 +3,12 @@ import { fetchAssetManifest, pickVariantFromManifest } from "@/js/threeExt/asset
 import { getResource } from "@/js/endpoints.js";
 import { detectAssetKind } from "@/js/threeExt/graph/resourceKinds.js";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function hasPersistedAssetId(asset) {
+    return typeof asset?.id === "string" && UUID_RE.test(asset.id);
+}
+
 export function InputAssetNode() {
     return {
         id: "InputAsset",
@@ -58,6 +64,27 @@ export function ResolveAssetUrlNode() {
                         fromUpload: true,
                         variant: "original",
                         kind: detectAssetKind(asset),
+                    },
+                };
+            }
+
+            if (!hasPersistedAssetId(asset) && asset.sourceUrl) {
+                const finalUrl = getResource(asset.sourceUrl);
+                const kind = detectAssetKind(asset, { url: finalUrl });
+
+                logger.debug("[ResolveAssetUrlNode] direct source asset -> load from URL", {
+                    assetId: asset.id,
+                    url: finalUrl,
+                    kind,
+                });
+
+                return {
+                    source: {
+                        manifest: null,
+                        url: finalUrl,
+                        fromUpload: false,
+                        variant: "original",
+                        kind,
                     },
                 };
             }

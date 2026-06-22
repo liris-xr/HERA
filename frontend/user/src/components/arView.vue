@@ -15,12 +15,15 @@ import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 
 const props = defineProps({
-  json: { type: Object, required: true }
+  json: { type: Object, required: true },
+  authToken: { type: String, default: null }
 });
 
 const emit = defineEmits(["loaded"]);
 
-const arSessionManager = new ArSessionManager(props.json);
+const arSessionManager = new ArSessionManager(props.json, {
+  token: props.authToken
+});
 const overlayBottom = ref(true);
 
 defineExpose({

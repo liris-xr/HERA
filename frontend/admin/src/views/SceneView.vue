@@ -573,8 +573,20 @@ const availableVariants = computed(() => {
   return Array.from(variants);
 });
 
-function markChang() {
+function markChanged() {
   saved.value = false;
+}
+
+function onAnimationChanged(asset, value) {
+  if (!asset) return;
+  asset.activeAnimation = value;
+  markChanged();
+}
+
+function toggleAssetViewerDisplay(asset) {
+  if (!asset) return;
+  asset.switchViewerDisplayStatus();
+  markChanged();
 }
 </script>
 
@@ -755,9 +767,9 @@ function markChang() {
                     @select="editor.scene.setSelected(asset)"
                     @delete="editor.scene.removeAsset(asset)"
                     @duplicate="editor.scene.duplicateAsset(asset)"
-                    @animationChanged="(val) => { asset.activeAnimation = val; saved.value = false; }"
-                    @hide-in-viewer="() => { asset.switchViewerDisplayStatus(); saved.value = false; }"
-                    @changed="markChang"
+                    @animationChanged="(val) => onAnimationChanged(asset, val)"
+                    @hide-in-viewer="() => toggleAssetViewerDisplay(asset)"
+                    @changed="markChanged"
                     @optimize="() => optimizeAsset(asset)"
                     @simplify="() => simplifyAsset(asset)"
                     @compress="(params) => compressAsset(asset, params)"

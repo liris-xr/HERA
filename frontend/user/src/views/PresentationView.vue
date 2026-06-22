@@ -416,6 +416,7 @@ const projectUrl = computed(() => {
             v-if="!(loading || error)"
             ref="arView"
             :json="project"
+            :auth-token="token"
             @loaded="initSocket"
         />
 

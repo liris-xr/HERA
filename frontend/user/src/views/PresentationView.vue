@@ -184,12 +184,32 @@ function editPreset() {
   editingPreset.value = null
 }
 
-function createPreset() {
+async function createPreset() {
+  if (creatingPreset.value.isDirect) {
+    const newPresets = JSON.parse(JSON.stringify(project.presets));
+    newPresets.push(creatingPreset.value);
+    
+    const res = await fetch(`${ENDPOINT}project/${project.id}/presets`,{
+      method: "PUT",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({presets: newPresets}),
+    });
+    
+    if(res.ok) {
+      project.presets = newPresets;
+    } else {
+      toast.error(res.status + " : " + res.statusText, {
+        position: toast.POSITION.BOTTOM_RIGHT
+      });
+    }
+  } else {
+    editingPresets.value.push(creatingPreset.value);
+  }
 
-  editingPresets.value.push(creatingPreset.value)
-
-  creatingPreset.value = null
-
+  creatingPreset.value = null;
 }
 
 async function savePresets() {
@@ -211,6 +231,21 @@ async function savePresets() {
   }
 
   editingPresets.value = null
+}
+
+async function saveRecording() {
+  recordTarget.actions = socket.stopRecording();
+
+  if (creatingPreset.value && recordTarget === creatingPreset.value) {
+    const wasDirect = creatingPreset.value.isDirect;
+    await createPreset();
+    if (!wasDirect) {
+      await savePresets();
+    }
+  } else if (editingPreset.value && recordTarget === editingPreset.value) {
+    editPreset();
+    await savePresets();
+  }
 }
 
 const connectedText = computed(() => {
@@ -298,14 +333,16 @@ const projectUrl = computed(() => {
                 @click="editingPresets = JSON.parse(JSON.stringify(project.presets))" />
           </div>
           <div class="presets">
-
             <presentation-preset
-                v-for="preset in project.presets"
+                v-for="(preset, index) in project.presets"
+                :key="preset.id || index"
                 :preset="preset"
-
                 @triggered="applyPreset(preset)" />
-
-
+            <presentation-preset
+                key="dummy-add-button"
+                :preset="{ bigText: '+' }"
+                style="background-color: transparent; border: 3px solid black;"
+                @triggered="creatingPreset = { id: generateUUID(), isDirect: true }" />
           </div>
         </section>
 
@@ -403,7 +440,7 @@ const projectUrl = computed(() => {
         <filled-button-view
             :text="$t('presentation.sections.presets.confirm')"
             icon="/icons/save.svg"
-            @click="recordTarget.actions = socket.stopRecording();" />
+            @click="saveRecording" />
       </div>
     </section>
 

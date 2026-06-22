@@ -17,8 +17,37 @@ function stripOuterQuotes(value = "") {
     return String(value ?? "").trim().replace(/^["']|["']$/g, "");
 }
 
+function localConverterCandidates() {
+    const relativeToolPath = path.join(
+        ".hera-tools",
+        "PotreeConverter_2.1.1_x64_windows",
+        "PotreeConverter_windows_x64",
+        "PotreeConverter.exe"
+    );
+
+    return [
+        path.resolve(process.cwd(), relativeToolPath),
+        path.resolve(process.cwd(), "..", relativeToolPath),
+        path.resolve(process.cwd(), "..", "..", relativeToolPath),
+    ];
+}
+
+function resolveExecutablePath(value) {
+    const candidate = stripOuterQuotes(value);
+    if (!candidate) return null;
+
+    const resolved = path.isAbsolute(candidate)
+        ? candidate
+        : path.resolve(process.cwd(), candidate);
+
+    return fs.existsSync(resolved) ? resolved : null;
+}
+
 function getConverterPath() {
-    return stripOuterQuotes(process.env.POTREE_CONVERTER_PATH ?? process.env.POTREE_CONVERTER ?? "");
+    const configured = process.env.POTREE_CONVERTER_PATH ?? process.env.POTREE_CONVERTER ?? "";
+    return resolveExecutablePath(configured)
+        ?? localConverterCandidates().find((candidate) => fs.existsSync(candidate))
+        ?? "";
 }
 
 function ensureConverterPath() {
@@ -49,9 +78,15 @@ function appendCapturedLog(current, chunk) {
 }
 
 function buildConverterConfigError() {
+    const configured = stripOuterQuotes(process.env.POTREE_CONVERTER_PATH ?? process.env.POTREE_CONVERTER ?? "");
+    const configuredMessage = configured
+        ? ` Configured path was not found: ${configured}.`
+        : "";
+
     return new Error(
         "Classic .ply point clouds must be converted to Potree before streaming. " +
-        "Set POTREE_CONVERTER_PATH to the PotreeConverter executable, then retry the upload."
+        "Set POTREE_CONVERTER_PATH to the PotreeConverter executable, then retry the upload." +
+        configuredMessage
     );
 }
 

@@ -5,6 +5,7 @@ import { spawn } from "node:child_process";
 const SPLAT_INPUT_EXTENSIONS = new Set([".splat", ".spz", ".ksplat", ".ply", ".sog", ".rad"]);
 const DEFAULT_BUILD_ARGS = ["--quality"];
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+const SETUP_SCRIPT_REL = "scripts/setup-spark-build-lod.ps1";
 
 function normalizeRelPath(value) {
     const normalized = String(value ?? "").replaceAll("\\", "/").replace(/^\/+/, "").trim();
@@ -38,6 +39,82 @@ function canSpawnTool(toolPath) {
         return fs.existsSync(toolPath);
     }
     return true;
+}
+
+function resolveRepoRoot(apiRoot = process.cwd()) {
+    const root = path.resolve(apiRoot);
+    const candidates = [
+        path.resolve(root, "..", ".."),
+        root,
+        path.resolve(root, ".."),
+    ];
+
+    return candidates.find((candidate) => fs.existsSync(path.join(candidate, SETUP_SCRIPT_REL)))
+        ?? path.resolve(root, "..", "..");
+}
+
+function getDefaultBuildLodPath(apiRoot = process.cwd()) {
+    const repoRoot = resolveRepoRoot(apiRoot);
+    const binaryName = process.platform === "win32" ? "build-lod.exe" : "build-lod";
+    return path.join(repoRoot, ".hera-tools", "spark", "rust", "target", "release", binaryName);
+}
+
+function getScriptsBuildLodPath(apiRoot = process.cwd()) {
+    const repoRoot = resolveRepoRoot(apiRoot);
+    const binaryName = process.platform === "win32" ? "build-lod.exe" : "build-lod";
+    return path.join(repoRoot, "scripts", "tools", binaryName);
+}
+
+function getSparkBuildLodSetupCommand(apiRoot = process.cwd()) {
+    const repoRoot = resolveRepoRoot(apiRoot);
+    return `powershell -ExecutionPolicy Bypass -File "${path.join(repoRoot, SETUP_SCRIPT_REL)}"`;
+}
+
+export function resolveSparkBuildLodTool({ apiRoot = process.cwd() } = {}) {
+    const envPath = String(process.env.SPARK_BUILD_LOD_PATH ?? "").trim();
+    const candidates = [
+        envPath ? { toolPath: envPath, source: "SPARK_BUILD_LOD_PATH" } : null,
+        { toolPath: getScriptsBuildLodPath(apiRoot), source: "scripts-tools" },
+        { toolPath: getDefaultBuildLodPath(apiRoot), source: "repo-default" },
+    ].filter(Boolean);
+
+    const available = candidates.find((candidate) => canSpawnTool(candidate.toolPath));
+    if (available) {
+        return {
+            ...available,
+            available: true,
+            checkedPaths: candidates,
+            setupCommand: getSparkBuildLodSetupCommand(apiRoot),
+        };
+    }
+
+    const fallback = candidates[0];
+    return {
+        ...fallback,
+        available: false,
+        checkedPaths: candidates,
+        setupCommand: getSparkBuildLodSetupCommand(apiRoot),
+    };
+}
+
+export function logSparkRadBuildLodStatus({ apiRoot = process.cwd() } = {}) {
+    const resolved = resolveSparkBuildLodTool({ apiRoot });
+    const details = {
+        source: resolved.source,
+        toolPath: resolved.toolPath,
+        checkedPaths: resolved.checkedPaths,
+    };
+
+    if (resolved.available) {
+        console.info("[HERA][SparkRad] build-lod detected", details);
+        return resolved;
+    }
+
+    console.warn("[HERA][SparkRad] build-lod not found, automatic RAD disabled", {
+        ...details,
+        setup: resolved.setupCommand,
+    });
+    return resolved;
 }
 
 function relFromDiskPath(diskPath, apiRoot) {
@@ -242,36 +319,28 @@ export async function prepareUploadedSplatAsset({
         };
     }
 
-    const toolPath = String(process.env.SPARK_BUILD_LOD_PATH ?? "").trim();
-    if (!toolPath) {
-        logSparkRad("skipped", {
-            fileRelPath: sourceRel,
-            assetName,
-            reason: "SPARK_BUILD_LOD_PATH is not set",
-        });
-        return {
-            url: sourceRel,
-            preferredVariant: "original",
-            lodMeta: buildLodMeta({
-                sourceRel,
-                skippedReason: "SPARK_BUILD_LOD_PATH is not set",
-            }),
-        };
-    }
-
-    if (!canSpawnTool(toolPath)) {
+    const resolvedTool = resolveSparkBuildLodTool({ apiRoot });
+    const toolPath = resolvedTool.toolPath;
+    if (!resolvedTool.available) {
+        const envPath = String(process.env.SPARK_BUILD_LOD_PATH ?? "").trim();
+        const reason = envPath
+            ? "SPARK_BUILD_LOD_PATH is invalid and no repo-local build-lod executable was found"
+            : "build-lod executable was not found in scripts/tools or the default repo-local path";
         logSparkRad("skipped", {
             fileRelPath: sourceRel,
             assetName,
             toolPath,
-            reason: "SPARK_BUILD_LOD_PATH does not point to an executable file",
+            source: resolvedTool.source,
+            checkedPaths: resolvedTool.checkedPaths,
+            reason,
+            setup: resolvedTool.setupCommand,
         });
         return {
             url: sourceRel,
             preferredVariant: "original",
             lodMeta: buildLodMeta({
                 sourceRel,
-                skippedReason: "SPARK_BUILD_LOD_PATH executable not found",
+                skippedReason: reason,
             }),
         };
     }
@@ -285,6 +354,7 @@ export async function prepareUploadedSplatAsset({
         fileRelPath: sourceRel,
         assetName,
         toolPath,
+        source: resolvedTool.source,
         args,
         timeoutMs,
     });

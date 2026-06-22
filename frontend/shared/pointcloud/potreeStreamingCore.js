@@ -37,7 +37,54 @@ function resolveRelativeUrl(baseUrl, relativeUrl) {
     }
 }
 
+function parseByteRange(value) {
+    const match = /^bytes=(\d+)-(\d+)$/i.exec(String(value ?? "").trim());
+    if (!match) return null;
+
+    const start = Number(match[1]);
+    const end = Number(match[2]);
+
+    if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end < start) {
+        return null;
+    }
+
+    return { start, end };
+}
+
+function getRequestHeader(headers, name) {
+    if (!headers) return null;
+    if (typeof headers.get === "function") return headers.get(name);
+
+    return headers[name] ?? headers[name.toLowerCase()] ?? null;
+}
+
+async function ensureRangeResponse(response, range) {
+    if (!range || response.status === 206) return response;
+
+    const buffer = await response.arrayBuffer();
+    const { start, end } = range;
+
+    if (response.status !== 200 || end >= buffer.byteLength) {
+        throw new Error(
+            `[Potree] Invalid range response: requested bytes=${start}-${end}, ` +
+            `received status ${response.status} with ${buffer.byteLength} bytes`
+        );
+    }
+
+    const sliced = buffer.slice(start, end + 1);
+    const headers = new Headers(response.headers);
+    headers.set("Content-Length", String(sliced.byteLength));
+    headers.set("Content-Range", `bytes ${start}-${end}/${buffer.byteLength}`);
+
+    return new Response(sliced, {
+        status: 206,
+        statusText: "Partial Content",
+        headers,
+    });
+}
+
 async function fetchPotreeResource(input, init = {}) {
+    const range = parseByteRange(getRequestHeader(init?.headers, "Range"));
     const response = await fetch(input, {
         ...init,
         cache: "no-store",
@@ -47,7 +94,7 @@ async function fetchPotreeResource(input, init = {}) {
         throw new Error(`[Potree] Failed to load ${input}: ${response.status} ${response.statusText}`);
     }
 
-    return response;
+    return ensureRangeResponse(response, range);
 }
 
 function detectPotreeVersion(entryName, options = {}) {

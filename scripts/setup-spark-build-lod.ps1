@@ -65,6 +65,11 @@ New-Item -ItemType Directory -Force -Path $toolsRoot | Out-Null
 Require-Command -Name "git" -InstallHint "Install Git for Windows, then open a new PowerShell window."
 Require-Command -Name "cargo" -InstallHint "Install Rust with rustup from https://rustup.rs/ or run: winget install Rustlang.Rustup"
 
+$gitVersion = (& git --version) -join " "
+$cargoVersion = (& cargo --version) -join " "
+Write-Host "[HERA][SparkBuildLodSetup] found $gitVersion"
+Write-Host "[HERA][SparkBuildLodSetup] found $cargoVersion"
+
 if ($Force -and (Test-Path $InstallRoot)) {
     Remove-Item -LiteralPath $InstallRoot -Recurse -Force
 }
@@ -115,9 +120,15 @@ if (-not $buildLodPath) {
 }
 
 $buildLodPath = (Resolve-Path $buildLodPath).Path
+$scriptToolsRoot = Join-Path $PSScriptRoot "tools"
+$scriptToolPath = Join-Path $scriptToolsRoot ([System.IO.Path]::GetFileName($buildLodPath))
+New-Item -ItemType Directory -Force -Path $scriptToolsRoot | Out-Null
+Copy-Item -LiteralPath $buildLodPath -Destination $scriptToolPath -Force
+$scriptToolPath = (Resolve-Path $scriptToolPath).Path
+
 $envScriptPath = Join-Path $toolsRoot "spark-build-lod.env.ps1"
 $envScript = @(
-    ('$env:SPARK_BUILD_LOD_PATH="{0}"' -f $buildLodPath),
+    ('$env:SPARK_BUILD_LOD_PATH="{0}"' -f $scriptToolPath),
     ('$env:SPARK_BUILD_LOD_ARGS="{0}"' -f $BuildArgs),
     '$env:SPARK_BUILD_LOD_TIMEOUT_MS="600000"'
 )
@@ -152,10 +163,19 @@ if (-not [string]::IsNullOrWhiteSpace($TestSplat)) {
 
 Write-Host ""
 Write-Host "[HERA][SparkBuildLodSetup] done"
-Write-Host "Use these before starting backend/api:"
-Write-Host ('$env:SPARK_BUILD_LOD_PATH="{0}"' -f $buildLodPath)
+Write-Host "build-lod build output:"
+Write-Host $buildLodPath
+Write-Host ""
+Write-Host "build-lod backend tool path:"
+Write-Host $scriptToolPath
+Write-Host ""
+Write-Host "HERA backend will auto-detect the scripts tool path after setup."
+Write-Host "You do not need to set SPARK_BUILD_LOD_PATH unless you want to use a different binary."
+Write-Host ""
+Write-Host "Optional override variables:"
+Write-Host ('$env:SPARK_BUILD_LOD_PATH="{0}"' -f $scriptToolPath)
 Write-Host ('$env:SPARK_BUILD_LOD_ARGS="{0}"' -f $BuildArgs)
 Write-Host '$env:SPARK_BUILD_LOD_TIMEOUT_MS="600000"'
 Write-Host ""
-Write-Host "Or dot-source the generated env file:"
+Write-Host "Optional helper env file:"
 Write-Host ". `"$envScriptPath`""

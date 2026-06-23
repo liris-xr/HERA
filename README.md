@@ -130,45 +130,6 @@ and Vite dev servers.
 
 To test HERA from a phone or tablet, both devices must be connected to the same network.
 
-Find your computer IP address by running the HTTPS setup script or, on Windows:
-
-```powershell
-ipconfig
-```
-
-Look for the IPv4 address of your Wi-Fi adapter, for example:
-
-```text
-192.168.1.42
-```
-
-Then open the app from the phone using the computer IP:
-
-```text
-https://192.168.1.42:8081/viewer/
-```
-
-For the admin/editor:
-
-```text
-https://192.168.1.42:8082/editor/
-```
-
-You may also need to open and accept the API certificate on the phone:
-
-```text
-https://192.168.1.42:8080
-```
-
-If the phone cannot load the project, check that:
-
-- the phone and computer are on the same Wi-Fi network;
-- the API is running;
-- the viewer/editor is running with HTTPS;
-- the browser accepted the certificate;
-- the firewall allows ports `8080`, `8081`, and `8082`;
-- the certificate was regenerated after any LAN IP change.
-
 ## Android ADB Option
 
 If testing with an Android device connected by USB, you can use ADB reverse.
@@ -252,10 +213,6 @@ CORS_ORIGIN=*
 HTTPS_KEY_PATH=certs/dev-key.pem
 HTTPS_CERT_PATH=certs/dev.pem
 ```
-
-The local SQLite file `backend/api/src/database/database.sqlite` is runtime
-state and is ignored by Git. Do not commit local users, projects, scenes, asset
-metadata, or machine-specific file paths.
 
 ### Frontend `.env`
 

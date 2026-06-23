@@ -1,30 +1,19 @@
-/*// const HOST = 'https://192.168.65.116';
-//const HOST = 'https://localhost';
-// const HOST = 'https://192.168.1.10';
-const HOST = 'https://10.42.205.102'
-export const ENDPOINT = `${HOST}:8080/api/`;
+export const BASE_URL = import.meta.env.BASE_URL; // "/viewer/" in this app
 
-export const HEADERS= {
-    'Content-Type': "application/json"
-};
+const API_PORT = import.meta.env.VITE_API_PORT || "8080";
+const FRONTEND_PORT = import.meta.env.VITE_FRONTEND_PORT || window.location.port || "8081";
 
-export const BASE_URL = "/viewer/";
+function hostForUrl(hostname) {
+    const cleanHost = hostname || "localhost";
+    return cleanHost.includes(":") && !cleanHost.startsWith("[") ? `[${cleanHost}]` : cleanHost;
+}
 
-const RESOURCES_SERVER = `${HOST}:8080/`;
+const CURRENT_HOST = hostForUrl(window.location.hostname);
+const inferredApiOrigin = `https://${CURRENT_HOST}:${API_PORT}`;
 
-export const getResource = (url) => url == null ? null : RESOURCES_SERVER + url;
-
-export const getCertUrl = () => `${RESOURCES_SERVER}api/dev/cert?redirect=` + encodeURIComponent(window.location.href)
-*/
-// src/js/endpoints.js  (same file in admin + user)
-
-export const BASE_URL = import.meta.env.BASE_URL; // "/editor/" or "/viewer/" depending on app
-
-const HOSTNAME = window.location.hostname;        // localhost OR 10.42... depending on URL you open
-const PROTOCOL = window.location.protocol;        // https: or http:
-
-// Backend origin (your API server)
-export const API_ORIGIN = `${PROTOCOL}//${HOSTNAME}:8080`;
+export const API_ORIGIN = import.meta.env.PROD && import.meta.env.VITE_API_ORIGIN
+    ? import.meta.env.VITE_API_ORIGIN
+    : inferredApiOrigin;
 export const ENDPOINT = `${API_ORIGIN}/api/`;
 
 export const HEADERS = { "Content-Type": "application/json" };
@@ -39,3 +28,8 @@ export const getResource = (url) => {
 
 export const getCertUrl = () =>
     `${API_ORIGIN}/api/dev/cert?redirect=` + encodeURIComponent(window.location.href);
+
+export const getDevCertificateUrls = () => ({
+    backend: `https://${CURRENT_HOST}:${API_PORT}`,
+    frontend: `https://${CURRENT_HOST}:${FRONTEND_PORT}`,
+});

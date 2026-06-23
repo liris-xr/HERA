@@ -349,9 +349,8 @@
   },
   "redirectMessage": {
     "part1": "Nota:",
-    "part2": "si estás visitando este sitio por primera vez, por favor haz clic ",
-    "part3": "aquí",
-    "part4": " para aceptar el certificado y continuar."
+    "part2": "si es tu primera visita o cambió la IP del PC, abre estas URLs y acepta los certificados:",
+    "part3": "Luego recarga HERA. El primer acceso HTTPS local necesita aceptarse en el navegador."
   },
   "deleteConfirmModal": {
     "confirmButton": "Sí, eliminar",

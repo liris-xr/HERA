@@ -10,6 +10,14 @@ import { Server } from "socket.io";
 import { initializeDatabase } from "./src/orm/index.js";
 import setupSocket from "./src/socket/index.js";
 import { errorHandler } from "./src/utils/errorHandler.js";
+import {
+    API_PORT,
+    CORS_ORIGIN,
+    HTTPS_CERT_FILE,
+    HTTPS_CERT_PATH,
+    HTTPS_KEY_FILE,
+    HTTPS_KEY_PATH,
+} from "./src/config.js";
 
 import project from "./src/routes/project.js";
 import auth from "./src/routes/auth.js";
@@ -22,14 +30,32 @@ import label from "./src/routes/label.js";
 const __filename = fileURLToPath(import.meta.url);
 export const DIRNAME = path.dirname(__filename);
 
-const options = {
-    key: fs.readFileSync(path.join(DIRNAME, "..", "..", "certs", "dev-key.pem")),
-    cert: fs.readFileSync(path.join(DIRNAME, "..", "..", "certs", "dev.pem")),
-};
+function readHttpsOptions() {
+    try {
+        return {
+            key: fs.readFileSync(HTTPS_KEY_FILE),
+            cert: fs.readFileSync(HTTPS_CERT_FILE),
+        };
+    } catch (error) {
+        throw new Error(
+            [
+                "Unable to read HTTPS development certificates.",
+                `Expected key: ${HTTPS_KEY_PATH} -> ${HTTPS_KEY_FILE}`,
+                `Expected cert: ${HTTPS_CERT_PATH} -> ${HTTPS_CERT_FILE}`,
+                "Run from the repository root: node scripts/setup-dev-https.mjs",
+            ].join("\n"),
+            { cause: error },
+        );
+    }
+}
+
+const corsOrigin = CORS_ORIGIN === "*"
+    ? "*"
+    : CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean);
 
 const app = express();
 app.use(express.json());
-app.use(cors({}));
+app.use(cors({ origin: corsOrigin }));
 app.use(zip());
 
 async function main() {
@@ -50,7 +76,7 @@ async function main() {
     // error handler LAST
     app.use(errorHandler);
 
-    const httpsServer = https.createServer(options, app);
+    const httpsServer = https.createServer(readHttpsOptions(), app);
 
     const io = new Server(httpsServer, {
         cors: { origin: "*", methods: ["GET", "POST"] },
@@ -58,7 +84,7 @@ async function main() {
     });
     setupSocket(io);
 
-    httpsServer.listen(8080, () => console.log("Server started on port 8080"));
+    httpsServer.listen(API_PORT, () => console.log(`Server started on https://localhost:${API_PORT}`));
 }
 
 main().catch((e) => {

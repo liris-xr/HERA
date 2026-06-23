@@ -158,9 +158,8 @@
   },
   "redirectMessage": {
     "part1": "Remarque :",
-    "part2": "si vous visitez ce site pour la première fois, veuillez cliquer ",
-    "part3": "ici",
-    "part4": " pour accepter le certificat et continuer."
+    "part2": "si vous visitez ce site pour la première fois ou si l'IP du PC a changé, ouvrez ces URLs et acceptez les certificats :",
+    "part3": "Rechargez ensuite HERA. Le premier accès HTTPS local nécessite une acceptation dans le navigateur."
   },
   "expandableNotification": {
     "hideButton": "Masquer"

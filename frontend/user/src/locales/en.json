@@ -157,9 +157,8 @@
   },
   "redirectMessage": {
     "part1": "Note:",
-    "part2": "if you are browsing this website for the first time, please click ",
-    "part3": "here",
-    "part4": " to accept certificate and continue."
+    "part2": "if this is your first visit or the computer IP changed, open these URLs and accept the certificates:",
+    "part3": "Then reload HERA. The first local HTTPS access needs to be accepted in the browser."
   },
   "expandableNotification": {
     "hideButton": "Hide"

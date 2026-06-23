@@ -145,6 +145,8 @@ scripts/tools/
 
 backend/api/privatekey.key
 backend/api/certificate.crt
+certs/*.pem
+certs/dev-cert.json
 
 # idea
 

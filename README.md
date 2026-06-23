@@ -172,12 +172,21 @@ Example:
 NODE_ENV=development
 PORT=8080
 JWT_SECRET=dev-only-insecure-secret-change-me
+HERA_ADMIN_EMAIL=admin@example.com
+HERA_ADMIN_USERNAME=admin
+HERA_ADMIN_PASSWORD=replace-with-a-strong-password
 CORS_ORIGIN=*
 HTTPS_KEY_PATH=../../certs/dev-key.pem
 HTTPS_CERT_PATH=../../certs/dev.pem
 ```
 
 For production, `JWT_SECRET` must be replaced with a long random private value.
+
+On a fresh database with zero users, the backend creates the first admin account
+from `HERA_ADMIN_EMAIL`, `HERA_ADMIN_USERNAME`, and `HERA_ADMIN_PASSWORD` after
+`sequelize.sync()`. If users already exist, these values are ignored. HERA does
+not create default `admin/admin` credentials; set these variables before the
+first backend start, especially in production.
 
 Generate a random secret with:
 
@@ -193,10 +202,17 @@ Example `.env.example`:
 NODE_ENV=development
 PORT=8080
 JWT_SECRET=replace-with-a-long-random-secret
+HERA_ADMIN_EMAIL=admin@example.com
+HERA_ADMIN_USERNAME=admin
+HERA_ADMIN_PASSWORD=replace-with-a-strong-password
 CORS_ORIGIN=*
 HTTPS_KEY_PATH=../../certs/dev-key.pem
 HTTPS_CERT_PATH=../../certs/dev.pem
 ```
+
+The local SQLite file `backend/api/src/database/database.sqlite` is runtime
+state and is ignored by Git. Do not commit local users, projects, scenes, asset
+metadata, or machine-specific file paths.
 
 ### Frontend `.env`
 

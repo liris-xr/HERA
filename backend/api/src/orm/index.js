@@ -3,6 +3,8 @@ import ArProject from "./models/arProject.js";
 import ArScene from "./models/arScene.js";
 
 import {sequelize} from './database.js'
+import "../config.js";
+import { passwordHash } from "../utils/passwordHash.js";
 import ArAsset from "./models/arAsset.js";
 import ArMesh from "./models/arMesh.js";
 import ArLabel from "./models/arLabel.js";
@@ -22,8 +24,48 @@ ArMesh.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 ArLabel.belongsTo(ArScene, { as: 'scene', foreignKey: 'sceneId' });
 
 
-export async function initializeDatabase (options) {
-    return await sequelize.sync(options);
+function getBootstrapAdminConfig() {
+    const email = (process.env.HERA_ADMIN_EMAIL ?? "").trim();
+    const username = (process.env.HERA_ADMIN_USERNAME ?? "").trim();
+    const password = process.env.HERA_ADMIN_PASSWORD ?? "";
+
+    const missing = [];
+    if (!email) missing.push("HERA_ADMIN_EMAIL");
+    if (!username) missing.push("HERA_ADMIN_USERNAME");
+    if (!password.trim()) missing.push("HERA_ADMIN_PASSWORD");
+
+    if (missing.length > 0) {
+        throw new Error(
+            "Database has no users. Set " +
+            missing.join(", ") +
+            " to bootstrap the first admin account."
+        );
+    }
+
+    return { email, username, password };
+}
+
+export async function bootstrapFirstAdmin() {
+    const userCount = await ArUser.count();
+    if (userCount > 0) return null;
+
+    const { email, username, password } = getBootstrapAdminConfig();
+
+    const admin = await ArUser.create({
+        username,
+        email,
+        admin: true,
+        password: passwordHash(password),
+    });
+
+    console.log(`[Database] Bootstrapped first admin user: ${email}`);
+    return admin;
+}
+
+export async function initializeDatabase(options) {
+    const syncResult = await sequelize.sync(options);
+    await bootstrapFirstAdmin();
+    return syncResult;
 }
 
 export {ArUser, ArProject, ArScene, ArAsset, ArLabel, ArMesh}

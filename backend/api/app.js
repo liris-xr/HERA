@@ -61,4 +61,7 @@ async function main() {
     httpsServer.listen(8080, () => console.log("Server started on port 8080"));
 }
 
-main().catch((e) => console.error(e));
+main().catch((e) => {
+    console.error(e);
+    process.exitCode = 1;
+});

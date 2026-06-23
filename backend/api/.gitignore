@@ -1,3 +1,6 @@
 public/files
 src/database
+src/database/database.sqlite
+database.sqlite
+*.sqlite
 .tmp-lod/

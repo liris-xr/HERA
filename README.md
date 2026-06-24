@@ -5,176 +5,140 @@ It allows users to create, edit, and visualize augmented reality scenes directly
 
 For more information, check [the paper](https://hal.science/hal-04725966v1) and the [demo video](https://www.youtube.com/watch?v=ZqwUtapg_Bk). 
 
-## Project Structure & Default Development Ports
+The project is composed of:
 
-| Folder | Role | URL |
-|---|---|---|
-| `backend/api` | Express API, database, authentication, uploaded files | `https://localhost:8080` |
-| `frontend/user` | Viewer used to open and visualize AR projects | `https://localhost:8081/viewer/` |
-| `frontend/admin` | Editor used to create and manage projects | `https://localhost:8082/editor/` |
+| Folder           | Role                                                  | Default URL                      |
+| ---------------- | ----------------------------------------------------- | -------------------------------- |
+| `backend/api`    | Express API, database, authentication, uploaded files | `https://localhost:8080`         |
+| `frontend/admin` | Editor interface for creating and managing projects   | `https://localhost:8082/editor/` |
+| `frontend/user`  | Viewer interface for opening and visualizing projects | `https://localhost:8081/viewer/` |
 
-The viewer and editor need the API to be running.
+The editor and viewer both require the backend API to be running.
+
+---
 
 ## Requirements
 
-Before running the project, make sure you have:
+Before starting, install:
 
-- Node.js and npm installed
-- a browser compatible with WebXR for AR testing (Google Chrome)
-- An ARCore-compatible Android smartphone or tablet ([list of compatible devices](https://developers.google.com/ar/devices)) to test AR.
-- [ADB](https://developer.android.com/tools/adb) (Optional if you want to open the console on the phone/tablet) 
+* Node.js and npm
+* Google Chrome or another WebXR-compatible browser
+* An ARCore-compatible Android device if you want to test AR
+* ADB, optional, for Android debugging
 
+---
 
-## Installation
-1. If you haven't already, clone this repository with the `git clone` command
-2. Switch to the `dev` branch:
-```shell
-git checkout dev
+## Quick Start
+
+Clone the repository:
+
+```bash
+git clone https://github.com/liris-xr/HERA.git
+cd HERA
 ```
-3. Prepare the shared development HTTPS certificate from the repository root:
+
+Switch to the development branch:
+
+```bash
+git checkout node-editor
+```
+
+Generate the local HTTPS certificates:
 
 ```bash
 node scripts/setup-dev-https.mjs
 ```
 
-This creates `certs/dev-key.pem` and `certs/dev.pem`, detects your LAN IP, and
-updates the local `.env` files for the backend, viewer, and editor.
-
-4. Install dependencies in each folder and run locally:
+Install backend dependencies:
 
 ```bash
 cd backend/api
-npm install
-npm run start
+npm install --legacy-peer-deps
+npm start
 ```
+
+In another terminal, start the viewer:
 
 ```bash
 cd frontend/user
-npm install
+npm install --legacy-peer-deps
 npm run dev
 ```
+
+In another terminal, start the editor:
 
 ```bash
 cd frontend/admin
-npm install
+npm install --legacy-peer-deps
 npm run dev
 ```
+
 Open:
 
-- API test: `https://localhost:8080/api/dev/hello`
-- Viewer: `https://localhost:8081/viewer/`
-- Editor: `https://localhost:8082/editor/`
+* API test: `https://localhost:8080/api/dev/hello`
+* Viewer: `https://localhost:8081/viewer/`
+* Editor: `https://localhost:8082/editor/`
 
-## HTTPS and Certificates
+---
 
-WebXR requires a secure context. In practice, AR features need HTTPS. Browsers
-treat `localhost` as a special development origin, but a phone or tablet opened
-on a LAN IP such as `https://192.168.1.42:8081/viewer/` must use HTTPS with a
-certificate that explicitly covers that IP.
+## HTTPS Setup
 
-HERA development uses one shared local certificate for the API and Vite
-frontends:
+HERA uses HTTPS in development because WebXR and AR features require a secure context.
 
-- `certs/dev-key.pem`
-- `certs/dev.pem`
-
-These files are generated locally, ignored by Git, and are only for local
-development. Do not commit them and do not use them for production deployment.
-
-Generate or refresh it with:
+Run this from the repository root:
 
 ```bash
 node scripts/setup-dev-https.mjs
 ```
 
-The script creates the `certs` folder if needed, detects the current LAN IP, and
-generates a certificate for at least:
+The script generates:
 
-- `localhost`
-- `127.0.0.1`
-- `::1`
-- the detected LAN IP
+```txt
+certs/dev.pem
+certs/dev-key.pem
+```
 
-The first time you use local HTTPS, the browser may ask you to accept the local
-certificate. Open these URLs once and accept the warning:
+It also detects your LAN IP and updates the local environment files used by the backend, viewer, and editor.
 
-- `https://localhost:8080`
-- `https://localhost:8081`
-- `https://localhost:8082`
-
-If you are testing from another device, use the URLs printed by the setup
-script, for example:
-
-- `https://192.168.1.42:8080`
-- `https://192.168.1.42:8081/viewer/`
-- `https://192.168.1.42:8082/editor/`
-
-If the certificate is not accepted, the frontend may load but API requests,
-assets, or AR features may fail with `ERR_CERT_AUTHORITY_INVALID` or
-`Failed to fetch`.
-
-To reset certificates:
+If your IP changes, rerun:
 
 ```bash
 node scripts/setup-dev-https.mjs --force
 ```
 
-You can also delete `certs/dev-key.pem`, `certs/dev.pem`, and
-`certs/dev-cert.json`, then rerun the setup script.
+Generated certificates are local development files. Do not commit them.
 
-To refresh only the local `.env` files without generating or installing
-certificates:
-
-```bash
-node scripts/setup-dev-https.mjs --env-only
-```
-
-If your computer gets a new LAN IP, rerun the setup script and restart the API
-and Vite dev servers.
+---
 
 ## Testing on a Phone or Tablet
 
-`localhost` on a phone means the phone itself, not your computer.
+A phone cannot use your computer’s `localhost`.
 
-To test HERA from a phone or tablet, both devices must be connected to the same network.
+To test from another device, connect the phone/tablet and computer to the same network, then use the LAN URLs printed by the HTTPS setup script.
 
-## Android ADB Option
+Example:
 
-If testing with an Android device connected by USB, you can use ADB reverse.
-
-Viewer:
-
-```bash
-cd frontend/user
-npm run adb
+```txt
+https://192.168.1.42:8081/viewer/
+https://192.168.1.42:8082/editor/
+https://192.168.1.42:8080
 ```
 
-Admin/editor:
+Open the API URL once on the device and accept the local certificate if the browser asks.
 
-```bash
-cd frontend/admin
-npm run adb
-```
-This can make local ports accessible from the Android device while debugging.
+---
 
 ## Environment Variables
 
-HERA uses several values that depend on the local machine or deployment environment:
-
-- backend port
-- JWT secret
-- CORS origin
-- HTTPS certificate paths
-- frontend API and frontend dev ports
-
-These values are configured through `.env` files or generated by
-`node scripts/setup-dev-https.mjs`. Local `.env` files are ignored by Git.
-
-### Backend `.env`
-
-Create a `.env` file inside:
+Local `.env` files are generated or updated by:
 
 ```bash
+node scripts/setup-dev-https.mjs
+```
+
+Backend environment file:
+
+```txt
 backend/api/.env
 ```
 
@@ -192,261 +156,81 @@ HTTPS_KEY_PATH=certs/dev-key.pem
 HTTPS_CERT_PATH=certs/dev.pem
 ```
 
-For production, `JWT_SECRET` must be replaced with a long random private value.
-
-On a fresh database with zero users, the backend creates the first admin account
-from `HERA_ADMIN_EMAIL`, `HERA_ADMIN_USERNAME`, and `HERA_ADMIN_PASSWORD` after
-`sequelize.sync()`. If users already exist, these values are ignored. HERA does
-not create default `admin/admin` credentials; set these variables before the
-first backend start, especially in production.
-
-Generate a random secret with:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-```
-
-Real `.env` files must not be committed to the repository. Only example files such as `.env.example` should be shared.
-
-Example `.env.example`:
+On a fresh database, the first admin account is created from:
 
 ```env
-NODE_ENV=development
-PORT=8080
-JWT_SECRET=replace-with-a-long-random-secret
-HERA_ADMIN_EMAIL=admin@example.com
-HERA_ADMIN_USERNAME=admin
-HERA_ADMIN_PASSWORD=replace-with-a-strong-password
-CORS_ORIGIN=*
-HTTPS_KEY_PATH=certs/dev-key.pem
-HTTPS_CERT_PATH=certs/dev.pem
+HERA_ADMIN_EMAIL
+HERA_ADMIN_USERNAME
+HERA_ADMIN_PASSWORD
 ```
 
-### Frontend `.env`
+If users already exist, these values are ignored.
 
-The frontend builds the API origin from the host used to open the app:
+Never commit real `.env` files.
 
-- `https://localhost:8081/viewer/` calls `https://localhost:8080`
-- `https://192.168.1.42:8081/viewer/` calls `https://192.168.1.42:8080`
-
-Do not set a LAN IP manually in the frontend source. For development, the setup
-script writes only the ports:
-
-```env
-VITE_API_PORT=8080
-VITE_FRONTEND_PORT=8081
-```
-
-The editor uses `VITE_FRONTEND_PORT=8082`.
-
-`VITE_API_ORIGIN` is reserved for production builds that need a fixed external
-API URL. It is ignored by dev builds so a stale LAN IP cannot break another
-device.
-
-## Changing Ports
-
-Default ports are:
-
-- API: `8080`
-- Viewer: `8081`
-- Admin/editor: `8082`
-
-To change the viewer port, edit `frontend/user/package.json`:
-
-```json
-"dev": "vite --host --port 8081"
-```
-
-To change the admin/editor port, edit `frontend/admin/package.json`:
-
-```json
-"dev": "vite --host --port 8082"
-```
-
-To change the API port, update the backend `PORT` and the frontend
-`VITE_API_PORT`.
-
-The Vite dev proxy defaults to `https://localhost:<VITE_API_PORT>` because it
-runs on the same computer as the backend. Browser API calls still use the host
-that opened the page.
+---
 
 ## Common Issues
 
-### The viewer says it cannot load projects
+### `npm install` fails with `ERESOLVE`
 
-Make sure the API is running:
-
-```text
-https://localhost:8080/api/dev/hello
-```
-
-If testing from a phone or tablet, use the computer IP instead of `localhost`:
-
-```text
-https://192.168.1.42:8080/api/dev/hello
-```
-
-Also check that you reran `node scripts/setup-dev-https.mjs` after any LAN IP
-change, then opened the API and frontend URLs once in the browser to accept the
-local certificate.
-
-### The AR button does not work
-
-Check that the page is opened with HTTPS and that the device/browser supports WebXR.
-
-WebXR generally requires:
-
-- HTTPS;
-- a compatible browser;
-- a compatible device;
-- permissions for camera and motion sensors when required.
-
-### Assets do not load
-
-Open the API URL in the browser and accept the certificate warning.
-
-Also check that:
-
-- the API is running;
-- uploaded files exist in the expected public folder;
-- `/public` files are reachable from the device;
-- the browser accepted the HTTPS certificate;
-- the frontend is using the correct API host and port.
-
-### Login stops working after changing `JWT_SECRET`
-
-This is expected.
-
-Existing tokens were signed with the old secret. After changing `JWT_SECRET`, old tokens become invalid.
-
-Log out, clear the browser storage if needed, and log in again.
-
-### The backend cannot find HTTPS certificates
-
-Check the values in `.env`:
-
-```env
-HTTPS_KEY_PATH=certs/dev-key.pem
-HTTPS_CERT_PATH=certs/dev.pem
-```
-Make sure the files exist and that the paths are relative to the repository
-root, or absolute paths for a production deployment.
-
-If the files are missing, run:
+Use:
 
 ```bash
-node scripts/setup-dev-https.mjs
+npm install --legacy-peer-deps
 ```
 
-### The phone cannot access the viewer or editor
+This is needed because some dependencies still declare older peer dependency versions.
 
-Check that:
-- the phone and computer are on the same Wi-Fi
-- the frontend was started with `--host`
-- the firewall allows ports `8080`, `8081`, and `8082`
-- the URL uses the computer IP, not `localhost`
-- the phone browser accepted the API certificate
-- the certificate includes the current computer IP
+### Backend says `Cannot find package 'express'`
 
-Correct example:
-```text
-https://192.168.1.42:8081/viewer/
-```
-
-Wrong from a phone:
-```text
-https://localhost:8081/viewer/
-```
-
-### Project import or database data is broken
-If project import fails or the default data is missing recreate the local database once.
-1- Open:
+The backend dependencies were not installed correctly. Run:
 
 ```bash
-backend/api/app.js
+cd backend/api
+npm install --legacy-peer-deps
+npm start
 ```
 
-2- Temporarily change the database initialization to:
+### Port already in use
 
-```js
-await initializeDatabase({ force: true });
-```
-
-3- Then uncomment:
-
-```js
-await resetDatabase();
-await insertDefaults();
-```
-
-4- Restart the backend once. This forces the recreation of the tables and reinserts the default data.
-
-5- After the reset works, immediately restore:
-
-```js
-await initializeDatabase({ force: false });
-```
-
-6- Then comment again:
-
-```js
-// await resetDatabase();
-// await insertDefaults();
-```
-
-This avoids resetting the database at every server restart.
-
-> Do not keep `force: true` enabled permanently. Do not use this procedure in production.
-
-### API target still points to an old IP address
-
-The frontend should not contain a hardcoded LAN IP. In development it derives
-the API URL from `window.location.hostname`.
-
-If a dev browser still calls an old IP, remove `VITE_API_ORIGIN`,
-`VITE_API_TARGET`, or `VITE_DEV_API_TARGET` from `frontend/user/.env` and
-`frontend/admin/.env`, then run:
+If port `8080`, `8081`, or `8082` is already used, stop the old server or find the process:
 
 ```bash
-node scripts/setup-dev-https.mjs
+netstat -ano | findstr :8080
+taskkill /PID <PID_NUMBER> /F
 ```
 
-Restart the frontend dev server after changing `.env`.
+### Browser blocks the site because of certificates
 
-#### Accepting the certificates
-![image](./readme/httpsWarning.png)\
-You should see this message if you are trying to access the site for the first time.
-To continue, simply click "Continue to site" (after expanding the "Advanced settings" section)\
-However, the site should still display an error even after accepting the risk:
-![image](./readme/fetchFail.png)\
-This is because the browser is trying to fetch data from the API, which is not
-trusted yet. Open the two URLs shown by the frontend error message:
+Open these URLs once and accept the local certificate warning:
 
-```text
-https://<host>:8080
-https://<host>:8081
+```txt
+https://localhost:8080
+https://localhost:8081
+https://localhost:8082
 ```
 
-Use the same `<host>` as the app URL. For example, if the viewer is opened at
-`https://192.168.1.42:8081/viewer/`, accept:
+When testing from a phone, use the LAN IP instead of `localhost`.
 
-```text
-https://192.168.1.42:8080
-https://192.168.1.42:8081
-```
+### Old projects do not appear in a fresh clone
 
-After this step, refresh the page.
+This is normal. Projects are stored in the local database and uploaded assets folder.
+
+A fresh clone starts with a fresh local database.
+
+---
 
 ## Production Notes
 
 For production deployment:
 
-- use a private and long `JWT_SECRET`
-- never commit the real `.env` file
-- avoid `CORS_ORIGIN=*`
-- use real HTTPS certificates
-- configure API routing with a production reverse proxy
-- do not use `force: true` for database initialization
-- do not run local database reset helpers automatically
-- make sure admin routes are protected server-side, not only in the frontend
+* use a strong private `JWT_SECRET`
+* never commit real `.env` files
+* do not use local development certificates
+* do not use `CORS_ORIGIN=*`
+* use real HTTPS certificates
+* protect admin routes on the backend
+* never keep database reset options enabled
+
 

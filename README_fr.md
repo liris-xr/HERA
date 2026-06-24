@@ -1,5 +1,13 @@
 # HERA
 
+> Note actuelle: pour le developpement local HTTPS, ce projet utilise
+> `node scripts/setup-dev-https.mjs`. Le plugin `vite-plugin-mkcert` n'est plus
+> utilise par les configurations Vite. Ne modifiez pas l'adresse IP dans les
+> fichiers `frontend/*/src/js/endpoints.js`: elle est deduite automatiquement
+> depuis l'URL ouverte dans le navigateur. Les certificats `certs/dev-key.pem`
+> et `certs/dev.pem` sont generes localement, ignores par Git, et ne doivent pas
+> etre utilises en production.
+
 
 ## Introduction
 
@@ -298,79 +306,24 @@ La seule solution pour résoudre ce problème est d'effectuer manuellement une r
 [Cliquez ici pour effectuer une requête sur le port par défaut](https://localhost:3000/api/dev/hello)\
 Après cette étape, retournez sur le site et actualisez la page. Le problème devrait être résolu.
 
-#### Désactiver le plugin https
-Cette méthode consiste à retirer le plugin `vite-plugin-mkcert` pour démarrer le serveur en mode normal (`http`).
-Cela permet de supprimier les avertissements de sécurité, mais il ne sera plus possible de démarrer une session WebXR (sauf en local, [Détails ici](#démarrage-dune-session-webxr)).
-Des modifications sont nécessaires au niveau du code des deux sites, et de l'API :
+#### Certificats HTTPS de developpement
+Le projet n'utilise plus le plugin Vite mkcert. Pour le developpement local,
+gardez HTTPS et generez les certificats avec le script suivant depuis la
+racine du projet :
 
-- Pour les deux sites web :
-  - Accédez aux fichiers `frontend/user/vite.config.js` et `frontend/admin/vite.config.js`.
-  Voici un extrait de leur contenu :
-    ```js
-    import { fileURLToPath, URL } from 'node:url'
-    import { defineConfig } from 'vite'
-    import vue from '@vitejs/plugin-vue'
-    import mkcert from "vite-plugin-mkcert";    //supprimez cette ligne
-    
-    // https://vitejs.dev/config/
-    export default defineConfig({
-        plugins: [
-            vue(),
-            mkcert(),       //supprimez cette ligne
-        ],
-        ...
-    })
-    ```
-  - Ici, deux lignes concernent le plugin `mkcert`. Supprimez (ou commentez) ces lignes, puis redémarrez le serveur (`npm run dev`).
-  Vérifiez le message dans la console :\
-  ![image](./readme/viteHttp.png)\
-  Le serveur est bien lancé en mode `http`. Répétez les étapes précédentes pour le deuxième site.
-  - Pour désinstaller complètement le plugin (facultatif) :
-    ```shell
-    npm uninstall vite-plugin-mkcert
-    ```
-    
-- Pour l'API :\
-  Contrairement aux deux sites web, l'API n'est pas démarré en utilisant le serveur Vite.
-  Le plugin n'est donc pas disponnible, et les étapges sont différentes :
-  - Accédez au fichier `backend/api/app.js`. Voici un extrait de sont contenu :
-    ```js
-    ...
-    import cors from 'cors'
-    
-    //for https only :                                //
-    import * as fs from "node:fs";                    //
-    import * as https from "node:https";              //
-    const options = {                                 // Supprimez ces lignes
-        key: fs.readFileSync('privatekey.key'),       //
-        cert: fs.readFileSync('certificate.crt')      //
-    };                                                //
-  
-    ...
-    
-    async function main () {
-        ...
-        https.createServer(options, app).listen(process.env.PORT || 3000, () => {   //modifiez cette ligne
-            console.log('Server started on port 3000')
-        })
-    }
-    ```
-  - Deux modifications importantes sont à effectuer :
-    1. Supprimez les lignes indiquées par le commentaire concernant `https`.
-    2. Modifiez la fonction `main()` : remplacez `https.createServer(options, app)` par `app`, pour obtenir le résultat suivant :
-       ```js
-       app.listen(process.env.PORT || 3000, () => {
-           console.log('Server started on port 3000')
-       })
-       ```
-  - Redémarrez l'API (`npm run start`), et testez une requête en `http`, par exemple http://localhost:3000/api/dev/hello
+```shell
+node scripts/setup-dev-https.mjs
+```
 
-  <ins>**Remarque :**</ins> Après avoir modifié le mode `http`, les sites d'édition et de visualisation tenteront toujours de faire des requêtes à l'API en mode `https`, entrainant une erreur.
-  Vous devez modifier leur adresse de destination dans les fichiers `frontend/user/src/js/endpoints.js` et `frontend/admin/src/js/endpoints.js` :
-  ```js
-  const HOST = 'https://localhost'; //le site tente toujours d'effectuer des requêtes en mode https;
-  ```
-  Modifiez la valeur de `HOST` de manière à obtenir une adresse en `http`, par exemple `http://localhost`
+Le script cree `certs/dev-key.pem` et `certs/dev.pem`, detecte l'IP locale du
+PC, et met a jour les fichiers `.env` locaux. Ces certificats sont uniquement
+pour le developpement local. Ne les commitez pas et ne les utilisez pas en
+production.
+
+Il n'est pas necessaire de modifier l'adresse IP dans
+`frontend/user/src/js/endpoints.js` ou `frontend/admin/src/js/endpoints.js`.
+Les frontends deduisent automatiquement l'adresse de l'API depuis l'URL ouverte
+dans le navigateur.
 
 Si vous ne parvenez toujours pas à faire fonctionner le site après avoir appliqué une des 2 méthodes ci-dessus, essayer depuis un autre navigateur.
 Notez cependant qu'il est nécessaire d'utiliser Chrome pour lancer la réalité augmentée, les autres navigateurs seront affichés comme incompatibles. 
@@ -392,12 +345,10 @@ Ici, le serveur est accessible depuis un navigateur, par deux adresse possibles 
 Dans ce cas, assurez vous que le téléphone Android est connecté au même réseau Wi-Fi que le PC sur lequel le serveur à été lancé,
 puis accédez simplement au site en rentrant son URL distant (celui avec l'IP) dans un navigateur (depuis le téléphone).
 
-Le site devrait apparaître en affichant une erreur de chargement.
-Cela est dû au fait qu'il tente de récupérer les données de l'API à l'adresse `https://localhost`, qui n'est pas joignable depuis le téléphone.
-Vous devez donc modifier les fichiers `frontend/user/src/js/endpoints.js` et `frontend/admin/src/js/endpoints.js`, de manière à changer la valeur de `HOST` pour y inclure l'IP du PC, par exemple :
-```js
-const HOST = 'https://192.168.139.116';     //utilisez l'IP du PC serveur
-```
+Lancez d'abord `node scripts/setup-dev-https.mjs`, puis utilisez les URLs avec
+l'IP locale affichees par le script. Les frontends utilisent automatiquement
+le nom d'hote de l'URL ouverte dans le navigateur, donc il n'est pas necessaire
+de modifier `frontend/user/src/js/endpoints.js` ou `frontend/admin/src/js/endpoints.js`.
 
 
 #### Accès local

@@ -20,6 +20,7 @@ const keyPath = path.join(projectRoot, keyRel);
 const certPath = path.join(projectRoot, certRel);
 const args = new Set(process.argv.slice(2));
 const force = args.has("--force") || args.has("-f");
+const envOnly = args.has("--env-only");
 
 function isPrivateIPv4(address) {
     const parts = address.split(".").map((part) => Number.parseInt(part, 10));
@@ -270,7 +271,7 @@ async function updateEnvFiles() {
             VITE_API_PORT: "8080",
             VITE_FRONTEND_PORT: "8081",
         },
-        ["VITE_API_ORIGIN", "VITE_API_TARGET"],
+        ["VITE_API_ORIGIN", "VITE_API_TARGET", "VITE_DEV_API_TARGET"],
     );
 
     await writeEnvFile(
@@ -279,7 +280,7 @@ async function updateEnvFiles() {
             VITE_API_PORT: "8080",
             VITE_FRONTEND_PORT: "8082",
         },
-        ["VITE_API_ORIGIN", "VITE_API_TARGET"],
+        ["VITE_API_ORIGIN", "VITE_API_TARGET", "VITE_DEV_API_TARGET"],
     );
 }
 
@@ -287,7 +288,9 @@ function printUrls(lanIp, hosts, generated) {
     console.log("");
     console.log("HERA dev HTTPS setup complete.");
     console.log(`Detected LAN IP: ${lanIp || "none"}`);
-    console.log(`Certificate ${generated ? "generated" : "validated"} for: ${hosts.join(", ")}`);
+    console.log(envOnly
+        ? `Certificate generation skipped for: ${hosts.join(", ")}`
+        : `Certificate ${generated ? "generated" : "validated"} for: ${hosts.join(", ")}`);
     console.log("");
     console.log("Open these URLs once in the browser and accept the local certificate if prompted:");
     console.log("  Backend/API: https://localhost:8080");
@@ -309,8 +312,15 @@ function printUrls(lanIp, hosts, generated) {
 async function main() {
     const lanIp = detectLanIp();
     const hosts = getHosts(lanIp);
-    const mkcertCommand = await ensureMkcert();
-    const generated = await generateCertificateIfNeeded(mkcertCommand, hosts, lanIp);
+    let generated = false;
+
+    if (envOnly) {
+        console.log("Skipping certificate generation because --env-only was provided.");
+    } else {
+        const mkcertCommand = await ensureMkcert();
+        generated = await generateCertificateIfNeeded(mkcertCommand, hosts, lanIp);
+    }
+
     await updateEnvFiles();
     printUrls(lanIp, hosts, generated);
 }

@@ -78,7 +78,8 @@ frontends:
 - `certs/dev-key.pem`
 - `certs/dev.pem`
 
-These files are generated locally and ignored by Git.
+These files are generated locally, ignored by Git, and are only for local
+development. Do not commit them and do not use them for production deployment.
 
 Generate or refresh it with:
 
@@ -120,6 +121,13 @@ node scripts/setup-dev-https.mjs --force
 
 You can also delete `certs/dev-key.pem`, `certs/dev.pem`, and
 `certs/dev-cert.json`, then rerun the setup script.
+
+To refresh only the local `.env` files without generating or installing
+certificates:
+
+```bash
+node scripts/setup-dev-https.mjs --env-only
+```
 
 If your computer gets a new LAN IP, rerun the setup script and restart the API
 and Vite dev servers.
@@ -395,8 +403,9 @@ This avoids resetting the database at every server restart.
 The frontend should not contain a hardcoded LAN IP. In development it derives
 the API URL from `window.location.hostname`.
 
-If a dev browser still calls an old IP, remove `VITE_API_ORIGIN` or
-`VITE_API_TARGET` from `frontend/user/.env` and `frontend/admin/.env`, then run:
+If a dev browser still calls an old IP, remove `VITE_API_ORIGIN`,
+`VITE_API_TARGET`, or `VITE_DEV_API_TARGET` from `frontend/user/.env` and
+`frontend/admin/.env`, then run:
 
 ```bash
 node scripts/setup-dev-https.mjs

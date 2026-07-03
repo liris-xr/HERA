@@ -12,7 +12,11 @@ import { buildSimpleDevicePolicy } from "@/js/threeExt/DeviceProfile/devicePolic
 import { createPerfDebugLogger } from "@/js/threeExt/performance/perfDebugLogger.js";
 import { createArMetricsCollector } from "@/js/threeExt/performance/arMetricsCollector.js";
 import { createArMetricsHud3d } from "@/js/threeExt/performance/arMetricsHud3d.js";
-import { ensureSparkRenderer } from "@/js/threeExt/spark/sparkRuntime.js";
+import {
+    applySparkXrPerformanceProfile,
+    ensureSparkRenderer,
+    getSparkRendererForScene,
+} from "@/js/threeExt/spark/sparkRuntime.js";
 
 export class ArSessionManager {
     sceneManager;
@@ -112,13 +116,22 @@ export class ArSessionManager {
 
     async #ensureSparkRendererForScene(scene) {
         try {
-            await ensureSparkRenderer({
+            return await ensureSparkRenderer({
                 renderer: this.arRenderer,
                 scene,
             });
         } catch (error) {
             console.warn("[HERA][Spark] renderer setup failed", error);
+            return null;
         }
+    }
+
+    #applySparkXrPerformanceProfile() {
+        const scene = this.sceneManager.getActiveContentScene();
+        const sparkRenderer = getSparkRendererForScene(scene);
+        if (!sparkRenderer) return null;
+
+        return applySparkXrPerformanceProfile(sparkRenderer, this.arRenderer);
     }
 
     #resetCameraPosition() {
@@ -256,6 +269,8 @@ export class ArSessionManager {
 
         this.arRenderer.xr.setReferenceSpaceType("local");
         await this.arRenderer.xr.setSession(this.arSession);
+        await this.#ensureSparkRendererForScene(this.sceneManager.getActiveContentScene());
+        this.#applySparkXrPerformanceProfile();
 
         this.referenceSpace = await this.arRenderer.xr.getReferenceSpace();
         this.viewerSpace = await this.arSession.requestReferenceSpace("viewer");
@@ -404,6 +419,7 @@ export class ArSessionManager {
 
         this.metricsCollector?.endSession();
         this.metricsHud?.detach?.();
+        this.#applySparkXrPerformanceProfile();
         this.#resetCameraPosition();
 
         if (this.sceneManager.active.value.hasLabels.value) {
@@ -433,6 +449,8 @@ export class ArSessionManager {
     }
 
     onXrFrame(time, frame) {
+        this.#applySparkXrPerformanceProfile();
+
         this.sceneManager.onXrFrame(
             time,
             frame,

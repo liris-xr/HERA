@@ -1,59 +1,53 @@
-/*import { fileURLToPath, URL } from 'node:url'
-
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import mkcert from "vite-plugin-mkcert";
-
-// https://vitejs.dev/config/
-export default defineConfig({
-  base: '/editor/',
-  plugins: [
-    vue(),
-    mkcert(),
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  }
-})
-*/
+import fs from "node:fs";
+import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
-import mkcert from "vite-plugin-mkcert";
 
-const API_TARGET = "https://10.42.205.102:8080"; // ton backend https
-const FRONTEND_ROOT = fileURLToPath(new URL("..", import.meta.url));
+const projectRoot = fileURLToPath(new URL("../../", import.meta.url));
+const frontendRoot = fileURLToPath(new URL("..", import.meta.url));
+const keyPath = path.resolve(projectRoot, "certs/dev-key.pem");
+const certPath = path.resolve(projectRoot, "certs/dev.pem");
 
-export default defineConfig({
-  base: "/editor/",
-  plugins: [vue(), mkcert()],
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@shared": fileURLToPath(new URL("../shared", import.meta.url)),
-    },
-  },
+function readHttpsConfig() {
+  if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+    throw new Error(
+      "Missing development HTTPS certificates. Run from the repository root: node scripts/setup-dev-https.mjs",
+    );
+  }
 
-  server: {
-    host: true,          // accessible depuis tablette
-    port: 8082,
-    https: true,         // mkcert
-    fs: {
-      allow: [FRONTEND_ROOT],
-    },
-    proxy: {
-      "/api": {
-        target: API_TARGET,
-        changeOrigin: true,
-        secure: false,   // mkcert / cert local
+  return {
+    key: fs.readFileSync(keyPath),
+    cert: fs.readFileSync(certPath),
+  };
+}
+
+export default defineConfig(({ command, mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const apiPort = env.VITE_API_PORT || "8080";
+  const frontendPort = Number(env.VITE_FRONTEND_PORT || "8082");
+  const apiTarget = env.VITE_DEV_API_TARGET || `https://localhost:${apiPort}`;
+
+  return {
+    base: "/editor/",
+    plugins: [vue()],
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("./src", import.meta.url)),
+        "@shared": fileURLToPath(new URL("../shared", import.meta.url)),
       },
-      "/public": {
-        target: API_TARGET,
-        changeOrigin: true,
-        secure: false,
-      },
     },
-  },
+    server: command === "serve" ? {
+      host: true,
+      port: frontendPort,
+      https: readHttpsConfig(),
+      fs: {
+        allow: [frontendRoot],
+      },
+      proxy: {
+        "/api": { target: apiTarget, changeOrigin: true, secure: false },
+        "/public": { target: apiTarget, changeOrigin: true, secure: false },
+      },
+    } : undefined,
+  };
 });

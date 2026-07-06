@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-06-24T10:51:44.097Z",
+  "lanIp": "10.42.221.192",
+  "hosts": [
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "10.42.221.192"
+  ],
+  "keyPath": "certs/dev-key.pem",
+  "certPath": "certs/dev.pem"
+}

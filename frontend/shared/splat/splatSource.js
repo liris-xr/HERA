@@ -1,5 +1,5 @@
 import { getAssetExtension } from "../assetKinds.js";
-
+//si manifest contient spark RAD ready on l'utilise sinon on utilise ply original tel qu'il est
 export const SPLAT_SOURCE_MODES = Object.freeze({
     QUICK_LOD: "quick-lod",
     RAD: "rad",

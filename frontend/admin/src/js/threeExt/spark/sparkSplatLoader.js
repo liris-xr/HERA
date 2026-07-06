@@ -1,16 +1,7 @@
 import { getResource } from "@/js/endpoints.js";
 import { ensureSparkRenderer } from "@/js/threeExt/spark/sparkRuntime.js";
-import {
-    buildSplatDebugPayload,
-    logSplatDebug,
-    logSplatSourceDebug,
-} from "@shared/splat/splatDiagnostics.js";
-import {
-    buildSparkSplatOptions,
-    getOriginalSplatPath,
-    getSparkRadSplatPath,
-    SPLAT_SOURCE_MODES,
-} from "@shared/splat/splatSource.js";
+import {buildSplatDebugPayload, logSplatDebug, logSplatSourceDebug} from "@shared/splat/splatDiagnostics.js";
+import {buildSparkSplatOptions, getOriginalSplatPath, getSparkRadSplatPath, SPLAT_SOURCE_MODES} from "@shared/splat/splatSource.js";
 
 function sourceMessage(mode) {
     if (mode === SPLAT_SOURCE_MODES.RAD_PAGED) return "using paged .rad";
@@ -36,14 +27,14 @@ async function createSplat({ SplatMesh, options, asset, mode }) {
 }
 
 export async function loadSparkSplatResource({ asset, url, fromUpload, state, ctx }) {
-    const startedAt = performance.now();
+    const startedAt = performance.now(); //calcul de temps de chargement pris
 
     await ensureSparkRenderer({
         renderer: ctx?.options?.renderer,
         scene: ctx?.scene,
         force: true,
     });
-
+    //charger package sparkjs si on en a besoin / si scène contient un splat
     const sparkModule = await import("@sparkjsdev/spark");
     const { SplatMesh } = sparkModule;
 
@@ -61,32 +52,11 @@ export async function loadSparkSplatResource({ asset, url, fromUpload, state, ct
             }
         }
 
-        const plan = buildSparkSplatOptions({
-            url: finalUrl,
-            fileBytes,
-            fileName,
-            manifest: state?.source?.manifest ?? null,
-            variant,
-            variantMeta,
-            fromUpload: !!fileBytes,
-        });
+        const plan = buildSparkSplatOptions({url: finalUrl, fileBytes, fileName, manifest: state?.source?.manifest ?? null, variant, variantMeta, fromUpload: !!fileBytes,});
 
-        logSplatSourceDebug(fallback ? "falling back to original splat" : sourceMessage(plan.mode), {
-            assetId: asset?.id ?? null,
-            name: asset?.name ?? null,
-            url: finalUrl ?? fileName,
-            variant,
-            mode: plan.mode,
-            paged: plan.paged,
-        });
+        logSplatSourceDebug(fallback ? "falling back to original splat" : sourceMessage(plan.mode), {assetId: asset?.id ?? null, name: asset?.name ?? null, url: finalUrl ?? fileName, variant, mode: plan.mode, paged: plan.paged,});
 
-        logSplatDebug("admin-load-start", buildSplatDebugPayload({
-            asset,
-            renderer: ctx?.options?.renderer,
-            url: finalUrl ?? fileName,
-            options: plan.options,
-            sparkModule,
-            manifest: state?.source?.manifest ?? null,
+        logSplatDebug("admin-load-start", buildSplatDebugPayload({asset, renderer: ctx?.options?.renderer, url: finalUrl ?? fileName, options: plan.options, sparkModule, manifest: state?.source?.manifest ?? null,
             source: {
                 fromUpload: !!fromUpload,
                 graphKind: state?.source?.kind ?? null,
@@ -98,13 +68,8 @@ export async function loadSparkSplatResource({ asset, url, fromUpload, state, ct
                 radPath: getSparkRadSplatPath(state?.source?.manifest ?? null),
             },
         }));
-
-        const splat = await createSplat({
-            SplatMesh,
-            options: plan.options,
-            asset,
-            mode: plan.mode,
-        });
+        //création de splat
+        const splat = await createSplat({SplatMesh, options: plan.options, asset, mode: plan.mode,});
 
         logSplatDebug("admin-load-end", buildSplatDebugPayload({
             asset,
@@ -129,13 +94,9 @@ export async function loadSparkSplatResource({ asset, url, fromUpload, state, ct
 
         return splat;
     }
-
+    //essayer de charge source prévue selon manifest (rad) sinon il charge l'original
     try {
-        return await loadPlanned({
-            sourceUrl: url ?? asset?.sourceUrl,
-            variant: state?.source?.variant ?? null,
-            variantMeta: state?.source?.variantMeta ?? null,
-        });
+        return await loadPlanned({sourceUrl: url ?? asset?.sourceUrl, variant: state?.source?.variant ?? null, variantMeta: state?.source?.variantMeta ?? null,});
     } catch (error) {
         const originalPath = getOriginalSplatPath(state?.source?.manifest ?? null);
         const canFallback = !fromUpload && originalPath && originalPath !== (url ?? asset?.sourceUrl);

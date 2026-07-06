@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { ArSessionManager } from "@/js/threeExt/project/arSessionManager.js";
 import ButtonView from "@/components/utils/buttonView.vue";
 import ExpandableArNotification from "@/components/notification/expandableArNotification.vue";
@@ -41,6 +41,7 @@ xrCompatible.value = await arSessionManager.isXrCompatible(props.json.displayMod
 
 const loaded = ref(false);
 const showQuestionnairePopup = ref(false);
+const showAdvancedActions = ref(false);
 
 onMounted(async () => {
   await arSessionManager.init(container.value, arOverlay.value);
@@ -52,7 +53,31 @@ function toggleContextMenuStatus() {
   contextMenu.value.toggleStatus();
 }
 
+function toggleAdvancedActions() {
+  showAdvancedActions.value = !showAdvancedActions.value;
+}
+
+function resetScenePlacement() {
+  showAdvancedActions.value = false;
+  arSessionManager.sceneManager.scenePlacementManager.reset();
+}
+
+watch(
+  () => arSessionManager.sceneManager.scenePlacementManager.isEnabled.value,
+  (isPlacementActive) => {
+    if (isPlacementActive) showAdvancedActions.value = false;
+  }
+);
+
+watch(
+  () => arSessionManager.isArRunning.value,
+  (isRunning) => {
+    if (!isRunning) showAdvancedActions.value = false;
+  }
+);
+
 async function handleStopArSession() {
+  showAdvancedActions.value = false;
   await arSessionManager.stop();
   if (props.json && props.json.quitUrl) {
     showQuestionnairePopup.value = true;
@@ -247,52 +272,59 @@ const buttonText = computed(() => {
           <action-bubble
               v-if="!arSessionManager.sceneManager.scenePlacementManager.isEnabled.value"
               icon="/icons/ar.svg"
-              @click="arSessionManager.sceneManager.scenePlacementManager.reset()"
+              @click="resetScenePlacement()"
           />
 
           <action-bubble
-              icon="/icons/settings.svg"
-              @click="toggleLodManualMode()"
+              :icon="showAdvancedActions ? '/icons/close.svg' : '/icons/more.svg'"
+              @click="toggleAdvancedActions()"
           />
 
-          <action-bubble
-              icon="/icons/next.svg"
-              @click="cycleLodVariant()"
-          />
-          <action-bubble
-              icon="/icons/plus.svg"
-              @click="increaseCalibrationSize()"
-          />
+          <template v-if="showAdvancedActions">
+            <action-bubble
+                icon="/icons/settings.svg"
+                @click="toggleLodManualMode()"
+            />
 
-          <action-bubble
-              icon="/icons/minus.svg"
-              @click="decreaseCalibrationSize()"
-          />
+            <action-bubble
+                icon="/icons/next.svg"
+                @click="cycleLodVariant()"
+            />
+            <action-bubble
+                icon="/icons/plus.svg"
+                @click="increaseCalibrationSize()"
+            />
 
-          <action-bubble
-              icon="/icons/restart.svg"
-              @click="resetCalibrationSize()"
-          />
+            <action-bubble
+                icon="/icons/minus.svg"
+                @click="decreaseCalibrationSize()"
+            />
 
-          <action-bubble
-              icon="/icons/check.svg"
-              @click="acceptCalibrationLod()"
-          />
+            <action-bubble
+                icon="/icons/restart.svg"
+                @click="resetCalibrationSize()"
+            />
 
-          <action-bubble
-              icon="/icons/close.svg"
-              @click="rejectCalibrationLod()"
-          />
+            <action-bubble
+                icon="/icons/check.svg"
+                @click="acceptCalibrationLod()"
+            />
 
-          <action-bubble
-              icon="/icons/image.svg"
-              @click="logLodSnapshot()"
-          />
+            <action-bubble
+                icon="/icons/close.svg"
+                @click="rejectCalibrationLod()"
+            />
 
-          <action-bubble
-              icon="/icons/download.svg"
-              @click="exportLodLogs()"
-          />
+            <action-bubble
+                icon="/icons/image.svg"
+                @click="logLodSnapshot()"
+            />
+
+            <action-bubble
+                icon="/icons/download.svg"
+                @click="exportLodLogs()"
+            />
+          </template>
         </div>
       </div>
 

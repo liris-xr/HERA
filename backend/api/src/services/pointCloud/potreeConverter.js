@@ -8,6 +8,7 @@ import { convertPlyToLas } from "./plyToLas.js";
 
 const DEFAULT_TIMEOUT_MS = 20 * 60 * 1000;
 const MAX_CAPTURED_LOG_CHARS = 16000;
+const SETUP_HINT = 'Set POTREE_CONVERTER_PATH to the PotreeConverter executable, for example: $env:POTREE_CONVERTER_PATH="C:\\path\\to\\PotreeConverter.exe"';
 
 function normalizeRelPath(value = "") {
     return String(value ?? "").replaceAll("\\", "/").replace(/^\/+/, "");
@@ -17,45 +18,184 @@ function stripOuterQuotes(value = "") {
     return String(value ?? "").trim().replace(/^["']|["']$/g, "");
 }
 
-function localConverterCandidates() {
-    const relativeToolPath = path.join(
+function uniqueByPath(candidates) {
+    const seen = new Set();
+    return candidates.filter((candidate) => {
+        if (!candidate?.path) return false;
+        const key = `${candidate.source}:${candidate.path}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+function envStatus(name) {
+    return process.env[name] ? "set" : "not set";
+}
+
+function resolveRepoRoot(apiRoot = process.cwd()) {
+    const root = path.resolve(apiRoot);
+    const candidates = [
+        root,
+        path.resolve(root, ".."),
+        path.resolve(root, "..", ".."),
+    ];
+
+    return candidates.find((candidate) => fs.existsSync(path.join(candidate, "scripts", "tools")))
+        ?? path.resolve(root, "..", "..");
+}
+
+function resolveCandidatePath(value, baseDir = process.cwd()) {
+    const candidate = stripOuterQuotes(value);
+    if (!candidate) return null;
+    return path.isAbsolute(candidate) ? candidate : path.resolve(baseDir, candidate);
+}
+
+function configuredConverterCandidates(apiRoot = process.cwd()) {
+    const candidates = [];
+
+    for (const envName of ["POTREE_CONVERTER_PATH", "POTREE_CONVERTER"]) {
+        const raw = process.env[envName];
+        if (!raw) continue;
+
+        const cwdResolved = resolveCandidatePath(raw, process.cwd());
+        if (cwdResolved) {
+            candidates.push({
+                source: envName,
+                path: cwdResolved,
+                envName,
+                isConfigured: true,
+            });
+        }
+
+        const apiRootResolved = resolveCandidatePath(raw, apiRoot);
+        if (apiRootResolved && apiRootResolved !== cwdResolved) {
+            candidates.push({
+                source: `${envName} (apiRoot-relative)`,
+                path: apiRootResolved,
+                envName,
+                isConfigured: true,
+            });
+        }
+    }
+
+    return candidates;
+}
+
+function localConverterCandidates(apiRoot = process.cwd()) {
+    const repoRoot = resolveRepoRoot(apiRoot);
+    const executableNames = process.platform === "win32"
+        ? ["PotreeConverter.exe"]
+        : ["PotreeConverter", "PotreeConverter.exe"];
+    const bundledToolPath = path.join(
         ".hera-tools",
         "PotreeConverter_2.1.1_x64_windows",
         "PotreeConverter_windows_x64",
         "PotreeConverter.exe"
     );
+    const roots = [
+        repoRoot,
+        apiRoot,
+        process.cwd(),
+        path.resolve(process.cwd(), ".."),
+        path.resolve(process.cwd(), "..", ".."),
+    ];
+    const candidates = [];
+
+    for (const root of roots) {
+        for (const executableName of executableNames) {
+            candidates.push({
+                source: "scripts-tools",
+                path: path.join(root, "scripts", "tools", executableName),
+            });
+        }
+    }
+
+    for (const root of roots) {
+        candidates.push({
+            source: "repo-default",
+            path: path.resolve(root, bundledToolPath),
+        });
+    }
+
+    return uniqueByPath(candidates);
+}
+
+function candidateWithExists(candidate) {
+    return {
+        ...candidate,
+        exists: fs.existsSync(candidate.path),
+    };
+}
+
+function sanitizeCandidateForApi(candidate) {
+    if (!candidate?.isConfigured) return candidate;
+    return {
+        ...candidate,
+        path: candidate.path ? "<configured path hidden>" : "",
+    };
+}
+
+export function resolvePotreeConverter({ apiRoot = process.cwd() } = {}) {
+    const checkedPaths = uniqueByPath([
+        ...configuredConverterCandidates(apiRoot),
+        ...localConverterCandidates(apiRoot),
+    ]).map(candidateWithExists);
+    const found = checkedPaths.find((candidate) => candidate.exists) ?? null;
+
+    return {
+        available: Boolean(found),
+        source: found?.source ?? null,
+        toolPath: found?.path ?? null,
+        checkedPaths,
+        env: {
+            POTREE_CONVERTER_PATH: envStatus("POTREE_CONVERTER_PATH"),
+            POTREE_CONVERTER: envStatus("POTREE_CONVERTER"),
+        },
+        setupHint: SETUP_HINT,
+    };
+}
+
+function formatConverterDiagnostics(resolved, { redactConfiguredPaths = true } = {}) {
+    const checkedPaths = resolved.checkedPaths
+        .map((candidate) => redactConfiguredPaths ? sanitizeCandidateForApi(candidate) : candidate)
+        .map((candidate) => `- ${candidate.source}: ${candidate.path} (${candidate.exists ? "found" : "missing"})`)
+        .join("\n");
 
     return [
-        path.resolve(process.cwd(), relativeToolPath),
-        path.resolve(process.cwd(), "..", relativeToolPath),
-        path.resolve(process.cwd(), "..", "..", relativeToolPath),
-    ];
+        `Environment: POTREE_CONVERTER_PATH=${resolved.env.POTREE_CONVERTER_PATH}, POTREE_CONVERTER=${resolved.env.POTREE_CONVERTER}.`,
+        `Checked paths:\n${checkedPaths || "- none"}`,
+        `Setup: ${resolved.setupHint}`,
+    ].join("\n");
 }
 
-function resolveExecutablePath(value) {
-    const candidate = stripOuterQuotes(value);
-    if (!candidate) return null;
+export function logPotreeConverterStatus({ apiRoot = process.cwd() } = {}) {
+    const resolved = resolvePotreeConverter({ apiRoot });
+    const details = {
+        source: resolved.source,
+        toolPath: resolved.toolPath,
+        env: resolved.env,
+        checkedPaths: resolved.checkedPaths,
+    };
 
-    const resolved = path.isAbsolute(candidate)
-        ? candidate
-        : path.resolve(process.cwd(), candidate);
-
-    return fs.existsSync(resolved) ? resolved : null;
-}
-
-function getConverterPath() {
-    const configured = process.env.POTREE_CONVERTER_PATH ?? process.env.POTREE_CONVERTER ?? "";
-    return resolveExecutablePath(configured)
-        ?? localConverterCandidates().find((candidate) => fs.existsSync(candidate))
-        ?? "";
-}
-
-function ensureConverterPath() {
-    const converterPath = getConverterPath();
-    if (!converterPath) {
-        throw buildConverterConfigError();
+    if (resolved.available) {
+        console.info("[HERA][PotreeConverter] found", details);
+        return resolved;
     }
-    return converterPath;
+
+    console.warn("[HERA][PotreeConverter] missing", {
+        ...details,
+        setup: resolved.setupHint,
+    });
+    return resolved;
+}
+
+function ensureConverterPath({ apiRoot = process.cwd() } = {}) {
+    const resolved = resolvePotreeConverter({ apiRoot });
+    if (!resolved.available) {
+        throw buildConverterConfigError(resolved);
+    }
+    return resolved.toolPath;
 }
 
 function getConverterTimeoutMs() {
@@ -77,17 +217,49 @@ function appendCapturedLog(current, chunk) {
         : next;
 }
 
-function buildConverterConfigError() {
-    const configured = stripOuterQuotes(process.env.POTREE_CONVERTER_PATH ?? process.env.POTREE_CONVERTER ?? "");
-    const configuredMessage = configured
-        ? ` Configured path was not found: ${configured}.`
-        : "";
+function buildConverterConfigError(resolved) {
+    console.warn("[HERA][PotreeConverter] missing", {
+        env: resolved.env,
+        checkedPaths: resolved.checkedPaths,
+        setup: resolved.setupHint,
+    });
 
-    return new Error(
-        "Classic .ply point clouds must be converted to Potree before streaming. " +
-        "Set POTREE_CONVERTER_PATH to the PotreeConverter executable, then retry the upload." +
-        configuredMessage
+    const error = new Error(
+        "Potree conversion skipped: executable missing. " +
+        "Classic .ply point clouds must be converted to Potree before streaming.\n\n" +
+        formatConverterDiagnostics(resolved)
     );
+    error.code = "POTREE_CONVERTER_MISSING";
+    error.diagnostics = {
+        reason: "executable-missing",
+        env: resolved.env,
+        checkedPaths: resolved.checkedPaths.map(sanitizeCandidateForApi),
+        setupHint: resolved.setupHint,
+    };
+    return error;
+}
+
+function buildInputNotRecognizedError({ assetKind, header }) {
+    const isSplat = assetKind === "splat";
+    const reason = isSplat
+        ? "input was recognized as a Gaussian splat, not a classic point cloud"
+        : "input was not recognized as a classic .ply point cloud";
+    const requirement = isSplat
+        ? "Upload it as a splat, or use a classic point-cloud PLY for Potree conversion."
+        : "Classic point cloud .ply must contain vertex x, y, and z properties.";
+
+    const error = new Error(
+        `Potree conversion skipped: ${reason}. ${requirement}`
+    );
+    error.code = "POINT_CLOUD_INPUT_NOT_RECOGNIZED";
+    error.diagnostics = {
+        reason: "input-not-recognized",
+        detectedAssetKind: assetKind ?? null,
+        plyFormat: header?.format ?? null,
+        pointCount: header?.pointCount ?? null,
+        vertexProperties: header?.vertexProperties ?? [],
+    };
+    return error;
 }
 
 function buildConverterFailureError({ code, stdout, stderr, cause = null }) {
@@ -102,8 +274,7 @@ function buildConverterFailureError({ code, stdout, stderr, cause = null }) {
     return error;
 }
 
-async function runPotreeConverter({ inputPath, outputDir }) {
-    const converterPath = ensureConverterPath();
+async function runPotreeConverter({ inputPath, outputDir, converterPath }) {
     const args = [inputPath, "-o", outputDir, ...parseExtraArgs()];
     const timeoutMs = getConverterTimeoutMs();
 
@@ -171,13 +342,18 @@ export async function convertPlyPointCloudToPotree({
     const { diskPath, header, assetKind, normalizedRel, stat } = inspected;
 
     if (assetKind !== "pointcloud") {
-        if (!strict) return null;
-
-        if (assetKind === "splat") {
-            throw new Error("This .ply looks like a Gaussian splat. Upload it as a splat, not as a classic point cloud.");
+        if (!strict) {
+            console.info("[HERA][PotreeConverter] skipped", {
+                fileRelPath: normalizedRel,
+                assetName,
+                reason: "input-not-recognized",
+                detectedAssetKind: assetKind,
+                vertexProperties: header.vertexProperties,
+            });
+            return null;
         }
 
-        throw new Error("Classic point cloud .ply must contain vertex x, y, and z properties.");
+        throw buildInputNotRecognizedError({ assetKind, header });
     }
 
     const outputDir = path.join(
@@ -189,7 +365,7 @@ export async function convertPlyPointCloudToPotree({
         `${path.basename(diskPath, path.extname(diskPath))}_potree_source.las`
     );
 
-    ensureConverterPath();
+    const converterPath = ensureConverterPath({ apiRoot });
 
     await fs.promises.rm(outputDir, { recursive: true, force: true });
     await fs.promises.mkdir(outputDir, { recursive: true });
@@ -211,13 +387,14 @@ export async function convertPlyPointCloudToPotree({
         console.info("[HERA][PotreeConverter] start", {
             fileRelPath: normalizedRel,
             assetName,
+            converterPath,
             converterInput: tempLasPath,
             sourceEncoding: header.format,
             sourcePointCount: lasInfo.pointCount,
             outputDir,
         });
 
-        await runPotreeConverter({ inputPath: tempLasPath, outputDir });
+        await runPotreeConverter({ inputPath: tempLasPath, outputDir, converterPath });
         const result = await inspectPotreeDatasetDirectory(outputDir, apiRoot, assetName);
 
         await fs.promises.rm(diskPath, { force: true });

@@ -177,6 +177,15 @@ HTTPS_KEY_PATH=../../certs/dev-key.pem
 HTTPS_CERT_PATH=../../certs/dev.pem
 ```
 
+Classic `.ply` point cloud uploads are converted to Potree streaming datasets during save. On Windows, set the converter path before starting the backend:
+
+```powershell
+$env:POTREE_CONVERTER_PATH="C:\path\to\PotreeConverter.exe"
+npm run start
+```
+
+The backend also checks `POTREE_CONVERTER` as a legacy fallback, `scripts/tools/PotreeConverter.exe`, and the repo-local `.hera-tools` PotreeConverter location.
+
 For production, `JWT_SECRET` must be replaced with a long random private value.
 
 Generate a random secret with:

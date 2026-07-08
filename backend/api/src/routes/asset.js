@@ -17,6 +17,15 @@ const router = express.Router();
 const activeSimplifyJobs = new Set();
 const activeProcessJobs = new Set();
 
+const buildErrorPayload = (error, fallback) => {
+    const details = error?.original?.message || error?.parent?.message || error?.message || String(error);
+    return {
+        error: fallback,
+        details,
+        ...(error?.diagnostics ? { diagnostics: error.diagnostics } : {}),
+    };
+};
+
 function logAdminAssetUploadHit(req, res, next) {
     console.info("[HERA][DEBUG] REAL UPLOAD ENDPOINT HIT", {
         route: "POST /admin/assets",
@@ -519,10 +528,7 @@ router.post(baseUrl + "admin/assets", authMiddleware, logAdminAssetUploadHit, ad
             return res.status(200).send(newAsset);
         } catch (e) {
             console.log(e);
-            return res.status(400).send({
-                error: "Unable to save asset",
-                details: e?.message || String(e),
-            });
+            return res.status(400).send(buildErrorPayload(e, "Unable to save asset"));
         }
     }
 );

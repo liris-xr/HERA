@@ -39,6 +39,14 @@ const requestedAssetKind = (asset) => {
     const kind = asset?.kind ?? asset?.assetKind ?? asset?.type ?? null;
     return kind ? String(kind).toLowerCase() : null;
 };
+const buildErrorPayload = (error, fallback) => {
+    const details = error?.original?.message || error?.parent?.message || error?.message || String(error);
+    return {
+        error: fallback,
+        details,
+        ...(error?.diagnostics ? { diagnostics: error.diagnostics } : {}),
+    };
+};
 
 router.get(baseUrl + "scenes/:sceneId", authMiddleware, async (req, res) => {
     const sceneId = req.params.sceneId;
@@ -350,10 +358,9 @@ router.put(baseUrl + "scenes/:sceneId", authMiddleware, getPostUploadData, uploa
             return res.status(200).send({ scene, assetsIdMatching });
         } catch (e) {
             console.log("[SAVE SCENE ERROR]", e);
-            const details = e?.original?.message || e?.parent?.message || e?.message || String(e);
 
             res.set({ "Content-Type": "application/json" });
-            return res.status(400).send({ error: "Unable to save scene", details });
+            return res.status(400).send(buildErrorPayload(e, "Unable to save scene"));
         }
     }
 );

@@ -11,6 +11,16 @@ function normalizeKind(value) {
 function logUploadTreatment(message, details = {}) {
     console.info("[HERA][PointCloudUpload]", message, details);
 }
+
+function logStreamingMetadataGenerated(result, details = {}) {
+    logUploadTreatment("streaming metadata generated", {
+        ...details,
+        url: result?.url ?? null,
+        format: result?.lodMeta?.pointCloud?.format ?? null,
+        pointCount: result?.lodMeta?.pointCloud?.pointCount ?? null,
+    });
+}
+
 export async function prepareUploadedPointCloudAsset({fileRelPath, assetName = null, apiRoot = process.cwd(), requestedKind = null,}) {
     if (!fileRelPath) return null;
 
@@ -21,7 +31,14 @@ export async function prepareUploadedPointCloudAsset({fileRelPath, assetName = n
         logUploadTreatment("potree archive detected", {fileRelPath, assetName, requestedKind, treatment: "extract archive and store metadata.json/cloud.js as pointcloud-streaming",
         });
 
-        return await importPotreeArchive({archiveRelPath: fileRelPath, assetName, apiRoot,});
+        const importedArchive = await importPotreeArchive({archiveRelPath: fileRelPath, assetName, apiRoot,});
+        logStreamingMetadataGenerated(importedArchive, {
+            fileRelPath,
+            assetName,
+            requestedKind,
+            source: "potree-archive",
+        });
+        return importedArchive;
     }
 
     const kind = normalizeKind(requestedKind);
@@ -51,7 +68,15 @@ export async function prepareUploadedPointCloudAsset({fileRelPath, assetName = n
             apiRoot,
             strict: kind === "pointcloud",
         });
-        if (convertedPointCloud) return convertedPointCloud;
+        if (convertedPointCloud) {
+            logStreamingMetadataGenerated(convertedPointCloud, {
+                fileRelPath,
+                assetName,
+                requestedKind,
+                source: "ply-conversion",
+            });
+            return convertedPointCloud;
+        }
 
         logUploadTreatment("ply gaussian splat candidate detected", {
             fileRelPath,
@@ -85,7 +110,17 @@ export async function prepareUploadedPointCloudAsset({fileRelPath, assetName = n
     if (!kind) return null;
 
     if (kind === "pointcloud") {
-        throw new Error("Classic point cloud upload supports .ply files, which are converted to Potree streaming on save.");
+        const error = new Error(
+            "Potree conversion skipped: input was not recognized as a classic .ply point cloud. " +
+            "Classic point cloud upload supports .ply files, which are converted to Potree streaming on save."
+        );
+        error.code = "POINT_CLOUD_INPUT_NOT_RECOGNIZED";
+        error.diagnostics = {
+            reason: "input-not-recognized",
+            fileRelPath,
+            requestedKind,
+        };
+        throw error;
     }
 
     if (kind === "pointcloud-streaming") {

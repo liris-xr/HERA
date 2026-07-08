@@ -19,6 +19,7 @@ import dev from "./src/routes/dev.js";
 import asset from "./src/routes/asset.js";
 import label from "./src/routes/label.js";
 import { logSparkRadBuildLodStatus } from "./src/services/splat/sparkRadAsset.js";
+import { logPotreeConverterStatus } from "./src/services/pointCloud/potreeConverter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 export const DIRNAME = path.dirname(__filename);
@@ -36,6 +37,7 @@ app.use(zip());
 async function main() {
     await initializeDatabase({ force: false });
     logSparkRadBuildLodStatus({ apiRoot: DIRNAME });
+    logPotreeConverterStatus({ apiRoot: DIRNAME });
 
     // routes FIRST
     app.use(project);

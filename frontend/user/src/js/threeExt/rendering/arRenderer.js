@@ -6,16 +6,24 @@ import {classes} from "@/js/utils/extender.js";
 export class ArRenderer extends classes(THREE.WebGLRenderer, DomElementInterface) {
     scaling;
     #domWidth
-    #domHeight
+    #domHeight 
 
-    constructor(shadowMapSize, scaling = 1) {
-        super([{ antialias: true, alpha: true }]);
+    constructor(shadowMapSize, scaling = 1, options = {}) {
+        super({
+            antialias: options.antialias ?? true,
+            alpha: true,
+            powerPreference: options.powerPreference ?? "high-performance",
+        });
         this.scaling = scaling;
 
-        this.setPixelRatio( window.devicePixelRatio );
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const maxPixelRatio = Number.isFinite(Number(options.maxPixelRatio))
+            ? Number(options.maxPixelRatio)
+            : 2;
+        this.setPixelRatio(Math.max(1, Math.min(devicePixelRatio, maxPixelRatio)));
         this.setDomSize(window.innerWidth, window.innerHeight);
         this.xr.enabled = true;
-        this.shadowMap.enabled = true;
+        this.shadowMap.enabled = options.shadowsEnabled !== false;
         this.shadowMap.type = PCFSoftShadowMap;
         this.shadowMap.width = shadowMapSize;
         this.shadowMap.height = shadowMapSize;

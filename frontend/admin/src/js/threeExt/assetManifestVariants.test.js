@@ -58,7 +58,6 @@ test("pickVariantFromManifest prefers a ready Spark RAD variant for splats", () 
     const manifest = {
         assetId: "splat-1",
         assetKind: "splat",
-        preferredVariant: "original",
         variants: {
             original: { status: "ready", path: "assets/source.spz" },
             sparkRad: {
@@ -81,6 +80,30 @@ test("pickVariantFromManifest prefers a ready Spark RAD variant for splats", () 
             streaming: true,
             paged: true,
         },
+    });
+});
+
+test("pickVariantFromManifest honors original preference for splats with ready Spark RAD", () => {
+    const manifest = {
+        assetId: "splat-1b",
+        assetKind: "splat",
+        preferredVariant: "original",
+        variants: {
+            original: { status: "ready", path: "assets/source.spz" },
+            sparkRad: {
+                status: "ready",
+                path: "assets/source-lod.rad",
+                format: "spark-rad",
+                streaming: true,
+                paged: true,
+            },
+        },
+    };
+
+    assert.deepEqual(pickVariantFromManifest(manifest), {
+        variant: "original",
+        path: "/assets/source.spz",
+        meta: { status: "ready", path: "assets/source.spz" },
     });
 });
 

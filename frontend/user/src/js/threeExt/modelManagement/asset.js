@@ -347,7 +347,12 @@ export class Asset extends SceneElementInterface {
         this.name = assetData.name != null ? assetData.name : assetData.url;
 
         this.lodMeta = parseLodMeta(assetData.lodMeta);
-        this.assetKind = assetData.assetKind ?? assetData.kind ?? this.lodMeta?.assetKind ?? detectAssetKind(this);
+        this.assetKind =
+            assetData.assetKind ??
+            assetData.kind ??
+            this.lodMeta?.assetKind ??
+            this.lodMeta?.pointCloud?.assetKind ??
+            detectAssetKind(this);
         this.kind = this.assetKind;
         this.pointCloudOptions = assetData.pointCloud ?? assetData.pointcloud ?? this.lodMeta?.pointCloud ?? null;
 

@@ -16,6 +16,7 @@ test("buildSparkSplatOptions keeps normal splats on Spark Quick LoD", () => {
     assert.equal(plan.paged, false);
     assert.equal(plan.options.lod, true);
     assert.equal(plan.options.paged, undefined);
+    assert.equal(plan.options.fileType, "spz");
 });
 
 test("buildSparkSplatOptions enables paged loading for streaming RAD variants", () => {
@@ -34,6 +35,7 @@ test("buildSparkSplatOptions enables paged loading for streaming RAD variants", 
     assert.equal(plan.paged, true);
     assert.equal(plan.options.lod, undefined);
     assert.equal(plan.options.paged, true);
+    assert.equal(plan.options.fileType, "rad");
 });
 
 test("buildSparkSplatOptions loads non-paged RAD without Quick LoD", () => {
@@ -50,6 +52,7 @@ test("buildSparkSplatOptions loads non-paged RAD without Quick LoD", () => {
     assert.equal(plan.mode, SPLAT_SOURCE_MODES.RAD);
     assert.equal(plan.options.lod, undefined);
     assert.equal(plan.options.paged, undefined);
+    assert.equal(plan.options.fileType, "rad");
 });
 
 test("buildSparkSplatOptions keeps forced original on Quick LoD even when asset has RAD metadata", () => {
@@ -104,5 +107,32 @@ test("buildSparkSplatOptions does not use paged RAD for unsaved file uploads", (
     assert.equal(plan.mode, SPLAT_SOURCE_MODES.RAD);
     assert.equal(plan.options.lod, undefined);
     assert.equal(plan.options.paged, undefined);
+    assert.equal(plan.options.fileType, "rad");
+    assert.ok(plan.options.fileBytes instanceof ArrayBuffer);
+});
+
+test("buildSparkSplatOptions passes explicit SPZ type for uploads", () => {
+    const plan = buildSparkSplatOptions({
+        fileBytes: new ArrayBuffer(8),
+        fileName: "source.spz",
+        fromUpload: true,
+    });
+
+    assert.equal(plan.mode, SPLAT_SOURCE_MODES.QUICK_LOD);
+    assert.equal(plan.options.lod, undefined);
+    assert.equal(plan.options.fileType, "spz");
+    assert.ok(plan.options.fileBytes instanceof ArrayBuffer);
+});
+
+test("buildSparkSplatOptions maps SOG uploads to Spark's PC-SOGS ZIP type", () => {
+    const plan = buildSparkSplatOptions({
+        fileBytes: new ArrayBuffer(8),
+        fileName: "source.sog",
+        fromUpload: true,
+    });
+
+    assert.equal(plan.mode, SPLAT_SOURCE_MODES.QUICK_LOD);
+    assert.equal(plan.options.lod, undefined);
+    assert.equal(plan.options.fileType, "pcsogszip");
     assert.ok(plan.options.fileBytes instanceof ArrayBuffer);
 });

@@ -17,6 +17,26 @@ export function isRadSplatUrl(url = "") {
     return getAssetExtension(url) === "rad";
 }
 
+function getExplicitSparkFileType(plan) {
+    return plan.isRad ? "rad" : null;
+}
+
+function getSparkFileTypeFromPath(path = "") {
+    const ext = getAssetExtension(path);
+    switch (ext) {
+        case "ply":
+        case "spz":
+        case "splat":
+        case "ksplat":
+        case "rad":
+            return ext;
+        case "sog":
+            return "pcsogszip";
+        default:
+            return null;
+    }
+}
+
 export function getSplatVariantMeta(manifest = null, variant = null) {
     if (!manifest || !variant) return null;
     return manifest?.variants?.[variant] ?? null;
@@ -87,6 +107,9 @@ export function buildSparkSplatOptions({
         fileName,
         raycastable: false,
     };
+    const fileType = getExplicitSparkFileType(plan)
+        ?? getSparkFileTypeFromPath(fileName)
+        ?? getSparkFileTypeFromPath(url);
 
     if (fileBytes) {
         options.fileBytes = fileBytes;
@@ -94,7 +117,11 @@ export function buildSparkSplatOptions({
         options.url = url;
     }
 
-    if (plan.mode === SPLAT_SOURCE_MODES.QUICK_LOD) {
+    if (fileType) {
+        options.fileType = fileType;
+    }
+
+    if (plan.mode === SPLAT_SOURCE_MODES.QUICK_LOD && !fromUpload) {
         options.lod = true;
     } else if (plan.paged) {
         options.paged = true;

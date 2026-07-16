@@ -769,7 +769,7 @@ function markChang() {
                   :text="$t('sceneView.leftSection.sceneAssets.addAssetButton')"
                   icon="/icons/upload.svg"
                   @fileSelected="(file) => editor.scene.addNewAsset(file)"
-                  :accept="['.glb', '.gltf', '.splat', '.spz', '.ksplat', '.ply', '.sog', '.zip']"
+                  :accept="['.glb', '.gltf', '.splat', '.spz', '.ksplat', '.ply', '.sog', '.rad', '.zip']"
               />
 
               <file-upload-button-view
@@ -808,6 +808,7 @@ function markChang() {
                     :hide-in-viewer="asset.hideInViewer.value"
                     :active="asset.isSelected.value"
                     :error="asset.hasError.value"
+                    :error-message="asset.errorMessage.value"
                     :loading="asset.isLoading.value"
                     :simplifying="isAssetSimplifying(asset.id)"
                     :asset="asset"

@@ -5,6 +5,7 @@ import { spawn } from "node:child_process";
 const SPLAT_INPUT_EXTENSIONS = new Set([".splat", ".spz", ".ksplat", ".ply", ".sog", ".rad"]);
 const DEFAULT_BUILD_ARGS = ["--quality"];
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+const DEFAULT_RAD_AUTO_PREFER_MAX_SIZE_RATIO = 2;
 const SETUP_SCRIPT_REL = "scripts/setup-spark-build-lod.ps1";
 
 function normalizeRelPath(value) {
@@ -27,6 +28,65 @@ function splitArgs(value) {
 
     const matches = source.match(/(?:[^\s"]+|"[^"]*")+/g) ?? [];
     return matches.map((part) => part.replace(/^"|"$/g, ""));
+}
+
+function positiveNumberFromEnv(name, fallback) {
+    const value = Number(process.env[name]);
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function getFileSizeBytes(diskPath) {
+    try {
+        return fs.statSync(diskPath).size;
+    } catch {
+        return null;
+    }
+}
+
+function roundRatio(value) {
+    return Number.isFinite(value) ? Number(value.toFixed(3)) : null;
+}
+
+function getRadAutoPreferMaxSizeRatio() {
+    return positiveNumberFromEnv(
+        "SPARK_RAD_AUTO_PREFER_MAX_SIZE_RATIO",
+        DEFAULT_RAD_AUTO_PREFER_MAX_SIZE_RATIO
+    );
+}
+
+function buildRadSizePreference({ sourceDiskPath, radRel, apiRoot }) {
+    const sourceBytes = getFileSizeBytes(sourceDiskPath);
+    const normalizedRad = normalizeRelPath(radRel);
+    const radDiskPath = normalizedRad ? path.resolve(apiRoot, normalizedRad) : null;
+    const radBytes = radDiskPath ? getFileSizeBytes(radDiskPath) : null;
+    const maxRatio = getRadAutoPreferMaxSizeRatio();
+    const ratio = sourceBytes > 0 && radBytes != null ? radBytes / sourceBytes : null;
+    const preferred = ratio == null || ratio <= maxRatio;
+
+    return {
+        sourceBytes,
+        radBytes,
+        ratio,
+        maxRatio,
+        preferred,
+        reason: ratio == null
+            ? "size-unavailable"
+            : preferred
+                ? "within-size-budget"
+                : "rad-larger-than-size-budget",
+    };
+}
+
+function cleanRadSizeMeta(sizeMeta) {
+    if (!sizeMeta) return null;
+    return {
+        sourceBytes: sizeMeta.sourceBytes ?? null,
+        radBytes: sizeMeta.radBytes ?? null,
+        ratio: roundRatio(sizeMeta.ratio),
+        maxAutoPreferRatio: sizeMeta.maxRatio ?? null,
+        autoPreferred: Boolean(sizeMeta.preferred),
+        reason: sizeMeta.reason ?? null,
+    };
 }
 
 function hasPathSeparator(value) {
@@ -128,6 +188,7 @@ function buildLodMeta({
     generated = false,
     skippedReason = null,
     failedReason = null,
+    radSizeMeta = null,
 } = {}) {
     const normalizedSource = normalizeRelPath(sourceRel);
     const sourcePath = normalizedSource ? `/${normalizedSource}` : null;
@@ -137,6 +198,7 @@ function buildLodMeta({
         .map(normalizeRelPath)
         .filter(Boolean)
         .map((chunkRel) => `/${chunkRel}`);
+    const sizeMeta = cleanRadSizeMeta(radSizeMeta);
 
     const lodMeta = {
         assetKind: "splat",
@@ -166,6 +228,7 @@ function buildLodMeta({
             generator: "spark-build-lod",
             generated,
         };
+        if (sizeMeta) lodMeta.splat.radSize = sizeMeta;
         lodMeta.variants.sparkRad = {
             path: radPath,
             status: "ready",
@@ -174,6 +237,7 @@ function buildLodMeta({
             paged: true,
             chunked: normalizedChunks.length > 0,
         };
+        if (sizeMeta) lodMeta.variants.sparkRad.size = sizeMeta;
     }
 
     return lodMeta;
@@ -303,10 +367,16 @@ export async function prepareUploadedSplatAsset({
     }
 
     if (sourceExt === ".rad") {
+        const radSizeMeta = buildRadSizePreference({
+            sourceDiskPath,
+            radRel: sourceRel,
+            apiRoot,
+        });
         logSparkRad("done", {
             fileRelPath: sourceRel,
             assetName,
             treatment: "using uploaded .rad as Spark optimized variant",
+            size: cleanRadSizeMeta(radSizeMeta),
         });
         return {
             url: sourceRel,
@@ -315,6 +385,7 @@ export async function prepareUploadedSplatAsset({
                 sourceRel,
                 radRel: sourceRel,
                 generated: false,
+                radSizeMeta,
             }),
         };
     }
@@ -411,21 +482,31 @@ export async function prepareUploadedSplatAsset({
         };
     }
 
+    const radSizeMeta = buildRadSizePreference({
+        sourceDiskPath,
+        radRel,
+        apiRoot,
+    });
+    const preferredVariant = radSizeMeta.preferred ? "sparkRad" : "original";
+
     logSparkRad("done", {
         fileRelPath: sourceRel,
         assetName,
         radRel,
         chunkCount: chunkRels.length,
+        preferredVariant,
+        size: cleanRadSizeMeta(radSizeMeta),
     });
 
     return {
         url: sourceRel,
-        preferredVariant: "sparkRad",
+        preferredVariant,
         lodMeta: buildLodMeta({
             sourceRel,
             radRel,
             chunkRels,
             generated: true,
+            radSizeMeta,
         }),
     };
 }

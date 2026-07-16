@@ -164,6 +164,14 @@ export class ArScene extends AbstractScene {
         return subMeshes;
     }
 
+    hasSplatAssets() {
+        return this.#assets.some((asset) =>
+            asset?.assetKind === "splat" ||
+            asset?.kind === "splat" ||
+            asset?.lodMeta?.assetKind === "splat"
+        );
+    }
+
     updateAssetSubMeshes(assetData) {
         const step = (child, transform) => {
             for (const children of child.children) {

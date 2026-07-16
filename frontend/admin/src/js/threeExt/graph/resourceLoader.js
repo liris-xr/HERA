@@ -172,7 +172,7 @@ export class ResourceLoader {
 
             return object3D;
         } catch (e) {
-            asset.markLoadFailed?.();
+            asset.markLoadFailed?.(e);
             throw e;
         }
     }

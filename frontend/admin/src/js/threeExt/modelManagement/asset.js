@@ -42,6 +42,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
     scale;
 
     #hasError;
+    #errorMessage;
     #isLoading;
     #isSelected;
     animationMixer;
@@ -73,6 +74,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
         this.scale = safeVec3(assetData.scale, { x: 1, y: 1, z: 1 });
 
         this.#hasError = ref(false);
+        this.#errorMessage = ref("");
         this.#isLoading = ref(true);
         this.lodMeta = parseLodMeta(assetData.lodMeta);
         this.kind = assetData.kind ?? assetData.assetKind ?? this.lodMeta?.assetKind ?? null;
@@ -83,6 +85,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
     }
 
     hasError = computed(() => this.#hasError.value);
+    errorMessage = computed(() => this.#errorMessage.value);
     isLoading = computed(() => this.#isLoading.value);
     isSelected = computed(() => this.#isSelected.value);
 
@@ -105,16 +108,19 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
 
     setHasError(value) {
         this.#hasError.value = !!value;
+        if (!value) this.#errorMessage.value = "";
     }
 
     markLoaded() {
         this.#isLoading.value = false;
         this.#hasError.value = false;
+        this.#errorMessage.value = "";
     }
 
-    markLoadFailed() {
+    markLoadFailed(error = null) {
         this.#isLoading.value = false;
         this.#hasError.value = true;
+        this.#errorMessage.value = error?.message || String(error ?? "");
     }
 
     load(options = {}) {
@@ -134,6 +140,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
         return meshToLoad.load().then((mesh) => {
             this.#isLoading.value = false;
             this.#hasError.value = false;
+            this.#errorMessage.value = "";
 
             mesh.position.set(this.position.x, this.position.y, this.position.z);
             mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
@@ -145,6 +152,7 @@ export class Asset extends classes(SelectableInterface, LoadableInterface) {
         }).catch((e) => {
             this.#isLoading.value = false;
             this.#hasError.value = true;
+            this.#errorMessage.value = e?.message || String(e ?? "");
             throw e;
         });
     }

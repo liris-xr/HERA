@@ -1,4 +1,5 @@
 export const DEVICE_CLASSES = Object.freeze({
+    XR_HEADSET: "xr-headset",
     LOW_MOBILE: "low-mobile",
     MID_MOBILE: "mid-mobile",
     HIGH_MOBILE: "high-mobile",
@@ -8,6 +9,13 @@ export const DEVICE_CLASSES = Object.freeze({
 });
 
 const VARIANT_CACHE_POLICIES = Object.freeze({
+    XR_HEADSET: Object.freeze({
+        decodedLimit: 1,
+        allowBytePrefetch: false,
+        disposeOldVariant: true,
+        maxStoredCacheWeight: 8,
+        maxWarmCacheWeight: 0,
+    }),
     LOW_MOBILE: Object.freeze({
         decodedLimit: 1,
         allowBytePrefetch: true,
@@ -55,6 +63,9 @@ const VARIANT_CACHE_POLICIES = Object.freeze({
 
 function getVariantCachePolicyForDeviceClass(deviceClass) {
     switch (deviceClass) {
+        case DEVICE_CLASSES.XR_HEADSET:
+            return VARIANT_CACHE_POLICIES.XR_HEADSET;
+
         case DEVICE_CLASSES.LOW_MOBILE:
             return VARIANT_CACHE_POLICIES.LOW_MOBILE;
 
@@ -76,6 +87,15 @@ function getVariantCachePolicyForDeviceClass(deviceClass) {
     }
 }
 
+export function isQuestOrOculusBrowser(userAgent = null) {
+    const ua = String(
+        userAgent ??
+        (typeof navigator !== "undefined" ? navigator.userAgent : "") ??
+        ""
+    );
+    return /Quest|OculusBrowser|Meta Quest/i.test(ua);
+}
+
 export function collectSimpleDeviceInfo() {
     //essayer de savoir si le device est tactile
     const touch = !!(
@@ -86,8 +106,10 @@ export function collectSimpleDeviceInfo() {
     const width = window.innerWidth || window.screen?.width || 0;
     //ratio of the picture width to the viewport/ mesure combien de pixels physiques sont rendus pour 1 pixel CSS
     const dpr = window.devicePixelRatio || 1;
+    const isQuestOrOculus = isQuestOrOculusBrowser();
 
     const isMobileLike =
+        isQuestOrOculus ||
         /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) ||
         (touch && width < 900);
 
@@ -96,11 +118,13 @@ export function collectSimpleDeviceInfo() {
         (touch && width >= 900 && width < 1200);
 
     let deviceType = "desktop";
-    if (isTabletLike) deviceType = "tablet";
+    if (isQuestOrOculus) deviceType = "xr-headset";
+    else if (isTabletLike) deviceType = "tablet";
     else if (isMobileLike) deviceType = "mobile";
 
     return {
         deviceType,
+        isQuestOrOculus,
         ramGbApprox: Number.isFinite(Number(navigator.deviceMemory))
             ? Number(navigator.deviceMemory)
             : null,
@@ -122,6 +146,10 @@ export function classifySimpleDevice(info) {
     const cores = info?.cpuLogicalCores ?? 0;
     const dpr = info?.dpr ?? 1;
     const type = info?.deviceType ?? "desktop";
+
+    if (info?.isQuestOrOculus || type === "xr-headset") {
+        return DEVICE_CLASSES.XR_HEADSET;
+    }
 
     let score = 0;
 
@@ -154,6 +182,27 @@ export function classifySimpleDevice(info) {
 
 export function getLodPolicyForDeviceClass(deviceClass) {
     switch (deviceClass) {
+        case DEVICE_CLASSES.XR_HEADSET:
+            return {
+                deviceClass,
+                variantUpdateIntervalMs: 300,
+                variantCache: getVariantCachePolicyForDeviceClass(deviceClass),
+                lodConfig: {
+                    originalMin: 0.30,
+                    n1Min: 0.16,
+                    n2Min: 0.07,
+                    hysteresis: 0.04,
+                },
+                renderer: {
+                    maxPixelRatio: 1,
+                    antialias: false,
+                    shadowsEnabled: false,
+                },
+                splat: {
+                    preferSparkRad: true,
+                },
+            };
+
         case DEVICE_CLASSES.LOW_MOBILE:
             return {
                 deviceClass,
@@ -238,6 +287,9 @@ export function getLodPolicyForDeviceClass(deviceClass) {
 
 export function getShadowMapSizeForDeviceClass(deviceClass) {
     switch (deviceClass) {
+        case DEVICE_CLASSES.XR_HEADSET:
+            return 1024;
+
         case DEVICE_CLASSES.LOW_MOBILE:
             return 1024;
 
@@ -262,5 +314,15 @@ export function buildSimpleDevicePolicy() {
         info,
         shadowMapSize: getShadowMapSizeForDeviceClass(deviceClass),
         ...policy,
+        renderer: {
+            maxPixelRatio: Math.min(info.dpr || 1, 2),
+            antialias: true,
+            shadowsEnabled: true,
+            ...(policy.renderer ?? {}),
+        },
+        splat: {
+            preferSparkRad: false,
+            ...(policy.splat ?? {}),
+        },
     };
 }

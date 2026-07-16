@@ -13,7 +13,7 @@ export function pickVariantFromManifest(manifest, options = {}) {
     }
 
     const hasReadySparkRad = manifest?.assetKind === "splat" && isReady(variants.sparkRad);
-    const preferred = variantOverride || (hasReadySparkRad ? "sparkRad" : manifest?.preferredVariant || "original");
+    const preferred = variantOverride || manifest?.preferredVariant || (hasReadySparkRad ? "sparkRad" : "original");
 
     let chosenKey = preferred;
     let chosen = variants[chosenKey];

@@ -1,12 +1,28 @@
 import { buildSplatDebugPayload, logSplatDebug } from "@shared/splat/splatDiagnostics.js";
 
 const SPARK_RENDERER_KEY = "heraSparkRenderer";
+const SPARK_RENDERER_PENDING_KEY = "heraSparkRendererPending";
 
 export async function ensureSparkRenderer({ renderer, scene, force = false }) {
     if (!renderer || !scene) return false;
-    if (scene.userData?.[SPARK_RENDERER_KEY]) return true;
+    if (scene.userData?.[SPARK_RENDERER_KEY]) return scene.userData[SPARK_RENDERER_KEY];
+
+    if (scene.userData?.[SPARK_RENDERER_PENDING_KEY]) {
+        return await scene.userData[SPARK_RENDERER_PENDING_KEY];
+    }
+
     if (!force) return false;
 
+    scene.userData[SPARK_RENDERER_PENDING_KEY] = createSparkRenderer({ renderer, scene });
+
+    try {
+        return await scene.userData[SPARK_RENDERER_PENDING_KEY];
+    } finally {
+        delete scene.userData[SPARK_RENDERER_PENDING_KEY];
+    }
+}
+
+async function createSparkRenderer({ renderer, scene }) {
     const sparkModule = await import("@sparkjsdev/spark");
     const { SparkRenderer } = sparkModule;
     const options = {
@@ -40,5 +56,5 @@ export async function ensureSparkRenderer({ renderer, scene, force = false }) {
         },
     }));
 
-    return true;
+    return sparkRenderer;
 }

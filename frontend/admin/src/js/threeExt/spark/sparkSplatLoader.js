@@ -1,6 +1,7 @@
 import { getResource } from "@/js/endpoints.js";
 import { ensureSparkRenderer } from "@/js/threeExt/spark/sparkRuntime.js";
 import {buildSplatDebugPayload, logSplatDebug, logSplatSourceDebug} from "@shared/splat/splatDiagnostics.js";
+import {createModernSpzSparkSplat, shouldUseModernSpzFallback} from "@shared/splat/modernSpzFallback.js";
 import {buildSparkSplatOptions, getOriginalSplatPath, getSparkRadSplatPath, SPLAT_SOURCE_MODES} from "@shared/splat/splatSource.js";
 
 function sourceMessage(mode) {
@@ -19,6 +20,7 @@ async function createSplat({ SplatMesh, options, asset, mode }) {
         mode,
         url: options.url ?? null,
         fileName: options.fileName ?? null,
+        fileType: options.fileType ?? null,
         paged: !!options.paged,
         lod: !!options.lod,
     };
@@ -44,7 +46,7 @@ export async function loadSparkSplatResource({ asset, url, fromUpload, state, ct
         const fileName = asset?.uploadData?.name ?? asset?.name;
 
         if (fromUpload && asset?.uploadData && !fallback) {
-            fileBytes = await asset.uploadData.arrayBuffer();
+            fileBytes = new Uint8Array(await asset.uploadData.arrayBuffer());
         } else {
             finalUrl = getResource(sourceUrl ?? asset?.sourceUrl);
             if (!finalUrl) {
@@ -69,7 +71,31 @@ export async function loadSparkSplatResource({ asset, url, fromUpload, state, ct
             },
         }));
         //création de splat
-        const splat = await createSplat({SplatMesh, options: plan.options, asset, mode: plan.mode,});
+        let splat;
+        try {
+            splat = await createSplat({SplatMesh, options: plan.options, asset, mode: plan.mode,});
+        } catch (error) {
+            if (!shouldUseModernSpzFallback({error, fileName, url: finalUrl, fileBytes})) {
+                throw error;
+            }
+
+            console.warn("[HERA][SplatSource] using modern SPZ fallback", {
+                assetId: asset?.id ?? null,
+                name: asset?.name ?? null,
+                url: finalUrl ?? fileName,
+                error: error?.message ?? String(error),
+            });
+            const { default: createSpzModule } = await import("@adobe/spz");
+            splat = await createModernSpzSparkSplat({
+                SplatMesh,
+                createSpzModule,
+                fileBytes,
+                url: finalUrl,
+                name: asset?.name || fileName || "Gaussian Splat",
+                mode: `${plan.mode}-spz-modern`,
+                baseOptions: plan.options,
+            });
+        }
 
         logSplatDebug("admin-load-end", buildSplatDebugPayload({
             asset,

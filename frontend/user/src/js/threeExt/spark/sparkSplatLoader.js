@@ -4,6 +4,7 @@ import {
     logSplatDebug,
     logSplatSourceDebug,
 } from "@shared/splat/splatDiagnostics.js";
+import {createModernSpzSparkSplat, shouldUseModernSpzFallback} from "@shared/splat/modernSpzFallback.js";
 import {
     buildSparkSplatOptions,
     getOriginalSplatPath,
@@ -27,6 +28,7 @@ async function createSparkSplat({ SplatMesh, options, name, mode }) {
         mode,
         url: options.url ?? null,
         fileName: options.fileName ?? null,
+        fileType: options.fileType ?? null,
         paged: !!options.paged,
         lod: !!options.lod,
     };
@@ -83,12 +85,35 @@ async function loadWithPlan({
         },
     }));
 
-    const splat = await createSparkSplat({
-        SplatMesh,
-        options: plan.options,
-        name,
-        mode: plan.mode,
-    });
+    let splat;
+    try {
+        splat = await createSparkSplat({
+            SplatMesh,
+            options: plan.options,
+            name,
+            mode: plan.mode,
+        });
+    } catch (error) {
+        if (!shouldUseModernSpzFallback({error, fileName: name, url: resolvedUrl})) {
+            throw error;
+        }
+
+        console.warn("[HERA][SplatSource] using modern SPZ fallback", {
+            assetId: asset?.id ?? null,
+            name,
+            url: resolvedUrl,
+            error: error?.message ?? String(error),
+        });
+        const { default: createSpzModule } = await import("@adobe/spz");
+        splat = await createModernSpzSparkSplat({
+            SplatMesh,
+            createSpzModule,
+            url: resolvedUrl,
+            name: name || "Gaussian Splat",
+            mode: `${plan.mode}-spz-modern`,
+            baseOptions: plan.options,
+        });
+    }
 
     logSplatDebug("viewer-load-end", buildSplatDebugPayload({
         asset,

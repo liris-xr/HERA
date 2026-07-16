@@ -1,4 +1,5 @@
 import { ENDPOINT } from "@/js/endpoints.js";
+import { isQuestOrOculusBrowser } from "@/js/threeExt/DeviceProfile/devicePolicy.js";
 
 export async function fetchAssetManifest(assetId, token = null) {
     const headers = {};
@@ -34,7 +35,12 @@ export function pickVariantFromManifest(manifest, options = {}) {
     }
 
     const hasReadySparkRad = manifest?.assetKind === "splat" && isReady(variants.sparkRad);
-    const preferred = variantOverride || (hasReadySparkRad ? "sparkRad" : manifest?.preferredVariant || "original");
+    const preferSparkRadForRuntime =
+        hasReadySparkRad &&
+        (options.preferSparkRad === true ||
+            (options.preferSparkRad !== false && isQuestOrOculusBrowser()));
+    const preferred = variantOverride ||
+        (preferSparkRadForRuntime ? "sparkRad" : manifest?.preferredVariant || (hasReadySparkRad ? "sparkRad" : "original"));
 
     let chosenKey = preferred;
     let chosen = variants[chosenKey];

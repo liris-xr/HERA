@@ -1,4 +1,5 @@
 import { buildSplatDebugPayload, logSplatDebug } from "@shared/splat/splatDiagnostics.js";
+import { isQuestOrOculusBrowser } from "@/js/threeExt/DeviceProfile/devicePolicy.js";
 
 const SPARK_RENDERER_KEY = "heraSparkRenderer";
 const SPARK_RENDERER_PENDING_KEY = "heraSparkRendererPending";
@@ -75,11 +76,6 @@ function getSparkUrlOptions() {
 
 function hasSparkProfileDebugFlag() {
     return getSparkUrlOptions().debug;
-}
-
-function isQuestOrOculusBrowser() {
-    if (typeof navigator === "undefined") return false;
-    return /Quest|OculusBrowser/i.test(String(navigator.userAgent ?? ""));
 }
 
 function getSparkProfileState(sparkRenderer) {
@@ -211,6 +207,10 @@ export function applySparkXrPerformanceProfile(sparkRenderer, renderer) {
 }
 
 export function sceneHasSparkContent(scene) {
+    if (typeof scene?.hasSplatAssets === "function" && scene.hasSplatAssets()) {
+        return true;
+    }
+
     let hasSparkContent = false;
 
     scene?.traverse?.((object) => {

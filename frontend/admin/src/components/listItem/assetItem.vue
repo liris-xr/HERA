@@ -12,6 +12,7 @@ const props = defineProps({
   hideInViewer: { type: Boolean, default: false },
   active: { type: Boolean, default: false },
   error: { type: Boolean, default: false },
+  errorMessage: { type: String, default: "" },
   loading: { type: Boolean, default: false },
   simplifying: { type: Boolean, default: false },
   activeAnimation: { type: String, default: null },
@@ -126,6 +127,10 @@ function toggleAdvancedOptimization() {
           <span v-if="hideInViewer" class="notDisplayedInfo">
             {{ $t("sceneView.leftSection.sceneAssets.assetNotDisplayed") }}
           </span>
+
+          <span v-if="error && errorMessage" class="assetErrorInfo">
+            {{ errorMessage }}
+          </span>
         </div>
       </div>
 
@@ -135,6 +140,7 @@ function toggleAdvancedOptimization() {
             url="/icons/warning.svg"
             theme="danger"
             class="iconAction"
+            :title="errorMessage || $t('sceneView.leftSection.sceneAssets.assetLoadFailed')"
         />
 
         <icon-svg
@@ -403,6 +409,14 @@ function toggleAdvancedOptimization() {
 .notDisplayedInfo {
   font-size: 12px;
   opacity: 0.7;
+}
+
+.assetErrorInfo {
+  max-width: 520px;
+  color: var(--dangerColor);
+  font-size: 11px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .iconAction {

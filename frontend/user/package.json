@@ -10,6 +10,7 @@
     "adb": "adb reverse tcp:8081 tcp:8081 & adb reverse tcp:3000 tcp:3000"
   },
   "dependencies": {
+    "@adobe/spz": "^0.2.2",
     "@baklavajs/core": "^2.8.1",
     "@baklavajs/renderer-vue": "^2.8.1",
     "@pnext/three-loader": "^1.0.0",

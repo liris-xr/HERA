@@ -11,6 +11,7 @@
     "adb": "adb reverse tcp:8080 tcp:8080 & adb reverse tcp:3000 tcp:3000"
   },
   "dependencies": {
+    "@adobe/spz": "^0.2.2",
     "@pnext/three-loader": "^1.0.0",
     "@sparkjsdev/spark": "^2.1.0",
     "baklavajs": "^2.8.1",

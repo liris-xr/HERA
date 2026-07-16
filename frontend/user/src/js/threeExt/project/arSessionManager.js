@@ -53,7 +53,7 @@ export class ArSessionManager {
         this.sceneManager = new ArSceneManager(json.scenes, this.shadowMapSize);
         this.arCamera = new ArCamera();
 
-        this.arRenderer = new ArRenderer(this.shadowMapSize, 1);
+        this.arRenderer = new ArRenderer(this.shadowMapSize, 1, this.devicePolicy.renderer);
         this.labelRenderer = new LabelRenderer();
         this.perfDebugLogger = createPerfDebugLogger({
             name: "viewer-ar",
@@ -91,6 +91,7 @@ export class ArSessionManager {
     async init(container, arOverlay) {
         this.domContainer = container;
 
+        await this.#ensureSparkRendererForScene(this.sceneManager.getActiveContentScene());
         await this.sceneManager.init();
         await this.#ensureSparkRendererForScene(this.sceneManager.getActiveContentScene());
 

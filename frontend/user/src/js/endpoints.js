@@ -1,10 +1,14 @@
-// const HOST = 'https://192.168.65.116';
-const HOST = 'https://localhost';
-// const HOST = 'https://192.168.1.10';
+// // const HOST = 'https://192.168.65.116';
+// const HOST = 'https://localhost';
+// // const HOST = 'https://192.168.1.10';
+
+// export const ENDPOINT = `${HOST}:8080/api/`;
+
+const HOST = `${window.location.protocol}//${window.location.hostname}`;
 
 export const ENDPOINT = `${HOST}:8080/api/`;
 
-export const HEADERS= {
+export const HEADERS = {
     'Content-Type': "application/json"
 };
 

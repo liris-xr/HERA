@@ -1,7 +1,8 @@
 import express from 'express';
-import {initializeDatabase} from "./src/orm/index.js";
-import {resetDatabase} from "./src/orm/defaults/reset.js";
-import {insertDefaults} from "./src/orm/defaults/insertDefaults.js";
+// import { initializeDatabase } from "./src/orm/index.js";
+import { initializeDatabase, ArUser } from "./src/orm/index.js";
+import { resetDatabase } from "./src/orm/defaults/reset.js";
+import { insertDefaults } from "./src/orm/defaults/insertDefaults.js";
 import project from "./src/routes/project.js";
 import auth from "./src/routes/auth.js";
 import user from "./src/routes/user.js";
@@ -24,9 +25,9 @@ export const DIRNAME = path.dirname(__filename);
 //for https only :
 import * as fs from "node:fs";
 import * as https from "node:https";
-import {Server} from "socket.io";
+import { Server } from "socket.io";
 import setupSocket from "./src/socket/index.js";
-import {errorHandler} from "./src/utils/errorHandler.js";
+import { errorHandler } from "./src/utils/errorHandler.js";
 import zip from 'express-easy-zip'
 const options = {
     key: fs.readFileSync('privatekey.key'),
@@ -40,10 +41,23 @@ app.use(cors({}))
 app.use(zip())
 app.use(errorHandler)
 
-async function main () {
-    await initializeDatabase({force: false});
-        // await resetDatabase();
-        // await insertDefaults();
+async function main() {
+    // await initializeDatabase({ force: false });
+    // // await resetDatabase();
+    // try {
+    //     await insertDefaults();
+    // } catch (e) {
+    //     console.log('Default data already exists, skipping insertDefaults()');
+    // }
+
+    await initializeDatabase({ force: false });
+    // await resetDatabase();
+    const userCount = await ArUser.count();
+    if (userCount === 0) {
+        await insertDefaults();
+    } else {
+        console.log('Database already initialized, skipping insertDefaults()');
+    }
 
     app.use(project);
     app.use(auth);
@@ -53,6 +67,19 @@ async function main () {
     app.use(asset)
     app.use(label)
     app.use('/public', express.static('public'));       //serving static files
+
+    // Serve built frontend apps (admin editor and user viewer)
+    app.use('/editor', express.static('public/editor'));
+    app.use('/viewer', express.static('public/viewer'));
+
+    app.get('/editor/*', (req, res) => {
+        res.sendFile(path.join(DIRNAME, 'public/editor/index.html'));
+    });
+
+    app.get('/viewer/*', (req, res) => {
+        res.sendFile(path.join(DIRNAME, 'public/viewer/index.html'));
+    });
+
 
     const httpsServer = https.createServer(options, app)
 

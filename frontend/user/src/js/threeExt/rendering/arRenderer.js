@@ -21,6 +21,8 @@ export class ArRenderer extends classes(THREE.WebGLRenderer, DomElementInterface
             ? Number(options.maxPixelRatio)
             : 2;
         this.setPixelRatio(Math.max(1, Math.min(devicePixelRatio, maxPixelRatio)));
+        this.setInlinePreviewClear();
+        this.domElement.style.background = "transparent";
         this.setDomSize(window.innerWidth, window.innerHeight);
         this.xr.enabled = true;
         this.shadowMap.enabled = options.shadowsEnabled !== false;
@@ -38,5 +40,15 @@ export class ArRenderer extends classes(THREE.WebGLRenderer, DomElementInterface
     updateSize(){
         this.setSize(this.#domWidth, this.#domHeight);
         this.setSize(this.#domWidth*this.scaling, this.#domHeight*this.scaling, false);
+    }
+
+    setInlinePreviewClear() {
+        this.setClearColor(0x000000, 0);
+        this.setClearAlpha(0);
+    }
+
+    setXrTransparentClear() {
+        this.setClearColor(0x000000, 0);
+        this.setClearAlpha(0);
     }
 }

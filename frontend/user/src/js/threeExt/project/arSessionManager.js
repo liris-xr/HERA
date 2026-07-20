@@ -270,6 +270,9 @@ export class ArSessionManager {
 
         this.arRenderer.xr.setReferenceSpaceType("local");
         await this.arRenderer.xr.setSession(this.arSession);
+        if (this.xrMode === "ar") {
+            this.arRenderer.setXrTransparentClear?.();
+        }
         await this.#ensureSparkRendererForScene(this.sceneManager.getActiveContentScene());
         this.#applySparkXrPerformanceProfile();
 
@@ -420,6 +423,7 @@ export class ArSessionManager {
 
         this.metricsCollector?.endSession();
         this.metricsHud?.detach?.();
+        this.arRenderer.setInlinePreviewClear?.();
         this.#applySparkXrPerformanceProfile();
         this.#resetCameraPosition();
 

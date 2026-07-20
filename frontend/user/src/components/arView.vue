@@ -465,12 +465,14 @@ h2 {
   border-radius: 16px;
   overflow: hidden;
   position: relative;
+  background: transparent;
 }
 
 #container :deep(canvas) {
   width: 100% !important;
   height: 100% !important;
   display: block;
+  background: transparent !important;
 }
 
 #labelContainer {
